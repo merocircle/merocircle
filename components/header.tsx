@@ -107,9 +107,9 @@ export function Header() {
         <div className="flex items-center space-x-4">
           <ThemeToggle />
           
-          {loading ? (
+          {loading && !isAuthenticated ? (
             <div className="w-8 h-8 animate-pulse bg-gray-200 dark:bg-gray-700 rounded-full" />
-          ) : isAuthenticated && user && userProfile ? (
+          ) : isAuthenticated && user ? (
             // User Profile Menu
             <div className="relative">
               <button
@@ -117,10 +117,10 @@ export function Header() {
                 className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden">
-                  {userProfile.photo_url ? (
+                  {userProfile?.photo_url ? (
                     <img 
                       src={userProfile.photo_url} 
-                      alt={userProfile.display_name}
+                      alt={userProfile.display_name || user.email || 'User'}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -132,12 +132,12 @@ export function Header() {
                 <div className="hidden sm:block text-left">
                   <div className="flex items-center space-x-1">
                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {userProfile.display_name}
+                      {userProfile?.display_name || user.email?.split('@')[0] || 'User'}
                     </span>
                     {isCreator && <Crown className="w-4 h-4 text-yellow-500" />}
                   </div>
                   <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                    {userProfile.role}
+                    {userProfile?.role || 'user'}
                   </span>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-500" />
@@ -156,7 +156,7 @@ export function Header() {
                   >
                     <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {userProfile.display_name}
+                        {userProfile?.display_name || user.email?.split('@')[0] || 'User'}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {user.email}

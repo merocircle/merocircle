@@ -196,8 +196,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (initialized) return;
 
-    // Get initial session
+    // Get initial session with timeout
     const getInitialSession = async () => {
+      const timeoutId = setTimeout(() => {
+        logger.warn('Initial session check timeout, setting loading to false', 'AUTH_CONTEXT');
+        setLoading(false);
+        setInitialized(true);
+      }, 5000); // 5 second timeout
+
       try {
         logger.debug('Getting initial session', 'AUTH_CONTEXT');
         
@@ -226,15 +232,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await loadUserProfile(session.user.id);
+          // Load profile in background, don't block
+          loadUserProfile(session.user.id).catch(err => {
+            logger.warn('Profile load failed in initial session, continuing', 'AUTH_CONTEXT', {
+              error: err instanceof Error ? err.message : String(err)
+            });
+          });
         }
         
+        clearTimeout(timeoutId);
         setLoading(false);
         setInitialized(true);
       } catch (error) {
         logger.error('Exception in getInitialSession', 'AUTH_CONTEXT', {
           error: error instanceof Error ? error.message : String(error)
         });
+        clearTimeout(timeoutId);
         setLoading(false);
         setInitialized(true);
       }
@@ -263,27 +276,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        // Handle TOKEN_REFRESHED - don't block UI if we have profile, but reload if missing
+        // Handle TOKEN_REFRESHED - update session and load profile if needed
         if (event === 'TOKEN_REFRESHED') {
           setSession(session);
           setUser(session?.user ?? null);
           
-          // If we have a profile, don't reload (just update session)
+          // If we have a profile matching the current user, just update session (don't reload)
           if (userProfile && session?.user?.id === userProfile.id) {
-            setLoading(false);
+            logger.debug('Token refreshed, profile already loaded', 'AUTH_CONTEXT');
+            setLoading(false); // Ensure loading is false
             return;
           }
           
-          // If profile is missing or user changed, reload it (but don't block UI)
+          // If profile is missing or user changed, load it in background
           if (session?.user) {
-            setLoading(false); // Don't block UI during token refresh
-            // Load profile in background
-            loadUserProfile(session.user.id).catch((error) => {
-              logger.error('Error loading profile after token refresh', 'AUTH_CONTEXT', {
-                error: error instanceof Error ? error.message : String(error)
+            logger.debug('Token refreshed, loading missing profile', 'AUTH_CONTEXT', {
+              userId: session.user.id,
+              hasProfile: !!userProfile
+            });
+            // Don't set loading to true - load in background
+            loadUserProfile(session.user.id).catch(err => {
+              logger.warn('Profile load failed after token refresh, continuing', 'AUTH_CONTEXT', {
+                error: err instanceof Error ? err.message : String(err)
               });
             });
           }
+          setLoading(false); // Always set loading to false
           return;
         }
         

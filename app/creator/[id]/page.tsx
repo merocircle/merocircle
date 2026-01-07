@@ -74,8 +74,12 @@ export default function CreatorProfilePage() {
     refreshCreatorDetails 
   } = useCreatorDetails(creatorId)
   
-  const { followCreator, unfollowCreator, isFollowing } = useFollow()
-  const { subscribe, unsubscribe, hasActiveSubscription } = useSubscription()
+  const { followCreator, unfollowCreator, loading: followLoading } = useFollow()
+  const { subscribe, unsubscribe, loading: subscriptionLoading } = useSubscription()
+  
+  // Get following status from creator details
+  const isFollowing = creatorDetails?.isFollowing || false
+  const hasActiveSubscription = creatorDetails?.current_subscription !== null
   
   const [activeTab, setActiveTab] = useState('posts')
   const [paymentAmount, setPaymentAmount] = useState('1000')
@@ -183,8 +187,8 @@ export default function CreatorProfilePage() {
     }
 
     try {
-      if (hasActiveSubscription) {
-        await unsubscribe(creatorId)
+      if (hasActiveSubscription && creatorDetails?.current_subscription) {
+        await unsubscribe(creatorId, creatorDetails.current_subscription.id)
         alert('Subscription cancelled successfully')
       } else {
         await subscribe(creatorId, tierId)
@@ -292,7 +296,7 @@ export default function CreatorProfilePage() {
                       </span>
                     )}
                   </div>
-                  {creatorDetails.verified && (
+                  {creatorDetails.is_verified && (
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                       <CheckCircle className="w-5 h-5 text-white" />
                     </div>
@@ -348,7 +352,7 @@ export default function CreatorProfilePage() {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {creatorDetails.post_count || 0}
+                      {creatorDetails.posts_count || 0}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Posts</div>
                   </div>
@@ -360,7 +364,7 @@ export default function CreatorProfilePage() {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {creatorDetails.join_date ? new Date(creatorDetails.join_date).getFullYear() : 'N/A'}
+                      {creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">Joined</div>
                   </div>
@@ -510,7 +514,7 @@ export default function CreatorProfilePage() {
                             <div className="mb-6">
                               <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Benefits</h4>
                               <ul className="space-y-2">
-                                {tier.benefits.split(',').map((benefit, index) => (
+                                {(Array.isArray(tier.benefits) ? tier.benefits : tier.benefits ? [tier.benefits] : []).map((benefit: string, index: number) => (
                                   <li key={index} className="flex items-center space-x-2">
                                     <CheckCircle className="w-4 h-4 text-green-500" />
                                     <span className="text-gray-700 dark:text-gray-300">{benefit.trim()}</span>
@@ -522,7 +526,7 @@ export default function CreatorProfilePage() {
 
                           <div className="flex items-center justify-between">
                             <div className="text-sm text-gray-600 dark:text-gray-400">
-                              {tier.subscriber_count || 0} supporters
+                              {tier.current_subscribers || 0} supporters
                             </div>
                             <Button 
                               className="bg-red-500 hover:bg-red-600"
@@ -572,13 +576,13 @@ export default function CreatorProfilePage() {
                         </div>
                       )}
                       
-                      {creatorDetails.join_date && (
+                      {creatorDetails.created_at && (
                         <div>
                           <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Joined</h4>
                           <div className="flex items-center space-x-2">
                             <Calendar className="w-4 h-4 text-gray-500" />
                             <span className="text-gray-700 dark:text-gray-300">
-                              {new Date(creatorDetails.join_date).toLocaleDateString('en-US', {
+                              {new Date(creatorDetails.created_at).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric'
@@ -682,20 +686,23 @@ export default function CreatorProfilePage() {
                   {paymentMethods.map((method, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                       <div className="flex items-center space-x-3">
-                        {method.type === 'esewa' && <Smartphone className="w-5 h-5 text-green-600" />}
-                        {method.type === 'khalti' && <Smartphone className="w-5 h-5 text-purple-600" />}
-                        {(method.type === 'bank_transfer' || method.type === 'bank') && <Building2 className="w-5 h-5 text-blue-600" />}
+                        {method.payment_type === 'esewa' && <Smartphone className="w-5 h-5 text-green-600" />}
+                        {method.payment_type === 'khalti' && <Smartphone className="w-5 h-5 text-purple-600" />}
+                        {method.payment_type === 'bank_transfer' && <Building2 className="w-5 h-5 text-blue-600" />}
                         <div>
                           <p className="font-medium text-gray-900 dark:text-gray-100">
-                            {method.type === 'esewa' && 'eSewa'}
-                            {method.type === 'khalti' && 'Khalti'}
-                            {(method.type === 'bank_transfer' || method.type === 'bank') && 'Bank Transfer'}
+                            {method.payment_type === 'esewa' && 'eSewa'}
+                            {method.payment_type === 'khalti' && 'Khalti'}
+                            {method.payment_type === 'bank_transfer' && 'Bank Transfer'}
                           </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{method.details}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {method.payment_type === 'esewa' && method.details?.phone_number && `Phone: ${method.details.phone_number}`}
+                            {method.payment_type === 'bank_transfer' && method.details?.account_number && `Account: ${method.details.account_number}`}
+                          </p>
                         </div>
                       </div>
                       
-                      {method.qr_code && (
+                      {method.details?.qr_code_url && (
                         <Button size="sm" variant="outline">
                           <QrCode className="w-4 h-4" />
                         </Button>
@@ -729,7 +736,7 @@ export default function CreatorProfilePage() {
                     <span className="text-gray-700 dark:text-gray-300">Posts</span>
                   </div>
                   <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {creatorDetails.post_count || 0}
+                    {creatorDetails.posts_count || 0}
                   </span>
                 </div>
                 
@@ -749,7 +756,7 @@ export default function CreatorProfilePage() {
                     <span className="text-gray-700 dark:text-gray-300">Member Since</span>
                   </div>
                   <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {creatorDetails.join_date ? new Date(creatorDetails.join_date).getFullYear() : 'N/A'}
+                    {creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
                   </span>
                 </div>
               </div>
@@ -774,26 +781,4 @@ export default function CreatorProfilePage() {
       </div>
     </div>
   )
-                </div>
-              </div>
-            </Card>
-
-            {/* Social Actions */}
-            <Card className="p-6">
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Profile
-                </Button>
-                
-                <Button variant="outline" className="w-full">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Send Message
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+}

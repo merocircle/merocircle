@@ -121,6 +121,83 @@ export default function CreatorDashboard() {
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'posts');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setUploadedImageUrl(result.url);
+      } else {
+        alert(result.error || 'File upload failed.');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('File upload failed. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handlePublishPost = async () => {
+    if (!newPostTitle || !newPostContent) {
+      alert('Title and content are required for a post.');
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newPostTitle,
+          content: newPostContent,
+          image_url: uploadedImageUrl || null,
+          is_public: postVisibility === 'public',
+          tier_required: postVisibility === 'public' ? 'free' : postVisibility,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('Post created successfully!');
+        setNewPostTitle('');
+        setNewPostContent('');
+        setUploadedImageUrl('');
+        setPostVisibility('public');
+        // Refresh dashboard data
+        if (user?.id) {
+          const dashboardResponse = await fetch(`/api/creator/${user.id}/dashboard`);
+          if (dashboardResponse.ok) {
+            const data = await dashboardResponse.json();
+            setDashboardData(data);
+          }
+        }
+      } else {
+        alert(result.error || 'Failed to create post.');
+      }
+    } catch (error) {
+      console.error('Create post error:', error);
+      alert('Failed to create post. Please try again.');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   if (loading || dataLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">

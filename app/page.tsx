@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { useAuth } from "@/contexts/supabase-auth-context";
+import { logger } from "@/lib/logger";
 
 // Animation variants
 const fadeInUp = {
@@ -153,9 +154,20 @@ export default function LandingPage() {
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isAuthenticated) {
+        logger.debug('Redirecting to dashboard after timeout', 'LANDING_PAGE');
+        router.push('/dashboard');
+      }
+    }, 3000); // 3 second timeout
+
     if (!loading && isAuthenticated) {
+      clearTimeout(timeoutId);
       router.push('/dashboard');
     }
+
+    return () => clearTimeout(timeoutId);
   }, [loading, isAuthenticated, router]);
 
   return (
