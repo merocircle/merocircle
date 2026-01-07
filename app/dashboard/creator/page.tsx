@@ -49,6 +49,7 @@ import {
   Save
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CreatorDashboard() {
   const { user, userProfile, creatorProfile, isAuthenticated, loading, createCreatorProfile } = useAuth();
@@ -76,10 +77,12 @@ export default function CreatorDashboard() {
     }
   }, [loading, isAuthenticated, router]);
 
-  // Fetch creator dashboard data
+  // Fetch creator dashboard data with progressive loading
   React.useEffect(() => {
     const fetchDashboardData = async () => {
       if (isAuthenticated && userProfile && creatorProfile) {
+        // Don't block UI - show skeleton while loading
+        setDataLoading(true);
         try {
           const response = await fetch(`/api/creator/${user?.id}/dashboard`);
           if (response.ok) {
@@ -198,7 +201,8 @@ export default function CreatorDashboard() {
     }
   };
 
-  if (loading || dataLoading) {
+  // Show skeleton loader instead of blocking spinner
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
@@ -401,60 +405,79 @@ export default function CreatorDashboard() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="grid grid-cols-1 md:grid-cols-4 gap-6"
             >
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Earnings</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      NPR {creatorStats.monthlyEarnings.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">This month</p>
-                  </div>
-                  <DollarSign className="w-8 h-8 text-green-600" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Supporters</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {creatorStats.supporters.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">Active supporters</p>
-                  </div>
-                  <Users className="w-8 h-8 text-blue-600" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Posts</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {creatorStats.posts}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">Total posts</p>
-                  </div>
-                  <FileText className="w-8 h-8 text-purple-600" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Earnings</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      NPR {creatorStats.totalEarnings.toLocaleString()}
-                    </p>
-                    <div className="flex items-center space-x-1 mt-1">
-                      <TrendingUp className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">All time</span>
+              {dataLoading ? (
+                <>
+                  {[1, 2, 3, 4].map((i) => (
+                    <Card key={i} className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-24 mb-2" />
+                          <Skeleton className="h-8 w-32 mb-2" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                      </div>
+                    </Card>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Earnings</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                          NPR {creatorStats.monthlyEarnings.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">This month</p>
+                      </div>
+                      <DollarSign className="w-8 h-8 text-green-600" />
                     </div>
-                  </div>
-                  <Target className="w-8 h-8 text-red-500" />
-                </div>
-              </Card>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Supporters</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                          {creatorStats.supporters.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">Active supporters</p>
+                      </div>
+                      <Users className="w-8 h-8 text-blue-600" />
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Posts</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                          {creatorStats.posts}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">Total posts</p>
+                      </div>
+                      <FileText className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Earnings</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                          NPR {creatorStats.totalEarnings.toLocaleString()}
+                        </p>
+                        <div className="flex items-center space-x-1 mt-1">
+                          <TrendingUp className="w-4 h-4 text-green-500" />
+                          <span className="text-sm text-green-500">All time</span>
+                        </div>
+                      </div>
+                      <Target className="w-8 h-8 text-red-500" />
+                    </div>
+                  </Card>
+                </>
+              )}
             </motion.div>
 
             {/* Earnings Summary */}

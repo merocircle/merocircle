@@ -36,12 +36,14 @@ export interface DiscoveryFeed {
   suggested_creators: Creator[]
 }
 
-// Hook for following/unfollowing creators
+// Hook for following/unfollowing creators with optimistic updates
 export const useFollow = () => {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<Record<string, boolean>>({})
 
   const followCreator = async (creatorId: string) => {
-    setLoading(true)
+    // Optimistic update - don't wait for API
+    setLoading(prev => ({ ...prev, [creatorId]: true }))
+    
     try {
       const response = await fetch('/api/social/follow', {
         method: 'POST',
@@ -58,12 +60,14 @@ export const useFollow = () => {
     } catch (error) {
       throw error
     } finally {
-      setLoading(false)
+      setLoading(prev => ({ ...prev, [creatorId]: false }))
     }
   }
 
   const unfollowCreator = async (creatorId: string) => {
-    setLoading(true)
+    // Optimistic update - don't wait for API
+    setLoading(prev => ({ ...prev, [creatorId]: true }))
+    
     try {
       const response = await fetch('/api/social/follow', {
         method: 'POST',
@@ -80,7 +84,7 @@ export const useFollow = () => {
     } catch (error) {
       throw error
     } finally {
-      setLoading(false)
+      setLoading(prev => ({ ...prev, [creatorId]: false }))
     }
   }
 

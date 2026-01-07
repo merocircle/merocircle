@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Creator, useFollow } from '@/hooks/useSocial'
@@ -13,33 +14,47 @@ interface CreatorCardProps {
   onFollowChange?: (creatorId: string, isFollowing: boolean) => void
 }
 
-export default function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
+function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing || false)
   const [followerCount, setFollowerCount] = useState(creator.follower_count || 0)
   const { followCreator, unfollowCreator, loading } = useFollow()
+  const [isPending, startTransition] = useTransition()
   
   // Ensure required fields exist
   if (!creator || !creator.user_id || !creator.display_name) {
     return null
   }
 
-  const handleFollowToggle = async () => {
-    try {
-      if (isFollowing) {
-        await unfollowCreator(creator.user_id)
-        setIsFollowing(false)
-        setFollowerCount(prev => prev - 1)
-      } else {
-        await followCreator(creator.user_id)
-        setIsFollowing(true)
-        setFollowerCount(prev => prev + 1)
+  const handleFollowToggle = () => {
+    // Optimistic UI update - instant feedback
+    const wasFollowing = isFollowing
+    const newFollowingState = !wasFollowing
+    const newFollowerCount = wasFollowing ? followerCount - 1 : followerCount + 1
+    
+    // Update UI immediately
+    setIsFollowing(newFollowingState)
+    setFollowerCount(newFollowerCount)
+    onFollowChange?.(creator.user_id, newFollowingState)
+    
+    // Perform API call in background
+    startTransition(async () => {
+      try {
+        if (wasFollowing) {
+          await unfollowCreator(creator.user_id)
+        } else {
+          await followCreator(creator.user_id)
+        }
+      } catch (error) {
+        // Revert on error
+        console.error('Follow toggle error:', error)
+        setIsFollowing(wasFollowing)
+        setFollowerCount(followerCount)
+        onFollowChange?.(creator.user_id, wasFollowing)
       }
-      
-      onFollowChange?.(creator.user_id, !isFollowing)
-    } catch (error) {
-      console.error('Follow toggle error:', error)
-    }
+    })
   }
+
+  const isLoading = loading[creator.user_id] || isPending
 
   return (
     <Card className="hover:shadow-lg transition-shadow duration-200">
@@ -88,34 +103,22 @@ export default function CreatorCard({ creator, onFollowChange }: CreatorCardProp
               </div>
             </div>
 
-            {/* Follow Button */}
+            {/* Follow Button - Optimistic UI */}
             <Button
               onClick={handleFollowToggle}
-              disabled={loading}
+              disabled={isLoading}
               variant={isFollowing ? "outline" : "default"}
               size="sm"
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto transition-all"
             >
-              {loading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-                  <span>{isFollowing ? 'Unfollowing...' : 'Following...'}</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  {isFollowing ? (
-                    <>
-                      <Heart className="w-4 h-4 fill-current" />
-                      <span>Following</span>
-                    </>
-                  ) : (
-                    <>
-                      <Heart className="w-4 h-4" />
-                      <span>Follow</span>
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center space-x-2">
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin opacity-50" />
+                ) : (
+                  <Heart className={`w-4 h-4 transition-all ${isFollowing ? 'fill-current' : ''}`} />
+                )}
+                <span>{isFollowing ? 'Following' : 'Follow'}</span>
+              </div>
             </Button>
           </div>
         </div>
@@ -123,3 +126,5 @@ export default function CreatorCard({ creator, onFollowChange }: CreatorCardProp
     </Card>
   )
 }
+
+export default memo(CreatorCard)
