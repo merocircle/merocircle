@@ -79,10 +79,10 @@ export default function DashboardPage() {
     }
   }, [loading, isAuthenticated, router]);
 
-  // Fetch dashboard data
+  // Fetch dashboard data (don't wait for userProfile - use user instead)
   React.useEffect(() => {
     const fetchDashboardData = async () => {
-      if (isAuthenticated && userProfile) {
+      if (isAuthenticated && user) {
         try {
           const response = await fetch('/api/dashboard/feed');
           if (response.ok) {
@@ -94,20 +94,37 @@ export default function DashboardPage() {
         } finally {
           setDataLoading(false);
         }
+      } else if (!isAuthenticated) {
+        setDataLoading(false);
       }
     };
 
-    fetchDashboardData();
-  }, [isAuthenticated, userProfile]);
+    // Add a small delay to allow auth context to finish initializing
+    const timer = setTimeout(() => {
+      fetchDashboardData();
+    }, 100);
 
-  // Show loading while checking auth
-  if (loading) {
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, user]);
+
+  // Show loading only for initial auth check (max 3 seconds timeout)
+  const [authTimeout, setAuthTimeout] = React.useState(false);
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthTimeout(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Don't block on userProfile - allow page to render with fallback
+  if (loading && !authTimeout) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center justify-center h-64 space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
           </div>
         </div>
       </div>
@@ -115,7 +132,7 @@ export default function DashboardPage() {
   }
 
   // If not authenticated after loading, don't render (will redirect)
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !loading) {
     return null;
   }
 

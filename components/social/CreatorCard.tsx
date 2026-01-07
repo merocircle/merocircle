@@ -122,4 +122,7 @@ export default function CreatorCard({ creator, onFollowChange }: CreatorCardProp
       </CardContent>
     </Card>
   )
-} 
+        </div>
+      </CardContent>
+    </Card>
+  )

@@ -56,14 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Load user profile data
   const loadUserProfile = async (userId: string, retryCount = 0): Promise<void> => {
-    const maxRetries = 3;
+    const maxRetries = 2; // Reduced retries to prevent long delays
     
     try {
       logger.debug('Loading user profile', 'AUTH_CONTEXT', { userId, retryCount });
       
       // Wait a bit if retrying (database trigger might be creating profile)
       if (retryCount > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        await new Promise(resolve => setTimeout(resolve, 500 * retryCount)); // Reduced wait time
       }
       
       const { data: profile, error } = await supabase
@@ -98,21 +98,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .single();
 
             if (createError) {
-              // If duplicate key error, profile was created by trigger - retry
-              if (createError.code === '23505' && retryCount < maxRetries) {
+              // If duplicate key error, profile was created by trigger - retry once
+              if (createError.code === '23505' && retryCount < 1) {
                 logger.debug('Profile creation conflict, retrying', 'AUTH_CONTEXT', {
                   retryCount: retryCount + 1
                 });
                 return loadUserProfile(userId, retryCount + 1);
               }
               
-              logger.error('Failed to auto-create user profile', 'AUTH_CONTEXT', {
+              logger.warn('Failed to auto-create user profile, will continue without profile', 'AUTH_CONTEXT', {
                 userId,
                 error: createError.message,
                 errorCode: createError.code
               });
-              setUserProfile(null);
-              setCreatorProfile(null);
+              // Don't set to null - allow UI to render with fallback
               return;
             }
             
@@ -125,8 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           } else {
             logger.warn('No auth user found when trying to create profile', 'AUTH_CONTEXT', { userId });
-            setUserProfile(null);
-            setCreatorProfile(null);
+            // Don't block - allow UI to render
             return;
           }
         }
@@ -141,11 +139,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return loadUserProfile(userId, retryCount + 1);
         }
         
-        logger.error('Error loading user profile after retries', 'AUTH_CONTEXT', {
+        logger.warn('Error loading user profile after retries, continuing anyway', 'AUTH_CONTEXT', {
           userId,
           error: error.message,
           errorCode: error.code
         });
+        // Don't block - allow UI to render with fallback
         return;
       }
 
@@ -156,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       setUserProfile(profile);
 
-      // If user is a creator, load creator profile
+      // If user is a creator, load creator profile (non-blocking)
       if (profile.role === 'creator') {
         logger.debug('Loading creator profile', 'AUTH_CONTEXT', { userId });
         
@@ -182,14 +181,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           setCreatorProfile(null);
         }
+      } else {
+        setCreatorProfile(null);
       }
     } catch (error) {
-      logger.error('Exception in loadUserProfile', 'AUTH_CONTEXT', {
+      logger.warn('Exception in loadUserProfile, continuing anyway', 'AUTH_CONTEXT', {
         userId,
         error: error instanceof Error ? error.message : String(error)
       });
-      setUserProfile(null);
-      setCreatorProfile(null);
+      // Don't set to null - allow UI to render with fallback
     }
   };
 
@@ -257,20 +257,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           logger.info('User signed out', 'AUTH_CONTEXT');
           setUserProfile(null);
           setCreatorProfile(null);
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
         }
         
+        // Handle TOKEN_REFRESHED - don't block UI if we have profile, but reload if missing
+        if (event === 'TOKEN_REFRESHED') {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // If we have a profile, don't reload (just update session)
+          if (userProfile && session?.user?.id === userProfile.id) {
+            setLoading(false);
+            return;
+          }
+          
+          // If profile is missing or user changed, reload it (but don't block UI)
+          if (session?.user) {
+            setLoading(false); // Don't block UI during token refresh
+            // Load profile in background
+            loadUserProfile(session.user.id).catch((error) => {
+              logger.error('Error loading profile after token refresh', 'AUTH_CONTEXT', {
+                error: error instanceof Error ? error.message : String(error)
+              });
+            });
+          }
+          return;
+        }
+        
+        // For other events, set loading and reload profile
+        setLoading(true);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await loadUserProfile(session.user.id);
+          try {
+            await loadUserProfile(session.user.id);
+          } catch (error) {
+            logger.error('Error loading profile in auth state change', 'AUTH_CONTEXT', {
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
         } else {
           setUserProfile(null);
           setCreatorProfile(null);
         }
         
         // Always set loading to false after handling auth state changes
-          setLoading(false);
+        setLoading(false);
       }
     );
 

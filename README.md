@@ -18,20 +18,14 @@ Platform for supporting Nepali creators with local payment integration.
 
 ```bash
 npm install
-```
-
-Create `.env.local`:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-ESEWA_TEST_MODE=true
-```
-
-Run migrations from `supabase/migrations/` folder, then:
-```bash
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
 npm run dev
 ```
+
+See `docs/QUICK_START.md` for detailed setup guide.
+
+**eSewa Test Mode**: Enabled by default. Payments auto-complete for development.
 
 ## Tech Stack
 

@@ -774,4 +774,26 @@ export default function CreatorProfilePage() {
       </div>
     </div>
   )
-} 
+                </div>
+              </div>
+            </Card>
+
+            {/* Social Actions */}
+            <Card className="p-6">
+              <div className="space-y-3">
+                <Button variant="outline" className="w-full">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share Profile
+                </Button>
+                
+                <Button variant="outline" className="w-full">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Send Message
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  )

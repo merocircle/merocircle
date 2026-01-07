@@ -56,6 +56,10 @@ export default function CreatorDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
+  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [postVisibility, setPostVisibility] = useState('public');
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationData, setRegistrationData] = useState({
     bio: '',
@@ -491,28 +495,51 @@ export default function CreatorDashboard() {
                   onChange={(e) => setNewPostContent(e.target.value)}
                   rows={4}
                 />
+                {uploadedImageUrl && (
+                  <div className="relative">
+                    <img src={uploadedImageUrl} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploadedImageUrl('')}
+                      className="absolute top-2 right-2"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                      <Camera className="w-4 h-4" />
-                      <span>Photo</span>
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                      <Video className="w-4 h-4" />
-                      <span>Video</span>
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4" />
-                      <span>Document</span>
+                    <input
+                      type="file"
+                      id="photo-upload"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('photo-upload')?.click()}
+                      disabled={isUploadingImage}
+                      className="flex items-center space-x-2"
+                    >
+                      {isUploadingImage ? <Upload className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                      <span>{isUploadingImage ? 'Uploading...' : 'Photo'}</span>
                     </Button>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <select className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm">
-                      <option>Public</option>
-                      <option>Supporters Only</option>
-                      <option>Premium Supporters</option>
+                    <select
+                      value={postVisibility}
+                      onChange={(e) => setPostVisibility(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm"
+                    >
+                      <option value="public">Public</option>
+                      <option value="supporters">Supporters Only</option>
                     </select>
-                    <Button>Publish</Button>
+                    <Button onClick={handlePublishPost} disabled={isPublishing}>
+                      {isPublishing ? 'Publishing...' : 'Publish'}
+                    </Button>
                   </div>
                 </div>
               </div>

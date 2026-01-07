@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { validatePostContent, sanitizeString } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -109,18 +111,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is a creator
     const { data: userProfile } = await supabase
       .from('users')
       .select('role')
@@ -128,59 +124,39 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (userProfile?.role !== 'creator') {
-      return NextResponse.json(
-        { error: 'Only creators can create posts' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Only creators can create posts' }, { status: 403 });
     }
 
     const body = await request.json();
     const { title, content, image_url, media_url, is_public = true, tier_required = 'free' } = body;
 
-    // Validate required fields
-    if (!title || !content) {
-      return NextResponse.json(
-        { error: 'Title and content are required' },
-        { status: 400 }
-      );
+    const validation = validatePostContent(title, content);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    // Create the post
     const { data: post, error } = await supabase
       .from('posts')
       .insert({
         creator_id: user.id,
-        title,
-        content,
-        image_url,
-        media_url,
+        title: sanitizeString(title),
+        content: sanitizeString(content),
+        image_url: image_url || null,
+        media_url: media_url || null,
         is_public,
         tier_required
       })
-      .select(`
-        *,
-        users!posts_creator_id_fkey(
-          id,
-          display_name,
-          photo_url,
-          role
-        )
-      `)
+      .select('*, users!posts_creator_id_fkey(id, display_name, photo_url, role)')
       .single();
 
     if (error) {
-      return NextResponse.json(
-        { error: 'Failed to create post' },
-        { status: 500 }
-      );
+      logger.error('Post creation failed', 'POSTS_API', { error: error.message, userId: user.id });
+      return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });
     }
 
     return NextResponse.json(post, { status: 201 });
-
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    logger.error('Post creation error', 'POSTS_API', { error: error instanceof Error ? error.message : 'Unknown' });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 
