@@ -48,9 +48,9 @@ export default function CreatorCard({ creator, onFollowChange }: CreatorCardProp
           {/* Avatar */}
           <Link href={`/creator/${creator.user_id}`}>
             <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
-              {(creator.avatar_url || creator.photo_url) ? (
+              {creator.avatar_url ? (
                 <Image
-                  src={creator.avatar_url || creator.photo_url || ''}
+                  src={creator.avatar_url}
                   alt={creator.display_name || 'Creator'}
                   fill
                   className="object-cover"
