@@ -90,7 +90,7 @@ export default function CreatorSearch({
             </h3>
             <div className="grid gap-4">
               {results.map((creator) => (
-                <CreatorCard key={creator.id} creator={creator} />
+                <CreatorCard key={creator.user_id} creator={creator} />
               ))}
             </div>
           </div>

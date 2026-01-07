@@ -15,8 +15,13 @@ interface CreatorCardProps {
 
 export default function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
   const [isFollowing, setIsFollowing] = useState(creator.isFollowing || false)
-  const [followerCount, setFollowerCount] = useState(creator.follower_count)
+  const [followerCount, setFollowerCount] = useState(creator.follower_count || 0)
   const { followCreator, unfollowCreator, loading } = useFollow()
+  
+  // Ensure required fields exist
+  if (!creator || !creator.user_id || !creator.display_name) {
+    return null
+  }
 
   const handleFollowToggle = async () => {
     try {
@@ -43,16 +48,16 @@ export default function CreatorCard({ creator, onFollowChange }: CreatorCardProp
           {/* Avatar */}
           <Link href={`/creator/${creator.user_id}`}>
             <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
-              {creator.avatar_url ? (
+              {(creator.avatar_url || creator.photo_url) ? (
                 <Image
-                  src={creator.avatar_url}
-                  alt={creator.display_name}
+                  src={creator.avatar_url || creator.photo_url || ''}
+                  alt={creator.display_name || 'Creator'}
                   fill
                   className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg">
-                  {creator.display_name.charAt(0).toUpperCase()}
+                  {(creator.display_name || 'C').charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
@@ -79,7 +84,7 @@ export default function CreatorCard({ creator, onFollowChange }: CreatorCardProp
               </div>
               <div className="flex items-center space-x-1">
                 <FileText className="w-4 h-4" />
-                <span>{creator.posts_count} posts</span>
+                <span>{(creator.posts_count || 0)} posts</span>
               </div>
             </div>
 

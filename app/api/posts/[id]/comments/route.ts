@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 interface Params {
   id: string;
@@ -7,11 +7,11 @@ interface Params {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id: postId } = params;
+    const supabase = await createClient();
+    const { id: postId } = await params;
     const searchParams = request.nextUrl.searchParams;
     
     const page = parseInt(searchParams.get('page') || '1');
@@ -72,11 +72,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id: postId } = params;
+    const supabase = await createClient();
+    const { id: postId } = await params;
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

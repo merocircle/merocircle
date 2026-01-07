@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
     
     // Query parameters
@@ -14,23 +14,17 @@ export async function GET(request: NextRequest) {
     
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query with simpler joins
     let query = supabase
       .from('posts')
       .select(`
         *,
-        creator:users!posts_creator_id_fkey(
+        users!posts_creator_id_fkey(
           id,
           display_name,
           photo_url,
           role
-        ),
-        creator_profile:creator_profiles!posts_creator_id_fkey(
-          category,
-          is_verified
-        ),
-        likes_count:post_likes(count),
-        comments_count:comments(count)
+        )
       `)
       .eq('is_public', true)
       .order('created_at', { ascending: false });
@@ -52,10 +46,41 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch posts' },
+        { error: 'Failed to fetch posts', details: error.message },
         { status: 500 }
       );
     }
+
+    // Get likes and comments count separately for each post
+    const postsWithCounts = await Promise.all(
+      (posts || []).map(async (post) => {
+        // Get likes count
+        const { count: likesCount } = await supabase
+          .from('post_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', post.id);
+
+        // Get comments count
+        const { count: commentsCount } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', post.id);
+
+        // Get creator profile if exists
+        const { data: creatorProfile } = await supabase
+          .from('creator_profiles')
+          .select('category, is_verified')
+          .eq('user_id', post.creator_id)
+          .single();
+
+        return {
+          ...post,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
+          creator_profile: creatorProfile
+        };
+      })
+    );
 
     // Get total count for pagination
     const { count } = await supabase
@@ -64,7 +89,7 @@ export async function GET(request: NextRequest) {
       .eq('is_public', true);
 
     return NextResponse.json({
-      posts,
+      posts: postsWithCounts,
       pagination: {
         page,
         limit,
@@ -74,9 +99,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching posts:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -84,7 +108,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -135,21 +159,16 @@ export async function POST(request: NextRequest) {
       })
       .select(`
         *,
-        creator:users!posts_creator_id_fkey(
+        users!posts_creator_id_fkey(
           id,
           display_name,
           photo_url,
           role
-        ),
-        creator_profile:creator_profiles!posts_creator_id_fkey(
-          category,
-          is_verified
         )
       `)
       .single();
 
     if (error) {
-      console.error('Error creating post:', error);
       return NextResponse.json(
         { error: 'Failed to create post' },
         { status: 500 }
@@ -159,7 +178,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(post, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating post:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

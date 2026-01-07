@@ -48,10 +48,25 @@ export interface CreatorDetails {
   } | null
 }
 
+export interface Post {
+  id: string
+  title: string
+  content: string
+  image_url: string | null
+  type: 'image' | 'text' | 'audio' | 'video'
+  likes: number
+  comments: number
+  views: number
+  createdAt: string
+  isPublic: boolean
+  isLiked: boolean
+}
+
 export interface CreatorProfile {
-  creator: CreatorDetails
-  payment_methods: PaymentMethod[]
-  subscription_tiers: SubscriptionTier[]
+  creatorDetails: CreatorDetails
+  paymentMethods: PaymentMethod[]
+  subscriptionTiers: SubscriptionTier[]
+  posts: Post[]
 }
 
 export const useCreatorDetails = (creatorId: string | null) => {
@@ -72,7 +87,12 @@ export const useCreatorDetails = (creatorId: string | null) => {
       }
       
       const data = await response.json()
-      setProfile(data)
+      setProfile({
+        creatorDetails: data.creatorDetails,
+        paymentMethods: data.paymentMethods || [],
+        subscriptionTiers: data.subscriptionTiers || [],
+        posts: data.posts || []
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load creator')
       console.error('Creator details error:', err)
@@ -93,7 +113,15 @@ export const useCreatorDetails = (creatorId: string | null) => {
     }
   }
 
-  return { profile, loading, error, refetch }
+  return {
+    creatorDetails: profile?.creatorDetails || null,
+    paymentMethods: profile?.paymentMethods || [],
+    subscriptionTiers: profile?.subscriptionTiers || [],
+    posts: profile?.posts || [],
+    loading,
+    error,
+    refreshCreatorDetails: refetch
+  }
 }
 
 // Hook for subscription management

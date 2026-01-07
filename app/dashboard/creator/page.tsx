@@ -51,36 +51,73 @@ import {
 import { useAuth } from '@/contexts/supabase-auth-context';
 
 export default function CreatorDashboard() {
-  const { user, userProfile, isAuthenticated, loading } = useAuth();
+  const { user, userProfile, creatorProfile, isAuthenticated, loading, createCreatorProfile } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationData, setRegistrationData] = useState({
+    bio: '',
+    category: ''
+  });
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  // CRITICAL SECURITY: Role-based access control
+  // Redirect to login if not authenticated
   React.useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated) {
-        console.log('Not authenticated, redirecting to login');
-        router.push('/login');
-      } else if (userProfile) {
-        // SECURITY CHECK: Only users with role 'creator' can access this page
-        if (userProfile.role !== 'creator') {
-          console.log('SECURITY VIOLATION: User with role', userProfile.role, 'trying to access creator dashboard');
-          console.log('Redirecting to correct dashboard...');
-          if (userProfile.role === 'user') {
-            router.push('/dashboard/supporter');
-          } else {
-            router.push('/dashboard'); // Fallback to main dashboard for unknown roles
-          }
-          return;
-        }
-        console.log('Access granted: User has correct role (creator)');
-      }
+    if (!loading && !isAuthenticated) {
+      router.push('/login');
     }
-  }, [loading, isAuthenticated, userProfile, router]);
+  }, [loading, isAuthenticated, router]);
 
-  if (loading) {
+  // Fetch creator dashboard data
+  React.useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (isAuthenticated && userProfile && creatorProfile) {
+        try {
+          const response = await fetch(`/api/creator/${user?.id}/dashboard`);
+          if (response.ok) {
+            const data = await response.json();
+            setDashboardData(data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch dashboard data:', error);
+        } finally {
+          setDataLoading(false);
+        }
+      } else if (isAuthenticated && userProfile && !creatorProfile) {
+        setDataLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [isAuthenticated, userProfile, creatorProfile, user?.id]);
+
+  const handleRegisterAsCreator = async () => {
+    if (!registrationData.bio || !registrationData.category) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    setRegistrationLoading(true);
+    try {
+      const { error } = await createCreatorProfile(registrationData.bio, registrationData.category);
+      if (error) {
+        alert(error.message || 'Failed to create creator profile');
+      } else {
+        setIsRegistering(false);
+        // Profile will be created, page will refresh
+      }
+    } catch (error) {
+      alert('Failed to register as creator');
+    } finally {
+      setRegistrationLoading(false);
+    }
+  };
+
+  if (loading || dataLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
@@ -97,75 +134,123 @@ export default function CreatorDashboard() {
     return null;
   }
 
-  // Mock data - in real app, this would come from your database
-  const creatorStats = {
-    monthlyEarnings: 45000,
-    totalEarnings: 320000,
-    supporters: 1247,
-    posts: 89,
-    goals: {
-      monthly: 50000,
-      current: 32000
-    },
-    growth: {
-      earnings: 12.5,
-      supporters: 8.3,
-      engagement: 15.7
-    }
+  // Show registration form if no creator profile
+  if (!creatorProfile && !isRegistering) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <Card className="max-w-2xl mx-auto p-8">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Crown className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Become a Creator
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Register as a creator to start posting content and receiving support from your audience
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Bio *
+                </label>
+                <Textarea
+                  placeholder="Tell us about yourself and your creative work..."
+                  value={registrationData.bio}
+                  onChange={(e) => setRegistrationData({ ...registrationData, bio: e.target.value })}
+                  rows={4}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category *
+                </label>
+                <select
+                  value={registrationData.category}
+                  onChange={(e) => setRegistrationData({ ...registrationData, category: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                >
+                  <option value="">Select a category</option>
+                  <option value="Art">Art</option>
+                  <option value="Music">Music</option>
+                  <option value="Photography">Photography</option>
+                  <option value="Writing">Writing</option>
+                  <option value="Cooking">Cooking</option>
+                  <option value="Tech">Tech</option>
+                  <option value="Fashion">Fashion</option>
+                  <option value="Travel">Travel</option>
+                  <option value="Gaming">Gaming</option>
+                  <option value="Education">Education</option>
+                  <option value="Fitness">Fitness</option>
+                  <option value="Crafts">Crafts</option>
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <Button
+                  onClick={handleRegisterAsCreator}
+                  disabled={registrationLoading}
+                  className="flex-1 bg-gradient-to-r from-red-500 to-pink-600"
+                >
+                  {registrationLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Registering...
+                    </>
+                  ) : (
+                    <>
+                      <Crown className="w-4 h-4 mr-2" />
+                      Register as Creator
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/dashboard')}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Get data from API
+  const creatorStats = dashboardData?.stats || {
+    monthlyEarnings: 0,
+    totalEarnings: 0,
+    supporters: 0,
+    posts: 0,
+    followers: 0
   };
 
-  const recentPosts = [
-    {
-      id: 1,
-      title: 'Behind the scenes of my latest artwork',
-      content: 'Here\'s a glimpse into my creative process...',
-      type: 'image',
-      likes: 124,
-      comments: 18,
-      views: 856,
-      createdAt: '2 hours ago',
-      isPublic: true
-    },
-    {
-      id: 2,
-      title: 'New music track preview',
-      content: 'Working on something special for you all...',
-      type: 'audio',
-      likes: 89,
-      comments: 12,
-      views: 432,
-      createdAt: '1 day ago',
-      isPublic: false
-    },
-    {
-      id: 3,
-      title: 'Photography workshop announcement',
-      content: 'Excited to share my knowledge with the community...',
-      type: 'text',
-      likes: 67,
-      comments: 23,
-      views: 1234,
-      createdAt: '3 days ago',
-      isPublic: true
-    },
-  ];
+  const recentPosts = dashboardData?.posts || [];
+  const supporters = dashboardData?.supporters || [];
 
-  const supporters = [
-    { name: 'Ramesh Sharma', amount: 1000, tier: 'Gold', joined: '2023-06', avatar: '/api/placeholder/32/32' },
-    { name: 'Sita Maharjan', amount: 750, tier: 'Silver', joined: '2023-08', avatar: '/api/placeholder/32/32' },
-    { name: 'Bikash Thapa', amount: 500, tier: 'Bronze', joined: '2023-09', avatar: '/api/placeholder/32/32' },
-    { name: 'Maya Gurung', amount: 1200, tier: 'Gold', joined: '2023-07', avatar: '/api/placeholder/32/32' },
-    { name: 'Arjun Nepal', amount: 300, tier: 'Bronze', joined: '2023-10', avatar: '/api/placeholder/32/32' },
-  ];
+  // Format post dates
+  const formatPostDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
 
-  const monthlyData = [
-    { month: 'Jan', earnings: 25000, supporters: 890 },
-    { month: 'Feb', earnings: 28000, supporters: 920 },
-    { month: 'Mar', earnings: 32000, supporters: 980 },
-    { month: 'Apr', earnings: 35000, supporters: 1050 },
-    { month: 'May', earnings: 38000, supporters: 1150 },
-    { month: 'Jun', earnings: 42000, supporters: 1247 },
-  ];
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    return date.toLocaleDateString()
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -195,6 +280,14 @@ export default function CreatorDashboard() {
             </div>
             
             <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                className="flex items-center space-x-2"
+                onClick={() => router.push('/dashboard')}
+              >
+                <Heart className="w-4 h-4" />
+                <span>Dashboard</span>
+              </Button>
               <Button variant="outline" className="flex items-center space-x-2">
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
@@ -234,10 +327,7 @@ export default function CreatorDashboard() {
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       NPR {creatorStats.monthlyEarnings.toLocaleString()}
                     </p>
-                    <div className="flex items-center space-x-1 mt-1">
-                      <ArrowUpRight className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">+{creatorStats.growth.earnings}%</span>
-                    </div>
+                    <p className="text-sm text-gray-500 mt-1">This month</p>
                   </div>
                   <DollarSign className="w-8 h-8 text-green-600" />
                 </div>
@@ -250,10 +340,7 @@ export default function CreatorDashboard() {
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {creatorStats.supporters.toLocaleString()}
                     </p>
-                    <div className="flex items-center space-x-1 mt-1">
-                      <ArrowUpRight className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">+{creatorStats.growth.supporters}%</span>
-                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Active supporters</p>
                   </div>
                   <Users className="w-8 h-8 text-blue-600" />
                 </div>
@@ -266,10 +353,7 @@ export default function CreatorDashboard() {
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {creatorStats.posts}
                     </p>
-                    <div className="flex items-center space-x-1 mt-1">
-                      <ArrowUpRight className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500">+{creatorStats.growth.engagement}%</span>
-                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Total posts</p>
                   </div>
                   <FileText className="w-8 h-8 text-purple-600" />
                 </div>
@@ -292,26 +376,22 @@ export default function CreatorDashboard() {
               </Card>
             </motion.div>
 
-            {/* Goal Progress */}
+            {/* Earnings Summary */}
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Monthly Goal Progress</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Earnings Summary</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Current Progress</span>
-                  <span className="font-medium">
-                    NPR {creatorStats.goals.current.toLocaleString()} / {creatorStats.goals.monthly.toLocaleString()}
+                  <span className="text-gray-600 dark:text-gray-400">This Month</span>
+                  <span className="font-semibold text-lg">
+                    NPR {creatorStats.monthlyEarnings.toLocaleString()}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                  <div 
-                    className="bg-gradient-to-r from-red-500 to-pink-600 h-3 rounded-full"
-                    style={{ width: `${(creatorStats.goals.current / creatorStats.goals.monthly) * 100}%` }}
-                  ></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">All Time</span>
+                  <span className="font-semibold text-lg">
+                    NPR {creatorStats.totalEarnings.toLocaleString()}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {Math.round((creatorStats.goals.current / creatorStats.goals.monthly) * 100)}% complete • 
-                  NPR {(creatorStats.goals.monthly - creatorStats.goals.current).toLocaleString()} remaining
-                </p>
               </div>
             </Card>
 
@@ -323,7 +403,7 @@ export default function CreatorDashboard() {
                   <Button variant="ghost" size="sm">View All</Button>
                 </div>
                 <div className="space-y-4">
-                  {recentPosts.slice(0, 3).map((post) => (
+                  {recentPosts.length > 0 ? recentPosts.slice(0, 3).map((post: any) => (
                     <div key={post.id} className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                       <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                         {post.type === 'image' && <Camera className="w-4 h-4 text-white" />}
@@ -331,15 +411,19 @@ export default function CreatorDashboard() {
                         {post.type === 'text' && <FileText className="w-4 h-4 text-white" />}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{post.title}</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{post.title || 'Untitled Post'}</p>
                         <div className="flex items-center space-x-4 mt-1 text-xs text-gray-600 dark:text-gray-400">
                           <span>{post.likes} likes</span>
                           <span>{post.comments} comments</span>
-                          <span>{post.views} views</span>
+                          <span>{formatPostDate(post.createdAt)}</span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
+                      No posts yet. Create your first post!
+                    </p>
+                  )}
                 </div>
               </Card>
 
@@ -349,8 +433,8 @@ export default function CreatorDashboard() {
                   <Button variant="ghost" size="sm">View All</Button>
                 </div>
                 <div className="space-y-4">
-                  {supporters.slice(0, 5).map((supporter, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                  {supporters.length > 0 ? supporters.slice(0, 5).map((supporter: any) => (
+                    <div key={supporter.id} className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-medium">
@@ -366,7 +450,11 @@ export default function CreatorDashboard() {
                         <p className="font-medium text-green-600 text-sm">NPR {supporter.amount}</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
+                      No supporters yet. Share your profile to get started!
+                    </p>
+                  )}
                 </div>
               </Card>
             </div>
@@ -432,7 +520,7 @@ export default function CreatorDashboard() {
 
             {/* Posts List */}
             <div className="space-y-6">
-              {recentPosts.map((post) => (
+              {recentPosts.length > 0 ? recentPosts.map((post: any) => (
                 <Card key={post.id} className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -442,8 +530,8 @@ export default function CreatorDashboard() {
                         {post.type === 'text' && <FileText className="w-5 h-5 text-white" />}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{post.title}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{post.createdAt}</p>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{post.title || 'Untitled Post'}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{formatPostDate(post.createdAt)}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -485,7 +573,21 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                 </Card>
-              ))}
+              )) : (
+                <Card className="p-8 text-center">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    No Posts Yet
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Create your first post to share with your supporters
+                  </p>
+                  <Button onClick={() => setActiveTab('posts')}>
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Create Post
+                  </Button>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
@@ -508,8 +610,8 @@ export default function CreatorDashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {supporters.map((supporter, index) => (
-                <Card key={index} className="p-6">
+              {supporters.length > 0 ? supporters.map((supporter: any) => (
+                <Card key={supporter.id} className="p-6">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-medium">
@@ -521,7 +623,7 @@ export default function CreatorDashboard() {
                         {supporter.name}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Joined {supporter.joined}
+                        Joined {new Date(supporter.joined).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -531,8 +633,8 @@ export default function CreatorDashboard() {
                       <span className="text-gray-600 dark:text-gray-400">Support Level</span>
                       <Badge 
                         variant={
-                          supporter.tier === 'Gold' ? 'default' : 
-                          supporter.tier === 'Silver' ? 'secondary' : 'outline'
+                          supporter.tier === 'gold' ? 'default' : 
+                          supporter.tier === 'silver' ? 'secondary' : 'outline'
                         }
                       >
                         {supporter.tier}
@@ -556,7 +658,17 @@ export default function CreatorDashboard() {
                     </Button>
                   </div>
                 </Card>
-              ))}
+              )) : (
+                <Card className="p-8 col-span-3 text-center">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    No Supporters Yet
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Share your profile to start receiving support!
+                  </p>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
@@ -587,12 +699,16 @@ export default function CreatorDashboard() {
               <Card className="p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Performing Posts</h4>
                 <div className="space-y-3">
-                  {recentPosts.slice(0, 3).map((post, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700 dark:text-gray-300 truncate">{post.title}</span>
-                      <span className="text-green-600 font-medium">{post.views} views</span>
+                  {recentPosts.length > 0 ? recentPosts.slice(0, 3).map((post: any) => (
+                    <div key={post.id} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 dark:text-gray-300 truncate">{post.title || 'Untitled Post'}</span>
+                      <span className="text-green-600 font-medium">{post.likes} likes</span>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
+                      No posts yet
+                    </p>
+                  )}
                 </div>
               </Card>
 
@@ -600,16 +716,16 @@ export default function CreatorDashboard() {
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Supporter Growth</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">New This Month</span>
-                    <span className="font-medium text-blue-600">+47</span>
+                    <span className="text-gray-600 dark:text-gray-400">Total Supporters</span>
+                    <span className="font-medium text-blue-600">{creatorStats.supporters}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Retention Rate</span>
-                    <span className="font-medium text-green-600">94%</span>
+                    <span className="text-gray-600 dark:text-gray-400">Total Posts</span>
+                    <span className="font-medium text-green-600">{creatorStats.posts}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Avg. Support</span>
-                    <span className="font-medium">NPR 680</span>
+                    <span className="text-gray-600 dark:text-gray-400">Followers</span>
+                    <span className="font-medium">{creatorStats.followers}</span>
                   </div>
                 </div>
               </Card>
@@ -618,16 +734,21 @@ export default function CreatorDashboard() {
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Engagement Stats</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Avg. Likes/Post</span>
-                    <span className="font-medium">93</span>
+                    <span className="text-gray-600 dark:text-gray-400">Total Earnings</span>
+                    <span className="font-medium">NPR {creatorStats.totalEarnings.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Avg. Comments/Post</span>
-                    <span className="font-medium">18</span>
+                    <span className="text-gray-600 dark:text-gray-400">Monthly Earnings</span>
+                    <span className="font-medium">NPR {creatorStats.monthlyEarnings.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Response Rate</span>
-                    <span className="font-medium text-green-600">87%</span>
+                    <span className="text-gray-600 dark:text-gray-400">Avg. per Supporter</span>
+                    <span className="font-medium text-green-600">
+                      {creatorStats.supporters > 0 
+                        ? `NPR ${Math.round(creatorStats.totalEarnings / creatorStats.supporters)}`
+                        : 'NPR 0'
+                      }
+                    </span>
                   </div>
                 </div>
               </Card>
@@ -645,93 +766,36 @@ export default function CreatorDashboard() {
             </div>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Current Monthly Goal</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Earnings Overview</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Target Amount</span>
-                  <span className="font-semibold text-2xl">NPR {creatorStats.goals.monthly.toLocaleString()}</span>
+                  <span className="text-gray-600 dark:text-gray-400">This Month</span>
+                  <span className="font-semibold text-2xl">NPR {creatorStats.monthlyEarnings.toLocaleString()}</span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
-                  <div 
-                    className="bg-gradient-to-r from-red-500 to-pink-600 h-4 rounded-full flex items-center justify-end pr-2"
-                    style={{ width: `${(creatorStats.goals.current / creatorStats.goals.monthly) * 100}%` }}
-                  >
-                    <span className="text-white text-xs font-medium">
-                      {Math.round((creatorStats.goals.current / creatorStats.goals.monthly) * 100)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    NPR {creatorStats.goals.current.toLocaleString()} raised
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    NPR {(creatorStats.goals.monthly - creatorStats.goals.current).toLocaleString()} remaining
-                  </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">All Time</span>
+                  <span className="font-semibold text-2xl">NPR {creatorStats.totalEarnings.toLocaleString()}</span>
                 </div>
               </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="p-6">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Milestone Progress</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">✓</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">First 100 Supporters</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Achieved 6 months ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">✓</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">NPR 10,000 Monthly</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Achieved 4 months ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">⋯</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">1,000 Supporters</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">247 supporters to go</p>
-                    </div>
-                  </div>
+            <Card className="p-6">
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Your Progress</h4>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Total Supporters</span>
+                  <span className="font-semibold">{creatorStats.supporters}</span>
                 </div>
-              </Card>
-
-              <Card className="p-6">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Upcoming Rewards</h4>
-                <div className="space-y-4">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="font-medium">Exclusive Workshop</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">At NPR 50,000 monthly</p>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${(creatorStats.goals.current / 50000) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <p className="font-medium">Premium Content Series</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">At 1,500 supporters</p>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                      <div 
-                        className="bg-purple-500 h-2 rounded-full"
-                        style={{ width: `${(creatorStats.supporters / 1500) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Total Posts</span>
+                  <span className="font-semibold">{creatorStats.posts}</span>
                 </div>
-              </Card>
-            </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Total Earnings</span>
+                  <span className="font-semibold">NPR {creatorStats.totalEarnings.toLocaleString()}</span>
+                </div>
+              </div>
+            </Card>
           </TabsContent>
 
           {/* Earnings Tab */}
@@ -756,9 +820,9 @@ export default function CreatorDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Available Balance</p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                      NPR {(creatorStats.monthlyEarnings * 0.85).toLocaleString()}
+                      NPR {creatorStats.totalEarnings.toLocaleString()}
                     </p>
-                    <p className="text-sm text-gray-500">After platform fees</p>
+                    <p className="text-sm text-gray-500">All time earnings</p>
                   </div>
                   <DollarSign className="w-8 h-8 text-green-600" />
                 </div>
@@ -771,7 +835,7 @@ export default function CreatorDashboard() {
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                       NPR {creatorStats.monthlyEarnings.toLocaleString()}
                     </p>
-                    <p className="text-sm text-green-500">+12.5% from last month</p>
+                    <p className="text-sm text-gray-500">This month</p>
                   </div>
                   <TrendingUp className="w-8 h-8 text-blue-600" />
                 </div>
@@ -782,9 +846,9 @@ export default function CreatorDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Last Payout</p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                      NPR 38,250
+                      {supporters.length}
                     </p>
-                    <p className="text-sm text-gray-500">15 days ago</p>
+                    <p className="text-sm text-gray-500">Active supporters</p>
                   </div>
                   <Calendar className="w-8 h-8 text-purple-600" />
                 </div>
@@ -792,37 +856,36 @@ export default function CreatorDashboard() {
             </div>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Transactions</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Supporters</h3>
               <div className="space-y-4">
-                {[
-                  { supporter: 'Ramesh Sharma', amount: 1000, date: '2024-01-15', type: 'Monthly Support' },
-                  { supporter: 'Sita Maharjan', amount: 750, date: '2024-01-14', type: 'One-time Tip' },
-                  { supporter: 'Bikash Thapa', amount: 500, date: '2024-01-13', type: 'Monthly Support' },
-                  { supporter: 'Maya Gurung', amount: 1200, date: '2024-01-12', type: 'Premium Tier' },
-                ].map((transaction, index) => (
-                  <div key={index} className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                {supporters.length > 0 ? supporters.slice(0, 5).map((supporter: any) => (
+                  <div key={supporter.id} className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-medium">
-                          {transaction.supporter[0]}
+                          {supporter.name[0]}
                         </span>
                       </div>
                       <div>
                         <p className="font-medium text-gray-900 dark:text-gray-100">
-                          {transaction.supporter}
+                          {supporter.name}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {transaction.type} • {transaction.date}
+                          {supporter.tier} • {new Date(supporter.joined).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-green-600">
-                        +NPR {transaction.amount}
+                        NPR {supporter.amount}
                       </p>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
+                    No supporters yet
+                  </p>
+                )}
               </div>
             </Card>
           </TabsContent>
@@ -886,7 +949,7 @@ export default function CreatorDashboard() {
                     </label>
                     <input
                       type="url"
-                      defaultValue={`${window.location.origin}/payment/success`}
+                      defaultValue={typeof window !== 'undefined' ? `${window.location.origin}/payment/success` : '/payment/success'}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:outline-none cursor-pointer"
                     />
                   </div>
@@ -897,7 +960,7 @@ export default function CreatorDashboard() {
                     </label>
                     <input
                       type="url"
-                      defaultValue={`${window.location.origin}/payment/failure`}
+                      defaultValue={typeof window !== 'undefined' ? `${window.location.origin}/payment/failure` : '/payment/failure'}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:outline-none cursor-pointer"
                     />
                   </div>

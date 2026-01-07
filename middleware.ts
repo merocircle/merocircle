@@ -54,13 +54,8 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
-  try {
-    await supabase.auth.getUser()
-  } catch (error) {
-    // If there's an error getting the user, it might be a token issue
-    console.log('Middleware auth error:', error)
-  }
+  // Just refresh the session - that's it
+  await supabase.auth.getUser()
 
   return response
 }
@@ -72,8 +67,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-} 
+}

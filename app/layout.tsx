@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/supabase-auth-context";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Creators Nepal - Support Local Creators",
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
+        <ErrorBoundary>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -26,6 +28,7 @@ export default function RootLayout({
         {children}
           </AuthProvider>
         </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

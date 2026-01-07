@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
 
 interface Params {
   id: string;
@@ -7,74 +6,23 @@ interface Params {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id: postId } = params;
+    const { id: postId } = await params;
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Redirect to the consolidated social like API
+    const response = await fetch(`${request.nextUrl.origin}/api/social/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': request.headers.get('cookie') || ''
+      },
+      body: JSON.stringify({ postId, action: 'like' })
+    });
 
-    // Check if post exists
-    const { data: post } = await supabase
-      .from('posts')
-      .select('id')
-      .eq('id', postId)
-      .single();
-
-    if (!post) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if user already liked this post
-    const { data: existingLike } = await supabase
-      .from('post_likes')
-      .select('id')
-      .eq('post_id', postId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (existingLike) {
-      return NextResponse.json(
-        { error: 'Post already liked' },
-        { status: 400 }
-      );
-    }
-
-    // Create the like
-    const { data: like, error } = await supabase
-      .from('post_likes')
-      .insert({
-        post_id: postId,
-        user_id: user.id
-      })
-      .select(`
-        id,
-        created_at,
-        user:users(id, display_name, photo_url)
-      `)
-      .single();
-
-    if (error) {
-      console.error('Error creating like:', error);
-      return NextResponse.json(
-        { error: 'Failed to like post' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(like, { status: 201 });
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
 
   } catch (error) {
     console.error('Error liking post:', error);
@@ -87,53 +35,23 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id: postId } = params;
+    const { id: postId } = await params;
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Redirect to the consolidated social like API
+    const response = await fetch(`${request.nextUrl.origin}/api/social/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': request.headers.get('cookie') || ''
+      },
+      body: JSON.stringify({ postId, action: 'unlike' })
+    });
 
-    // Check if like exists
-    const { data: existingLike } = await supabase
-      .from('post_likes')
-      .select('id')
-      .eq('post_id', postId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!existingLike) {
-      return NextResponse.json(
-        { error: 'Like not found' },
-        { status: 404 }
-      );
-    }
-
-    // Delete the like
-    const { error } = await supabase
-      .from('post_likes')
-      .delete()
-      .eq('post_id', postId)
-      .eq('user_id', user.id);
-
-    if (error) {
-      console.error('Error deleting like:', error);
-      return NextResponse.json(
-        { error: 'Failed to unlike post' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ message: 'Post unliked successfully' });
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
 
   } catch (error) {
     console.error('Error unliking post:', error);

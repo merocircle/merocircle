@@ -39,7 +39,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Link href={`/creator/${post.creator.username || post.creator_id}`}>
+            <Link href={`/creator/${post.creator.user_id || post.creator_id}`}>
               <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
                 {post.creator.avatar_url ? (
                   <Image
@@ -57,7 +57,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
             </Link>
             
             <div>
-              <Link href={`/creator/${post.creator.username || post.creator_id}`}>
+              <Link href={`/creator/${post.creator.user_id || post.creator_id}`}>
                 <h4 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
                   {post.creator.display_name}
                 </h4>
@@ -137,9 +137,9 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           </div>
 
           {/* Support Button */}
-          <Link href={`/creator/${post.creator.username || post.creator_id}/support`}>
+          <Link href={`/creator/${post.creator.user_id || post.creator_id}`}>
             <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-              Support Creator
+              View Profile
             </Button>
           </Link>
         </div>

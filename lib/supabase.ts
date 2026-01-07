@@ -1,23 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Supabase configuration
-// Your Supabase URL: https://podbecrfsjjaftdzonsz.supabase.co
 // Make sure to set these in your .env.local file:
-// NEXT_PUBLIC_SUPABASE_URL=https://podbecrfsjjaftdzonsz.supabase.co
-// NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvZGJlY3Jmc2pqYWZ0ZHpvbnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwNTg0MTYsImV4cCI6MjA2NDYzNDQxNn0.daqmGiDaZkNtKB-i7yOHeWCPrXg8ip90bwtuCr4Yfuo
-// SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvZGJlY3Jmc2pqYWZ0ZHpvbnN6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTA1ODQxNiwiZXhwIjoyMDY0NjM0NDE2fQ.A_D2mtEdY2gjztsATkeGAUEMzjx_vHBjezPPJcrHAcI
+// NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+// NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+// SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Create a single supabase client for interacting with your database
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env.local file.');
+}
+
+// Create a browser client that properly syncs with cookies for SSR
+// This ensures the middleware can read the session from cookies
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 // Database types for better TypeScript support
 export interface Database {

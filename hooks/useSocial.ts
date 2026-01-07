@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/supabase-auth-context'
 
 export interface Creator {
@@ -23,8 +23,9 @@ export interface Post {
   is_liked: boolean
   created_at: string
   creator: {
+    user_id: string
     display_name: string
-    username: string
+    username?: string
     avatar_url: string | null
   }
 }
@@ -55,7 +56,6 @@ export const useFollow = () => {
       
       return await response.json()
     } catch (error) {
-      console.error('Follow error:', error)
       throw error
     } finally {
       setLoading(false)
@@ -78,7 +78,6 @@ export const useFollow = () => {
       
       return await response.json()
     } catch (error) {
-      console.error('Unfollow error:', error)
       throw error
     } finally {
       setLoading(false)
@@ -94,7 +93,7 @@ export const useDiscoveryFeed = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchFeed = async () => {
+  const fetchFeed = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -110,15 +109,14 @@ export const useDiscoveryFeed = () => {
       setFeed(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
-      console.error('Discovery feed error:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchFeed()
-  }, [])
+  }, [fetchFeed])
 
   return { feed, loading, error, refetch: fetchFeed }
 }
@@ -150,7 +148,6 @@ export const useCreatorSearch = () => {
       setResults(data.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed')
-      console.error('Search error:', err)
       setResults([])
     } finally {
       setLoading(false)
@@ -187,7 +184,6 @@ export const usePostLike = () => {
       
       return await response.json()
     } catch (error) {
-      console.error('Like error:', error)
       throw error
     } finally {
       setLoading(prev => ({ ...prev, [postId]: false }))
@@ -204,7 +200,7 @@ export const useCreatorProfile = (creatorId: string | null) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchCreatorProfile = async (id: string) => {
+  const fetchCreatorProfile = useCallback(async (id: string) => {
     try {
       setLoading(true)
       setError(null)
@@ -227,17 +223,16 @@ export const useCreatorProfile = (creatorId: string | null) => {
       setPosts(postsData.posts || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load profile')
-      console.error('Creator profile error:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     if (creatorId) {
       fetchCreatorProfile(creatorId)
     }
-  }, [creatorId])
+  }, [creatorId, fetchCreatorProfile])
 
   return { creator, posts, loading, error, refetch: () => creatorId && fetchCreatorProfile(creatorId) }
 } 

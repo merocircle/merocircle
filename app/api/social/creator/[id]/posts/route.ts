@@ -51,7 +51,6 @@ export async function GET(
       })
 
     if (postsError) {
-      console.error('Creator posts error:', postsError)
       return NextResponse.json(
         { error: 'Failed to fetch creator posts' },
         { status: 500 }
@@ -64,7 +63,6 @@ export async function GET(
     })
     
   } catch (error) {
-    console.error('Creator posts API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

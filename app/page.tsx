@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, useInView, useAnimation } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { Header } from "@/components/header";
+import { useAuth } from "@/contexts/supabase-auth-context";
 
 // Animation variants
 const fadeInUp = {
@@ -130,16 +132,62 @@ export default function LandingPage() {
   const heroRef = useRef(null);
   const isHeroInView = useInView(heroRef, { once: true });
   const controls = useAnimation();
+  const [urlMessage, setUrlMessage] = useState<string | null>(null);
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     if (isHeroInView) {
       controls.start("visible");
     }
+    
+    // Check for URL messages
+    const params = new URLSearchParams(window.location.search);
+    const message = params.get('message');
+    if (message) {
+      setUrlMessage(message);
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, [isHeroInView, controls]);
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [loading, isAuthenticated, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <Header />
+      
+      {/* URL Message Display */}
+      {urlMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+          <Card className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  {urlMessage === 'auth_required' && 'Please complete authentication'}
+                  {urlMessage !== 'auth_required' && urlMessage}
+                </p>
+                {urlMessage === 'auth_required' && (
+                  <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+                    Check browser console for detailed logs
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setUrlMessage(null)}
+                className="text-yellow-600 hover:text-yellow-800"
+              >
+                ×
+              </button>
+            </div>
+          </Card>
+        </div>
+      )}
       
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -187,10 +235,10 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/supporters">
+              <Link href="/explore">
                 <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 font-semibold rounded-full transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <Coffee className="mr-2 w-5 h-5" />
-                  Support Creators
+                  Explore Creators
                 </Button>
               </Link>
             </motion.div>
@@ -386,10 +434,10 @@ export default function LandingPage() {
             <div>
               <h4 className="font-bold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/creators" className="hover:text-white transition-colors">For Creators</Link></li>
-                <li><Link href="/supporters" className="hover:text-white transition-colors">For Supporters</Link></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/signup/creator" className="hover:text-white transition-colors">For Creators</Link></li>
+                <li><Link href="/explore" className="hover:text-white transition-colors">Explore Creators</Link></li>
+                <li><Link href="/discover" className="hover:text-white transition-colors">Discover</Link></li>
+                <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
               </ul>
             </div>
             

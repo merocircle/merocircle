@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 interface Params {
   id: string;
@@ -7,11 +7,11 @@ interface Params {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id } = params;
+    const supabase = await createClient();
+    const { id } = await params;
 
     // Get user profile
     const { data: user, error: userError } = await supabase

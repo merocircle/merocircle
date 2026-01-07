@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 interface UserProfile {
   id: string;
@@ -54,9 +55,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [initialized, setInitialized] = useState(false);
 
   // Load user profile data
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string, retryCount = 0): Promise<void> => {
+    const maxRetries = 3;
+    
     try {
-      console.log('Loading user profile for:', userId);
+      logger.debug('Loading user profile', 'AUTH_CONTEXT', { userId, retryCount });
+      
+      // Wait a bit if retrying (database trigger might be creating profile)
+      if (retryCount > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+      }
+      
       const { data: profile, error } = await supabase
         .from('users')
         .select('*')
@@ -64,25 +73,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        // If the error is "PGRST116" (no rows found), it means the user profile doesn't exist yet
+        // If no profile exists, create one automatically
         if (error.code === 'PGRST116') {
-          console.log('No user profile found - this is normal for new users');
-          setUserProfile(null);
-          setCreatorProfile(null);
-          return;
+          logger.info('No user profile found, creating automatically', 'AUTH_CONTEXT', { userId, retryCount });
+          
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            const { data: newProfile, error: createError } = await supabase
+              .from('users')
+              .insert({
+                id: authUser.id,
+                email: authUser.email || '',
+                display_name: authUser.user_metadata?.display_name || 
+                             authUser.user_metadata?.full_name || 
+                             authUser.user_metadata?.name ||
+                             authUser.email?.split('@')[0] || 
+                             'User',
+                photo_url: authUser.user_metadata?.avatar_url || 
+                          authUser.user_metadata?.picture || 
+                          null,
+                role: 'user'
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              // If duplicate key error, profile was created by trigger - retry
+              if (createError.code === '23505' && retryCount < maxRetries) {
+                logger.debug('Profile creation conflict, retrying', 'AUTH_CONTEXT', {
+                  retryCount: retryCount + 1
+                });
+                return loadUserProfile(userId, retryCount + 1);
+              }
+              
+              logger.error('Failed to auto-create user profile', 'AUTH_CONTEXT', {
+                userId,
+                error: createError.message,
+                errorCode: createError.code
+              });
+              setUserProfile(null);
+              setCreatorProfile(null);
+              return;
+            }
+            
+            logger.info('User profile auto-created successfully', 'AUTH_CONTEXT', {
+              userId,
+              profileId: newProfile.id
+            });
+            setUserProfile(newProfile);
+            setCreatorProfile(null);
+            return;
+          } else {
+            logger.warn('No auth user found when trying to create profile', 'AUTH_CONTEXT', { userId });
+            setUserProfile(null);
+            setCreatorProfile(null);
+            return;
+          }
         }
         
-        // For other errors, log them
-        console.error('Error loading user profile:', error);
+        // Other errors - retry if we haven't exceeded max retries
+        if (retryCount < maxRetries) {
+          logger.debug('Error loading profile, retrying', 'AUTH_CONTEXT', {
+            userId,
+            retryCount: retryCount + 1,
+            error: error.message
+          });
+          return loadUserProfile(userId, retryCount + 1);
+        }
+        
+        logger.error('Error loading user profile after retries', 'AUTH_CONTEXT', {
+          userId,
+          error: error.message,
+          errorCode: error.code
+        });
         return;
       }
 
-      console.log('Loaded user profile:', profile);
+      logger.debug('User profile loaded', 'AUTH_CONTEXT', {
+        userId,
+        role: profile.role,
+        displayName: profile.display_name
+      });
       setUserProfile(profile);
 
       // If user is a creator, load creator profile
       if (profile.role === 'creator') {
-        console.log('User is creator, loading creator profile...');
+        logger.debug('Loading creator profile', 'AUTH_CONTEXT', { userId });
+        
         const { data: creatorData, error: creatorError } = await supabase
           .from('creator_profiles')
           .select('*')
@@ -90,18 +167,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (!creatorError && creatorData) {
-          console.log('Loaded creator profile:', creatorData);
+          logger.debug('Creator profile loaded', 'AUTH_CONTEXT', {
+            userId,
+            creatorProfileId: creatorData.id
+          });
           setCreatorProfile(creatorData);
         } else if (creatorError?.code === 'PGRST116') {
-          console.log('No creator profile found yet (expected if just upgraded to creator)');
+          logger.debug('No creator profile found yet', 'AUTH_CONTEXT', { userId });
           setCreatorProfile(null);
         } else {
-          console.log('Error loading creator profile:', creatorError);
+          logger.warn('Error loading creator profile', 'AUTH_CONTEXT', {
+            userId,
+            error: creatorError?.message
+          });
           setCreatorProfile(null);
         }
       }
     } catch (error) {
-      console.error('Error in loadUserProfile:', error);
+      logger.error('Exception in loadUserProfile', 'AUTH_CONTEXT', {
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      setUserProfile(null);
+      setCreatorProfile(null);
     }
   };
 
@@ -111,16 +199,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        logger.debug('Getting initial session', 'AUTH_CONTEXT');
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting session:', error);
-          // If there's an error getting the session, clear any stored tokens
+          logger.error('Error getting session', 'AUTH_CONTEXT', {
+            error: error.message,
+            errorCode: error.status
+          });
+          
+          // Clear invalid session
           if (error.message.includes('refresh_token_not_found') || error.message.includes('Invalid Refresh Token')) {
-            console.log('Clearing invalid session...');
+            logger.info('Clearing invalid session', 'AUTH_CONTEXT');
             await supabase.auth.signOut();
           }
         }
+        
+        logger.debug('Initial session retrieved', 'AUTH_CONTEXT', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
+        });
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -132,7 +232,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
         setInitialized(true);
       } catch (error) {
-        console.error('Error in getInitialSession:', error);
+        logger.error('Exception in getInitialSession', 'AUTH_CONTEXT', {
+          error: error instanceof Error ? error.message : String(error)
+        });
         setLoading(false);
         setInitialized(true);
       }
@@ -143,13 +245,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        logger.info('Auth state changed', 'AUTH_CONTEXT', {
+          event,
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
+        });
         
         // Handle specific auth events
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed successfully');
-        } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
+        if (event === 'SIGNED_OUT') {
+          logger.info('User signed out', 'AUTH_CONTEXT');
           setUserProfile(null);
           setCreatorProfile(null);
         }
@@ -164,9 +269,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setCreatorProfile(null);
         }
         
-        if (initialized) {
+        // Always set loading to false after handling auth state changes
           setLoading(false);
-        }
       }
     );
 
@@ -177,36 +281,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      logger.info('Initiating Google sign-in', 'AUTH_CONTEXT');
+      
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      logger.debug('Google OAuth redirect URL', 'AUTH_CONTEXT', { redirectUrl });
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
       
+      if (error) {
+        logger.error('Google sign-in error', 'AUTH_CONTEXT', {
+          error: error.message,
+          errorCode: error.status
+        });
+      } else {
+        logger.info('Google sign-in initiated successfully', 'AUTH_CONTEXT', {
+          url: data?.url
+        });
+      }
+      
       return { data, error };
     } catch (error) {
-      console.error('Error signing in with Google:', error);
+      logger.error('Exception in signInWithGoogle', 'AUTH_CONTEXT', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       return { data: null, error };
     }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
     try {
+      logger.info('Signing in with email', 'AUTH_CONTEXT', { email });
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
+      if (error) {
+        logger.error('Email sign-in error', 'AUTH_CONTEXT', {
+          error: error.message,
+          email
+        });
+      } else {
+        logger.info('Email sign-in successful', 'AUTH_CONTEXT', {
+          userId: data.user?.id,
+          email
+        });
+      }
+      
       return { data, error };
     } catch (error) {
-      console.error('Error signing in with email:', error);
+      logger.error('Exception in signInWithEmail', 'AUTH_CONTEXT', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       return { data: null, error };
     }
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     try {
+      logger.info('Signing up with email', 'AUTH_CONTEXT', { email, displayName });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -217,15 +361,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       
+      if (error) {
+        logger.error('Email sign-up error', 'AUTH_CONTEXT', {
+          error: error.message,
+          email
+        });
+      } else {
+        logger.info('Email sign-up successful', 'AUTH_CONTEXT', {
+          userId: data.user?.id,
+          email
+        });
+      }
+      
       return { data, error };
     } catch (error) {
-      console.error('Error signing up:', error);
+      logger.error('Exception in signUpWithEmail', 'AUTH_CONTEXT', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       return { data: null, error };
     }
   };
 
   const signOut = async () => {
     try {
+      logger.info('Signing out', 'AUTH_CONTEXT', { userId: user?.id });
+      
       const { error } = await supabase.auth.signOut();
       
       if (!error) {
@@ -233,61 +393,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(null);
         setCreatorProfile(null);
         setSession(null);
+        logger.info('Sign out successful', 'AUTH_CONTEXT');
+      } else {
+        logger.error('Sign out error', 'AUTH_CONTEXT', {
+          error: error.message
+        });
       }
       
       return { error };
     } catch (error) {
-      console.error('Error signing out:', error);
+      logger.error('Exception in signOut', 'AUTH_CONTEXT', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       return { error };
     }
   };
 
   const updateUserRole = async (role: 'user' | 'creator') => {
     if (!user) {
+      logger.warn('Cannot update role: no user logged in', 'AUTH_CONTEXT');
       return { error: new Error('No user logged in') };
     }
 
     try {
-      console.log('Updating user role to:', role, 'for user:', user.id);
+      logger.info('Updating user role', 'AUTH_CONTEXT', { userId: user.id, role });
+      
       const { error } = await supabase
         .from('users')
         .update({ role })
         .eq('id', user.id);
 
       if (error) {
-        console.error('Error updating user role:', error);
+        logger.error('Error updating user role', 'AUTH_CONTEXT', {
+          userId: user.id,
+          role,
+          error: error.message
+        });
         return { error };
       }
 
-      console.log('User role updated successfully, reloading profile...');
+      logger.info('User role updated successfully', 'AUTH_CONTEXT', {
+        userId: user.id,
+        role
+      });
+
       // Reload user profile to get updated role
       await loadUserProfile(user.id);
-      console.log('Profile reloaded after role update');
 
       return { error: null };
     } catch (error) {
-      console.error('Error updating user role:', error);
+      logger.error('Exception in updateUserRole', 'AUTH_CONTEXT', {
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return { error };
     }
   };
 
   const createCreatorProfile = async (bio: string, category: string) => {
     if (!user) {
+      logger.warn('Cannot create creator profile: no user logged in', 'AUTH_CONTEXT');
       return { error: new Error('No user logged in') };
     }
 
     try {
-      console.log('Creating creator profile for user:', user.id);
-      
+      logger.info('Creating creator profile', 'AUTH_CONTEXT', {
+        userId: user.id,
+        bio,
+        category
+      });
+
       // First update user role to creator
       const { error: roleError } = await updateUserRole('creator');
       if (roleError) {
-        console.error('Failed to update role to creator:', roleError);
+        logger.error('Failed to update role to creator', 'AUTH_CONTEXT', {
+          userId: user.id,
+          error: roleError
+        });
         return { error: roleError };
       }
 
-      console.log('Role updated to creator, now creating creator profile...');
-      
       // Create creator profile
       const { data, error } = await supabase
         .from('creator_profiles')
@@ -300,11 +485,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        console.error('Error creating creator profile:', error);
+        logger.error('Error creating creator profile', 'AUTH_CONTEXT', {
+          userId: user.id,
+          error: error.message,
+          errorCode: error.code
+        });
         return { error };
       }
 
-      console.log('Creator profile created successfully:', data);
+      logger.info('Creator profile created successfully', 'AUTH_CONTEXT', {
+        userId: user.id,
+        creatorProfileId: data.id
+      });
+
       setCreatorProfile(data);
 
       // Reload user profile one more time to ensure everything is synced
@@ -312,7 +505,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null };
     } catch (error) {
-      console.error('Error creating creator profile:', error);
+      logger.error('Exception in createCreatorProfile', 'AUTH_CONTEXT', {
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return { error };
     }
   };
@@ -320,12 +516,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Manually create user profile (fallback if trigger doesn't work)
   const createUserProfile = async (role: 'user' | 'creator' = 'user') => {
     if (!user) {
+      logger.warn('Cannot create user profile: no user logged in', 'AUTH_CONTEXT');
       return { error: new Error('No user logged in') };
     }
 
     try {
-      console.log('Manually creating user profile for:', user.id, 'with role:', role);
-      
+      logger.info('Manually creating user profile', 'AUTH_CONTEXT', {
+        userId: user.id,
+        role
+      });
+
       // Check if profile already exists
       const { data: existingProfile } = await supabase
         .from('users')
@@ -334,10 +534,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (existingProfile) {
-        console.log('User profile already exists:', existingProfile);
+        logger.info('User profile already exists', 'AUTH_CONTEXT', {
+          userId: user.id,
+          existingRole: existingProfile.role
+        });
+        
         // If profile exists but role is different, update it
         if (existingProfile.role !== role) {
-          console.log('Updating existing profile role to:', role);
+          logger.info('Updating existing profile role', 'AUTH_CONTEXT', {
+            userId: user.id,
+            oldRole: existingProfile.role,
+            newRole: role
+          });
+          
           const { error } = await supabase
             .from('users')
             .update({ role })
@@ -357,23 +566,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .insert({
           id: user.id,
           email: user.email || '',
-          display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'User',
-          photo_url: user.user_metadata?.avatar_url || null,
+          display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          photo_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
           role: role
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating user profile:', error);
+        logger.error('Error creating user profile', 'AUTH_CONTEXT', {
+          userId: user.id,
+          error: error.message,
+          errorCode: error.code
+        });
         return { error };
       }
 
-      console.log('User profile created successfully:', data);
+      logger.info('User profile created successfully', 'AUTH_CONTEXT', {
+        userId: user.id,
+        profileId: data.id,
+        role
+      });
+
       setUserProfile(data);
       return { error: null };
     } catch (error) {
-      console.error('Error in createUserProfile:', error);
+      logger.error('Exception in createUserProfile', 'AUTH_CONTEXT', {
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return { error };
     }
   };
@@ -408,4 +629,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}

@@ -67,7 +67,8 @@ export default function CreatorProfilePage() {
   const { 
     creatorDetails, 
     paymentMethods, 
-    subscriptionTiers, 
+    subscriptionTiers,
+    posts: recentPosts,
     loading, 
     error,
     refreshCreatorDetails 
@@ -98,7 +99,7 @@ export default function CreatorProfilePage() {
     }
   }
 
-  // Handle one-time payment
+  // Handle one-time payment - Following Medium article exactly
   const handlePayment = async () => {
     if (!user) {
       router.push('/login')
@@ -108,7 +109,15 @@ export default function CreatorProfilePage() {
     setPaymentLoading(true)
     try {
       const amount = customAmount || paymentAmount
-      const response = await fetch('/api/payment/esewa', {
+      
+      console.log('[PAYMENT] Initiating payment:', {
+        amount,
+        creatorId,
+        supporterId: user.id,
+      })
+      
+      // Call payment initiation API (following Medium article)
+      const response = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,35 +125,51 @@ export default function CreatorProfilePage() {
           creatorId,
           supporterId: user.id,
           supporterMessage,
-          successUrl: `${window.location.origin}/payment/success`,
-          failureUrl: `${window.location.origin}/payment/failure`
         })
       })
 
+      if (!response.ok) {
+        throw new Error('Payment initiation failed')
+      }
+
       const result = await response.json()
       
-      if (result.success) {
+      console.log('[PAYMENT] API response:', result)
+      
+      // TEST MODE: Redirect directly to success page
+      if (result.test_mode && result.redirect_url) {
+        console.log('[PAYMENT] TEST MODE: Redirecting to success')
+        window.location.href = result.redirect_url
+        return
+      }
+      
+      // PRODUCTION MODE: Submit to eSewa
+      if (result.success && result.esewaConfig) {
+        console.log('[PAYMENT] eSewa config:', result.esewaConfig)
+        
         // Create form and submit to eSewa
         const form = document.createElement('form')
         form.method = 'POST'
-        form.action = result.esewa_url
+        form.action = result.payment_url
         
-        Object.entries(result.form_data).forEach(([key, value]) => {
+        // Add all form fields from esewaConfig
+        Object.entries(result.esewaConfig).forEach(([key, value]) => {
           const input = document.createElement('input')
           input.type = 'hidden'
           input.name = key
-          input.value = value as string
+          input.value = String(value)
           form.appendChild(input)
         })
         
+        console.log('[PAYMENT] Submitting to eSewa:', result.payment_url)
         document.body.appendChild(form)
         form.submit()
       } else {
-        alert(result.error || 'Payment initialization failed')
+        throw new Error(result.error || 'Invalid payment response')
       }
     } catch (error) {
-      console.error('Payment error:', error)
-      alert('Payment failed. Please try again.')
+      console.error('[PAYMENT] Error:', error)
+      alert(error instanceof Error ? error.message : 'Payment failed. Please try again.')
     } finally {
       setPaymentLoading(false)
     }
@@ -188,42 +213,21 @@ export default function CreatorProfilePage() {
     { amount: '2500', label: 'NPR 2,500', icon: <Star className="w-4 h-4" /> },
   ]
 
-  // Mock posts data - in real app, this would be fetched
-  const recentPosts = [
-    {
-      id: 1,
-      title: 'Behind the scenes of my latest artwork',
-      content: 'Here\'s a glimpse into my creative process...',
-      type: 'image',
-      likes: 124,
-      comments: 18,
-      views: 856,
-      createdAt: '2 hours ago',
-      isPublic: true
-    },
-    {
-      id: 2,
-      title: 'New music track preview',
-      content: 'Working on something special for you all...',
-      type: 'audio',
-      likes: 89,
-      comments: 12,
-      views: 432,
-      createdAt: '1 day ago',
-      isPublic: false
-    },
-    {
-      id: 3,
-      title: 'Photography workshop announcement',
-      content: 'Excited to share my knowledge with the community...',
-      type: 'text',
-      likes: 67,
-      comments: 23,
-      views: 1234,
-      createdAt: '3 days ago',
-      isPublic: true
-    },
-  ]
+  // Format post dates
+  const formatPostDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    return date.toLocaleDateString()
+  }
 
   if (loading) {
     return (
@@ -379,7 +383,7 @@ export default function CreatorProfilePage() {
 
               {/* Posts Tab */}
               <TabsContent value="posts" className="space-y-6">
-                {recentPosts.map((post) => (
+                {recentPosts.length > 0 ? recentPosts.map((post) => (
                   <motion.div
                     key={post.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -395,8 +399,8 @@ export default function CreatorProfilePage() {
                             {post.type === 'text' && <FileText className="w-5 h-5 text-white" />}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{post.title}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{post.createdAt}</p>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{post.title || 'Untitled Post'}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{formatPostDate(post.createdAt)}</p>
                           </div>
                         </div>
                         {!post.isPublic && (
@@ -437,7 +441,17 @@ export default function CreatorProfilePage() {
                       </div>
                     </Card>
                   </motion.div>
-                ))}
+                )) : (
+                  <Card className="p-8 text-center">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      No Posts Yet
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      This creator hasn't posted anything yet.
+                    </p>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Subscriptions Tab */}
@@ -670,12 +684,12 @@ export default function CreatorProfilePage() {
                       <div className="flex items-center space-x-3">
                         {method.type === 'esewa' && <Smartphone className="w-5 h-5 text-green-600" />}
                         {method.type === 'khalti' && <Smartphone className="w-5 h-5 text-purple-600" />}
-                        {method.type === 'bank' && <Building2 className="w-5 h-5 text-blue-600" />}
+                        {(method.type === 'bank_transfer' || method.type === 'bank') && <Building2 className="w-5 h-5 text-blue-600" />}
                         <div>
                           <p className="font-medium text-gray-900 dark:text-gray-100">
                             {method.type === 'esewa' && 'eSewa'}
                             {method.type === 'khalti' && 'Khalti'}
-                            {method.type === 'bank' && 'Bank Transfer'}
+                            {(method.type === 'bank_transfer' || method.type === 'bank') && 'Bank Transfer'}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">{method.details}</p>
                         </div>

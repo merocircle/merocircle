@@ -30,7 +30,7 @@ export function Header() {
       await signOut();
       router.push('/');
     } catch (error) {
-      console.error('Error signing out:', error);
+      // Error is handled silently - user will see they're still logged in if it fails
     }
   };
 
@@ -45,7 +45,7 @@ export function Header() {
   const profileMenuItems = [
     {
       icon: User,
-      label: 'Profile',
+      label: 'My Profile',
       href: '/profile'
     },
     {
@@ -53,11 +53,16 @@ export function Header() {
       label: 'Settings',
       href: '/settings'
     },
-    ...(isCreator ? [{
+    {
       icon: BarChart3,
       label: 'Creator Dashboard',
       href: '/dashboard/creator'
-    }] : []),
+    },
+    {
+      icon: Heart,
+      label: 'Dashboard',
+      href: '/dashboard'
+    },
     {
       icon: LogOut,
       label: 'Sign Out',
@@ -83,17 +88,19 @@ export function Header() {
             Discover
           </Link>
           <Link 
-            href="/about" 
+            href="/explore" 
             className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
           >
-            About
+            Explore
           </Link>
+          {isAuthenticated && (
           <Link 
-            href="/support" 
+              href="/dashboard" 
             className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
           >
-            Support
+              Dashboard
           </Link>
+          )}
         </nav>
 
         {/* Right Side */}
@@ -224,19 +231,21 @@ export function Header() {
                 Discover
               </Link>
               <Link 
-                href="/about" 
+                href="/explore" 
                 className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
                 onClick={closeMobileMenu}
               >
-                About
+                Explore
               </Link>
+              {isAuthenticated && (
               <Link 
-                href="/support" 
+                  href="/dashboard" 
                 className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
                 onClick={closeMobileMenu}
               >
-                Support
+                  Dashboard
               </Link>
+              )}
 
               {!isAuthenticated ? (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">

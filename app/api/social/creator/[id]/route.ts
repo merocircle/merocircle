@@ -48,7 +48,6 @@ export async function GET(
       })
 
     if (creatorError) {
-      console.error('Creator profile error:', creatorError)
       return NextResponse.json(
         { error: 'Failed to fetch creator profile' },
         { status: 500 }
@@ -68,7 +67,6 @@ export async function GET(
     })
     
   } catch (error) {
-    console.error('Creator profile API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Creators Nepal 🇳🇵
 
-## Getting Started
+Platform for supporting Nepali creators with local payment integration.
 
-First, run the development server:
+[![Next.js](https://img.shields.io/badge/Next.js-15.3-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Latest-green)](https://supabase.com/)
+
+## Features
+
+- Creator profiles with content management
+- eSewa/Khalti payment integration
+- Social features (follow, like, comment)
+- Analytics dashboard
+- Dark mode support
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+ESEWA_TEST_MODE=true
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run migrations from `supabase/migrations/` folder, then:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+- Next.js 15.3 with App Router
+- TypeScript
+- Supabase (Auth + Database)
+- Tailwind CSS 4.0
+- Radix UI + Framer Motion
 
-To learn more about Next.js, take a look at the following resources:
+## Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Tables: `users`, `creator_profiles`, `supporter_transactions`, `follows`, `posts`, `post_likes`, `post_comments`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Functions: `get_discovery_feed()`, `search_creators()`, `get_creator_posts()`
 
-## Deploy on Vercel
+## Payment Integration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**eSewa**: See `docs/ESEWA_SETUP.md`
+- Test mode available for development
+- Requires merchant registration for production
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Works on Vercel, Netlify, Railway, or any Next.js hosting.
+
+Set environment variables:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_BASE_URL`
+- `ESEWA_TEST_MODE=true` (for development)
+
+---
+
+Made with ❤️ for Nepal's creator community

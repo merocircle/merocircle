@@ -1,98 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { Header } from '@/components/header';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Wallet,
-  BarChart3,
-  Heart,
-  Eye,
-  History,
-  Calendar,
-  DollarSign,
-  Users,
-  Search,
-  User,
-  Settings,
-  ArrowRight,
-  TrendingUp,
-  MessageCircle,
-  Star,
-  Crown,
-  Sparkles,
-  Share2,
-  Gift,
-  Clock,
-  CheckCircle,
-  ArrowUp,
-  ArrowDown,
-  Plus,
-  Filter,
-  Bell,
-  Bookmark,
-  Trophy,
-  Target,
-  PieChart,
-  Coins,
-  CreditCard,
-  Zap,
-  Flame,
-  Camera,
-  Play,
-  Music,
-  Palette,
-  ThumbsUp,
-  ThumbsDown,
-  MoreHorizontal,
-  ExternalLink,
-  Copy,
-  Minus,
-  FileText
-} from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
-import { useCreatorSearch } from '@/hooks/useSocial';
-import CreatorSearch from '@/components/social/CreatorSearch';
-import CreatorCard from '@/components/social/CreatorCard';
 
 export default function SupporterDashboard() {
-  const { user, userProfile, isAuthenticated, loading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('feed');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // CRITICAL SECURITY: Role-based access control
+  // Redirect to main dashboard
   React.useEffect(() => {
     if (!loading) {
-      if (!isAuthenticated) {
-        console.log('Not authenticated, redirecting to login');
-        router.push('/login');
-      } else if (userProfile) {
-        // SECURITY CHECK: Only users with role 'user' (supporters) can access this page
-        if (userProfile.role !== 'user') {
-          console.log('SECURITY VIOLATION: User with role', userProfile.role, 'trying to access supporter dashboard');
-          console.log('Redirecting to correct dashboard...');
-          if (userProfile.role === 'creator') {
-            router.push('/dashboard/creator');
-          } else {
-            router.push('/dashboard'); // Fallback to main dashboard for unknown roles
-          }
-          return;
-        }
-        console.log('Access granted: User has correct role (user/supporter)');
-      }
+      router.replace('/dashboard');
     }
-  }, [loading, isAuthenticated, userProfile, router]);
+  }, [loading, router]);
 
-  if (loading) {
+  // Show loading while redirecting
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
@@ -103,11 +25,6 @@ export default function SupporterDashboard() {
         </div>
       </div>
     );
-  }
-
-  if (!isAuthenticated || !userProfile) {
-    return null;
-  }
 
   // Mock data - in real app, this would come from your database
   const supporterStats = {
@@ -256,11 +173,11 @@ export default function SupporterDashboard() {
                 <span>Settings</span>
               </Button>
               <Button 
-                onClick={() => router.push('/signup?role=creator')}
+                onClick={() => router.push('/dashboard/creator')}
                 className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-600"
               >
                 <Crown className="w-4 h-4" />
-                <span>Become Creator</span>
+                <span>Creator Dashboard</span>
               </Button>
             </div>
           </div>
