@@ -72,11 +72,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95 dark:border-gray-800">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
-          <Heart className="h-8 w-8 text-red-500" />
-          <span className="text-xl font-bold">Creators Nepal</span>
+        <Link href="/" className="flex items-center space-x-1 sm:space-x-2" onClick={closeMobileMenu}>
+          <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
+          <span className="text-lg sm:text-xl font-bold">Creators Nepal</span>
         </Link>
 
         {/* Desktop Navigation */}

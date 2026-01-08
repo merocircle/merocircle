@@ -140,7 +140,7 @@ export default function DynamicPostCard({
   const isOwner = user?.id === post.creator_id;
 
   return (
-    <Card className="p-6 hover:shadow-lg transition-shadow">
+    <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           {/* Creator Avatar */}

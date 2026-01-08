@@ -246,7 +246,7 @@ export default function CreatorProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
           </div>
@@ -259,7 +259,7 @@ export default function CreatorProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Creator Not Found</h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">The creator you're looking for doesn't exist.</p>
@@ -283,14 +283,14 @@ export default function CreatorProfilePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8"
+          className="mb-4 sm:mb-6 md:mb-8"
         >
-          <Card className="p-8">
-            <div className="flex flex-col lg:flex-row items-start space-y-6 lg:space-y-0 lg:space-x-8">
+          <Card className="p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row items-start space-y-4 sm:space-y-6 lg:space-y-0 lg:space-x-8">
               {/* Creator Avatar & Basic Info */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 w-full lg:w-auto flex justify-center lg:justify-start">
                 <div className="relative">
-                  <div className="w-32 h-32 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
                     {creatorDetails.avatar_url ? (
                       <Image 
                         src={creatorDetails.avatar_url} 
@@ -300,14 +300,14 @@ export default function CreatorProfilePage() {
                         className="object-cover"
                       />
                     ) : (
-                      <span className="text-4xl font-bold text-white">
+                      <span className="text-3xl sm:text-4xl font-bold text-white">
                         {creatorDetails.display_name?.[0]?.toUpperCase() || '?'}
                       </span>
                     )}
                   </div>
                   {creatorDetails.is_verified && (
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-950">
-                      <CheckCircle className="w-5 h-5 text-white" />
+                    <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-950">
+                      <CheckCircle className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
                     </div>
                   )}
                 </div>
@@ -317,7 +317,7 @@ export default function CreatorProfilePage() {
               <div className="flex-grow">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                       {creatorDetails.display_name || 'Creator'}
                     </h1>
                     {creatorDetails.category && (
@@ -328,11 +328,12 @@ export default function CreatorProfilePage() {
                     )}
                   </div>
                   
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
                     <Button
                       onClick={handleFollow}
                       variant={isFollowing ? "outline" : "default"}
-                      className={isFollowing ? "" : "bg-red-500 hover:bg-red-600"}
+                      size="sm"
+                      className={`flex-1 sm:flex-initial ${isFollowing ? "" : "bg-red-500 hover:bg-red-600"}`}
                       disabled={followLoading[creatorId] || false}
                     >
                       {followLoading[creatorId] ? (
@@ -362,30 +363,30 @@ export default function CreatorProfilePage() {
                 )}
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {creatorDetails.follower_count || 0}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Followers</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Followers</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {creatorDetails.posts_count || 0}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Posts</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Posts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {subscriptionTiers?.length || 0}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Tiers</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Tiers</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Joined</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Joined</div>
                   </div>
                 </div>
               </div>
@@ -394,18 +395,18 @@ export default function CreatorProfilePage() {
         </motion.div>
 
         {/* Main Content - Following dashboard pattern */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="posts">Posts</TabsTrigger>
-                <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-                <TabsTrigger value="about">About</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 gap-1 sm:gap-2 h-auto">
+                <TabsTrigger value="posts" className="text-xs sm:text-sm whitespace-nowrap">Posts</TabsTrigger>
+                <TabsTrigger value="subscriptions" className="text-xs sm:text-sm whitespace-nowrap">Subscriptions</TabsTrigger>
+                <TabsTrigger value="about" className="text-xs sm:text-sm whitespace-nowrap">About</TabsTrigger>
               </TabsList>
 
               {/* Posts Tab */}
-              <TabsContent value="posts" className="space-y-6">
+              <TabsContent value="posts" className="space-y-4 sm:space-y-6">
                 {recentPosts.length > 0 ? recentPosts.map((post: any) => (
                   <motion.div
                     key={post.id}
@@ -444,12 +445,12 @@ export default function CreatorProfilePage() {
                     />
                   </motion.div>
                 )) : (
-                  <Card className="p-8 text-center">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  <Card className="p-6 sm:p-8 text-center">
+                    <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                       No Posts Yet
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                       This creator hasn't posted anything yet.
                     </p>
                   </Card>
@@ -457,9 +458,9 @@ export default function CreatorProfilePage() {
               </TabsContent>
 
               {/* Subscriptions Tab */}
-              <TabsContent value="subscriptions" className="space-y-6">
+              <TabsContent value="subscriptions" className="space-y-4 sm:space-y-6">
                 {hasActiveSubscription && (
-                  <Card className="p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
+                  <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
                         <Crown className="w-6 h-6 text-green-600" />
@@ -490,27 +491,27 @@ export default function CreatorProfilePage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                       >
-                        <Card className="p-6">
-                          <div className="flex justify-between items-start mb-4">
+                        <Card className="p-4 sm:p-6">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-3 sm:mb-4">
                             <div>
-                              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                                 {tier.tier_name}
                               </h3>
                               <p className="text-gray-600 dark:text-gray-400 mb-4">
                                 {tier.description}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            <div className="text-right sm:text-left sm:mt-0 mt-2">
+                              <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                                 NPR {tier.price}
                               </div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">per month</div>
+                              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">per month</div>
                             </div>
                           </div>
 
                           {tier.benefits && (
-                            <div className="mb-6">
-                              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Benefits</h4>
+                            <div className="mb-4 sm:mb-6">
+                              <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">Benefits</h4>
                               <ul className="space-y-2">
                                 {(Array.isArray(tier.benefits) ? tier.benefits : tier.benefits ? [tier.benefits] : []).map((benefit: string, index: number) => (
                                   <li key={index} className="flex items-center space-x-2">
@@ -522,12 +523,13 @@ export default function CreatorProfilePage() {
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                               {tier.current_subscribers || 0} supporters
                             </div>
                             <Button 
-                              className="bg-red-500 hover:bg-red-600"
+                              size="sm"
+                              className="bg-red-500 hover:bg-red-600 text-xs sm:text-sm w-full sm:w-auto"
                               onClick={() => handleSubscription(tier.id)}
                               disabled={paymentLoading}
                             >
@@ -539,12 +541,12 @@ export default function CreatorProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <Card className="p-8 text-center">
-                    <Crown className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  <Card className="p-6 sm:p-8 text-center">
+                    <Crown className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                       No Subscription Tiers Available
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                       This creator hasn't set up subscription tiers yet.
                     </p>
                   </Card>
@@ -552,9 +554,9 @@ export default function CreatorProfilePage() {
               </TabsContent>
 
               {/* About Tab */}
-              <TabsContent value="about" className="space-y-6">
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">About</h3>
+              <TabsContent value="about" className="space-y-4 sm:space-y-6">
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">About</h3>
                   <div className="space-y-4">
                     {creatorDetails.bio && (
                       <div>
@@ -597,15 +599,15 @@ export default function CreatorProfilePage() {
           </div>
 
           {/* Sidebar - Payment & Support */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* One-time Support Card */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">
                 Support {creatorDetails.display_name}
               </h3>
               
               {/* Quick Amount Selection */}
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
                 {paymentOptions.map((option) => (
                   <Button
                     key={option.amount}
@@ -620,8 +622,8 @@ export default function CreatorProfilePage() {
               </div>
 
               {/* Custom Amount */}
-              <div className="mb-4">
-                <Label htmlFor="custom-amount" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="mb-3 sm:mb-4">
+                <Label htmlFor="custom-amount" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Custom Amount (NPR)
                 </Label>
                 <Input
@@ -630,13 +632,13 @@ export default function CreatorProfilePage() {
                   placeholder="Enter amount"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 text-sm sm:text-base"
                 />
               </div>
 
               {/* Support Message */}
-              <div className="mb-6">
-                <Label htmlFor="support-message" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="mb-4 sm:mb-6">
+                <Label htmlFor="support-message" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Message (Optional)
                 </Label>
                 <Textarea
@@ -644,7 +646,7 @@ export default function CreatorProfilePage() {
                   placeholder="Say something nice..."
                   value={supporterMessage}
                   onChange={(e) => setSupporterMessage(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 text-sm sm:text-base"
                   rows={3}
                 />
               </div>

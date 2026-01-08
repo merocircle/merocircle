@@ -145,8 +145,8 @@ export default function PostCard({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto mb-6 hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3">
+    <Card className="w-full max-w-2xl mx-auto mb-4 sm:mb-6 hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             <Link 
@@ -229,7 +229,7 @@ export default function PostCard({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 px-4 sm:px-6 pb-4 sm:pb-6">
         <div className="space-y-4">
           {/* Post Title */}
           <Link href={`/posts/${post.id}`}>

@@ -43,8 +43,8 @@ export function ActivityItem({
     : time;
 
   return (
-    <div className="flex items-start space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+    <div className="flex items-start space-x-3 sm:space-x-4 pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
         <span className="text-white text-sm font-medium">
           {creator[0]?.toUpperCase() || 'C'}
         </span>

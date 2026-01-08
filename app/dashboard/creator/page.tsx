@@ -347,47 +347,50 @@ export default function CreatorDashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center">
-                <Crown className="w-8 h-8 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
                   Creator Dashboard
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 truncate">
                   Welcome back, {userProfile.display_name || userProfile.email?.split('@')[0] || 'Creator'}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
               <Button 
                 variant="outline" 
-                className="flex items-center space-x-2"
+                size="sm"
+                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap"
                 onClick={() => router.push('/dashboard')}
               >
-                <Heart className="w-4 h-4" />
-                <span>Dashboard</span>
+                <Heart className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Dashboard</span>
               </Button>
               <Button 
                 variant="outline" 
-                className="flex items-center space-x-2"
+                size="sm"
+                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap"
                 onClick={() => router.push('/profile')}
               >
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
+                <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Settings</span>
               </Button>
               <Button 
-                className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-600"
+                size="sm"
+                className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-red-500 to-pink-600 text-xs sm:text-sm whitespace-nowrap"
                 onClick={() => {
                   setActiveTab('posts');
                   setTimeout(() => {
@@ -398,30 +401,31 @@ export default function CreatorDashboard() {
                   }, 100);
                 }}
               >
-                <PlusCircle className="w-4 h-4" />
-                <span>New Post</span>
+                <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">New Post</span>
+                <span className="sm:hidden">Post</span>
               </Button>
             </div>
           </div>
         </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="supporters">Supporters</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="goals">Goals</TabsTrigger>
-            <TabsTrigger value="earnings">Earnings</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 gap-1 sm:gap-2 h-auto overflow-x-auto">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap">Overview</TabsTrigger>
+            <TabsTrigger value="posts" className="text-xs sm:text-sm whitespace-nowrap">Posts</TabsTrigger>
+            <TabsTrigger value="supporters" className="text-xs sm:text-sm whitespace-nowrap">Supporters</TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs sm:text-sm whitespace-nowrap">Analytics</TabsTrigger>
+            <TabsTrigger value="goals" className="text-xs sm:text-sm whitespace-nowrap">Goals</TabsTrigger>
+            <TabsTrigger value="earnings" className="text-xs sm:text-sm whitespace-nowrap">Earnings</TabsTrigger>
+            <TabsTrigger value="payments" className="text-xs sm:text-sm whitespace-nowrap">Payments</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-6"
+              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6"
             >
               {dataLoading ? (
                 <>
@@ -470,8 +474,8 @@ export default function CreatorDashboard() {
               )}
             </motion.div>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Earnings Summary</h3>
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Earnings Summary</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600 dark:text-gray-400">This Month</span>
@@ -489,10 +493,10 @@ export default function CreatorDashboard() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Posts</h3>
-                  <Button variant="ghost" size="sm">View All</Button>
+              <Card className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Posts</h3>
+                  <Button variant="ghost" size="sm" className="text-xs sm:text-sm">View All</Button>
                 </div>
                 <div className="space-y-4">
                   {recentPosts.length > 0 ? recentPosts.slice(0, 3).map((post: any) => (
@@ -517,10 +521,10 @@ export default function CreatorDashboard() {
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Supporters</h3>
-                  <Button variant="ghost" size="sm">View All</Button>
+              <Card className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Top Supporters</h3>
+                  <Button variant="ghost" size="sm" className="text-xs sm:text-sm">View All</Button>
                 </div>
                 <div className="space-y-4">
                   {supporters.length > 0 ? supporters.slice(0, 5).map((supporter: any) => (
@@ -545,16 +549,17 @@ export default function CreatorDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="posts" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Manage Posts</h2>
-              <div className="flex items-center space-x-3">
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Filter className="w-4 h-4" />
-                  <span>Filter</span>
+          <TabsContent value="posts" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Manage Posts</h2>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Button variant="outline" size="sm" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+                  <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Filter</span>
                 </Button>
                 <Button 
-                  className="flex items-center space-x-2"
+                  size="sm"
+                  className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
                   onClick={() => {
                     setTimeout(() => {
                       const postForm = document.getElementById('new-post-form');
@@ -564,26 +569,28 @@ export default function CreatorDashboard() {
                     }, 100);
                   }}
                 >
-                  <PlusCircle className="w-4 h-4" />
+                  <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>New Post</span>
                 </Button>
               </div>
             </div>
 
             {/* Quick Post Creator */}
-            <Card id="new-post-form" className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Create New Post</h3>
+            <Card id="new-post-form" className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Create New Post</h3>
               <div className="space-y-4">
                 <Input
                   placeholder="Post title..."
                   value={newPostTitle}
                   onChange={(e) => setNewPostTitle(e.target.value)}
+                  className="text-sm sm:text-base"
                 />
                 <Textarea
                   placeholder="Share your thoughts with your supporters..."
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
                   rows={4}
+                  className="text-sm sm:text-base"
                 />
                 {uploadedImageUrl && (
                   <div className="relative">
@@ -622,12 +629,12 @@ export default function CreatorDashboard() {
                     <select
                       value={postVisibility}
                       onChange={(e) => setPostVisibility(e.target.value)}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm"
+                      className="px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-xs sm:text-sm"
                     >
                       <option value="public">Public</option>
                       <option value="supporters">Supporters Only</option>
                     </select>
-                    <Button onClick={handlePublishPost} disabled={isPublishing}>
+                    <Button onClick={handlePublishPost} disabled={isPublishing} size="sm" className="text-xs sm:text-sm">
                       {isPublishing ? 'Publishing...' : 'Publish'}
                     </Button>
                   </div>
@@ -635,7 +642,7 @@ export default function CreatorDashboard() {
               </div>
             </Card>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {recentPosts.length > 0 ? recentPosts.map((post: any) => (
                 <PostCard 
                   key={post.id} 
@@ -749,19 +756,19 @@ export default function CreatorDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Analytics & Insights</h2>
-              <select className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800">
+          <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Analytics & Insights</h2>
+              <select className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 w-full sm:w-auto">
                 <option>Last 6 Months</option>
                 <option>Last 3 Months</option>
                 <option>Last Month</option>
               </select>
             </div>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Growth Overview</h3>
-              <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Growth Overview</h3>
+              <div className="h-48 sm:h-64 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
                 <div className="text-center">
                   <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                   <p className="text-gray-600 dark:text-gray-400">Analytics chart will be displayed here</p>
@@ -769,9 +776,9 @@ export default function CreatorDashboard() {
               </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="p-6">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Performing Posts</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+              <Card className="p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Top Performing Posts</h4>
                 <div className="space-y-3">
                   {recentPosts.length > 0 ? (() => {
                     const topPosts = [...recentPosts]
@@ -795,8 +802,8 @@ export default function CreatorDashboard() {
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Supporter Growth</h4>
+              <Card className="p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Supporter Growth</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Total Supporters</span>
@@ -813,8 +820,8 @@ export default function CreatorDashboard() {
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Engagement Stats</h4>
+              <Card className="p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Engagement Stats</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Total Likes</span>

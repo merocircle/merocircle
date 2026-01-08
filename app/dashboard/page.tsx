@@ -160,51 +160,53 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-hidden">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Heart className="w-8 h-8 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
                   Dashboard
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 truncate">
                   Welcome back, {displayName}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+              <Button variant="outline" size="sm" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap">
+                <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Settings</span>
               </Button>
               <Button 
                 onClick={() => router.push('/dashboard/creator')}
-                className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-600"
+                size="sm"
+                className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-red-500 to-pink-600 text-xs sm:text-sm whitespace-nowrap"
               >
-                <Crown className="w-4 h-4" />
-                <span>Creator Dashboard</span>
+                <Crown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden md:inline">Creator Dashboard</span>
+                <span className="md:hidden">Creator</span>
               </Button>
             </div>
           </div>
         </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="feed">Activity Feed</TabsTrigger>
-            <TabsTrigger value="following">Following</TabsTrigger>
-            <TabsTrigger value="discover">Discover</TabsTrigger>
-            <TabsTrigger value="history">Support History</TabsTrigger>
-            <TabsTrigger value="stats">My Stats</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-2 h-auto">
+            <TabsTrigger value="feed" className="text-xs sm:text-sm whitespace-nowrap">Feed</TabsTrigger>
+            <TabsTrigger value="following" className="text-xs sm:text-sm whitespace-nowrap">Following</TabsTrigger>
+            <TabsTrigger value="discover" className="text-xs sm:text-sm whitespace-nowrap">Discover</TabsTrigger>
+            <TabsTrigger value="history" className="text-xs sm:text-sm whitespace-nowrap">History</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs sm:text-sm whitespace-nowrap col-span-2 sm:col-span-1">Stats</TabsTrigger>
           </TabsList>
 
           <TabsContent value="feed" className="space-y-6">
@@ -243,8 +245,8 @@ export default function DashboardPage() {
               />
             </motion.div>
 
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Posts from Creators You Follow</h3>
+            <div className="space-y-4 sm:space-y-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Posts from Creators You Follow</h3>
               {feedPosts.length > 0 ? (
                 feedPosts.map((post: any) => (
                   <motion.div
@@ -306,7 +308,7 @@ export default function DashboardPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="following" className="space-y-6">
+          <TabsContent value="following" className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Creators You Follow</h2>
               <div className="flex items-center space-x-3">
