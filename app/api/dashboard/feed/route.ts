@@ -1,90 +1,68 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { fetchCreatorProfiles, fetchCreatorDetails, calculateMonthlyTotal, calculateTotalAmount } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch following relationships
-    const { data: following, error: followingError } = await supabase
+    const { data: following } = await supabase
       .from('follows')
       .select('following_id')
-      .eq('follower_id', user.id)
+      .eq('follower_id', user.id);
 
-    const followingIds = following?.map(f => f.following_id) || []
+    const followingIds = following?.map(f => f.following_id) || [];
     
-    // Fetch creator profiles and user details for following creators
-    let followingCreators: any[] = []
-    if (followingIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('creator_profiles')
-        .select('*, users(id, display_name, photo_url)')
-        .in('user_id', followingIds)
-      
-      followingCreators = (profiles || []).map((p: any) => ({
-        id: p.user_id,
-        name: p.users?.display_name || 'Creator',
-        category: p.category || 'Creator',
-        avatar: p.users?.photo_url || null,
-        supporters: p.followers_count || 0,
-        isVerified: p.is_verified || false,
-        posts_count: p.posts_count || 0
-      }))
-    }
+    const followingCreators = await fetchCreatorProfiles(followingIds);
     
-    // Fetch recent posts from followed creators
-    let recentActivity = []
+    let recentActivity = [];
+    let feedPosts: any[] = [];
     if (followingIds.length > 0) {
       const { data: posts } = await supabase
         .from('posts')
-        .select('*, users(id, display_name, photo_url)')
+        .select(`
+          *,
+          users(id, display_name, photo_url),
+          post_likes(id, user_id),
+          post_comments(
+            id,
+            content,
+            created_at,
+            user:users(id, display_name, photo_url)
+          )
+        `)
         .in('creator_id', followingIds)
         .eq('is_public', true)
         .order('created_at', { ascending: false })
-        .limit(10)
-      recentActivity = posts || []
+        .limit(20);
+      recentActivity = (posts || []).slice(0, 10);
+      feedPosts = posts || [];
     }
 
-    // Fetch support transactions first
-    const { data: supportTransactions, error: transactionsError } = await supabase
+    const { data: supportTransactions } = await supabase
       .from('supporter_transactions')
       .select('id, amount, created_at, creator_id')
       .eq('supporter_id', user.id)
       .eq('status', 'completed')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    // Get unique creator IDs and fetch their details
-    const creatorIds = [...new Set((supportTransactions || []).map((t: any) => t.creator_id))]
-    let creatorsMap = new Map()
-    
-    if (creatorIds.length > 0) {
-      const { data: creators } = await supabase
-        .from('users')
-        .select('id, display_name, photo_url')
-        .in('id', creatorIds)
-      
-      creatorsMap = new Map((creators || []).map((c: any) => [c.id, c]))
-    }
+    const creatorIds = [...new Set((supportTransactions || []).map((t: any) => t.creator_id))];
+    const creatorsMap = await fetchCreatorDetails(creatorIds);
 
-    const totalSupported = (supportTransactions || []).reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
-    const thisMonth = new Date()
-    thisMonth.setDate(1)
-    const thisMonthSupport = (supportTransactions || []).filter(t => new Date(t.created_at) >= thisMonth)
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
-
-    const uniqueCreatorsSupported = creatorIds.length
+    const totalSupported = calculateTotalAmount(supportTransactions || []);
+    const thisMonthSupport = calculateMonthlyTotal(supportTransactions || []);
 
     const supportActivities = (supportTransactions || []).slice(0, 10).map((t: any) => {
       const creator = creatorsMap.get(t.creator_id) || {
         id: t.creator_id,
         display_name: 'Creator',
         photo_url: null
-      }
+      };
       
       return {
         id: t.id,
@@ -94,10 +72,10 @@ export async function GET(request: NextRequest) {
         title: `Supported with NPR ${Number(t.amount || 0).toLocaleString()}`,
         content: null,
         time: t.created_at,
-        type: 'support',
+        type: 'support' as const,
         amount: Number(t.amount || 0)
-      }
-    })
+      };
+    });
 
     const postActivities = (recentActivity || []).map((p: any) => ({
       id: p.id,
@@ -107,10 +85,58 @@ export async function GET(request: NextRequest) {
       title: p.title || 'New post',
       content: p.content,
       time: p.created_at,
-      type: p.image_url ? 'image' : 'text',
-      likes: 0,
-      comments: 0
+      type: (p.image_url ? 'image' : 'text') as 'image' | 'text',
+      imageUrl: p.image_url || null,
+      postId: p.id,
+      likes: p.post_likes?.length || 0,
+      comments: p.post_comments?.length || 0
     }));
+
+    let profilesMap = new Map();
+    if (feedPosts.length > 0) {
+      const creatorProfileIds = [...new Set(feedPosts.map((p: any) => p.creator_id))];
+      const { data: creatorProfiles } = await supabase
+        .from('creator_profiles')
+        .select('user_id, category, is_verified')
+        .in('user_id', creatorProfileIds);
+      
+      profilesMap = new Map((creatorProfiles || []).map((cp: any) => [cp.user_id, cp]));
+    }
+
+    const formattedFeedPosts = feedPosts.map((p: any) => {
+      const profile = profilesMap.get(p.creator_id);
+      return {
+        id: p.id,
+        title: p.title,
+        content: p.content,
+        image_url: p.image_url,
+        media_url: p.media_url || null,
+        is_public: p.is_public,
+        tier_required: p.tier_required || 'free',
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+        creator_id: p.creator_id,
+        creator: {
+          id: p.users?.id || p.creator_id,
+          display_name: p.users?.display_name || 'Creator',
+          photo_url: p.users?.photo_url || null,
+          role: 'creator'
+        },
+        creator_profile: {
+          category: profile?.category || null,
+          is_verified: profile?.is_verified || false
+        },
+        likes: p.post_likes || [],
+        comments: (p.post_comments || []).map((c: any) => ({
+          id: c.id,
+          content: c.content,
+          created_at: c.created_at,
+          user: c.user || { id: null, display_name: 'Unknown', photo_url: null }
+        })),
+        likes_count: p.post_likes?.length || 0,
+        comments_count: p.post_comments?.length || 0
+      };
+    });
 
     const allRecentActivity = [...supportActivities, ...postActivities]
       .sort((a, b) => {
@@ -118,20 +144,21 @@ export async function GET(request: NextRequest) {
         const timeB = b.time ? new Date(b.time).getTime() : 0;
         return timeB - timeA;
       })
-      .slice(0, 20)
+      .slice(0, 20);
 
     return NextResponse.json({
       stats: {
         totalSupported,
-        creatorsSupported: uniqueCreatorsSupported,
+        creatorsSupported: creatorIds.length,
         thisMonth: thisMonthSupport,
         favoriteCreators: followingIds.length
       },
-      followingCreators: followingCreators,
-      recentActivity: allRecentActivity
-    })
+      followingCreators,
+      recentActivity: allRecentActivity,
+      feedPosts: formattedFeedPosts
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

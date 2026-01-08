@@ -86,13 +86,20 @@ export const useCreatorDetails = (creatorId: string | null) => {
         throw new Error(errorData.error || 'Failed to fetch creator details')
       }
       
-      const data = await response.json()
+      const data = await response.json();
+      
+      const creatorDetails = data.creatorDetails ? {
+        ...data.creatorDetails,
+        is_verified: data.creatorDetails.is_verified ?? data.creatorDetails.verified ?? false,
+        created_at: data.creatorDetails.created_at || data.creatorDetails.join_date
+      } : null;
+      
       setProfile({
-        creatorDetails: data.creatorDetails,
+        creatorDetails,
         paymentMethods: data.paymentMethods || [],
         subscriptionTiers: data.subscriptionTiers || [],
         posts: data.posts || []
-      })
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load creator')
       console.error('Creator details error:', err)

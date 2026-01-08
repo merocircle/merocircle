@@ -1,7 +1,7 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Header } from '@/components/header'
@@ -75,34 +75,42 @@ export default function CreatorProfilePage() {
     refreshCreatorDetails 
   } = useCreatorDetails(creatorId)
   
-  const { followCreator, unfollowCreator, loading: followLoading } = useFollow()
-  const { subscribe, unsubscribe, loading: subscriptionLoading } = useSubscription()
+  const { followCreator, unfollowCreator, loading: followLoading } = useFollow();
+  const { subscribe, unsubscribe, loading: subscriptionLoading } = useSubscription();
   
-  // Get following status from creator details
-  const isFollowing = creatorDetails?.isFollowing || false
-  const hasActiveSubscription = creatorDetails?.current_subscription !== null
+  const [isFollowing, setIsFollowing] = useState(creatorDetails?.isFollowing || false);
+  const hasActiveSubscription = creatorDetails?.current_subscription !== null;
   
-  const [activeTab, setActiveTab] = useState('posts')
-  const [paymentAmount, setPaymentAmount] = useState('1000')
-  const [customAmount, setCustomAmount] = useState('')
-  const [supporterMessage, setSupporterMessage] = useState('')
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
-  const [selectedTier, setSelectedTier] = useState<string | null>(null)
-  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('posts');
+  const [paymentAmount, setPaymentAmount] = useState('1000');
+  const [customAmount, setCustomAmount] = useState('');
+  const [supporterMessage, setSupporterMessage] = useState('');
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
-  // Handle follow/unfollow
-  const handleFollow = async () => {
-    try {
-      if (isFollowing) {
-        await unfollowCreator(creatorId)
-      } else {
-        await followCreator(creatorId)
-      }
-      refreshCreatorDetails()
-    } catch (error) {
-      alert('Failed to update follow status')
+  useEffect(() => {
+    if (creatorDetails?.isFollowing !== undefined) {
+      setIsFollowing(creatorDetails.isFollowing);
     }
-  }
+  }, [creatorDetails?.isFollowing]);
+
+  const handleFollow = async () => {
+    const wasFollowing = isFollowing;
+    setIsFollowing(!wasFollowing);
+    
+    try {
+      if (wasFollowing) {
+        await unfollowCreator(creatorId);
+      } else {
+        await followCreator(creatorId);
+      }
+      await refreshCreatorDetails();
+    } catch (error) {
+      setIsFollowing(wasFollowing);
+      alert('Failed to update follow status');
+    }
+  };
 
   // Handle one-time payment - Following Medium article exactly
   const handlePayment = async () => {
@@ -298,7 +306,7 @@ export default function CreatorProfilePage() {
                     )}
                   </div>
                   {creatorDetails.is_verified && (
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-950">
                       <CheckCircle className="w-5 h-5 text-white" />
                     </div>
                   )}
@@ -325,9 +333,19 @@ export default function CreatorProfilePage() {
                       onClick={handleFollow}
                       variant={isFollowing ? "outline" : "default"}
                       className={isFollowing ? "" : "bg-red-500 hover:bg-red-600"}
+                      disabled={followLoading[creatorId] || false}
                     >
-                      <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
-                      {isFollowing ? 'Following' : 'Follow'}
+                      {followLoading[creatorId] ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                          {isFollowing ? 'Unfollowing...' : 'Following...'}
+                        </>
+                      ) : (
+                        <>
+                          <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
+                          {isFollowing ? 'Following' : 'Follow'}
+                        </>
+                      )}
                     </Button>
                     
                     <Button variant="outline" size="icon">

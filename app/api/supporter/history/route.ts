@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { fetchCreatorDetails } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Fetch transactions first
     const { data: transactions, error: transactionsError } = await supabase
       .from('supporter_transactions')
       .select('id, amount, supporter_message, status, created_at, completed_at, creator_id')
@@ -36,26 +36,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ history: [] });
     }
 
-    // Get unique creator IDs
     const creatorIds = [...new Set(transactions.map((t: any) => t.creator_id))];
+    const creatorsMap = await fetchCreatorDetails(creatorIds);
 
-    // Fetch creator details
-    const { data: creators, error: creatorsError } = await supabase
-      .from('users')
-      .select('id, display_name, photo_url')
-      .in('id', creatorIds);
-
-    if (creatorsError) {
-      logger.error('Failed to fetch creators', 'SUPPORTER_HISTORY', {
-        error: creatorsError.message
-      });
-      // Continue with empty creator data if fetch fails
-    }
-
-    // Create a map of creator IDs to creator data
-    const creatorsMap = new Map((creators || []).map((c: any) => [c.id, c]));
-
-    // Map transactions with creator data
     const history = transactions.map((t: any) => {
       const creator = creatorsMap.get(t.creator_id) || {
         id: t.creator_id,

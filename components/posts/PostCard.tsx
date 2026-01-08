@@ -149,7 +149,10 @@ export default function PostCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
-            <Link href={`/creator/${post.creator.id}`}>
+            <Link 
+              href={`/creator/${post.creator.id}`}
+              className="flex-shrink-0 hover:opacity-80 transition-opacity"
+            >
               <Avatar className="h-12 w-12 cursor-pointer">
                 {post.creator.photo_url ? (
                   <Image 
@@ -169,8 +172,11 @@ export default function PostCard({
             
             <div className="flex-1">
               <div className="flex items-center space-x-2">
-                <Link href={`/creator/${post.creator.id}`}>
-                  <h4 className="font-semibold text-gray-900 hover:text-blue-600 cursor-pointer">
+                <Link 
+                  href={`/creator/${post.creator.id}`}
+                  className="hover:text-blue-600 transition-colors"
+                >
+                  <h4 className="font-semibold text-gray-900 cursor-pointer inline-block">
                     {post.creator.display_name}
                   </h4>
                 </Link>

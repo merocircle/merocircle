@@ -47,8 +47,6 @@ import {
   CreditCard,
   Zap,
   Flame,
-  Camera,
-  Play,
   Music,
   Palette,
   ThumbsUp,
@@ -64,6 +62,12 @@ import { useCreatorSearch } from '@/hooks/useSocial';
 import { useSupportHistory } from '@/hooks/useSupporterDashboard';
 import CreatorSearch from '@/components/social/CreatorSearch';
 import CreatorCard from '@/components/social/CreatorCard';
+import { StatsCard } from '@/components/dashboard/StatsCard';
+import { ActivityItem } from '@/components/dashboard/ActivityItem';
+import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
+import { EmptyState } from '@/components/dashboard/EmptyState';
+import { SupportHistoryItem } from '@/components/dashboard/SupportHistoryItem';
+import DynamicPostCard from '@/components/posts/DynamicPostCard';
 
 export default function DashboardPage() {
   const { user, userProfile, isAuthenticated, loading } = useAuth();
@@ -73,14 +77,12 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Redirect to login if not authenticated (only after loading completes)
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
     }
   }, [loading, isAuthenticated, router]);
 
-  // Fetch dashboard data (don't wait for userProfile - use user instead)
   React.useEffect(() => {
     const fetchDashboardData = async () => {
       if (isAuthenticated && user) {
@@ -100,12 +102,10 @@ export default function DashboardPage() {
       }
     };
 
-    // Add a small delay to allow auth context to finish initializing
     const timer = setTimeout(() => {
       fetchDashboardData();
     }, 100);
 
-    // Refresh every 30 seconds to keep data updated
     const refreshInterval = setInterval(() => {
       if (isAuthenticated && user) {
         fetchDashboardData();
@@ -118,7 +118,6 @@ export default function DashboardPage() {
     };
   }, [isAuthenticated, user]);
 
-  // Show loading only for initial auth check (max 3 seconds timeout)
   const [authTimeout, setAuthTimeout] = React.useState(false);
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -127,30 +126,23 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Don't block on userProfile - allow page to render with fallback
   if (loading && !authTimeout) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col items-center justify-center h-64 space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-          </div>
+          <LoadingSpinner size="lg" className="h-64" />
         </div>
       </div>
     );
   }
 
-  // If not authenticated after loading, don't render (will redirect)
   if (!isAuthenticated && !loading) {
     return null;
   }
 
-  // Use fallback display name if profile is still loading (auth context will create it)
   const displayName = userProfile?.display_name || user?.email?.split('@')[0] || 'User';
 
-  // Get data from API (loaded via useEffect)
   const supporterStats = dashboardData?.stats || {
     totalSupported: 0,
     creatorsSupported: 0,
@@ -160,16 +152,15 @@ export default function DashboardPage() {
 
   const followingCreators = dashboardData?.followingCreators || [];
   const recentActivity = dashboardData?.recentActivity || [];
+  const feedPosts = dashboardData?.feedPosts || [];
   
   const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
-  const discoverCreators = []; // Will be loaded from discover API
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Dashboard Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -216,70 +207,66 @@ export default function DashboardPage() {
             <TabsTrigger value="stats">My Stats</TabsTrigger>
           </TabsList>
 
-          {/* Activity Feed Tab */}
           <TabsContent value="feed" className="space-y-6">
-            {dataLoading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
-              </div>
-            )}
-            {/* Quick Stats */}
+            {dataLoading && <LoadingSpinner className="py-8" />}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="grid grid-cols-1 md:grid-cols-4 gap-6"
             >
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Following</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {supporterStats.favoriteCreators}
-                    </p>
-                  </div>
-                  <Users className="w-8 h-8 text-blue-600" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">This Month</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      NPR {supporterStats.thisMonth.toLocaleString()}
-                    </p>
-                  </div>
-                  <DollarSign className="w-8 h-8 text-green-600" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Supported</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      NPR {supporterStats.totalSupported.toLocaleString()}
-                    </p>
-                  </div>
-                  <Heart className="w-8 h-8 text-red-500" />
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Favorites</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {supporterStats.favoriteCreators}
-                    </p>
-                  </div>
-                  <Star className="w-8 h-8 text-yellow-500" />
-                </div>
-              </Card>
+              <StatsCard
+                label="Following"
+                value={supporterStats.favoriteCreators}
+                icon={Users}
+                iconColor="text-blue-600"
+              />
+              <StatsCard
+                label="This Month"
+                value={supporterStats.thisMonth}
+                icon={DollarSign}
+                iconColor="text-green-600"
+                prefix="NPR"
+              />
+              <StatsCard
+                label="Total Supported"
+                value={supporterStats.totalSupported}
+                icon={Heart}
+                iconColor="text-red-500"
+                prefix="NPR"
+              />
+              <StatsCard
+                label="Favorites"
+                value={supporterStats.favoriteCreators}
+                icon={Star}
+                iconColor="text-yellow-500"
+              />
             </motion.div>
 
-            {/* Activity Feed */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Posts from Creators You Follow</h3>
+              {feedPosts.length > 0 ? (
+                feedPosts.map((post: any) => (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <DynamicPostCard post={post} showActions={false} />
+                  </motion.div>
+                ))
+              ) : (
+                <EmptyState
+                  icon={FileText}
+                  title="No posts yet"
+                  description="Follow creators to see their public posts here"
+                  actionLabel="Explore Creators"
+                  actionHref="/explore"
+                />
+              )}
+            </div>
+
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h3>
@@ -288,92 +275,37 @@ export default function DashboardPage() {
                   <span>Filter</span>
                 </Button>
               </div>
-              
               <div className="space-y-6">
                 {recentActivity.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600 dark:text-gray-400">No recent activity</p>
-                  </div>
+                  <EmptyState
+                    icon={MessageCircle}
+                    title="No recent activity"
+                    description="Follow creators and support them to see activity here"
+                  />
                 ) : (
                   recentActivity.map((activity: any) => (
-                    <div key={activity.id || activity.date} className="flex items-start space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {activity.creator?.[0] || 'C'}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          {activity.creatorId && (
-                            <Link href={`/creator/${activity.creatorId}`}>
-                              <span className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 cursor-pointer transition-colors">
-                                {activity.creator}
-                              </span>
-                            </Link>
-                          )}
-                          {!activity.creatorId && (
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {activity.creator}
-                            </span>
-                          )}
-                          <span className="text-gray-600 dark:text-gray-400">
-                            {activity.action}
-                          </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-500">
-                            {typeof activity.time === 'string' 
-                              ? new Date(activity.time).toLocaleString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })
-                              : activity.time}
-                          </span>
-                        </div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                          {activity.title}
-                        </h4>
-                        {activity.amount && (
-                          <p className="text-green-600 font-semibold mb-2">
-                            NPR {activity.amount.toLocaleString()}
-                          </p>
-                        )}
-                        {activity.type && activity.type !== 'support' && (
-                          <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg mb-4 flex items-center justify-center">
-                            {activity.type === 'image' && <Camera className="w-8 h-8 text-gray-400" />}
-                            {activity.type === 'video' && <Play className="w-8 h-8 text-gray-400" />}
-                            {activity.type === 'audio' && <FileText className="w-8 h-8 text-gray-400" />}
-                          </div>
-                        )}
-                        {(activity.likes !== undefined || activity.comments !== undefined) && (
-                          <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-                            {activity.likes !== undefined && (
-                              <span className="flex items-center space-x-1">
-                                <Heart className="w-4 h-4" />
-                                <span>{activity.likes}</span>
-                              </span>
-                            )}
-                            {activity.comments !== undefined && (
-                              <span className="flex items-center space-x-1">
-                                <MessageCircle className="w-4 h-4" />
-                                <span>{activity.comments}</span>
-                              </span>
-                            )}
-                            <span className="flex items-center space-x-1">
-                              <Share2 className="w-4 h-4" />
-                              <span>Share</span>
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <ActivityItem
+                      key={activity.id || activity.date}
+                      id={activity.id || activity.date}
+                      creator={activity.creator}
+                      creatorId={activity.creatorId}
+                      action={activity.action}
+                      title={activity.title}
+                      time={activity.time}
+                      type={activity.type}
+                      amount={activity.amount}
+                      content={activity.content}
+                      likes={activity.likes}
+                      comments={activity.comments}
+                      imageUrl={activity.imageUrl}
+                      postId={activity.postId}
+                    />
                   ))
                 )}
               </div>
             </Card>
           </TabsContent>
 
-          {/* Following Tab */}
           <TabsContent value="following" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Creators You Follow</h2>
@@ -392,70 +324,35 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {followingCreators.length > 0 ? followingCreators.map((creator: any, index: number) => (
-                <Card key={creator.user_id || creator.id || `creator-${index}`} className="p-6">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <Link href={`/creator/${creator.user_id || creator.id}`}>
-                      <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-red-500 transition-all">
-                        <span className="text-white font-medium">
-                          {creator.name[0]}
-                        </span>
-                      </div>
-                    </Link>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <Link href={`/creator/${creator.user_id || creator.id}`}>
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 cursor-pointer transition-colors">
-                            {creator.name}
-                          </h3>
-                        </Link>
-                        {creator.isVerified && (
-                          <Crown className="w-4 h-4 text-blue-500" />
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {creator.category} • {creator.supporters} supporters
-                      </p>
-                    </div>
-                  </div>
-
-
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-xs">
-                      {creator.posts_count || 0} posts
-                    </Badge>
-                    <div className="flex items-center space-x-2">
-                      <Link href={`/creator/${creator.user_id || creator.id}`}>
-                        <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                          <Gift className="w-3 h-3" />
-                          <span>View Profile</span>
-                        </Button>
-                      </Link>
-                      <Button variant="ghost" size="sm">
-                        <Bookmark className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+                <CreatorCard
+                  key={creator.id || `creator-${index}`}
+                  creator={{
+                    user_id: creator.id,
+                    display_name: creator.name,
+                    avatar_url: creator.avatar,
+                    bio: creator.category || null,
+                    follower_count: creator.supporters,
+                    following_count: 0,
+                    posts_count: creator.posts_count,
+                    total_earned: 0,
+                    created_at: '',
+                    isFollowing: true
+                  }}
+                />
               )) : (
-                <Card className="p-8 col-span-3 text-center">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    No creators yet
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    Start following creators to see them here
-                  </p>
-                  <Link href="/explore">
-                    <Button>
-                      Explore Creators
-                    </Button>
-                  </Link>
-                </Card>
+                <div className="col-span-3">
+                  <EmptyState
+                    icon={Users}
+                    title="No creators yet"
+                    description="Start following creators to see them here"
+                    actionLabel="Explore Creators"
+                    actionHref="/explore"
+                  />
+                </div>
               )}
             </div>
           </TabsContent>
 
-          {/* Discover Tab */}
           <TabsContent value="discover" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Discover Creators</h2>
@@ -465,7 +362,6 @@ export default function DashboardPage() {
               </Button>
             </div>
 
-            {/* Creator Search */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Find New Creators
@@ -473,7 +369,6 @@ export default function DashboardPage() {
               <CreatorSearch placeholder="Search creators by name, category, or tags..." />
             </Card>
 
-            {/* Trending Creators */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -505,7 +400,6 @@ export default function DashboardPage() {
               </div>
             </Card>
 
-            {/* Categories */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Browse by Category
@@ -519,7 +413,6 @@ export default function DashboardPage() {
               </div>
             </Card>
 
-            {/* Success Stories */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Success Stories
@@ -545,7 +438,6 @@ export default function DashboardPage() {
             </Card>
           </TabsContent>
 
-          {/* Support History Tab */}
           <TabsContent value="history" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Support History</h2>
@@ -557,65 +449,33 @@ export default function DashboardPage() {
 
             <Card className="p-6">
               {historyLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
-                </div>
+                <LoadingSpinner className="py-8" />
               ) : supportHistory.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-600 dark:text-gray-400">No support history yet</p>
-                </div>
+                <EmptyState
+                  icon={History}
+                  title="No support history yet"
+                  description="Support creators to see your history here"
+                  actionLabel="Explore Creators"
+                  actionHref="/explore"
+                />
               ) : (
                 <div className="space-y-4">
                   {supportHistory.map((support) => (
-                    <div key={support.id} className="flex items-center justify-between py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
-                          {support.creator.photo_url ? (
-                            <img 
-                              src={support.creator.photo_url} 
-                              alt={support.creator.name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-white text-sm font-medium">
-                              {support.creator.name[0]}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">
-                            {support.creator.name}
-                          </p>
-                          {support.message && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {support.message}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-500 dark:text-gray-500">
-                            {new Date(support.date).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600">
-                          NPR {support.amount.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-gray-500">{support.status}</p>
-                      </div>
-                    </div>
+                    <SupportHistoryItem
+                      key={support.id}
+                      id={support.id}
+                      creator={support.creator}
+                      amount={support.amount}
+                      message={support.message}
+                      date={support.date}
+                      status={support.status}
+                    />
                   ))}
                 </div>
               )}
             </Card>
           </TabsContent>
 
-          {/* My Stats Tab */}
           <TabsContent value="stats" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your Impact</h2>

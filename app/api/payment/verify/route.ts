@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Find transaction in database
     const { data: transaction, error: transactionError } = await supabase
       .from('supporter_transactions')
       .select('*')
@@ -35,7 +34,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify amount matches (compare as numbers)
     const transactionAmount = Number(transaction.amount);
     const receivedAmount = Number(total_amount);
     
@@ -53,7 +51,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // If already completed, return success
     if (transaction.status === 'completed') {
       return NextResponse.json({
         success: true,
@@ -67,7 +64,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Mark transaction as completed
     const updateData: any = {
       status: 'completed',
       completed_at: new Date().toISOString(),
@@ -97,7 +93,6 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-
 
     logger.info('Transaction completed successfully', 'PAYMENT_VERIFY', {
       transactionId: transaction.id,

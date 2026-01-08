@@ -1,53 +1,61 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { calculateMonthlyTotal, calculateTotalAmount } from '@/lib/api-helpers';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: creatorId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { id: creatorId } = await params;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
     
     if (!user || user.id !== creatorId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const { data: creatorProfile } = await supabase
       .from('creator_profiles')
       .select('*')
       .eq('user_id', creatorId)
-      .single()
+      .single();
 
     if (!creatorProfile) {
-      return NextResponse.json({ error: 'Creator profile not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Creator profile not found' }, { status: 404 });
     }
 
     const { data: posts } = await supabase
       .from('posts')
-      .select('*, post_likes(id), post_comments(id)')
+      .select(`
+        *,
+        post_likes(id, user_id),
+        post_comments(
+          id,
+          content,
+          created_at,
+          user:users(id, display_name, photo_url)
+        ),
+        users!posts_creator_id_fkey(id, display_name, photo_url, role)
+      `)
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
-      .limit(20)
+      .limit(20);
 
     const { data: supporters } = await supabase
       .from('supporters')
       .select('*, users!supporters_supporter_id_fkey(id, display_name, photo_url)')
       .eq('creator_id', creatorId)
-      .eq('is_active', true)
+      .eq('is_active', true);
 
     const { data: transactions } = await supabase
       .from('supporter_transactions')
       .select('amount, created_at')
       .eq('creator_id', creatorId)
-      .eq('status', 'completed')
+      .eq('status', 'completed');
 
-    const totalEarnings = transactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
-    const thisMonth = new Date()
-    thisMonth.setDate(1)
-    const monthlyEarnings = transactions?.filter(t => new Date(t.created_at) >= thisMonth)
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
+    const totalEarnings = calculateTotalAmount(transactions || []);
+    const monthlyEarnings = calculateMonthlyTotal(transactions || []);
 
     return NextResponse.json({
       stats: {
@@ -61,11 +69,32 @@ export async function GET(
         id: p.id,
         title: p.title,
         content: p.content,
-        type: p.image_url ? 'image' : 'text',
-        likes: p.post_likes?.length || 0,
-        comments: p.post_comments?.length || 0,
-        createdAt: p.created_at,
-        isPublic: p.is_public
+        image_url: p.image_url,
+        media_url: p.media_url,
+        is_public: p.is_public,
+        tier_required: p.tier_required || 'free',
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+        creator_id: p.creator_id,
+        creator: {
+          id: p.users?.id || p.creator_id,
+          display_name: p.users?.display_name || 'Creator',
+          photo_url: p.users?.photo_url || null,
+          role: p.users?.role || 'creator'
+        },
+        creator_profile: {
+          category: creatorProfile.category || null,
+          is_verified: creatorProfile.is_verified || false
+        },
+        likes: p.post_likes || [],
+        comments: (p.post_comments || []).map((c: any) => ({
+          id: c.id,
+          content: c.content,
+          created_at: c.created_at,
+          user: c.user || { id: null, display_name: 'Unknown', photo_url: null }
+        })),
+        likes_count: p.post_likes?.length || 0,
+        comments_count: p.post_comments?.length || 0
       })),
       supporters: (supporters || []).map((s: any) => ({
         id: s.supporter_id,
@@ -74,9 +103,9 @@ export async function GET(
         joined: s.created_at,
         avatar: s.users?.photo_url
       }))
-    })
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

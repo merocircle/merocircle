@@ -28,14 +28,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Edit3,
-  Camera,
   Video,
   FileText,
   Bell,
   CreditCard,
   Target,
   Upload,
-  Play,
   Bookmark,
   Download,
   Filter,
@@ -46,10 +44,18 @@ import {
   Sparkles,
   Shield,
   Phone,
-  Save
+  Save,
+  Camera,
+  Play
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatsCard } from '@/components/dashboard/StatsCard';
+import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
+import { EmptyState } from '@/components/dashboard/EmptyState';
+import { PostListItem } from '@/components/dashboard/PostListItem';
+import { SupporterListItem } from '@/components/dashboard/SupporterListItem';
+import PostCard from '@/components/posts/PostCard';
 
 export default function CreatorDashboard() {
   const { user, userProfile, creatorProfile, isAuthenticated, loading, createCreatorProfile } = useAuth();
@@ -70,18 +76,15 @@ export default function CreatorDashboard() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Redirect to login if not authenticated
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
     }
   }, [loading, isAuthenticated, router]);
 
-  // Fetch creator dashboard data with progressive loading
   React.useEffect(() => {
     const fetchDashboardData = async () => {
       if (isAuthenticated && userProfile && creatorProfile) {
-        // Don't block UI - show skeleton while loading
         setDataLoading(true);
         try {
           const response = await fetch(`/api/creator/${user?.id}/dashboard`);
@@ -101,7 +104,6 @@ export default function CreatorDashboard() {
 
     fetchDashboardData();
     
-    // Refresh every 30 seconds to keep data updated
     const refreshInterval = setInterval(() => {
       if (isAuthenticated && userProfile && creatorProfile) {
         fetchDashboardData();
@@ -124,7 +126,6 @@ export default function CreatorDashboard() {
         alert(error.message || 'Failed to create creator profile');
       } else {
         setIsRegistering(false);
-        // Profile will be created, page will refresh
       }
     } catch (error) {
       alert('Failed to register as creator');
@@ -191,7 +192,6 @@ export default function CreatorDashboard() {
         setNewPostContent('');
         setUploadedImageUrl('');
         setPostVisibility('public');
-        // Refresh dashboard data
         if (user?.id) {
           const dashboardResponse = await fetch(`/api/creator/${user.id}/dashboard`);
           if (dashboardResponse.ok) {
@@ -210,15 +210,12 @@ export default function CreatorDashboard() {
     }
   };
 
-  // Show skeleton loader instead of blocking spinner
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-          </div>
+          <LoadingSpinner size="lg" className="h-64" />
         </div>
       </div>
     );
@@ -228,7 +225,6 @@ export default function CreatorDashboard() {
     return null;
   }
 
-  // Show registration form if no creator profile
   if (!creatorProfile && !isRegistering) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -318,7 +314,6 @@ export default function CreatorDashboard() {
     );
   }
 
-  // Get data from API
   const creatorStats = dashboardData?.stats || {
     monthlyEarnings: 0,
     totalEarnings: 0,
@@ -330,28 +325,29 @@ export default function CreatorDashboard() {
   const recentPosts = dashboardData?.posts || [];
   const supporters = dashboardData?.supporters || [];
 
-  // Format post dates
-  const formatPostDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
+  const analyticsData = React.useMemo(() => {
+    const totalLikes = recentPosts.reduce((sum: number, post: any) => sum + (post.likes_count || 0), 0);
+    const totalComments = recentPosts.reduce((sum: number, post: any) => sum + (post.comments_count || 0), 0);
+    const avgLikesPerPost = recentPosts.length > 0 ? Math.round(totalLikes / recentPosts.length) : 0;
+    const avgCommentsPerPost = recentPosts.length > 0 ? Math.round(totalComments / recentPosts.length) : 0;
+    const engagementRate = recentPosts.length > 0 && creatorStats.followers > 0 
+      ? ((totalLikes + totalComments) / creatorStats.followers * 100).toFixed(1)
+      : '0';
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
-    return date.toLocaleDateString()
-  }
+    return {
+      totalLikes,
+      totalComments,
+      avgLikesPerPost,
+      avgCommentsPerPost,
+      engagementRate
+    };
+  }, [recentPosts, creatorStats.followers]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Creator Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -382,11 +378,26 @@ export default function CreatorDashboard() {
                 <Heart className="w-4 h-4" />
                 <span>Dashboard</span>
               </Button>
-              <Button variant="outline" className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center space-x-2"
+                onClick={() => router.push('/profile')}
+              >
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
               </Button>
-              <Button className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-600">
+              <Button 
+                className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-600"
+                onClick={() => {
+                  setActiveTab('posts');
+                  setTimeout(() => {
+                    const postForm = document.getElementById('new-post-form');
+                    if (postForm) {
+                      postForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 100);
+                }}
+              >
                 <PlusCircle className="w-4 h-4" />
                 <span>New Post</span>
               </Button>
@@ -405,9 +416,7 @@ export default function CreatorDashboard() {
             <TabsTrigger value="payments">Payments</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Key Metrics */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -431,65 +440,36 @@ export default function CreatorDashboard() {
                 </>
               ) : (
                 <>
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Earnings</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          NPR {creatorStats.monthlyEarnings.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">This month</p>
-                      </div>
-                      <DollarSign className="w-8 h-8 text-green-600" />
-                    </div>
-                  </Card>
-
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Supporters</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {creatorStats.supporters.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">Active supporters</p>
-                      </div>
-                      <Users className="w-8 h-8 text-blue-600" />
-                    </div>
-                  </Card>
-
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Posts</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {creatorStats.posts}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">Total posts</p>
-                      </div>
-                      <FileText className="w-8 h-8 text-purple-600" />
-                    </div>
-                  </Card>
-
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Earnings</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          NPR {creatorStats.totalEarnings.toLocaleString()}
-                        </p>
-                        <div className="flex items-center space-x-1 mt-1">
-                          <TrendingUp className="w-4 h-4 text-green-500" />
-                          <span className="text-sm text-green-500">All time</span>
-                        </div>
-                      </div>
-                      <Target className="w-8 h-8 text-red-500" />
-                    </div>
-                  </Card>
+                  <StatsCard
+                    label="Monthly Earnings"
+                    value={creatorStats.monthlyEarnings}
+                    icon={DollarSign}
+                    iconColor="text-green-600"
+                    prefix="NPR"
+                  />
+                  <StatsCard
+                    label="Supporters"
+                    value={creatorStats.supporters}
+                    icon={Users}
+                    iconColor="text-blue-600"
+                  />
+                  <StatsCard
+                    label="Total Posts"
+                    value={creatorStats.posts}
+                    icon={FileText}
+                    iconColor="text-purple-600"
+                  />
+                  <StatsCard
+                    label="Total Earnings"
+                    value={creatorStats.totalEarnings}
+                    icon={Target}
+                    iconColor="text-red-500"
+                    prefix="NPR"
+                  />
                 </>
               )}
             </motion.div>
 
-            {/* Earnings Summary */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Earnings Summary</h3>
               <div className="space-y-4">
@@ -508,7 +488,6 @@ export default function CreatorDashboard() {
               </div>
             </Card>
 
-            {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -517,25 +496,23 @@ export default function CreatorDashboard() {
                 </div>
                 <div className="space-y-4">
                   {recentPosts.length > 0 ? recentPosts.slice(0, 3).map((post: any) => (
-                    <div key={post.id} className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        {post.type === 'image' && <Camera className="w-4 h-4 text-white" />}
-                        {post.type === 'audio' && <Play className="w-4 h-4 text-white" />}
-                        {post.type === 'text' && <FileText className="w-4 h-4 text-white" />}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{post.title || 'Untitled Post'}</p>
-                        <div className="flex items-center space-x-4 mt-1 text-xs text-gray-600 dark:text-gray-400">
-                          <span>{post.likes} likes</span>
-                          <span>{post.comments} comments</span>
-                          <span>{formatPostDate(post.createdAt)}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <PostListItem
+                      key={post.id}
+                      id={post.id}
+                      title={post.title}
+                      type={post.image_url ? 'image' : 'text'}
+                      likes={post.likes_count || 0}
+                      comments={post.comments_count || 0}
+                      createdAt={post.created_at || post.createdAt}
+                    />
                   )) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
-                      No posts yet. Create your first post!
-                    </p>
+                    <EmptyState
+                      icon={FileText}
+                      title="No posts yet"
+                      description="Create your first post to share with your supporters"
+                      actionLabel="Create Post"
+                      onActionClick={() => setActiveTab('posts')}
+                    />
                   )}
                 </div>
               </Card>
@@ -547,33 +524,27 @@ export default function CreatorDashboard() {
                 </div>
                 <div className="space-y-4">
                   {supporters.length > 0 ? supporters.slice(0, 5).map((supporter: any) => (
-                    <div key={supporter.id} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">
-                            {supporter.name[0]}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{supporter.name}</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">{supporter.tier} Supporter</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-green-600 text-sm">NPR {supporter.amount}</p>
-                      </div>
-                    </div>
+                    <SupporterListItem
+                      key={supporter.id}
+                      id={supporter.id}
+                      name={supporter.name}
+                      avatar={supporter.avatar}
+                      amount={supporter.amount}
+                      tier="Basic"
+                      joined={supporter.joined}
+                    />
                   )) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
-                      No supporters yet. Share your profile to get started!
-                    </p>
+                    <EmptyState
+                      icon={Users}
+                      title="No supporters yet"
+                      description="Share your profile to get started!"
+                    />
                   )}
                 </div>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Posts Tab */}
           <TabsContent value="posts" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Manage Posts</h2>
@@ -582,7 +553,17 @@ export default function CreatorDashboard() {
                   <Filter className="w-4 h-4" />
                   <span>Filter</span>
                 </Button>
-                <Button className="flex items-center space-x-2">
+                <Button 
+                  className="flex items-center space-x-2"
+                  onClick={() => {
+                    setTimeout(() => {
+                      const postForm = document.getElementById('new-post-form');
+                      if (postForm) {
+                        postForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100);
+                  }}
+                >
                   <PlusCircle className="w-4 h-4" />
                   <span>New Post</span>
                 </Button>
@@ -590,7 +571,7 @@ export default function CreatorDashboard() {
             </div>
 
             {/* Quick Post Creator */}
-            <Card className="p-6">
+            <Card id="new-post-form" className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Create New Post</h3>
               <div className="space-y-4">
                 <Input
@@ -654,61 +635,24 @@ export default function CreatorDashboard() {
               </div>
             </Card>
 
-            {/* Posts List */}
             <div className="space-y-6">
               {recentPosts.length > 0 ? recentPosts.map((post: any) => (
-                <Card key={post.id} className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center">
-                        {post.type === 'image' && <Camera className="w-5 h-5 text-white" />}
-                        {post.type === 'audio' && <Play className="w-5 h-5 text-white" />}
-                        {post.type === 'text' && <FileText className="w-5 h-5 text-white" />}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{post.title || 'Untitled Post'}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{formatPostDate(post.createdAt)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={post.isPublic ? "default" : "secondary"}>
-                        {post.isPublic ? "Public" : "Supporters Only"}
-                      </Badge>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-700 dark:text-gray-300 mb-4">{post.content}</p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center space-x-1">
-                        <Heart className="w-4 h-4" />
-                        <span>{post.likes} likes</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{post.comments} comments</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{post.views} views</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                        <Edit3 className="w-3 h-3" />
-                        <span>Edit</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                        <Share2 className="w-3 h-3" />
-                        <span>Share</span>
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+                <PostCard 
+                  key={post.id} 
+                  post={post} 
+                  currentUserId={user?.id}
+                  showActions={true}
+                  onEdit={(postId) => {
+                    // TODO: Implement edit functionality
+                    console.log('Edit post:', postId);
+                  }}
+                  onDelete={(postId) => {
+                    // TODO: Implement delete functionality
+                    if (confirm('Are you sure you want to delete this post?')) {
+                      console.log('Delete post:', postId);
+                    }
+                  }}
+                />
               )) : (
                 <Card className="p-8 text-center">
                   <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -727,7 +671,6 @@ export default function CreatorDashboard() {
             </div>
           </TabsContent>
 
-          {/* Supporters Tab */}
           <TabsContent value="supporters" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Your Supporters</h2>
@@ -795,20 +738,17 @@ export default function CreatorDashboard() {
                   </div>
                 </Card>
               )) : (
-                <Card className="p-8 col-span-3 text-center">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    No Supporters Yet
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Share your profile to start receiving support!
-                  </p>
-                </Card>
+                <div className="col-span-3">
+                  <EmptyState
+                    icon={Users}
+                    title="No Supporters Yet"
+                    description="Share your profile to start receiving support!"
+                  />
+                </div>
               )}
             </div>
           </TabsContent>
 
-          {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Analytics & Insights</h2>
@@ -819,7 +759,6 @@ export default function CreatorDashboard() {
               </select>
             </div>
 
-            {/* Growth Chart Placeholder */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Growth Overview</h3>
               <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
@@ -830,20 +769,28 @@ export default function CreatorDashboard() {
               </div>
             </Card>
 
-            {/* Performance Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="p-6">
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Performing Posts</h4>
                 <div className="space-y-3">
-                  {recentPosts.length > 0 ? recentPosts.slice(0, 3).map((post: any) => (
-                    <div key={post.id} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700 dark:text-gray-300 truncate">{post.title || 'Untitled Post'}</span>
-                      <span className="text-green-600 font-medium">{post.likes} likes</span>
-                    </div>
-                  )) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4">
-                      No posts yet
-                    </p>
+                  {recentPosts.length > 0 ? (() => {
+                    const topPosts = [...recentPosts]
+                      .sort((a: any, b: any) => (b.likes_count || 0) - (a.likes_count || 0))
+                      .slice(0, 3);
+                    return topPosts.map((post: any) => (
+                      <div key={post.id} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">{post.title || 'Untitled Post'}</span>
+                        <span className="text-green-600 font-medium whitespace-nowrap">{post.likes_count || 0} likes</span>
+                      </div>
+                    ));
+                  })() : (
+                    <EmptyState
+                      icon={FileText}
+                      title="No posts yet"
+                      description="Create your first post to see analytics"
+                      actionLabel="Create Post"
+                      onActionClick={() => setActiveTab('posts')}
+                    />
                   )}
                 </div>
               </Card>
@@ -870,28 +817,26 @@ export default function CreatorDashboard() {
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Engagement Stats</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Total Earnings</span>
-                    <span className="font-medium">NPR {creatorStats.totalEarnings.toLocaleString()}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Total Likes</span>
+                    <span className="font-medium text-red-600">{analyticsData.totalLikes.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Monthly Earnings</span>
-                    <span className="font-medium">NPR {creatorStats.monthlyEarnings.toLocaleString()}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Total Comments</span>
+                    <span className="font-medium text-blue-600">{analyticsData.totalComments.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Avg. per Supporter</span>
-                    <span className="font-medium text-green-600">
-                      {creatorStats.supporters > 0 
-                        ? `NPR ${Math.round(creatorStats.totalEarnings / creatorStats.supporters)}`
-                        : 'NPR 0'
-                      }
-                    </span>
+                    <span className="text-gray-600 dark:text-gray-400">Avg. Likes/Post</span>
+                    <span className="font-medium text-green-600">{analyticsData.avgLikesPerPost}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Engagement Rate</span>
+                    <span className="font-medium text-purple-600">{analyticsData.engagementRate}%</span>
                   </div>
                 </div>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Goals Tab */}
           <TabsContent value="goals" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Goals & Milestones</h2>
@@ -934,7 +879,6 @@ export default function CreatorDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Earnings Tab */}
           <TabsContent value="earnings" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Earnings & Payouts</h2>

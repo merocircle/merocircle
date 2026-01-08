@@ -1,41 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: creatorId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { id: creatorId } = await params;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
     const { data: creatorProfile, error: profileError } = await supabase
       .from('creator_profiles')
       .select('*, users!inner(id, display_name, email, photo_url, role)')
       .eq('user_id', creatorId)
-      .single()
+      .single();
 
     if (profileError || !creatorProfile) {
-      return NextResponse.json({ error: 'Creator not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
     }
 
-    let isFollowing = false
+    let isFollowing = false;
     if (user) {
       const { data: followData } = await supabase
         .from('follows')
         .select('id')
         .eq('follower_id', user.id)
         .eq('following_id', creatorId)
-        .single()
-      isFollowing = !!followData
+        .single();
+      isFollowing = !!followData;
     }
 
     const { data: paymentMethods } = await supabase
       .from('creator_payment_methods')
       .select('*')
       .eq('creator_id', creatorId)
-      .eq('is_active', true)
+      .eq('is_active', true);
 
     const { data: posts } = await supabase
       .from('posts')
@@ -47,7 +47,38 @@ export async function GET(
       `)
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
-      .limit(20)
+      .limit(20);
+
+    const { count: actualFollowersCount } = await supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', creatorId);
+
+    const { count: actualPostsCount } = await supabase
+      .from('posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('creator_id', creatorId);
+
+    const followerCount = creatorProfile.followers_count > 0 
+      ? creatorProfile.followers_count 
+      : (actualFollowersCount || 0);
+    
+    const postsCount = creatorProfile.posts_count > 0 
+      ? creatorProfile.posts_count 
+      : (actualPostsCount || 0);
+
+    let subscriptionTiers: any[] = [];
+    try {
+      const { data: tiers } = await supabase
+        .from('subscription_tiers')
+        .select('*')
+        .eq('creator_id', creatorId)
+        .eq('is_active', true)
+        .order('price', { ascending: true });
+      subscriptionTiers = tiers || [];
+    } catch (error) {
+      subscriptionTiers = [];
+    }
 
     const formattedPosts = (posts || []).map((post: any) => ({
       id: post.id,
@@ -74,7 +105,7 @@ export async function GET(
       comments: post.post_comments || [],
       likes_count: post.post_likes?.length || 0,
       comments_count: post.post_comments?.length || 0
-    }))
+    }));
 
     return NextResponse.json({
       success: true,
@@ -85,24 +116,40 @@ export async function GET(
         avatar_url: creatorProfile.users.photo_url,
         bio: creatorProfile.bio,
         category: creatorProfile.category,
-        verified: creatorProfile.is_verified,
-        follower_count: creatorProfile.followers_count || 0,
-        post_count: creatorProfile.posts_count || 0,
+        is_verified: creatorProfile.is_verified,
+        follower_count: followerCount,
+        posts_count: postsCount,
         total_earnings: creatorProfile.total_earnings || 0,
-        join_date: creatorProfile.created_at,
-        is_following: isFollowing
+        created_at: creatorProfile.created_at,
+        isFollowing: isFollowing
       },
       paymentMethods: (paymentMethods || []).map((m: any) => ({
-        type: m.payment_type,
-        details: m.phone_number || m.account_number || m.merchant_id || '',
-        qr_code: m.qr_code_url
+        id: m.id,
+        payment_type: m.payment_type,
+        details: {
+          phone_number: m.phone_number,
+          qr_code_url: m.qr_code_url,
+          account_number: m.account_number,
+          merchant_id: m.merchant_id
+        },
+        is_active: m.is_active,
+        is_verified: m.is_verified
+      })),
+      subscriptionTiers: (subscriptionTiers || []).map((tier: any) => ({
+        id: tier.id,
+        tier_name: tier.tier_name || tier.name,
+        price: Number(tier.price || 0),
+        description: tier.description,
+        benefits: tier.benefits || [],
+        max_subscribers: tier.max_subscribers,
+        current_subscribers: tier.current_subscribers || 0
       })),
       posts: formattedPosts
-    })
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 } 

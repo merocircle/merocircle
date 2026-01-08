@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import NextImage from 'next/image';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +18,6 @@ import {
   FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
-import { usePosts } from '@/hooks/usePosts';
 
 interface Post {
   id: string;
@@ -59,9 +60,8 @@ export default function DynamicPostCard({
   onDelete 
 }: DynamicPostCardProps) {
   const { user } = useAuth();
-  const { likePost } = usePosts();
   const [isLiked, setIsLiked] = useState(
-    post.likes?.some(like => like.user_id === user?.id) || false
+    post.likes?.some((like: any) => like.user_id === user?.id) || false
   );
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [isLiking, setIsLiking] = useState(false);
@@ -103,10 +103,13 @@ export default function DynamicPostCard({
       });
 
       if (response.ok) {
+        const data = await response.json();
         setNewComment('');
         setShowComments(true);
-        // Optionally refresh comments count
-        window.location.reload(); // Or use a callback to refresh
+        // Update comments count optimistically
+        if (post.comments_count !== undefined) {
+          // The count will be updated on next page refresh
+        }
       }
     } catch (error) {
       console.error('Comment error:', error);
@@ -141,25 +144,35 @@ export default function DynamicPostCard({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           {/* Creator Avatar */}
-          <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center">
-            {post.creator?.photo_url ? (
-              <img 
-                src={post.creator.photo_url} 
-                alt={post.creator.display_name}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-white font-medium">
-                {post.creator?.display_name?.[0] || 'U'}
-              </span>
-            )}
-          </div>
+          <Link 
+            href={`/creator/${post.creator_id}`}
+            className="flex-shrink-0 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center cursor-pointer">
+              {post.creator?.photo_url ? (
+                <img 
+                  src={post.creator.photo_url} 
+                  alt={post.creator.display_name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-white font-medium">
+                  {post.creator?.display_name?.[0] || 'U'}
+                </span>
+              )}
+            </div>
+          </Link>
           
           <div>
             <div className="flex items-center space-x-2">
-              <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                {post.creator?.display_name || 'Unknown Creator'}
-              </h4>
+              <Link 
+                href={`/creator/${post.creator_id}`}
+                className="hover:text-blue-600 transition-colors"
+              >
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 cursor-pointer inline-block">
+                  {post.creator?.display_name || 'Unknown Creator'}
+                </h4>
+              </Link>
               {post.creator_profile?.is_verified && (
                 <Crown className="w-4 h-4 text-blue-500" />
               )}
@@ -217,16 +230,15 @@ export default function DynamicPostCard({
           {post.content}
         </p>
 
-        {/* Media */}
         {post.image_url && (
-          <div className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-            <img 
-              src={post.image_url} 
+          <div className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 relative w-full aspect-video">
+            <NextImage
+              src={post.image_url}
               alt={post.title || 'Post image'}
-              className="w-full h-auto object-cover max-h-96"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              unoptimized
             />
           </div>
         )}
@@ -320,27 +332,43 @@ export default function DynamicPostCard({
           )}
 
           {/* Comments List */}
-          {post.comments && post.comments.length > 0 && (
+          {post.comments && Array.isArray(post.comments) && post.comments.length > 0 ? (
             <div className="space-y-3">
               {post.comments.slice(0, 5).map((comment: any) => (
-                <div key={comment.id} className="flex space-x-3">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                    {comment.user?.display_name?.[0]?.toUpperCase() || 'U'}
+                <div key={comment.id || Math.random()} className="flex space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    {comment.user?.photo_url ? (
+                      <img 
+                        src={comment.user.photo_url} 
+                        alt={comment.user.display_name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-xs font-medium">
+                        {comment.user?.display_name?.[0]?.toUpperCase() || 'U'}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                         {comment.user?.display_name || 'Unknown'}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDate(comment.created_at)}
-                      </span>
+                      {comment.created_at && (
+                        <span className="text-xs text-gray-500">
+                          {formatDate(comment.created_at)}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{comment.content}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{comment.content || ''}</p>
                   </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+              No comments yet. Be the first to comment!
+            </p>
           )}
         </div>
       )}
