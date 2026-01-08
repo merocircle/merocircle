@@ -73,32 +73,40 @@ export function Header() {
   ];
 
   return (
-    <header className={cn('sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95 dark:border-gray-800')}>
+    <header className={cn('sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 dark:bg-gray-950/95 dark:border-gray-800 shadow-sm')}>
       <div className={cn(spacing.container, layout.flexBetween, 'h-14 sm:h-16')}>
-        <Link href="/" className={cn(layout.flexRow, 'space-x-1 sm:space-x-2')} onClick={closeMobileMenu}>
-          <Heart className={cn(responsive.iconMedium, 'text-red-500')} />
-          <span className={cn('text-lg sm:text-xl font-bold')}>Creators Nepal</span>
+        <Link href="/" className={cn(layout.flexRow, 'space-x-2 sm:space-x-3 group')} onClick={closeMobileMenu}>
+          <div className={cn('relative', responsive.iconMedium, 'text-red-500 group-hover:scale-110 transition-transform')}>
+            <Heart className="absolute inset-0 fill-red-500" />
+            <Heart className="absolute inset-0 animate-pulse" />
+          </div>
+          <span className={cn('text-lg sm:text-xl font-bold bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent')}>
+            Creators Nepal
+          </span>
         </Link>
 
-        <nav className={cn('hidden md:flex', layout.flexRow, 'space-x-8')}>
+        <nav className={cn('hidden md:flex', layout.flexRow, 'space-x-6')}>
           <Link 
             href="/discover" 
-            className={cn(colors.text.secondary, 'hover:text-gray-900 dark:hover:text-gray-100 transition-colors')}
+            className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
           >
             Discover
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
           </Link>
           <Link 
             href="/explore" 
-            className={cn(colors.text.secondary, 'hover:text-gray-900 dark:hover:text-gray-100 transition-colors')}
+            className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
           >
             Explore
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
           </Link>
           {isAuthenticated && (
           <Link 
               href="/dashboard" 
-            className={cn(colors.text.secondary, 'hover:text-gray-900 dark:hover:text-gray-100 transition-colors')}
+            className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
           >
               Dashboard
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
           </Link>
           )}
         </nav>
@@ -150,7 +158,7 @@ export function Header() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2"
+                    className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-xl shadow-xl backdrop-blur-md py-2"
                     onMouseLeave={() => setIsProfileMenuOpen(false)}
                   >
                     <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
@@ -191,10 +199,7 @@ export function Header() {
           ) : (
             // Guest Navigation
             <div className="hidden md:flex items-center space-x-3">
-              <Link href="/login">
-                <Button variant="ghost">Sign in</Button>
-              </Link>
-              <Link href="/signup">
+              <Link href="/auth">
                 <Button>Get Started</Button>
               </Link>
             </div>
@@ -248,12 +253,7 @@ export function Header() {
 
               {!isAuthenticated ? (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                  <Link href="/login" onClick={closeMobileMenu}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      Sign in
-                    </Button>
-                  </Link>
-                  <Link href="/signup" onClick={closeMobileMenu}>
+                  <Link href="/auth" onClick={closeMobileMenu}>
                     <Button className="w-full">Get Started</Button>
                   </Link>
                 </div>

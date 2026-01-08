@@ -9,7 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useDiscoveryFeed } from '@/hooks/useSocial'
+import { StatsCard } from '@/components/dashboard/StatsCard'
 import CreatorCard from '@/components/social/CreatorCard'
+import { EnhancedCreatorCard } from '@/components/social/EnhancedCreatorCard'
 import CreatorSearch from '@/components/social/CreatorSearch'
 import { cn } from '@/lib/utils';
 import { 
@@ -105,37 +107,39 @@ export default function ExplorePage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12"
         >
-          <Card className="p-6 text-center">
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">1,234</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Active Creators</div>
-          </Card>
-
-          <Card className="p-6 text-center">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Heart className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">50K+</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Supporters</div>
-          </Card>
-
-          <Card className="p-6 text-center">
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Star className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">₹2M+</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Earned</div>
-          </Card>
-
-          <Card className="p-6 text-center">
-            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-3">
-              <TrendingUp className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">99.9%</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Uptime</div>
-          </Card>
+          <StatsCard
+            label="Active Creators"
+            value={1234}
+            icon={Users}
+            iconColor="text-blue-600"
+            useBauhaus={true}
+            accentColor="#3b82f6"
+          />
+          <StatsCard
+            label="Supporters"
+            value="50K+"
+            icon={Heart}
+            iconColor="text-red-500"
+            useBauhaus={true}
+            accentColor="#ef4444"
+          />
+          <StatsCard
+            label="Earned"
+            value={2000000}
+            icon={Star}
+            iconColor="text-purple-600"
+            prefix="₹"
+            useBauhaus={true}
+            accentColor="#8b5cf6"
+          />
+          <StatsCard
+            label="Uptime"
+            value="99.9%"
+            icon={TrendingUp}
+            iconColor="text-green-600"
+            useBauhaus={true}
+            accentColor="#10b981"
+          />
         </motion.div>
 
         {/* Categories Section */}
@@ -220,10 +224,10 @@ export default function ExplorePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {feed?.trending_creators?.map((creator) => (
-                <CreatorCard key={creator.user_id} creator={creator} />
+                <EnhancedCreatorCard key={creator.user_id} creator={creator} />
               ))}
               {feed?.suggested_creators?.map((creator) => (
-                <CreatorCard key={creator.user_id} creator={creator} />
+                <EnhancedCreatorCard key={creator.user_id} creator={creator} />
               ))}
             </div>
           )}

@@ -1,21 +1,26 @@
 import { cn } from '@/lib/utils';
-import { layout } from '@/lib/tailwind-utils';
+import { MorphingSquare } from '@/components/ui/morphing-square';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  message?: string;
 }
 
-export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = 'md', className = '', message = 'Loading...' }: LoadingSpinnerProps) {
   const sizeClasses = {
-    sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12'
+    sm: 'w-6 h-6',
+    md: 'w-10 h-10',
+    lg: 'w-16 h-16'
   };
 
   return (
-    <div className={cn(layout.flexCenter, className)}>
-      <div className={cn('animate-spin rounded-full border-b-2 border-red-500', sizeClasses[size])} />
+    <div className={cn('flex items-center justify-center', className)}>
+      <MorphingSquare 
+        className={cn(sizeClasses[size])}
+        message={message}
+        messagePlacement="bottom"
+      />
     </div>
   );
 }

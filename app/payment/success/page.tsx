@@ -63,7 +63,11 @@ export default function PaymentSuccessPage() {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <Card className="p-8 max-w-md w-full mx-4">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <div className="mb-4 flex justify-center">
+              <div className="w-12 h-12">
+                <div className="w-12 h-12 bg-primary animate-[morph_2s_ease-in-out_infinite] rounded-[6%]" />
+              </div>
+            </div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Verifying Payment
             </h2>

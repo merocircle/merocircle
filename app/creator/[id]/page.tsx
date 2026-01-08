@@ -9,6 +9,9 @@ import { useAuth } from '@/contexts/supabase-auth-context'
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails'
 import { useFollow } from '@/hooks/useSocial'
 import DynamicPostCard from '@/components/posts/DynamicPostCard'
+import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
+import { StatsCard } from '@/components/dashboard/StatsCard'
+import { BauhausCard } from '@/components/ui/bauhaus-card'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -126,7 +129,7 @@ export default function CreatorProfilePage() {
   // Handle one-time payment - Following Medium article exactly
   const handlePayment = async () => {
     if (!user) {
-      router.push('/login')
+      router.push('/auth')
       return
     }
 
@@ -202,7 +205,7 @@ export default function CreatorProfilePage() {
   // Handle subscription
   const handleSubscription = async (tierId: string) => {
     if (!user) {
-      router.push('/login')
+      router.push('/auth')
       return
     }
 
@@ -367,31 +370,39 @@ export default function CreatorProfilePage() {
                   </p>
                 )}
 
-                <div className={cn('grid grid-cols-2 sm:grid-cols-4', layout.gapMedium)}>
-                  <div className="text-center">
-                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
-                      {creatorDetails.follower_count || 0}
-                    </div>
-                    <div className={cn(typography.small, colors.text.secondary)}>Followers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
-                      {creatorDetails.posts_count || 0}
-                    </div>
-                    <div className={cn(typography.small, colors.text.secondary)}>Posts</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
-                      {subscriptionTiers?.length || 0}
-                    </div>
-                    <div className={cn(typography.small, colors.text.secondary)}>Tiers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
-                      {creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
-                    </div>
-                    <div className={cn(typography.small, colors.text.secondary)}>Joined</div>
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                  <StatsCard
+                    label="Followers"
+                    value={creatorDetails.follower_count || 0}
+                    icon={Users}
+                    iconColor="text-blue-600"
+                    useBauhaus={true}
+                    accentColor="#3b82f6"
+                  />
+                  <StatsCard
+                    label="Posts"
+                    value={creatorDetails.posts_count || 0}
+                    icon={FileText}
+                    iconColor="text-purple-600"
+                    useBauhaus={true}
+                    accentColor="#8b5cf6"
+                  />
+                  <StatsCard
+                    label="Tiers"
+                    value={subscriptionTiers?.length || 0}
+                    icon={Crown}
+                    iconColor="text-yellow-600"
+                    useBauhaus={true}
+                    accentColor="#f59e0b"
+                  />
+                  <StatsCard
+                    label="Joined"
+                    value={creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
+                    icon={Calendar}
+                    iconColor="text-green-600"
+                    useBauhaus={true}
+                    accentColor="#10b981"
+                  />
                 </div>
               </div>
             </div>
@@ -418,18 +429,15 @@ export default function CreatorProfilePage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                   >
-                    <DynamicPostCard 
+                    <EnhancedPostCard 
                       post={{
                         id: post.id,
                         title: post.title,
                         content: post.content,
                         image_url: post.image_url,
                         media_url: post.media_url,
-                        is_public: post.is_public ?? post.isPublic ?? true,
                         tier_required: post.tier_required || 'free',
                         created_at: post.created_at || post.createdAt,
-                        updated_at: post.updated_at || post.created_at || post.createdAt,
-                        creator_id: post.creator_id || creatorId,
                         creator: post.creator || {
                           id: creatorId,
                           display_name: creatorDetails?.display_name || 'Unknown',
@@ -440,12 +448,11 @@ export default function CreatorProfilePage() {
                           category: creatorDetails?.category || null,
                           is_verified: creatorDetails?.is_verified || false
                         },
-                        likes: post.likes || [],
-                        comments: post.comments || [],
                         likes_count: post.likes_count || post.likes?.length || 0,
                         comments_count: post.comments_count || post.comments?.length || 0
                       }}
-                      showActions={false}
+                      currentUserId={user?.id}
+                      showActions={true}
                     />
                   </motion.div>
                 )) : (
@@ -604,20 +611,21 @@ export default function CreatorProfilePage() {
 
           {/* Sidebar - Payment & Support */}
           <div className="space-y-4 sm:space-y-6">
-            {/* One-time Support Card */}
-            <Card className="p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">
+            {/* Support Card with integrated inputs */}
+            <Card className="p-4 sm:p-6 overflow-hidden border-2 border-border">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">
                 Support {creatorDetails.display_name}
               </h3>
               
               {/* Quick Amount Selection */}
-              <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-4">
                 {paymentOptions.map((option) => (
                   <Button
                     key={option.amount}
                     variant={paymentAmount === option.amount ? "default" : "outline"}
                     size="sm"
                     onClick={() => setPaymentAmount(option.amount)}
+                    className="text-xs"
                   >
                     {option.icon}
                     <span className="ml-2">{option.label}</span>
@@ -626,8 +634,8 @@ export default function CreatorProfilePage() {
               </div>
 
               {/* Custom Amount */}
-              <div className="mb-3 sm:mb-4">
-                <Label htmlFor="custom-amount" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="mb-4">
+                <Label htmlFor="custom-amount" className="text-xs sm:text-sm font-medium text-foreground mb-2 block">
                   Custom Amount (NPR)
                 </Label>
                 <Input
@@ -636,13 +644,13 @@ export default function CreatorProfilePage() {
                   placeholder="Enter amount"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
-                  className="mt-1 text-sm sm:text-base"
+                  className="text-sm sm:text-base"
                 />
               </div>
 
               {/* Support Message */}
-              <div className="mb-4 sm:mb-6">
-                <Label htmlFor="support-message" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="mb-4">
+                <Label htmlFor="support-message" className="text-xs sm:text-sm font-medium text-foreground mb-2 block">
                   Message (Optional)
                 </Label>
                 <Textarea
@@ -650,7 +658,7 @@ export default function CreatorProfilePage() {
                   placeholder="Say something nice..."
                   value={supporterMessage}
                   onChange={(e) => setSupporterMessage(e.target.value)}
-                  className="mt-1 text-sm sm:text-base"
+                  className="text-sm sm:text-base"
                   rows={3}
                 />
               </div>
@@ -669,12 +677,12 @@ export default function CreatorProfilePage() {
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Pay with eSewa
+                    Pay NPR {customAmount || paymentAmount || '1000'} with eSewa
                   </>
                 )}
               </Button>
               
-              <p className="text-xs text-gray-500 text-center mt-2">
+              <p className="text-xs text-muted-foreground text-center mt-2">
                 Secure payment via eSewa
               </p>
             </Card>
@@ -723,46 +731,39 @@ export default function CreatorProfilePage() {
                 Creator Stats
               </h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Followers</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {creatorDetails.follower_count || 0}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Posts</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {creatorDetails.posts_count || 0}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Crown className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Subscription Tiers</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {subscriptionTiers?.length || 0}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700 dark:text-gray-300">Member Since</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
-                  </span>
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                <StatsCard
+                  label="Followers"
+                  value={creatorDetails.follower_count || 0}
+                  icon={Users}
+                  iconColor="text-blue-600"
+                  useBauhaus={true}
+                  accentColor="#3b82f6"
+                />
+                <StatsCard
+                  label="Posts"
+                  value={creatorDetails.posts_count || 0}
+                  icon={FileText}
+                  iconColor="text-purple-600"
+                  useBauhaus={true}
+                  accentColor="#8b5cf6"
+                />
+                <StatsCard
+                  label="Tiers"
+                  value={subscriptionTiers?.length || 0}
+                  icon={Crown}
+                  iconColor="text-yellow-600"
+                  useBauhaus={true}
+                  accentColor="#f59e0b"
+                />
+                <StatsCard
+                  label="Since"
+                  value={creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
+                  icon={Calendar}
+                  iconColor="text-green-600"
+                  useBauhaus={true}
+                  accentColor="#10b981"
+                />
               </div>
             </Card>
 

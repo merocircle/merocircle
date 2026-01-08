@@ -20,12 +20,9 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        const isCreatorSignup = localStorage.getItem('isCreatorSignupFlow') === 'true';
-        const defaultRole = isCreatorSignup ? 'creator' : 'user';
-        
-        if (isCreatorSignup) {
-          localStorage.removeItem('isCreatorSignupFlow');
-        }
+        // All users start as 'user' (supporter) role
+        // They can become creators later from their dashboard
+        const defaultRole = 'user';
 
         for (let i = 0; i < maxAttempts; i++) {
           try {
@@ -36,12 +33,7 @@ export default function AuthCallbackPage() {
               .single();
 
             if (profile) {
-              if (isCreatorSignup && profile.role !== 'creator') {
-                await supabase
-                  .from('users')
-                  .update({ role: 'creator' })
-                  .eq('id', user.id);
-              }
+              // Profile exists, no need to create
               return;
             }
 
@@ -70,12 +62,7 @@ export default function AuthCallbackPage() {
                   .eq('id', user.id)
                   .single();
                 
-                if (existingProfile && isCreatorSignup && existingProfile.role !== 'creator') {
-                  await supabase
-                    .from('users')
-                    .update({ role: 'creator' })
-                    .eq('id', user.id);
-                }
+                // Profile exists, return
                 return;
               }
               
@@ -98,7 +85,7 @@ export default function AuthCallbackPage() {
     const processCallback = async () => {
       const timeoutId = setTimeout(() => {
         console.warn('Auth callback timeout - redirecting anyway');
-        router.replace('/dashboard');
+        router.replace('/auth');
       }, 10000);
 
       try {
@@ -108,7 +95,7 @@ export default function AuthCallbackPage() {
 
         if (error) {
           clearTimeout(timeoutId);
-          router.replace(`/login?error=${encodeURIComponent(error)}`);
+          router.replace(`/auth?error=${encodeURIComponent(error)}`);
           return;
         }
 
@@ -162,21 +149,22 @@ export default function AuthCallbackPage() {
           }
           
           clearTimeout(timeoutId);
-          router.replace('/dashboard');
+          // Redirect to auth page which will handle creator prompt
+          router.replace('/auth');
           return;
         }
 
         const { data: { session } } = await supabase.auth.getSession();
         clearTimeout(timeoutId);
         if (session) {
-          router.replace('/dashboard');
+          router.replace('/auth');
         } else {
-          router.replace('/login?error=no_session');
+          router.replace('/auth?error=no_session');
         }
       } catch (err) {
         clearTimeout(timeoutId);
         console.error('Callback error:', err);
-        router.replace('/login?error=callback_failed');
+        router.replace('/auth?error=callback_failed');
       }
     };
 

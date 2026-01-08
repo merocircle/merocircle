@@ -56,6 +56,7 @@ import { EmptyState } from '@/components/dashboard/EmptyState';
 import { PostListItem } from '@/components/dashboard/PostListItem';
 import { SupporterListItem } from '@/components/dashboard/SupporterListItem';
 import PostCard from '@/components/posts/PostCard';
+import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { cn } from '@/lib/utils';
 import { 
   common, 
@@ -89,7 +90,7 @@ export default function CreatorDashboard() {
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/auth');
     }
   }, [loading, isAuthenticated, router]);
 
@@ -459,18 +460,24 @@ export default function CreatorDashboard() {
                     icon={DollarSign}
                     iconColor="text-green-600"
                     prefix="NPR"
+                    useBauhaus={true}
+                    accentColor="#10b981"
                   />
                   <StatsCard
                     label="Supporters"
                     value={creatorStats.supporters}
                     icon={Users}
                     iconColor="text-blue-600"
+                    useBauhaus={true}
+                    accentColor="#3b82f6"
                   />
                   <StatsCard
                     label="Total Posts"
                     value={creatorStats.posts}
                     icon={FileText}
                     iconColor="text-purple-600"
+                    useBauhaus={true}
+                    accentColor="#8b5cf6"
                   />
                   <StatsCard
                     label="Total Earnings"
@@ -478,6 +485,8 @@ export default function CreatorDashboard() {
                     icon={Target}
                     iconColor="text-red-500"
                     prefix="NPR"
+                    useBauhaus={true}
+                    accentColor="#ef4444"
                   />
                 </>
               )}
@@ -653,21 +662,31 @@ export default function CreatorDashboard() {
 
             <div className="space-y-4 sm:space-y-6">
               {recentPosts.length > 0 ? recentPosts.map((post: any) => (
-                <PostCard 
+                <EnhancedPostCard 
                   key={post.id} 
-                  post={post} 
+                  post={{
+                    id: post.id,
+                    title: post.title,
+                    content: post.content,
+                    image_url: post.image_url,
+                    media_url: post.media_url,
+                    tier_required: post.tier_required || 'free',
+                    created_at: post.created_at,
+                    creator: post.creator || {
+                      id: user?.id || '',
+                      display_name: userProfile?.display_name || 'You',
+                      photo_url: userProfile?.photo_url,
+                      role: 'creator'
+                    },
+                    creator_profile: post.creator_profile || {
+                      category: creatorProfile?.category || null,
+                      is_verified: creatorProfile?.is_verified || false
+                    },
+                    likes_count: post.likes_count || 0,
+                    comments_count: post.comments_count || 0
+                  }}
                   currentUserId={user?.id}
                   showActions={true}
-                  onEdit={(postId) => {
-                    // TODO: Implement edit functionality
-                    console.log('Edit post:', postId);
-                  }}
-                  onDelete={(postId) => {
-                    // TODO: Implement delete functionality
-                    if (confirm('Are you sure you want to delete this post?')) {
-                      console.log('Delete post:', postId);
-                    }
-                  }}
                 />
               )) : (
                 <Card className="p-8 text-center">

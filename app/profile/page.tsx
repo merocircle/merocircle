@@ -35,6 +35,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils';
+import { StatsCard } from '@/components/dashboard/StatsCard';
 import { 
   common, 
   spacing, 
@@ -56,7 +57,7 @@ export default function ProfilePage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push('/login')
+      router.push('/auth')
     }
   }, [loading, isAuthenticated, router])
 
@@ -238,49 +239,62 @@ export default function ProfilePage() {
                 )}
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {creatorProfile && (
                     <>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {creatorProfile.followers_count || 0}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Followers</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {creatorProfile.posts_count || 0}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Posts</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {creatorProfile.supporters_count || 0}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Supporters</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          NPR {(creatorProfile.total_earnings || 0).toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Earnings</div>
-                      </div>
+                      <StatsCard
+                        label="Followers"
+                        value={creatorProfile.followers_count || 0}
+                        icon={Users}
+                        iconColor="text-blue-600"
+                        useBauhaus={true}
+                        accentColor="#3b82f6"
+                      />
+                      <StatsCard
+                        label="Posts"
+                        value={creatorProfile.posts_count || 0}
+                        icon={FileText}
+                        iconColor="text-purple-600"
+                        useBauhaus={true}
+                        accentColor="#8b5cf6"
+                      />
+                      <StatsCard
+                        label="Supporters"
+                        value={creatorProfile.supporters_count || 0}
+                        icon={Heart}
+                        iconColor="text-red-500"
+                        useBauhaus={true}
+                        accentColor="#ef4444"
+                      />
+                      <StatsCard
+                        label="Earnings"
+                        value={(creatorProfile.total_earnings || 0).toLocaleString()}
+                        icon={DollarSign}
+                        iconColor="text-green-600"
+                        prefix="NPR"
+                        useBauhaus={true}
+                        accentColor="#10b981"
+                      />
                     </>
                   )}
                   {!creatorProfile && (
                     <>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {posts.length}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Posts</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {formatDate(userProfile.created_at)}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Joined</div>
-                      </div>
+                      <StatsCard
+                        label="Posts"
+                        value={posts.length}
+                        icon={FileText}
+                        iconColor="text-purple-600"
+                        useBauhaus={true}
+                        accentColor="#8b5cf6"
+                      />
+                      <StatsCard
+                        label="Joined"
+                        value={formatDate(userProfile.created_at)}
+                        icon={Calendar}
+                        iconColor="text-blue-600"
+                        useBauhaus={true}
+                        accentColor="#3b82f6"
+                      />
                     </>
                   )}
                 </div>

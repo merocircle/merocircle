@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/supabase-auth-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AppBackground } from "@/components/ui/app-background";
 
 export const metadata: Metadata = {
   title: "Creators Nepal - Support Local Creators",
@@ -25,7 +26,9 @@ export default function RootLayout({
           disableTransitionOnChange
       >
           <AuthProvider>
-        {children}
+            <AppBackground>
+              {children}
+            </AppBackground>
           </AuthProvider>
         </ThemeProvider>
         </ErrorBoundary>

@@ -25,6 +25,7 @@ import {
 import { Header } from "@/components/header";
 import { useAuth } from "@/contexts/supabase-auth-context";
 import { logger } from "@/lib/logger";
+import { HeroGeometric } from "@/components/ui/shape-landing-hero";
 
 // Animation variants
 const fadeInUp = {
@@ -171,7 +172,7 @@ export default function LandingPage() {
   }, [loading, isAuthenticated, router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen">
       <Header />
       
       {/* URL Message Display */}
@@ -201,54 +202,33 @@ export default function LandingPage() {
         </div>
       )}
       
-      {/* Hero Section */}
+      {/* Hero Section - Using HeroGeometric */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 opacity-50 dark:opacity-30" />
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 dark:bg-blue-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" />
-        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-400 dark:bg-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000" />
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-400 dark:bg-pink-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000" />
+        <div className="absolute inset-0 z-0">
+          <HeroGeometric 
+            badge="Nepal's #1 Creator Economy Platform"
+            title1="Empower Nepal's"
+            title2="Creative Economy"
+          />
+        </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial="hidden"
             animate={controls}
             variants={staggerContainer}
             className="space-y-8"
           >
-            {/* Hero Badge */}
-            <motion.div variants={fadeInUp}>
-              <Badge className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-full">
-                <Star className="w-4 h-4 mr-2" />
-                Nepal's #1 Creator Economy Platform
-              </Badge>
-            </motion.div>
-
-            {/* Hero Heading */}
-            <motion.div variants={fadeInUp} className="space-y-4">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold">
-                <span className="text-gray-900 dark:text-gray-100">Empower Nepal's</span>
-                <br />
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Creative Economy
-                </span>
-              </h1>
-              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                The only platform designed specifically for Nepali creators. Accept payments through eSewa & Khalti, 
-                build communities, and turn your passion into sustainable income.
-              </p>
-            </motion.div>
-
             {/* CTA Buttons */}
-            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/signup">
-                <Button size="lg" className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+              <Link href="/auth">
+                <Button size="lg" className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl relative z-10">
                   Start Creating Today
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link href="/explore">
-                <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 font-semibold rounded-full transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-white/30 hover:border-white/50 text-white font-semibold rounded-full transition-all duration-300 hover:bg-white/10 backdrop-blur-sm relative z-10">
                   <Coffee className="mr-2 w-5 h-5" />
                   Explore Creators
                 </Button>
@@ -256,18 +236,18 @@ export default function LandingPage() {
             </motion.div>
 
             {/* Hero Stats */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16">
+            <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 relative z-10">
               {heroStats.map((stat, index) => (
                 <motion.div
                   key={index}
                   variants={scaleIn}
                   className="text-center group cursor-pointer"
                 >
-                  <div className="mb-2 mx-auto w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <stat.icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="mb-2 mx-auto w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-white/20">
+                    <stat.icon className="w-6 h-6 text-white" />
                   </div>
-                  <div className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
+                  <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">{stat.value}</div>
+                  <div className="text-sm text-white/80 drop-shadow-md">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
@@ -279,7 +259,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.5, duration: 0.6 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 text-white/60 cursor-pointer hover:text-white transition-colors"
         >
           <ArrowDown className="w-6 h-6 animate-bounce" />
         </motion.div>
@@ -408,7 +388,7 @@ export default function LandingPage() {
               Join thousands of Nepali creators who are already building sustainable income streams and thriving communities.
             </motion.p>
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/signup">
+              <Link href="/auth">
                 <Button size="lg" className="px-8 py-4 bg-white text-blue-600 hover:bg-gray-100 font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
                   Get Started Free
                   <ArrowRight className="ml-2 w-5 h-5" />
@@ -446,7 +426,7 @@ export default function LandingPage() {
             <div>
               <h4 className="font-bold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/signup/creator" className="hover:text-white transition-colors">For Creators</Link></li>
+                <li><Link href="/auth" className="hover:text-white transition-colors">Get Started</Link></li>
                 <li><Link href="/explore" className="hover:text-white transition-colors">Explore Creators</Link></li>
                 <li><Link href="/discover" className="hover:text-white transition-colors">Discover</Link></li>
                 <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>

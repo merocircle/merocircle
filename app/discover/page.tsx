@@ -10,7 +10,9 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useDiscoveryFeed } from '@/hooks/useSocial'
 import CreatorCard from '@/components/social/CreatorCard'
+import { EnhancedCreatorCard } from '@/components/social/EnhancedCreatorCard'
 import PostCard from '@/components/social/PostCard'
+import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
 import CreatorSearch from '@/components/social/CreatorSearch'
 import { cn } from '@/lib/utils';
 import { 
@@ -145,7 +147,7 @@ export default function DiscoverPage() {
                     : 'space-y-4'
                   }>
                     {feed?.trending_creators?.map((creator) => (
-                      <CreatorCard key={creator.user_id} creator={creator} />
+                      <EnhancedCreatorCard key={creator.user_id} creator={creator} />
                     ))}
                   </div>
                 </div>
@@ -160,7 +162,11 @@ export default function DiscoverPage() {
                   
                   <div className="space-y-6">
                     {feed?.recent_posts?.slice(0, 5).map((post) => (
-                      <PostCard key={post.id} post={post} />
+                      <EnhancedPostCard 
+                        key={post.id} 
+                        post={post}
+                        showActions={true}
+                      />
                     ))}
                   </div>
                 </div>
@@ -190,10 +196,10 @@ export default function DiscoverPage() {
                 : 'space-y-4'
               }>
                 {feed?.suggested_creators?.map((creator) => (
-                  <CreatorCard key={creator.user_id} creator={creator} />
+                  <EnhancedCreatorCard key={creator.user_id} creator={creator} />
                 ))}
                 {feed?.trending_creators?.map((creator) => (
-                  <CreatorCard key={creator.user_id} creator={creator} />
+                  <EnhancedCreatorCard key={creator.user_id} creator={creator} />
                 ))}
               </div>
             )}
@@ -218,7 +224,11 @@ export default function DiscoverPage() {
             ) : (
               <div className="space-y-6">
                 {feed?.recent_posts?.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                  <EnhancedPostCard 
+                    key={post.id} 
+                    post={post}
+                    showActions={true}
+                  />
                 ))}
               </div>
             )}

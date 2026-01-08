@@ -73,12 +73,14 @@ import { useCreatorSearch } from '@/hooks/useSocial';
 import { useSupportHistory } from '@/hooks/useSupporterDashboard';
 import CreatorSearch from '@/components/social/CreatorSearch';
 import CreatorCard from '@/components/social/CreatorCard';
+import { EnhancedCreatorCard } from '@/components/social/EnhancedCreatorCard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { ActivityItem } from '@/components/dashboard/ActivityItem';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { SupportHistoryItem } from '@/components/dashboard/SupportHistoryItem';
 import DynamicPostCard from '@/components/posts/DynamicPostCard';
+import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 
 export default function DashboardPage() {
   const { user, userProfile, isAuthenticated, loading } = useAuth();
@@ -90,7 +92,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/auth');
     }
   }, [loading, isAuthenticated, router]);
 
@@ -161,9 +163,9 @@ export default function DashboardPage() {
     favoriteCreators: 0
   };
 
-  const followingCreators = dashboardData?.followingCreators || [];
-  const recentActivity = dashboardData?.recentActivity || [];
-  const feedPosts = dashboardData?.feedPosts || [];
+  const followingCreators = Array.isArray(dashboardData?.followingCreators) ? dashboardData.followingCreators : [];
+  const recentActivity = Array.isArray(dashboardData?.recentActivity) ? dashboardData.recentActivity : [];
+  const feedPosts = Array.isArray(dashboardData?.feedPosts) ? dashboardData.feedPosts : [];
   
   const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
 
@@ -229,6 +231,8 @@ export default function DashboardPage() {
                 value={supporterStats.favoriteCreators}
                 icon={Users}
                 iconColor="text-blue-600"
+                useBauhaus={true}
+                accentColor="#3b82f6"
               />
               <StatsCard
                 label="This Month"
@@ -236,6 +240,8 @@ export default function DashboardPage() {
                 icon={DollarSign}
                 iconColor="text-green-600"
                 prefix="NPR"
+                useBauhaus={true}
+                accentColor="#10b981"
               />
               <StatsCard
                 label="Total Supported"
@@ -243,26 +249,57 @@ export default function DashboardPage() {
                 icon={Heart}
                 iconColor="text-red-500"
                 prefix="NPR"
+                useBauhaus={true}
+                accentColor="#ef4444"
               />
               <StatsCard
                 label="Favorites"
                 value={supporterStats.favoriteCreators}
                 icon={Star}
                 iconColor="text-yellow-500"
+                useBauhaus={true}
+                accentColor="#f59e0b"
               />
             </motion.div>
 
             <div className={layout.gapLarge}>
               <h3 className={typography.h3}>Posts from Creators You Follow</h3>
-              {feedPosts.length > 0 ? (
-                feedPosts.map((post: any) => (
-                  <motion.div
-                    key={post.id}
-                    {...animations.fadeIn}
-                  >
-                    <DynamicPostCard post={post} showActions={false} />
-                  </motion.div>
-                ))
+              {feedPosts && Array.isArray(feedPosts) && feedPosts.length > 0 ? (
+                feedPosts.map((post: any) => {
+                  if (!post || !post.id) return null;
+                  return (
+                    <motion.div
+                      key={post.id}
+                      {...animations.fadeIn}
+                    >
+                      <EnhancedPostCard 
+                        post={{
+                          id: post.id,
+                          title: post.title || 'Untitled',
+                          content: post.content || '',
+                          image_url: post.image_url,
+                          media_url: post.media_url,
+                          tier_required: post.tier_required || 'free',
+                          created_at: post.created_at || post.createdAt || new Date().toISOString(),
+                          creator: post.creator || {
+                            id: post.creator_id || '',
+                            display_name: post.creator?.display_name || 'Unknown',
+                            photo_url: post.creator?.photo_url,
+                            role: 'creator'
+                          },
+                          creator_profile: post.creator_profile || {
+                            category: post.category || null,
+                            is_verified: post.is_verified || false
+                          },
+                          likes_count: post.likes_count || post.likes?.length || 0,
+                          comments_count: post.comments_count || post.comments?.length || 0
+                        }}
+                        currentUserId={user?.id}
+                        showActions={true}
+                      />
+                    </motion.div>
+                  );
+                })
               ) : (
                 <EmptyState
                   icon={FileText}
@@ -290,24 +327,27 @@ export default function DashboardPage() {
                     description="Follow creators and support them to see activity here"
                   />
                 ) : (
-                  recentActivity.map((activity: any) => (
-                    <ActivityItem
-                      key={activity.id || activity.date}
-                      id={activity.id || activity.date}
-                      creator={activity.creator}
-                      creatorId={activity.creatorId}
-                      action={activity.action}
-                      title={activity.title}
-                      time={activity.time}
-                      type={activity.type}
-                      amount={activity.amount}
-                      content={activity.content}
-                      likes={activity.likes}
-                      comments={activity.comments}
-                      imageUrl={activity.imageUrl}
-                      postId={activity.postId}
-                    />
-                  ))
+                  recentActivity && Array.isArray(recentActivity) && recentActivity.map((activity: any) => {
+                    if (!activity) return null;
+                    return (
+                      <ActivityItem
+                        key={activity.id || activity.date}
+                        id={activity.id || activity.date}
+                        creator={activity.creator}
+                        creatorId={activity.creatorId}
+                        action={activity.action}
+                        title={activity.title}
+                        time={activity.time}
+                        type={activity.type}
+                        amount={activity.amount}
+                        content={activity.content}
+                        likes={activity.likes}
+                        comments={activity.comments}
+                        imageUrl={activity.imageUrl}
+                        postId={activity.postId}
+                      />
+                    );
+                  })
                 )}
               </div>
             </Card>
@@ -330,23 +370,26 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {followingCreators.length > 0 ? followingCreators.map((creator: any, index: number) => (
-                <CreatorCard
-                  key={creator.id || `creator-${index}`}
-                  creator={{
-                    user_id: creator.id,
-                    display_name: creator.name,
-                    avatar_url: creator.avatar,
-                    bio: creator.category || null,
-                    follower_count: creator.supporters,
-                    following_count: 0,
-                    posts_count: creator.posts_count,
-                    total_earned: 0,
-                    created_at: '',
-                    isFollowing: true
-                  }}
-                />
-              )) : (
+              {followingCreators && Array.isArray(followingCreators) && followingCreators.length > 0 ? followingCreators.map((creator: any, index: number) => {
+                if (!creator) return null;
+                return (
+                  <EnhancedCreatorCard
+                    key={creator.id || creator.user_id || `creator-${index}`}
+                    creator={{
+                      user_id: creator.id || creator.user_id || '',
+                      display_name: creator.name || creator.display_name || 'Unknown',
+                      avatar_url: creator.avatar || creator.avatar_url,
+                      bio: creator.category || creator.bio || null,
+                      follower_count: creator.supporters || creator.follower_count || 0,
+                      following_count: creator.following_count || 0,
+                      posts_count: creator.posts_count || 0,
+                      total_earned: creator.total_earned || 0,
+                      created_at: creator.created_at || '',
+                      isFollowing: true
+                    }}
+                  />
+                );
+              }) : (
                 <div className="col-span-3">
                   <EmptyState
                     icon={Users}
@@ -467,17 +510,20 @@ export default function DashboardPage() {
                 />
               ) : (
                 <div className="space-y-4">
-                  {supportHistory.map((support) => (
-                    <SupportHistoryItem
-                      key={support.id}
-                      id={support.id}
-                      creator={support.creator}
-                      amount={support.amount}
-                      message={support.message}
-                      date={support.date}
-                      status={support.status}
-                    />
-                  ))}
+                  {supportHistory && Array.isArray(supportHistory) && supportHistory.map((support) => {
+                    if (!support || !support.id) return null;
+                    return (
+                      <SupportHistoryItem
+                        key={support.id}
+                        id={support.id}
+                        creator={support.creator}
+                        amount={support.amount}
+                        message={support.message}
+                        date={support.date}
+                        status={support.status}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </Card>
