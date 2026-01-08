@@ -17,6 +17,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils';
+import { 
+  common, 
+  spacing, 
+  typography, 
+  layout, 
+  responsive, 
+  colors, 
+  effects, 
+  animations 
+} from '@/lib/tailwind-utils';
 import { 
   Heart, 
   Users, 
@@ -277,20 +288,16 @@ export default function CreatorProfilePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Creator Header - Following same pattern as dashboard */}
+      <div className={common.pageContainer}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          {...animations.fadeIn}
           className="mb-4 sm:mb-6 md:mb-8"
         >
-          <Card className="p-4 sm:p-6 md:p-8">
-            <div className="flex flex-col lg:flex-row items-start space-y-4 sm:space-y-6 lg:space-y-0 lg:space-x-8">
-              {/* Creator Avatar & Basic Info */}
+          <Card className={cn('p-4 sm:p-6 md:p-8')}>
+            <div className={cn('flex flex-col lg:flex-row items-start space-y-4 sm:space-y-6 lg:space-y-0 lg:space-x-8')}>
               <div className="flex-shrink-0 w-full lg:w-auto flex justify-center lg:justify-start">
                 <div className="relative">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
+                  <div className={cn(responsive.avatarLarge, effects.gradient.red, effects.rounded.full, layout.flexCenter, 'overflow-hidden')}>
                     {creatorDetails.avatar_url ? (
                       <Image 
                         src={creatorDetails.avatar_url} 
@@ -300,24 +307,23 @@ export default function CreatorProfilePage() {
                         className="object-cover"
                       />
                     ) : (
-                      <span className="text-3xl sm:text-4xl font-bold text-white">
+                      <span className={cn('text-3xl sm:text-4xl font-bold text-white')}>
                         {creatorDetails.display_name?.[0]?.toUpperCase() || '?'}
                       </span>
                     )}
                   </div>
                   {creatorDetails.is_verified && (
-                    <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-950">
-                      <CheckCircle className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
+                    <div className={cn('absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2', responsive.avatarSmall, 'bg-blue-500', effects.rounded.full, layout.flexCenter, 'border-2 border-white dark:border-gray-950')}>
+                      <CheckCircle className={cn(responsive.icon, 'text-white')} />
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Creator Details */}
               <div className="flex-grow">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                <div className={cn('flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4')}>
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    <h1 className={cn(typography.h1, 'mb-2')}>
                       {creatorDetails.display_name || 'Creator'}
                     </h1>
                     {creatorDetails.category && (
@@ -355,38 +361,36 @@ export default function CreatorProfilePage() {
                   </div>
                 </div>
 
-                {/* Bio */}
                 {creatorDetails.bio && (
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-2xl">
+                  <p className={cn(typography.body, colors.text.secondary, 'mb-4 max-w-2xl')}>
                     {creatorDetails.bio}
                   </p>
                 )}
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                <div className={cn('grid grid-cols-2 sm:grid-cols-4', layout.gapMedium)}>
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
                       {creatorDetails.follower_count || 0}
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Followers</div>
+                    <div className={cn(typography.small, colors.text.secondary)}>Followers</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
                       {creatorDetails.posts_count || 0}
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Posts</div>
+                    <div className={cn(typography.small, colors.text.secondary)}>Posts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
                       {subscriptionTiers?.length || 0}
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Tiers</div>
+                    <div className={cn(typography.small, colors.text.secondary)}>Tiers</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className={cn('text-xl sm:text-2xl font-bold', colors.text.primary)}>
                       {creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Joined</div>
+                    <div className={cn(typography.small, colors.text.secondary)}>Joined</div>
                   </div>
                 </div>
               </div>
@@ -399,10 +403,10 @@ export default function CreatorProfilePage() {
           {/* Main Content Area */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="flex flex-wrap sm:flex-nowrap w-full sm:w-auto gap-1 sm:gap-2 h-auto">
-                <TabsTrigger value="posts" className="text-xs sm:text-sm whitespace-nowrap">Posts</TabsTrigger>
-                <TabsTrigger value="subscriptions" className="text-xs sm:text-sm whitespace-nowrap">Subscriptions</TabsTrigger>
-                <TabsTrigger value="about" className="text-xs sm:text-sm whitespace-nowrap">About</TabsTrigger>
+              <TabsList className={responsive.tabList}>
+                <TabsTrigger value="posts" className={responsive.tab}>Posts</TabsTrigger>
+                <TabsTrigger value="subscriptions" className={responsive.tab}>Subscriptions</TabsTrigger>
+                <TabsTrigger value="about" className={responsive.tab}>About</TabsTrigger>
               </TabsList>
 
               {/* Posts Tab */}

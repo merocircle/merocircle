@@ -1,4 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
 
 interface SupporterListItemProps {
   id: string;
@@ -20,27 +22,27 @@ export function SupporterListItem({
   creatorId
 }: SupporterListItemProps) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center space-x-3 flex-1 min-w-0">
-        <Avatar className="w-8 h-8 flex-shrink-0">
+    <div className={cn(layout.flexBetween, 'py-2')}>
+      <div className={cn(layout.flexRow, 'space-x-3 flex-1 min-w-0')}>
+        <Avatar className={cn('w-8 h-8', 'flex-shrink-0')}>
           <AvatarImage src={avatar || undefined} alt={name} />
-          <AvatarFallback className="bg-gradient-to-r from-green-500 to-blue-600 text-white text-xs">
+          <AvatarFallback className={cn(effects.gradient.green, 'text-white', typography.small)}>
             {name[0]?.toUpperCase() || 'S'}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
+          <p className={cn('font-medium', typography.small, colors.text.primary, typography.truncate)}>
             {name}
           </p>
           {tier && (
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className={cn(typography.small, colors.text.secondary)}>
               {tier} Supporter
             </p>
           )}
         </div>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="font-medium text-green-600 text-sm">
+        <p className={cn('font-medium text-green-600', typography.small)}>
           NPR {amount.toLocaleString()}
         </p>
       </div>

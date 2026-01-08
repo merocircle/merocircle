@@ -18,6 +18,8 @@ import {
   FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { cn } from '@/lib/utils';
+import { spacing, layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
 
 interface Post {
   id: string;
@@ -140,20 +142,19 @@ export default function DynamicPostCard({
   const isOwner = user?.id === post.creator_id;
 
   return (
-    <Card className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          {/* Creator Avatar */}
+    <Card className={cn(spacing.card, 'hover:shadow-lg transition-shadow')}>
+      <div className={cn(layout.flexStart, layout.flexBetween, 'mb-4')}>
+        <div className={cn(layout.flexRow, 'space-x-3')}>
           <Link 
             href={`/creator/${post.creator_id}`}
             className="flex-shrink-0 hover:opacity-80 transition-opacity"
           >
-            <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center cursor-pointer">
+            <div className={cn(responsive.avatarSmall, effects.gradient.red, effects.rounded.full, layout.flexCenter, 'cursor-pointer')}>
               {post.creator?.photo_url ? (
                 <img 
                   src={post.creator.photo_url} 
                   alt={post.creator.display_name}
-                  className="w-10 h-10 rounded-full object-cover"
+                  className={cn(responsive.avatarSmall, effects.rounded.full, 'object-cover')}
                 />
               ) : (
                 <span className="text-white font-medium">
@@ -164,20 +165,20 @@ export default function DynamicPostCard({
           </Link>
           
           <div>
-            <div className="flex items-center space-x-2">
+            <div className={cn(layout.flexRow, 'space-x-2')}>
               <Link 
                 href={`/creator/${post.creator_id}`}
                 className="hover:text-blue-600 transition-colors"
               >
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 cursor-pointer inline-block">
+                <h4 className={cn('font-semibold cursor-pointer inline-block', colors.text.primary)}>
                   {post.creator?.display_name || 'Unknown Creator'}
                 </h4>
               </Link>
               {post.creator_profile?.is_verified && (
-                <Crown className="w-4 h-4 text-blue-500" />
+                <Crown className={cn(responsive.icon, 'text-blue-500')} />
               )}
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={cn(typography.small, colors.text.secondary)}>
               {post.creator_profile?.category} • {formatDate(post.created_at)}
             </p>
           </div>

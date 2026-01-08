@@ -1,5 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { spacing, typography, layout, responsive, colors } from '@/lib/tailwind-utils';
 
 interface StatsCardProps {
   label: string;
@@ -13,15 +15,15 @@ export function StatsCard({ label, value, icon: Icon, iconColor = 'text-blue-600
   const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
   
   return (
-    <Card className="p-4 sm:p-6">
-      <div className="flex items-center justify-between">
+    <Card className={spacing.card}>
+      <div className={layout.flexBetween}>
         <div className="flex-1 min-w-0">
-          <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">{label}</p>
-          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">
+          <p className={cn(typography.label, typography.truncate)}>{label}</p>
+          <p className={cn('text-xl sm:text-2xl font-bold', colors.text.primary, typography.truncate)}>
             {prefix && `${prefix} `}{displayValue}
           </p>
         </div>
-        <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${iconColor} flex-shrink-0 ml-2`} />
+        <Icon className={cn(responsive.iconMedium, iconColor, 'flex-shrink-0 ml-2')} />
       </div>
     </Card>
   );

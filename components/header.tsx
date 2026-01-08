@@ -18,6 +18,8 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { cn } from '@/lib/utils';
+import { spacing, layout, responsive, colors, typography } from '@/lib/tailwind-utils';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -71,40 +73,37 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95 dark:border-gray-800">
-      <div className="container mx-auto flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
-        {/* Logo */}
-        <Link href="/" className="flex items-center space-x-1 sm:space-x-2" onClick={closeMobileMenu}>
-          <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
-          <span className="text-lg sm:text-xl font-bold">Creators Nepal</span>
+    <header className={cn('sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95 dark:border-gray-800')}>
+      <div className={cn(spacing.container, layout.flexBetween, 'h-14 sm:h-16')}>
+        <Link href="/" className={cn(layout.flexRow, 'space-x-1 sm:space-x-2')} onClick={closeMobileMenu}>
+          <Heart className={cn(responsive.iconMedium, 'text-red-500')} />
+          <span className={cn('text-lg sm:text-xl font-bold')}>Creators Nepal</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className={cn('hidden md:flex', layout.flexRow, 'space-x-8')}>
           <Link 
             href="/discover" 
-            className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+            className={cn(colors.text.secondary, 'hover:text-gray-900 dark:hover:text-gray-100 transition-colors')}
           >
             Discover
           </Link>
           <Link 
             href="/explore" 
-            className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+            className={cn(colors.text.secondary, 'hover:text-gray-900 dark:hover:text-gray-100 transition-colors')}
           >
             Explore
           </Link>
           {isAuthenticated && (
           <Link 
               href="/dashboard" 
-            className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+            className={cn(colors.text.secondary, 'hover:text-gray-900 dark:hover:text-gray-100 transition-colors')}
           >
               Dashboard
           </Link>
           )}
         </nav>
 
-        {/* Right Side */}
-        <div className="flex items-center space-x-4">
+        <div className={cn(layout.flexRow, 'space-x-4')}>
           <ThemeToggle />
           
           {loading && !isAuthenticated ? (
@@ -130,17 +129,17 @@ export function Header() {
                   )}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className={cn(layout.flexRow, 'space-x-1')}>
+                    <span className={cn(typography.small, 'font-medium', colors.text.primary)}>
                       {userProfile?.display_name || user.email?.split('@')[0] || 'User'}
                     </span>
-                    {isCreator && <Crown className="w-4 h-4 text-yellow-500" />}
+                    {isCreator && <Crown className={cn(responsive.icon, 'text-yellow-500')} />}
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                  <span className={cn(typography.small, colors.text.muted, 'capitalize')}>
                     {userProfile?.role || 'user'}
                   </span>
                 </div>
-                <ChevronDown className="w-4 h-4 text-gray-500" />
+                <ChevronDown className={cn(responsive.icon, colors.text.muted)} />
               </button>
 
               {/* Profile Dropdown */}

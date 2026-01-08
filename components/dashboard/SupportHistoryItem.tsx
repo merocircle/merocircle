@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
 
 interface SupportHistoryItemProps {
   id: string;
@@ -33,37 +35,37 @@ export function SupportHistoryItem({
     : date;
 
   return (
-    <div className="flex items-center justify-between py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-      <div className="flex items-center space-x-4 flex-1 min-w-0">
+    <div className={cn(layout.flexBetween, 'py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0')}>
+      <div className={cn(layout.flexRow, 'space-x-4 flex-1 min-w-0')}>
         <Link href={`/creator/${creator.id}`}>
-          <Avatar className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
+          <Avatar className={cn(responsive.avatarSmall, 'cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all')}>
             <AvatarImage src={creator.photo_url || undefined} alt={creator.name} />
-            <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-600 text-white">
+            <AvatarFallback className={cn(effects.gradient.red, 'text-white')}>
               {creator.name[0]?.toUpperCase() || 'C'}
             </AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1 min-w-0">
           <Link href={`/creator/${creator.id}`}>
-            <p className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 cursor-pointer transition-colors truncate">
+            <p className={cn('font-medium', colors.text.primary, 'hover:text-blue-600 cursor-pointer transition-colors', typography.truncate)}>
               {creator.name}
             </p>
           </Link>
           {message && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+            <p className={cn(typography.small, colors.text.secondary, typography.truncate)}>
               {message}
             </p>
           )}
-          <p className="text-xs text-gray-500 dark:text-gray-500">
+          <p className={cn(typography.small, colors.text.muted)}>
             {formattedDate}
           </p>
         </div>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="font-semibold text-green-600">
+        <p className={cn('font-semibold text-green-600')}>
           NPR {amount.toLocaleString()}
         </p>
-        <p className="text-xs text-gray-500 capitalize">{status}</p>
+        <p className={cn(typography.small, colors.text.muted, 'capitalize')}>{status}</p>
       </div>
     </div>
   );

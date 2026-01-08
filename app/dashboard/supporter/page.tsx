@@ -4,6 +4,8 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/header';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
+import { cn } from '@/lib/utils';
+import { common, colors } from '@/lib/tailwind-utils';
 
 export default function SupporterDashboard() {
   const router = useRouter();
@@ -13,9 +15,9 @@ export default function SupporterDashboard() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className={cn('min-h-screen', colors.bg.page)}>
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className={common.pageContainer}>
         <LoadingSpinner size="lg" className="h-64" />
       </div>
     </div>

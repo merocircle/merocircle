@@ -10,6 +10,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { spacing, layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
 
 interface Post {
   id: string;
@@ -145,15 +147,15 @@ export default function PostCard({
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto mb-4 sm:mb-6 hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-3">
+    <Card className={cn('w-full max-w-2xl mx-auto mb-4 sm:mb-6 hover:shadow-lg transition-shadow')}>
+      <CardHeader className={cn('pb-3', spacing.card)}>
+        <div className={cn(layout.flexStart, layout.flexBetween)}>
+          <div className={cn(layout.flexRow, 'space-x-3')}>
             <Link 
               href={`/creator/${post.creator.id}`}
               className="flex-shrink-0 hover:opacity-80 transition-opacity"
             >
-              <Avatar className="h-12 w-12 cursor-pointer">
+              <Avatar className={cn(responsive.avatar, 'cursor-pointer')}>
                 {post.creator.photo_url ? (
                   <Image 
                     src={post.creator.photo_url} 
@@ -163,7 +165,7 @@ export default function PostCard({
                     className="rounded-full object-cover"
                   />
                 ) : (
-                  <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-lg flex items-center justify-center h-full w-full rounded-full">
+                  <div className={cn(effects.gradient.blue, 'text-white font-semibold text-lg', layout.flexCenter, 'h-full w-full', effects.rounded.full)}>
                     {post.creator.display_name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -171,23 +173,23 @@ export default function PostCard({
             </Link>
             
             <div className="flex-1">
-              <div className="flex items-center space-x-2">
+              <div className={cn(layout.flexRow, 'space-x-2')}>
                 <Link 
                   href={`/creator/${post.creator.id}`}
                   className="hover:text-blue-600 transition-colors"
                 >
-                  <h4 className="font-semibold text-gray-900 cursor-pointer inline-block">
+                  <h4 className={cn('font-semibold cursor-pointer inline-block', colors.text.primary)}>
                     {post.creator.display_name}
                   </h4>
                 </Link>
                 {post.creator_profile?.is_verified && (
-                  <span className="h-4 w-4 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span className={cn('h-4 w-4', effects.rounded.full, 'bg-blue-500', layout.flexCenter)}>
                     <span className="text-white text-xs">✓</span>
                   </span>
                 )}
               </div>
               
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className={cn(layout.flexRow, 'space-x-2', typography.small, colors.text.muted)}>
                 {post.creator_profile?.category && (
                   <BadgeComponent variant="secondary" className="text-xs">
                     {post.creator_profile.category}
@@ -229,17 +231,15 @@ export default function PostCard({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 px-4 sm:px-6 pb-4 sm:pb-6">
-        <div className="space-y-4">
-          {/* Post Title */}
+      <CardContent className={cn('pt-0', spacing.card)}>
+        <div className={layout.gapLarge}>
           <Link href={`/posts/${post.id}`}>
-            <h2 className="text-xl font-bold text-gray-900 hover:text-blue-600 cursor-pointer line-clamp-2">
+            <h2 className={cn('text-xl font-bold hover:text-blue-600 cursor-pointer line-clamp-2', colors.text.primary)}>
               {post.title}
             </h2>
           </Link>
 
-          {/* Post Content */}
-          <div className="text-gray-700 whitespace-pre-wrap">
+          <div className={cn('text-gray-700 whitespace-pre-wrap')}>
             {formatContent(post.content)}
             {post.content.length > 300 && (
               <Link href={`/posts/${post.id}`} className="text-blue-600 hover:underline ml-1">
@@ -260,18 +260,17 @@ export default function PostCard({
             </div>
           )}
 
-          {/* Actions */}
           {showActions && (
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center space-x-6">
+            <div className={cn(layout.flexBetween, 'pt-4 border-t')}>
+              <div className={cn(layout.flexRow, 'space-x-6')}>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLike}
-                  className={`flex items-center space-x-2 ${isLiked ? 'text-red-500' : 'text-gray-500'}`}
+                  className={cn(layout.flexRow, 'space-x-2', isLiked ? 'text-red-500' : colors.text.muted)}
                   disabled={!currentUserId}
                 >
-                  <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                  <Heart className={cn(responsive.icon, isLiked ? 'fill-current' : '')} />
                   <span>{likesCount}</span>
                 </Button>
 
@@ -279,9 +278,9 @@ export default function PostCard({
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowComments(!showComments)}
-                  className="flex items-center space-x-2 text-gray-500"
+                  className={cn(layout.flexRow, 'space-x-2', colors.text.muted)}
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className={responsive.icon} />
                   <span>{post.comments_count || post.comments?.length || 0}</span>
                 </Button>
 
@@ -289,30 +288,28 @@ export default function PostCard({
                   variant="ghost"
                   size="sm"
                   onClick={handleShare}
-                  className="flex items-center space-x-2 text-gray-500"
+                  className={cn(layout.flexRow, 'space-x-2', colors.text.muted)}
                 >
-                  <Share2 className="h-4 w-4" />
+                  <Share2 className={responsive.icon} />
                   <span>Share</span>
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Comments Section */}
           {showComments && (
-            <div className="space-y-4 pt-4 border-t">
-              {/* Add Comment Form */}
+            <div className={cn(layout.gapLarge, 'pt-4 border-t')}>
               {currentUserId && (
-                <form onSubmit={handleComment} className="flex space-x-3">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <User className="h-4 w-4" />
+                <form onSubmit={handleComment} className={cn(layout.flexRow, 'space-x-3')}>
+                  <Avatar className={cn(responsive.avatarSmall, 'flex-shrink-0')}>
+                    <User className={responsive.icon} />
                   </Avatar>
-                  <div className="flex-1 space-y-2">
+                  <div className={cn('flex-1', layout.gap)}>
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Write a comment..."
-                      className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={cn('w-full p-3 border', effects.rounded.lg, 'resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent')}
                       rows={3}
                     />
                     <div className="flex justify-end">

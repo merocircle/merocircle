@@ -34,6 +34,17 @@ import {
   MessageCircle
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils';
+import { 
+  common, 
+  spacing, 
+  typography, 
+  layout, 
+  responsive, 
+  colors, 
+  effects, 
+  animations 
+} from '@/lib/tailwind-utils';
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -89,11 +100,11 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className={cn('min-h-screen', colors.bg.page)}>
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+        <div className={common.pageContainer}>
+          <div className={cn(layout.flexCenter, 'h-64')}>
+            <div className={cn('animate-spin rounded-full h-12 w-12 border-b-2 border-red-500')}></div>
           </div>
         </div>
       </div>

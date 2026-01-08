@@ -9,6 +9,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { 
+  common, 
+  spacing, 
+  typography, 
+  layout, 
+  responsive, 
+  colors, 
+  effects, 
+  animations 
+} from '@/lib/tailwind-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -157,42 +168,40 @@ export default function DashboardPage() {
   const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className={cn("min-h-screen", colors.bg.page)}>
       <Header />
       
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <div className={common.pageContainer}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-6 sm:mb-8"
+          {...animations.fadeIn}
+          className={spacing.section}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+          <div className={common.pageHeader}>
+            <div className={common.headerTitle}>
+              <div className={common.avatarContainer}>
+                <Heart className={cn(responsive.iconMedium, "text-white")} />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+              <div className={common.headerContent}>
+                <h1 className={cn(typography.h1, typography.truncate)}>
                   Dashboard
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 truncate">
+                <p className={cn(typography.body, typography.truncate)}>
                   Welcome back, {displayName}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
-              <Button variant="outline" size="sm" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap">
-                <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+            <div className={common.buttonGroup}>
+              <Button variant="outline" size="sm" className={common.iconButton}>
+                <Settings className={responsive.buttonIcon} />
                 <span className="hidden sm:inline">Settings</span>
               </Button>
               <Button 
                 onClick={() => router.push('/dashboard/creator')}
                 size="sm"
-                className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-red-500 to-pink-600 text-xs sm:text-sm whitespace-nowrap"
+                className={cn(common.iconButton, effects.gradient.red)}
               >
-                <Crown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <Crown className={responsive.buttonIcon} />
                 <span className="hidden md:inline">Creator Dashboard</span>
                 <span className="md:hidden">Creator</span>
               </Button>
@@ -200,22 +209,20 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="flex flex-wrap sm:flex-nowrap w-full sm:w-auto gap-1 sm:gap-2 h-auto">
-            <TabsTrigger value="feed" className="text-xs sm:text-sm whitespace-nowrap">Feed</TabsTrigger>
-            <TabsTrigger value="following" className="text-xs sm:text-sm whitespace-nowrap">Following</TabsTrigger>
-            <TabsTrigger value="discover" className="text-xs sm:text-sm whitespace-nowrap">Discover</TabsTrigger>
-            <TabsTrigger value="history" className="text-xs sm:text-sm whitespace-nowrap">History</TabsTrigger>
-            <TabsTrigger value="stats" className="text-xs sm:text-sm whitespace-nowrap w-full sm:w-auto">Stats</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className={common.tabsContainer}>
+          <TabsList className={responsive.tabList}>
+            <TabsTrigger value="feed" className={responsive.tab}>Feed</TabsTrigger>
+            <TabsTrigger value="following" className={responsive.tab}>Following</TabsTrigger>
+            <TabsTrigger value="discover" className={responsive.tab}>Discover</TabsTrigger>
+            <TabsTrigger value="history" className={responsive.tab}>History</TabsTrigger>
+            <TabsTrigger value="stats" className={cn(responsive.tab, "w-full sm:w-auto")}>Stats</TabsTrigger>
           </TabsList>
 
           <TabsContent value="feed" className="space-y-6">
             {dataLoading && <LoadingSpinner className="py-8" />}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-6"
+              {...animations.fadeInDelayed}
+              className={layout.gridCols4}
             >
               <StatsCard
                 label="Following"
@@ -245,15 +252,13 @@ export default function DashboardPage() {
               />
             </motion.div>
 
-            <div className="space-y-4 sm:space-y-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Posts from Creators You Follow</h3>
+            <div className={layout.gapLarge}>
+              <h3 className={typography.h3}>Posts from Creators You Follow</h3>
               {feedPosts.length > 0 ? (
                 feedPosts.map((post: any) => (
                   <motion.div
                     key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                    {...animations.fadeIn}
                   >
                     <DynamicPostCard post={post} showActions={false} />
                   </motion.div>

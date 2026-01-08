@@ -8,6 +8,8 @@ import { Creator, useFollow } from '@/hooks/useSocial'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Heart, Users, FileText } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { spacing, layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils'
 
 interface CreatorCardProps {
   creator: Creator
@@ -57,12 +59,11 @@ function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
   const isLoading = loading[creator.user_id] || isPending
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardContent className="p-6">
-        <div className="flex items-start space-x-4">
-          {/* Avatar */}
+    <Card className={cn('hover:shadow-lg transition-shadow duration-200')}>
+      <CardContent className={spacing.card}>
+        <div className={cn(layout.flexStart, 'space-x-4')}>
           <Link href={`/creator/${creator.user_id}`}>
-            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
+            <div className={cn('relative', responsive.avatar, effects.rounded.full, 'overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all')}>
               {creator.avatar_url ? (
                 <Image
                   src={creator.avatar_url}
@@ -71,51 +72,48 @@ function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
                   className="object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg">
+                <div className={cn('w-full h-full', effects.gradient.blue, layout.flexCenter, 'text-white font-semibold text-lg')}>
                   {(creator.display_name || 'C').charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
           </Link>
 
-          {/* Creator Info */}
           <div className="flex-1 min-w-0">
             <Link href={`/creator/${creator.user_id}`}>
-              <h3 className="font-semibold text-lg text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+              <h3 className={cn('font-semibold text-lg hover:text-blue-600 transition-colors cursor-pointer', colors.text.primary)}>
                 {creator.display_name}
               </h3>
             </Link>
             {creator.bio && (
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+              <p className={cn(typography.small, colors.text.secondary, 'mb-3 line-clamp-2')}>
                 {creator.bio}
               </p>
             )}
 
-            {/* Stats */}
-            <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-              <div className="flex items-center space-x-1">
-                <Users className="w-4 h-4" />
+            <div className={cn(layout.flexRow, 'space-x-4', typography.small, colors.text.muted, 'mb-3')}>
+              <div className={cn(layout.flexRow, 'space-x-1')}>
+                <Users className={responsive.icon} />
                 <span>{followerCount.toLocaleString()} followers</span>
               </div>
-              <div className="flex items-center space-x-1">
-                <FileText className="w-4 h-4" />
+              <div className={cn(layout.flexRow, 'space-x-1')}>
+                <FileText className={responsive.icon} />
                 <span>{(creator.posts_count || 0)} posts</span>
               </div>
             </div>
 
-            {/* Follow Button - Optimistic UI */}
             <Button
               onClick={handleFollowToggle}
               disabled={isLoading}
               variant={isFollowing ? "outline" : "default"}
               size="sm"
-              className="w-full sm:w-auto transition-all"
+              className={cn('w-full sm:w-auto transition-all')}
             >
-              <div className="flex items-center space-x-2">
+              <div className={cn(layout.flexRow, 'space-x-2')}>
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin opacity-50" />
+                  <div className={cn('w-4 h-4 border-2 border-current border-t-transparent', effects.rounded.full, 'animate-spin opacity-50')} />
                 ) : (
-                  <Heart className={`w-4 h-4 transition-all ${isFollowing ? 'fill-current' : ''}`} />
+                  <Heart className={cn(responsive.icon, 'transition-all', isFollowing ? 'fill-current' : '')} />
                 )}
                 <span>{isFollowing ? 'Following' : 'Follow'}</span>
               </div>

@@ -2,6 +2,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { spacing, typography, colors, responsive } from '@/lib/tailwind-utils';
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -31,12 +33,12 @@ export function EmptyState({
   );
 
   return (
-    <Card className="p-8 text-center">
-      <Icon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+    <Card className={cn('p-8 text-center')}>
+      <Icon className={cn(responsive.iconLarge, 'text-gray-400 mx-auto mb-4')} />
+      <h3 className={cn(typography.h3, colors.text.primary, 'mb-2')}>
         {title}
       </h3>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">
+      <p className={cn(typography.body, colors.text.secondary, 'mb-4')}>
         {description}
       </p>
       {buttonContent}

@@ -1,4 +1,6 @@
 import { Camera, Play, FileText } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
 
 interface PostListItemProps {
   id: string;
@@ -35,17 +37,17 @@ export function PostListItem({
   })();
 
   return (
-    <div className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-        {type === 'image' && <Camera className="w-4 h-4 text-white" />}
-        {type === 'audio' && <Play className="w-4 h-4 text-white" />}
-        {type === 'text' && <FileText className="w-4 h-4 text-white" />}
+    <div className={cn(layout.flexStart, 'space-x-3 p-3', effects.rounded.lg, 'bg-gray-50 dark:bg-gray-800')}>
+      <div className={cn('w-8 h-8', effects.gradient.blue, effects.rounded.full, layout.flexCenter, 'flex-shrink-0')}>
+        {type === 'image' && <Camera className={cn(responsive.icon, 'text-white')} />}
+        {type === 'audio' && <Play className={cn(responsive.icon, 'text-white')} />}
+        {type === 'text' && <FileText className={cn(responsive.icon, 'text-white')} />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
+        <p className={cn('font-medium', typography.small, colors.text.primary, typography.truncate)}>
           {title || 'Untitled Post'}
         </p>
-        <div className="flex items-center space-x-4 mt-1 text-xs text-gray-600 dark:text-gray-400">
+        <div className={cn(layout.flexRow, 'space-x-4 mt-1', typography.small, colors.text.secondary)}>
           <span>{likes} likes</span>
           <span>{comments} comments</span>
           <span>{formatDate}</span>

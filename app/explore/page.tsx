@@ -11,6 +11,17 @@ import { useAuth } from '@/contexts/supabase-auth-context'
 import { useDiscoveryFeed } from '@/hooks/useSocial'
 import CreatorCard from '@/components/social/CreatorCard'
 import CreatorSearch from '@/components/social/CreatorSearch'
+import { cn } from '@/lib/utils';
+import { 
+  common, 
+  spacing, 
+  typography, 
+  layout, 
+  responsive, 
+  colors, 
+  effects, 
+  animations 
+} from '@/lib/tailwind-utils';
 import { 
   Search, 
   TrendingUp, 
@@ -47,11 +58,11 @@ export default function ExplorePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className={cn('min-h-screen', colors.bg.page)}>
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+        <div className={common.pageContainer}>
+          <div className={cn(layout.flexCenter, 'h-64')}>
+            <div className={cn('animate-spin rounded-full h-12 w-12 border-b-2 border-red-500')}></div>
           </div>
         </div>
       </div>
@@ -59,36 +70,30 @@ export default function ExplorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className={cn('min-h-screen', colors.bg.page)}>
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
+      <div className={common.pageContainer}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          {...animations.fadeIn}
           className="mb-12 text-center"
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-6">
-            <Globe className="w-10 h-10 text-white" />
+          <div className={cn('inline-flex items-center justify-center w-20 h-20', effects.gradient.blue, effects.rounded.full, 'mb-6')}>
+            <Globe className={cn(responsive.iconLarge, 'text-white')} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          <h1 className={cn('text-4xl md:text-5xl font-bold mb-4', colors.text.primary)}>
             Explore Nepal's Creative Community
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className={cn('text-xl max-w-2xl mx-auto', colors.text.secondary)}>
             Discover talented creators, support their work, and be part of Nepal's growing creative economy
           </p>
         </motion.div>
 
-        {/* Search Section */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+          {...animations.fadeInDelayed}
           className="mb-12"
         >
-          <Card className="p-6">
+          <Card className={spacing.card}>
             <CreatorSearch placeholder="Search for creators, categories, or tags..." />
           </Card>
         </motion.div>

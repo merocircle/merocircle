@@ -12,6 +12,17 @@ import { useDiscoveryFeed } from '@/hooks/useSocial'
 import CreatorCard from '@/components/social/CreatorCard'
 import PostCard from '@/components/social/PostCard'
 import CreatorSearch from '@/components/social/CreatorSearch'
+import { cn } from '@/lib/utils';
+import { 
+  common, 
+  spacing, 
+  typography, 
+  layout, 
+  responsive, 
+  colors, 
+  effects, 
+  animations 
+} from '@/lib/tailwind-utils';
 import { 
   Search, 
   TrendingUp, 
@@ -31,11 +42,11 @@ export default function DiscoverPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className={cn('min-h-screen', colors.bg.page)}>
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+        <div className={common.pageContainer}>
+          <div className={cn(layout.flexCenter, 'h-64')}>
+            <div className={cn('animate-spin rounded-full h-12 w-12 border-b-2 border-red-500')}></div>
           </div>
         </div>
       </div>
@@ -43,59 +54,54 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className={cn('min-h-screen', colors.bg.page)}>
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
+      <div className={common.pageContainer}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          {...animations.fadeIn}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
-                <Compass className="w-8 h-8 text-white" />
+          <div className={cn(layout.flexBetween, 'mb-6')}>
+            <div className={cn(layout.flexRow, 'space-x-4')}>
+              <div className={cn(responsive.avatar, effects.gradient.red, effects.rounded.full, layout.flexCenter)}>
+                <Compass className={cn(responsive.iconLarge, 'text-white')} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                <h1 className={cn(typography.h1, 'text-3xl')}>
                   Discover Creators
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className={typography.body}>
                   Find amazing creators and support their work
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className={cn(layout.flexRow, 'space-x-3')}>
               <Button 
                 variant={viewMode === 'grid' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
               >
-                <Grid className="w-4 h-4" />
+                <Grid className={responsive.icon} />
               </Button>
               <Button 
                 variant={viewMode === 'list' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('list')}
               >
-                <List className="w-4 h-4" />
+                <List className={responsive.icon} />
               </Button>
             </div>
           </div>
 
-          {/* Search Bar */}
-          <Card className="p-6">
+          <Card className={spacing.card}>
             <CreatorSearch placeholder="Search for creators by name, category, or tags..." />
           </Card>
         </motion.div>
 
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className={common.tabsContainer}>
+          <TabsList className={cn('grid w-full grid-cols-3')}>
             <TabsTrigger value="trending">
               <TrendingUp className="w-4 h-4 mr-2" />
               Trending

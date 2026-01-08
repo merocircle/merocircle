@@ -56,6 +56,17 @@ import { EmptyState } from '@/components/dashboard/EmptyState';
 import { PostListItem } from '@/components/dashboard/PostListItem';
 import { SupporterListItem } from '@/components/dashboard/SupporterListItem';
 import PostCard from '@/components/posts/PostCard';
+import { cn } from '@/lib/utils';
+import { 
+  common, 
+  spacing, 
+  typography, 
+  layout, 
+  responsive, 
+  colors, 
+  effects, 
+  animations 
+} from '@/lib/tailwind-utils';
 
 export default function CreatorDashboard() {
   const { user, userProfile, creatorProfile, isAuthenticated, loading, createCreatorProfile } = useAuth();
@@ -347,50 +358,48 @@ export default function CreatorDashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <div className={common.pageContainer}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-6 sm:mb-8"
+          {...animations.fadeIn}
+          className={spacing.section}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+          <div className={common.pageHeader}>
+            <div className={common.headerTitle}>
+              <div className={cn(common.avatarContainer, effects.gradient.red)}>
+                <Crown className={cn(responsive.iconMedium, 'text-white')} />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">
+              <div className={common.headerContent}>
+                <h1 className={cn(typography.h1, typography.truncate)}>
                   Creator Dashboard
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 truncate">
+                <p className={cn(typography.body, typography.truncate)}>
                   Welcome back, {userProfile.display_name || userProfile.email?.split('@')[0] || 'Creator'}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+            <div className={common.buttonGroup}>
               <Button 
                 variant="outline" 
                 size="sm"
-                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap"
+                className={common.iconButton}
                 onClick={() => router.push('/dashboard')}
               >
-                <Heart className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <Heart className={responsive.buttonIcon} />
                 <span className="hidden sm:inline">Dashboard</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
-                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap"
+                className={common.iconButton}
                 onClick={() => router.push('/profile')}
               >
-                <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <Settings className={responsive.buttonIcon} />
                 <span className="hidden sm:inline">Settings</span>
               </Button>
               <Button 
                 size="sm"
-                className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-red-500 to-pink-600 text-xs sm:text-sm whitespace-nowrap"
+                className={cn(common.iconButton, effects.gradient.red)}
                 onClick={() => {
                   setActiveTab('posts');
                   setTimeout(() => {
@@ -401,7 +410,7 @@ export default function CreatorDashboard() {
                   }, 100);
                 }}
               >
-                <PlusCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <PlusCircle className={responsive.buttonIcon} />
                 <span className="hidden sm:inline">New Post</span>
                 <span className="sm:hidden">Post</span>
               </Button>
@@ -409,15 +418,15 @@ export default function CreatorDashboard() {
           </div>
         </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="flex flex-wrap sm:flex-nowrap w-full sm:w-auto gap-1 sm:gap-2 h-auto overflow-x-auto sm:overflow-x-visible">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap">Overview</TabsTrigger>
-            <TabsTrigger value="posts" className="text-xs sm:text-sm whitespace-nowrap">Posts</TabsTrigger>
-            <TabsTrigger value="supporters" className="text-xs sm:text-sm whitespace-nowrap">Supporters</TabsTrigger>
-            <TabsTrigger value="analytics" className="text-xs sm:text-sm whitespace-nowrap">Analytics</TabsTrigger>
-            <TabsTrigger value="goals" className="text-xs sm:text-sm whitespace-nowrap">Goals</TabsTrigger>
-            <TabsTrigger value="earnings" className="text-xs sm:text-sm whitespace-nowrap">Earnings</TabsTrigger>
-            <TabsTrigger value="payments" className="text-xs sm:text-sm whitespace-nowrap">Payments</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className={common.tabsContainer}>
+          <TabsList className={cn(responsive.tabList, 'overflow-x-auto sm:overflow-x-visible')}>
+            <TabsTrigger value="overview" className={responsive.tab}>Overview</TabsTrigger>
+            <TabsTrigger value="posts" className={responsive.tab}>Posts</TabsTrigger>
+            <TabsTrigger value="supporters" className={responsive.tab}>Supporters</TabsTrigger>
+            <TabsTrigger value="analytics" className={responsive.tab}>Analytics</TabsTrigger>
+            <TabsTrigger value="goals" className={responsive.tab}>Goals</TabsTrigger>
+            <TabsTrigger value="earnings" className={responsive.tab}>Earnings</TabsTrigger>
+            <TabsTrigger value="payments" className={responsive.tab}>Payments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6">

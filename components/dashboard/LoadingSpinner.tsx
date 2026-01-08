@@ -1,3 +1,6 @@
+import { cn } from '@/lib/utils';
+import { layout } from '@/lib/tailwind-utils';
+
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -11,8 +14,8 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
   };
 
   return (
-    <div className={`flex items-center justify-center ${className}`}>
-      <div className={`animate-spin rounded-full border-b-2 border-red-500 ${sizeClasses[size]}`} />
+    <div className={cn(layout.flexCenter, className)}>
+      <div className={cn('animate-spin rounded-full border-b-2 border-red-500', sizeClasses[size])} />
     </div>
   );
 }
