@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 
 interface SupportedCreator {
@@ -70,7 +70,13 @@ export function useSupportedCreators() {
     fetchSupportedCreators();
   }, [user]);
 
-  return { creators, loading, error, refetch: () => setLoading(true) };
+  const refetch = useCallback(() => {
+    if (user) {
+      setLoading(true);
+    }
+  }, [user]);
+
+  return { creators, loading, error, refetch };
 }
 
 export function useSupportHistory(limit = 20) {
@@ -114,5 +120,11 @@ export function useSupportHistory(limit = 20) {
     fetchSupportHistory();
   }, [user, limit]);
 
-  return { history, loading, error, refetch: () => setLoading(true) };
+  const refetch = useCallback(() => {
+    if (user) {
+      setLoading(true);
+    }
+  }, [user]);
+
+  return { history, loading, error, refetch };
 } 

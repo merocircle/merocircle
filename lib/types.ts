@@ -1,5 +1,3 @@
-// Shared TypeScript types for the application
-
 export interface User {
   id: string;
   email: string;
@@ -104,7 +102,6 @@ export interface UserActivity {
   created_at: string;
 }
 
-// API Response types
 export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
@@ -119,7 +116,6 @@ export interface PaginatedResponse<T> {
   hasMore: boolean;
 }
 
-// Stats and Analytics types
 export interface CreatorStats {
   monthlyEarnings: number;
   totalEarnings: number;
@@ -144,7 +140,6 @@ export interface SupporterStats {
   following: number;
 }
 
-// Discovery Feed types
 export interface DiscoveryFeedPost {
   post_id: string;
   creator_id: string;
@@ -198,7 +193,6 @@ export interface EsewaVerifyResponse {
   signature: string;
 }
 
-// Form types
 export interface CreatePostForm {
   title: string;
   content: string;
@@ -222,14 +216,12 @@ export interface SupportCreatorForm {
   gateway: 'esewa' | 'khalti' | 'bank_transfer';
 }
 
-// Error types
 export interface AppError {
   message: string;
   code?: string;
   statusCode?: number;
 }
 
-// Utility types
 export type UserRole = 'user' | 'creator';
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
 export type PaymentGateway = 'esewa' | 'khalti' | 'bank_transfer';

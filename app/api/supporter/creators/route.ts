@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,11 +36,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (creatorsError) {
-      console.error('Error fetching supported creators:', creatorsError);
+      logger.error('Error fetching supported creators', 'SUPPORTER_API', { error: creatorsError.message, userId: user.id });
       return NextResponse.json({ error: 'Failed to fetch supported creators' }, { status: 500 });
     }
 
-    // Group by creator and calculate totals
     const creatorMap = new Map();
     
     supportedCreators?.forEach(transaction => {

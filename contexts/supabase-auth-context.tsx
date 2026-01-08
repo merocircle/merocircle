@@ -54,16 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
-  // Load user profile data
   const loadUserProfile = async (userId: string, retryCount = 0): Promise<void> => {
-    const maxRetries = 2; // Reduced retries to prevent long delays
+    const maxRetries = 2;
     
     try {
       logger.debug('Loading user profile', 'AUTH_CONTEXT', { userId, retryCount });
       
-      // Wait a bit if retrying (database trigger might be creating profile)
       if (retryCount > 0) {
-        await new Promise(resolve => setTimeout(resolve, 500 * retryCount)); // Reduced wait time
+        await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
       }
       
       const { data: profile, error } = await supabase
@@ -73,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        // If no profile exists, create one automatically
         if (error.code === 'PGRST116') {
           logger.info('No user profile found, creating automatically', 'AUTH_CONTEXT', { userId, retryCount });
           
@@ -98,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .single();
 
             if (createError) {
-              // If duplicate key error, profile was created by trigger - retry once
               if (createError.code === '23505' && retryCount < 1) {
                 logger.debug('Profile creation conflict, retrying', 'AUTH_CONTEXT', {
                   retryCount: retryCount + 1
@@ -111,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 error: createError.message,
                 errorCode: createError.code
               });
-              // Don't set to null - allow UI to render with fallback
               return;
             }
             
@@ -124,12 +119,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           } else {
             logger.warn('No auth user found when trying to create profile', 'AUTH_CONTEXT', { userId });
-            // Don't block - allow UI to render
             return;
           }
         }
         
-        // Other errors - retry if we haven't exceeded max retries
         if (retryCount < maxRetries) {
           logger.debug('Error loading profile, retrying', 'AUTH_CONTEXT', {
             userId,
@@ -144,7 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error: error.message,
           errorCode: error.code
         });
-        // Don't block - allow UI to render with fallback
         return;
       }
 
@@ -155,7 +147,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       setUserProfile(profile);
 
-      // If user is a creator, load creator profile (non-blocking)
       if (profile.role === 'creator') {
         logger.debug('Loading creator profile', 'AUTH_CONTEXT', { userId });
         
@@ -189,14 +180,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userId,
         error: error instanceof Error ? error.message : String(error)
       });
-      // Don't set to null - allow UI to render with fallback
     }
   };
 
   useEffect(() => {
     if (initialized) return;
 
-    // Get initial session with timeout
     const getInitialSession = async () => {
       const timeoutId = setTimeout(() => {
         logger.warn('Initial session check timeout, setting loading to false', 'AUTH_CONTEXT');
@@ -232,7 +221,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Load profile in background, don't block
           loadUserProfile(session.user.id).catch(err => {
             logger.warn('Profile load failed in initial session, continuing', 'AUTH_CONTEXT', {
               error: err instanceof Error ? err.message : String(err)
@@ -255,7 +243,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getInitialSession();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
         logger.info('Auth state changed', 'AUTH_CONTEXT', {
@@ -265,7 +252,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userEmail: session?.user?.email
         });
         
-        // Handle specific auth events
         if (event === 'SIGNED_OUT') {
           logger.info('User signed out', 'AUTH_CONTEXT');
           setUserProfile(null);
@@ -276,36 +262,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        // Handle TOKEN_REFRESHED - update session and load profile if needed
         if (event === 'TOKEN_REFRESHED') {
           setSession(session);
           setUser(session?.user ?? null);
           
-          // If we have a profile matching the current user, just update session (don't reload)
           if (userProfile && session?.user?.id === userProfile.id) {
             logger.debug('Token refreshed, profile already loaded', 'AUTH_CONTEXT');
-            setLoading(false); // Ensure loading is false
+            setLoading(false);
             return;
           }
           
-          // If profile is missing or user changed, load it in background
           if (session?.user) {
             logger.debug('Token refreshed, loading missing profile', 'AUTH_CONTEXT', {
               userId: session.user.id,
               hasProfile: !!userProfile
             });
-            // Don't set loading to true - load in background
             loadUserProfile(session.user.id).catch(err => {
               logger.warn('Profile load failed after token refresh, continuing', 'AUTH_CONTEXT', {
                 error: err instanceof Error ? err.message : String(err)
               });
             });
           }
-          setLoading(false); // Always set loading to false
+          setLoading(false);
           return;
         }
         
-        // For other events, set loading and reload profile
         setLoading(true);
         setSession(session);
         setUser(session?.user ?? null);
@@ -323,7 +304,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setCreatorProfile(null);
         }
         
-        // Always set loading to false after handling auth state changes
         setLoading(false);
       }
     );
@@ -567,7 +547,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Manually create user profile (fallback if trigger doesn't work)
   const createUserProfile = async (role: 'user' | 'creator' = 'user') => {
     if (!user) {
       logger.warn('Cannot create user profile: no user logged in', 'AUTH_CONTEXT');
@@ -593,7 +572,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           existingRole: existingProfile.role
         });
         
-        // If profile exists but role is different, update it
         if (existingProfile.role !== role) {
           logger.info('Updating existing profile role', 'AUTH_CONTEXT', {
             userId: user.id,
@@ -614,7 +592,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: null };
       }
 
-      // Create new profile
       const { data, error } = await supabase
         .from('users')
         .insert({

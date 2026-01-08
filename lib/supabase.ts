@@ -1,11 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
 
-// Supabase configuration
-// Make sure to set these in your .env.local file:
-// NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-// NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-// SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
@@ -13,11 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env.local file.');
 }
 
-// Create a browser client that properly syncs with cookies for SSR
-// This ensures the middleware can read the session from cookies
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
-
-// Database types for better TypeScript support
 export interface Database {
   public: {
     Tables: {

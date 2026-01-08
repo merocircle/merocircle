@@ -7,16 +7,12 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
-    
-    // Query parameters
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const creator_id = searchParams.get('creator_id');
     const tier = searchParams.get('tier') || 'free';
-    
     const offset = (page - 1) * limit;
 
-    // Build query with simpler joins
     let query = supabase
       .from('posts')
       .select(`
@@ -31,17 +27,14 @@ export async function GET(request: NextRequest) {
       .eq('is_public', true)
       .order('created_at', { ascending: false });
 
-    // Filter by creator if specified
     if (creator_id) {
       query = query.eq('creator_id', creator_id);
     }
 
-    // Filter by tier access
     if (tier !== 'all') {
       query = query.in('tier_required', ['free', tier]);
     }
 
-    // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
     const { data: posts, error } = await query;
@@ -53,38 +46,53 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get likes and comments count separately for each post
-    const postsWithCounts = await Promise.all(
-      (posts || []).map(async (post) => {
-        // Get likes count
-        const { count: likesCount } = await supabase
-          .from('post_likes')
-          .select('*', { count: 'exact', head: true })
-          .eq('post_id', post.id);
+    if (!posts || posts.length === 0) {
+      return NextResponse.json({
+        posts: [],
+        pagination: { page, limit, total: 0, totalPages: 0 }
+      });
+    }
 
-        // Get comments count
-        const { count: commentsCount } = await supabase
-          .from('comments')
-          .select('*', { count: 'exact', head: true })
-          .eq('post_id', post.id);
+    const postIds = posts.map(p => p.id);
+    const creatorIds = [...new Set(posts.map(p => p.creator_id))];
 
-        // Get creator profile if exists
-        const { data: creatorProfile } = await supabase
-          .from('creator_profiles')
-          .select('category, is_verified')
-          .eq('user_id', post.creator_id)
-          .single();
+    const [likesData, commentsData, profilesData] = await Promise.all([
+      supabase
+        .from('post_likes')
+        .select('post_id')
+        .in('post_id', postIds),
+      supabase
+        .from('post_comments')
+        .select('post_id')
+        .in('post_id', postIds),
+      supabase
+        .from('creator_profiles')
+        .select('user_id, category, is_verified')
+        .in('user_id', creatorIds)
+    ]);
 
-        return {
-          ...post,
-          likes_count: likesCount || 0,
-          comments_count: commentsCount || 0,
-          creator_profile: creatorProfile
-        };
-      })
-    );
+    const likesCountMap = (likesData.data || []).reduce((acc, like) => {
+      acc[like.post_id] = (acc[like.post_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
-    // Get total count for pagination
+    const commentsCountMap = (commentsData.data || []).reduce((acc, comment) => {
+      acc[comment.post_id] = (acc[comment.post_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const profilesMap = (profilesData.data || []).reduce((acc, profile) => {
+      acc[profile.user_id] = { category: profile.category, is_verified: profile.is_verified };
+      return acc;
+    }, {} as Record<string, { category: string | null; is_verified: boolean }>);
+
+    const postsWithCounts = posts.map(post => ({
+      ...post,
+      likes_count: likesCountMap[post.id] || 0,
+      comments_count: commentsCountMap[post.id] || 0,
+      creator_profile: profilesMap[post.creator_id] || null
+    }));
+
     const { count } = await supabase
       .from('posts')
       .select('*', { count: 'exact', head: true })

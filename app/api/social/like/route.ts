@@ -74,8 +74,7 @@ export async function POST(request: NextRequest) {
         throw likeError
       }
 
-      // Log activity
-      await supabase
+      supabase
         .from('user_activities')
         .insert({
           user_id: user.id,
@@ -84,6 +83,7 @@ export async function POST(request: NextRequest) {
           target_type: 'post',
           metadata: { creator_id: post.creator_id }
         })
+        .then()
 
       return NextResponse.json({ 
         success: true, 

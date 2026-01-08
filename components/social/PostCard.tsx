@@ -29,7 +29,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
       setLikeCount(newLikeCount)
       onLikeChange?.(post.id, newIsLiked, newLikeCount)
     } catch (error) {
-      console.error('Like toggle error:', error)
+      // Silently handle error - optimistic update already applied
     }
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export interface PaymentMethod {
   id: string
@@ -107,11 +107,11 @@ export const useCreatorDetails = (creatorId: string | null) => {
     }
   }, [creatorId])
 
-  const refetch = () => {
+  const refetch = useCallback(() => {
     if (creatorId) {
       fetchCreatorDetails(creatorId)
     }
-  }
+  }, [creatorId])
 
   return {
     creatorDetails: profile?.creatorDetails || null,
@@ -124,7 +124,6 @@ export const useCreatorDetails = (creatorId: string | null) => {
   }
 }
 
-// Hook for subscription management
 export const useSubscription = () => {
   const [loading, setLoading] = useState(false)
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Calendar, User, Badge } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Calendar, User } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
@@ -99,7 +99,7 @@ export default function PostCard({
         onLike?.(post.id);
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      // Silently handle error - user feedback handled by optimistic update
     }
   };
 
@@ -118,10 +118,9 @@ export default function PostCard({
       if (response.ok) {
         setNewComment('');
         onComment?.(post.id, newComment.trim());
-        // Refresh comments or update local state
       }
     } catch (error) {
-      console.error('Error posting comment:', error);
+      // Silently handle error
     } finally {
       setIsSubmittingComment(false);
     }
@@ -137,7 +136,6 @@ export default function PostCard({
       });
     } else {
       await navigator.clipboard.writeText(url);
-      // Show toast notification
     }
   };
 
@@ -177,7 +175,9 @@ export default function PostCard({
                   </h4>
                 </Link>
                 {post.creator_profile?.is_verified && (
-                  <Badge className="h-4 w-4 text-blue-500" />
+                  <span className="h-4 w-4 rounded-full bg-blue-500 flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </span>
                 )}
               </div>
               

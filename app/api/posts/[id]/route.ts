@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface Params {
   id: string;
@@ -33,7 +34,7 @@ export async function GET(
           created_at,
           user:users(display_name, photo_url)
         ),
-        comments:comments(
+        comments:post_comments(
           id,
           content,
           created_at,
@@ -54,7 +55,7 @@ export async function GET(
     return NextResponse.json(post);
 
   } catch (error) {
-    console.error('Error fetching post:', error);
+    logger.error('Error fetching post', 'POSTS_API', { error: error instanceof Error ? error.message : 'Unknown' });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -104,7 +105,6 @@ export async function PUT(
     const body = await request.json();
     const { title, content, image_url, media_url, is_public, tier_required } = body;
 
-    // Update the post
     const { data: post, error } = await supabase
       .from('posts')
       .update({
@@ -133,7 +133,7 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('Error updating post:', error);
+      logger.error('Error updating post', 'POSTS_API', { error: error.message, postId: id, userId: user.id });
       return NextResponse.json(
         { error: 'Failed to update post' },
         { status: 500 }
@@ -143,7 +143,7 @@ export async function PUT(
     return NextResponse.json(post);
 
   } catch (error) {
-    console.error('Error updating post:', error);
+    logger.error('Error updating post', 'POSTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId: id });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -190,14 +190,13 @@ export async function DELETE(
       );
     }
 
-    // Delete the post (this will cascade delete likes and comments)
     const { error } = await supabase
       .from('posts')
       .delete()
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting post:', error);
+      logger.error('Error deleting post', 'POSTS_API', { error: error.message, postId: id, userId: user.id });
       return NextResponse.json(
         { error: 'Failed to delete post' },
         { status: 500 }
@@ -207,7 +206,7 @@ export async function DELETE(
     return NextResponse.json({ message: 'Post deleted successfully' });
 
   } catch (error) {
-    console.error('Error deleting post:', error);
+    logger.error('Error deleting post', 'POSTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId: id });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -9,11 +9,9 @@ export default function AuthCallbackPage() {
   const processedRef = useRef(false);
 
   useEffect(() => {
-    // Only run once
     if (processedRef.current) return;
     processedRef.current = true;
 
-    // Helper function to wait for profile creation
     const waitForProfile = async (maxAttempts = 5): Promise<void> => {
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -22,7 +20,6 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Check if this is a creator signup flow
         const isCreatorSignup = localStorage.getItem('isCreatorSignupFlow') === 'true';
         const defaultRole = isCreatorSignup ? 'creator' : 'user';
         
@@ -39,17 +36,15 @@ export default function AuthCallbackPage() {
               .single();
 
             if (profile) {
-              // If profile exists but role needs updating (for creator signup)
               if (isCreatorSignup && profile.role !== 'creator') {
                 await supabase
                   .from('users')
                   .update({ role: 'creator' })
                   .eq('id', user.id);
               }
-              return; // Profile exists
+              return;
             }
 
-            // If no profile (PGRST116 = not found), try to create it
             if (profileError?.code === 'PGRST116' && i === 0) {
               const { error: createError } = await supabase
                 .from('users')
@@ -67,7 +62,6 @@ export default function AuthCallbackPage() {
                   role: defaultRole
                 });
 
-              // If duplicate (23505), profile was created by trigger - wait and check
               if (createError?.code === '23505') {
                 await new Promise(resolve => setTimeout(resolve, 500));
                 const { data: existingProfile } = await supabase
@@ -82,16 +76,14 @@ export default function AuthCallbackPage() {
                     .update({ role: 'creator' })
                     .eq('id', user.id);
                 }
-                return; // Profile exists now
+                return;
               }
               
-              // If no error, profile was created successfully
               if (!createError) {
                 return;
               }
             }
 
-            // Wait before next attempt
             await new Promise(resolve => setTimeout(resolve, 500));
           } catch (err) {
             console.error('Error in profile check attempt:', err);
@@ -100,24 +92,20 @@ export default function AuthCallbackPage() {
         }
       } catch (err) {
         console.error('Error in waitForProfile:', err);
-        // Don't throw - just return, let auth context handle profile creation
       }
     };
 
     const processCallback = async () => {
-      // Add timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
         console.warn('Auth callback timeout - redirecting anyway');
         router.replace('/dashboard');
-      }, 10000); // 10 second timeout
+      }, 10000);
 
       try {
-        // Get params from URL directly
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         const error = params.get('error');
 
-        // Handle errors
         if (error) {
           clearTimeout(timeoutId);
           router.replace(`/login?error=${encodeURIComponent(error)}`);
@@ -126,7 +114,6 @@ export default function AuthCallbackPage() {
 
         let sessionCreated = false;
 
-        // Handle hash fragment first (if present)
         if (window.location.hash) {
           const hash = window.location.hash.substring(1);
           const hashParams = new URLSearchParams(hash);
@@ -149,7 +136,6 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // Handle authorization code
         if (code && !sessionCreated) {
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
@@ -165,16 +151,14 @@ export default function AuthCallbackPage() {
           }
         }
 
-        // If session was created, wait for profile (with timeout)
         if (sessionCreated) {
           try {
             await Promise.race([
               waitForProfile(),
-              new Promise(resolve => setTimeout(resolve, 3000)) // Max 3 seconds for profile
+              new Promise(resolve => setTimeout(resolve, 3000))
             ]);
           } catch (err) {
             console.error('Profile wait error:', err);
-            // Continue anyway - auth context will handle it
           }
           
           clearTimeout(timeoutId);
@@ -182,7 +166,6 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Fallback: if no code/hash, check if already authenticated
         const { data: { session } } = await supabase.auth.getSession();
         clearTimeout(timeoutId);
         if (session) {

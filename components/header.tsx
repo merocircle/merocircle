@@ -30,7 +30,7 @@ export function Header() {
       await signOut();
       router.push('/');
     } catch (error) {
-      // Error is handled silently - user will see they're still logged in if it fails
+      // Silently handle error
     }
   };
 

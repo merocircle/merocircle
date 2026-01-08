@@ -28,40 +28,30 @@ export async function GET(request: NextRequest) {
       }
     )
     
-    // Get current user (optional - works without auth too)
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Get trending creators (most followers)
-    const { data: trendingCreators, error: trendingError } = await supabase
-      .from('creator_profiles')
-      .select(`
-        *,
-        users!inner(id, display_name, photo_url, email)
-      `)
-      .order('followers_count', { ascending: false })
-      .limit(10)
+    const [trendingResult, postsResult, suggestedResult] = await Promise.all([
+      supabase
+        .from('creator_profiles')
+        .select('*, users!inner(id, display_name, photo_url, email)')
+        .order('followers_count', { ascending: false })
+        .limit(10),
+      supabase
+        .from('posts')
+        .select('*, users!inner(id, display_name, photo_url)')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      supabase
+        .from('creator_profiles')
+        .select('*, users!inner(id, display_name, photo_url, email)')
+        .limit(10)
+    ])
 
-    // Get recent posts
-    const { data: recentPosts, error: postsError } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        users!inner(id, display_name, photo_url)
-      `)
-      .eq('is_public', true)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    const trendingCreators = trendingResult.data
+    const recentPosts = postsResult.data
+    const suggestedCreators = suggestedResult.data
 
-    // Get suggested creators (random selection)
-    const { data: suggestedCreators, error: suggestedError } = await supabase
-      .from('creator_profiles')
-      .select(`
-        *,
-        users!inner(id, display_name, photo_url, email)
-      `)
-      .limit(10)
-
-    // Format trending creators
     const trending_creators = (trendingCreators || []).map((cp: any) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
@@ -75,7 +65,6 @@ export async function GET(request: NextRequest) {
       isFollowing: false
     }))
 
-    // Format recent posts
     const recent_posts = (recentPosts || []).map((post: any) => ({
       id: post.id,
       creator_id: post.creator_id,
@@ -91,7 +80,6 @@ export async function GET(request: NextRequest) {
       }
     }))
 
-    // Format suggested creators
     const suggested_creators = (suggestedCreators || []).map((cp: any) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
@@ -112,7 +100,6 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Discover API error:', error)
     return NextResponse.json(
       { 
         error: 'Internal server error',

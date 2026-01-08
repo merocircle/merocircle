@@ -82,8 +82,7 @@ export async function POST(request: NextRequest) {
         throw followError
       }
 
-      // Log activity
-      await supabase
+      supabase
         .from('user_activities')
         .insert({
           user_id: user.id,
@@ -92,6 +91,7 @@ export async function POST(request: NextRequest) {
           target_type: 'user',
           metadata: { action: 'followed' }
         })
+        .then()
 
       return NextResponse.json({ 
         success: true, 

@@ -1,11 +1,8 @@
--- Drop existing functions if they exist (to avoid return type conflicts)
 DROP FUNCTION IF EXISTS search_creators(TEXT, INTEGER);
 DROP FUNCTION IF EXISTS get_creator_profile(UUID, UUID);
 DROP FUNCTION IF EXISTS get_creator_posts(UUID, UUID, INTEGER);
 DROP FUNCTION IF EXISTS get_discovery_feed(UUID, INTEGER);
 
--- Create search_creators function for optimized creator search
--- This version matches the schema from social-features-migration.sql
 CREATE OR REPLACE FUNCTION search_creators(search_query TEXT, search_limit INTEGER DEFAULT 20)
 RETURNS TABLE (
   user_id UUID,
@@ -19,6 +16,8 @@ RETURNS TABLE (
   total_earnings NUMERIC(10,2)
 ) 
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -42,19 +41,14 @@ BEGIN
     OR cp.category ILIKE '%' || search_query || '%'
     )
   ORDER BY 
-    -- Exact name matches first
     CASE WHEN u.display_name ILIKE search_query THEN 1 ELSE 2 END,
-    -- Then by verification status
     CASE WHEN cp.is_verified THEN 1 ELSE 2 END,
-    -- Then by follower count
     cp.followers_count DESC,
-    -- Then by earnings
     cp.total_earnings DESC
   LIMIT search_limit;
 END;
 $$;
 
--- Create get_creator_profile function for detailed creator profiles
 CREATE OR REPLACE FUNCTION get_creator_profile(creator_user_id UUID, current_user_id UUID DEFAULT NULL)
 RETURNS TABLE (
   user_id UUID,
@@ -69,6 +63,8 @@ RETURNS TABLE (
   is_following BOOLEAN
 ) 
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -93,7 +89,6 @@ BEGIN
 END;
 $$;
 
--- Create get_creator_posts function for creator's posts with engagement data
 CREATE OR REPLACE FUNCTION get_creator_posts(creator_user_id UUID, current_user_id UUID DEFAULT NULL, post_limit INTEGER DEFAULT 20)
 RETURNS TABLE (
   id UUID,
@@ -109,6 +104,8 @@ RETURNS TABLE (
   created_at TIMESTAMPTZ
 ) 
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -150,7 +147,6 @@ BEGIN
 END;
 $$;
 
--- Grant execute permissions
 GRANT EXECUTE ON FUNCTION search_creators(TEXT, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_creator_profile(UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_creator_posts(UUID, UUID, INTEGER) TO authenticated;

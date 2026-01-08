@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 interface Params {
   id: string;
@@ -25,7 +26,7 @@ export async function POST(
     return NextResponse.json(data, { status: response.status });
 
   } catch (error) {
-    console.error('Error liking post:', error);
+    logger.error('Error liking post', 'LIKE_API', { error: error instanceof Error ? error.message : 'Unknown', postId });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -54,7 +55,7 @@ export async function DELETE(
     return NextResponse.json(data, { status: response.status });
 
   } catch (error) {
-    console.error('Error unliking post:', error);
+    logger.error('Error unliking post', 'LIKE_API', { error: error instanceof Error ? error.message : 'Unknown', postId });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

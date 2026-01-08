@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface Params {
   id: string;
@@ -18,9 +19,8 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    // Get comments for the post
     const { data: comments, error } = await supabase
-      .from('comments')
+      .from('post_comments')
       .select(`
         id,
         content,
@@ -38,16 +38,15 @@ export async function GET(
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Error fetching comments:', error);
+      logger.error('Error fetching comments', 'COMMENTS_API', { error: error.message, postId });
       return NextResponse.json(
         { error: 'Failed to fetch comments' },
         { status: 500 }
       );
     }
 
-    // Get total count for pagination
     const { count } = await supabase
-      .from('comments')
+      .from('post_comments')
       .select('*', { count: 'exact', head: true })
       .eq('post_id', postId);
 
@@ -62,7 +61,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    logger.error('Error fetching comments', 'COMMENTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -78,7 +77,6 @@ export async function POST(
     const supabase = await createClient();
     const { id: postId } = await params;
 
-    // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -88,7 +86,6 @@ export async function POST(
       );
     }
 
-    // Check if post exists
     const { data: post } = await supabase
       .from('posts')
       .select('id')
@@ -105,7 +102,6 @@ export async function POST(
     const body = await request.json();
     const { content, parent_comment_id } = body;
 
-    // Validate required fields
     if (!content || content.trim().length === 0) {
       return NextResponse.json(
         { error: 'Comment content is required' },
@@ -113,10 +109,9 @@ export async function POST(
       );
     }
 
-    // If it's a reply, check if parent comment exists
     if (parent_comment_id) {
       const { data: parentComment } = await supabase
-        .from('comments')
+        .from('post_comments')
         .select('id')
         .eq('id', parent_comment_id)
         .eq('post_id', postId)
@@ -130,9 +125,8 @@ export async function POST(
       }
     }
 
-    // Create the comment
     const { data: comment, error } = await supabase
-      .from('comments')
+      .from('post_comments')
       .insert({
         post_id: postId,
         user_id: user.id,
@@ -154,7 +148,7 @@ export async function POST(
       .single();
 
     if (error) {
-      console.error('Error creating comment:', error);
+      logger.error('Error creating comment', 'COMMENTS_API', { error: error.message, postId, userId: user.id });
       return NextResponse.json(
         { error: 'Failed to create comment' },
         { status: 500 }
@@ -164,7 +158,7 @@ export async function POST(
     return NextResponse.json(comment, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating comment:', error);
+    logger.error('Error creating comment', 'COMMENTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
