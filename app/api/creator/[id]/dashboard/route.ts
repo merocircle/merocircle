@@ -38,16 +38,16 @@ export async function GET(
       .eq('is_active', true)
 
     const { data: transactions } = await supabase
-      .from('transactions')
+      .from('supporter_transactions')
       .select('amount, created_at')
       .eq('creator_id', creatorId)
       .eq('status', 'completed')
 
-    const totalEarnings = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0
+    const totalEarnings = transactions?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
     const thisMonth = new Date()
     thisMonth.setDate(1)
     const monthlyEarnings = transactions?.filter(t => new Date(t.created_at) >= thisMonth)
-      .reduce((sum, t) => sum + Number(t.amount), 0) || 0
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0
 
     return NextResponse.json({
       stats: {

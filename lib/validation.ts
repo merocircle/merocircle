@@ -49,3 +49,26 @@ export function sanitizeString(input: string): string {
     .substring(0, 1000); // Limit length
 }
 
+/**
+ * Validate post content
+ */
+export function validatePostContent(title: string, content: string): ValidationResult {
+  if (!title || title.trim().length === 0) {
+    return { valid: false, error: 'Title is required' };
+  }
+  
+  if (title.length > 200) {
+    return { valid: false, error: 'Title must be less than 200 characters' };
+  }
+  
+  if (!content || content.trim().length === 0) {
+    return { valid: false, error: 'Content is required' };
+  }
+  
+  if (content.length > 50000) {
+    return { valid: false, error: 'Content must be less than 50,000 characters' };
+  }
+  
+  return { valid: true };
+}
+

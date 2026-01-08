@@ -1,7 +1,7 @@
 // Production-ready logging utility
 // Only logs in development or when explicitly enabled
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 const isLoggingEnabled = process.env.ENABLE_LOGGING === 'true' || isDevelopment;
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
@@ -20,6 +20,11 @@ class Logger {
     const contextStr = context ? `[${context}]` : '';
     const dataStr = data ? `\nData: ${JSON.stringify(data, null, 2)}` : '';
     return `${timestamp} ${level.toUpperCase()} ${contextStr} ${message}${dataStr}`;
+  }
+  
+  // Debug helper to check if logging is enabled
+  isEnabled(): boolean {
+    return isLoggingEnabled;
   }
 
   private log(level: LogLevel, message: string, context?: string, data?: any) {

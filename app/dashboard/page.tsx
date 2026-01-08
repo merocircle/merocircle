@@ -61,6 +61,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useCreatorSearch } from '@/hooks/useSocial';
+import { useSupportHistory } from '@/hooks/useSupporterDashboard';
 import CreatorSearch from '@/components/social/CreatorSearch';
 import CreatorCard from '@/components/social/CreatorCard';
 
@@ -104,7 +105,17 @@ export default function DashboardPage() {
       fetchDashboardData();
     }, 100);
 
-    return () => clearTimeout(timer);
+    // Refresh every 30 seconds to keep data updated
+    const refreshInterval = setInterval(() => {
+      if (isAuthenticated && user) {
+        fetchDashboardData();
+      }
+    }, 30000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(refreshInterval);
+    };
   }, [isAuthenticated, user]);
 
   // Show loading only for initial auth check (max 3 seconds timeout)
@@ -150,7 +161,7 @@ export default function DashboardPage() {
   const followingCreators = dashboardData?.followingCreators || [];
   const recentActivity = dashboardData?.recentActivity || [];
   
-  const supportHistory = []; // TODO: Add support history API
+  const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
   const discoverCreators = []; // Will be loaded from discover API
 
   return (
@@ -207,6 +218,11 @@ export default function DashboardPage() {
 
           {/* Activity Feed Tab */}
           <TabsContent value="feed" className="space-y-6">
+            {dataLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+              </div>
+            )}
             {/* Quick Stats */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -219,7 +235,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Following</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {supporterStats.creatorsSupported}
+                      {supporterStats.favoriteCreators}
                     </p>
                   </div>
                   <Users className="w-8 h-8 text-blue-600" />
@@ -274,54 +290,85 @@ export default function DashboardPage() {
               </div>
               
               <div className="space-y-6">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-                    <Link href={`/creator/${activity.creatorId}`}>
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
+                {recentActivity.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 dark:text-gray-400">No recent activity</p>
+                  </div>
+                ) : (
+                  recentActivity.map((activity: any) => (
+                    <div key={activity.id || activity.date} className="flex items-start space-x-4 pb-6 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-medium">
-                          {activity.creator[0]}
+                          {activity.creator?.[0] || 'C'}
                         </span>
                       </div>
-                    </Link>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Link href={`/creator/${activity.creatorId}`}>
-                          <span className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 cursor-pointer transition-colors">
-                            {activity.creator}
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          {activity.creatorId && (
+                            <Link href={`/creator/${activity.creatorId}`}>
+                              <span className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 cursor-pointer transition-colors">
+                                {activity.creator}
+                              </span>
+                            </Link>
+                          )}
+                          {!activity.creatorId && (
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              {activity.creator}
+                            </span>
+                          )}
+                          <span className="text-gray-600 dark:text-gray-400">
+                            {activity.action}
                           </span>
-                        </Link>
-                        <span className="text-gray-600 dark:text-gray-400">
-                          {activity.action}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-500">
-                          {activity.time}
-                        </span>
-                      </div>
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                        {activity.title}
-                      </h4>
-                      <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg mb-4 flex items-center justify-center">
-                        {activity.type === 'image' && <Camera className="w-8 h-8 text-gray-400" />}
-                        {activity.type === 'video' && <Play className="w-8 h-8 text-gray-400" />}
-                        {activity.type === 'audio' && <FileText className="w-8 h-8 text-gray-400" />}
-                      </div>
-                      <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-                        <span className="flex items-center space-x-1">
-                          <Heart className="w-4 h-4" />
-                          <span>{activity.likes}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <MessageCircle className="w-4 h-4" />
-                          <span>{activity.comments}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <Share2 className="w-4 h-4" />
-                          <span>Share</span>
-                        </span>
+                          <span className="text-sm text-gray-500 dark:text-gray-500">
+                            {typeof activity.time === 'string' 
+                              ? new Date(activity.time).toLocaleString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
+                              : activity.time}
+                          </span>
+                        </div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          {activity.title}
+                        </h4>
+                        {activity.amount && (
+                          <p className="text-green-600 font-semibold mb-2">
+                            NPR {activity.amount.toLocaleString()}
+                          </p>
+                        )}
+                        {activity.type && activity.type !== 'support' && (
+                          <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg mb-4 flex items-center justify-center">
+                            {activity.type === 'image' && <Camera className="w-8 h-8 text-gray-400" />}
+                            {activity.type === 'video' && <Play className="w-8 h-8 text-gray-400" />}
+                            {activity.type === 'audio' && <FileText className="w-8 h-8 text-gray-400" />}
+                          </div>
+                        )}
+                        {(activity.likes !== undefined || activity.comments !== undefined) && (
+                          <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
+                            {activity.likes !== undefined && (
+                              <span className="flex items-center space-x-1">
+                                <Heart className="w-4 h-4" />
+                                <span>{activity.likes}</span>
+                              </span>
+                            )}
+                            {activity.comments !== undefined && (
+                              <span className="flex items-center space-x-1">
+                                <MessageCircle className="w-4 h-4" />
+                                <span>{activity.comments}</span>
+                              </span>
+                            )}
+                            <span className="flex items-center space-x-1">
+                              <Share2 className="w-4 h-4" />
+                              <span>Share</span>
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </Card>
           </TabsContent>
@@ -329,7 +376,7 @@ export default function DashboardPage() {
           {/* Following Tab */}
           <TabsContent value="following" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Creators You Support</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Creators You Follow</h2>
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -371,20 +418,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-gray-600 dark:text-gray-400">Monthly Goal</span>
-                      <span className="font-medium">
-                        NPR {creator.currentAmount.toLocaleString()} / {creator.monthlyGoal.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-red-500 to-pink-600 h-2 rounded-full"
-                        style={{ width: `${(creator.currentAmount / creator.monthlyGoal) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
 
                   <div className="flex items-center justify-between">
                     <Badge variant="outline" className="text-xs">
@@ -523,35 +556,62 @@ export default function DashboardPage() {
             </div>
 
             <Card className="p-6">
-              <div className="space-y-4">
-                {supportHistory.map((support, index) => (
-                  <div key={index} className="flex items-center justify-between py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {support.creator[0]}
-                        </span>
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+                </div>
+              ) : supportHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 dark:text-gray-400">No support history yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {supportHistory.map((support) => (
+                    <div key={support.id} className="flex items-center justify-between py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center overflow-hidden">
+                          {support.creator.photo_url ? (
+                            <img 
+                              src={support.creator.photo_url} 
+                              alt={support.creator.name}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-white text-sm font-medium">
+                              {support.creator.name[0]}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                            {support.creator.name}
+                          </p>
+                          {support.message && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {support.message}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            {new Date(support.date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">
-                          {support.creator}
+                      <div className="text-right">
+                        <p className="font-semibold text-green-600">
+                          NPR {support.amount.toLocaleString()}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {support.message}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500">
-                          {support.date}
-                        </p>
+                        <p className="text-xs text-gray-500">{support.status}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">
-                        NPR {support.amount}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </TabsContent>
 

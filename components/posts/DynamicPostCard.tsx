@@ -70,13 +70,49 @@ export default function DynamicPostCard({
     if (!user || isLiking) return;
     
     setIsLiking(true);
-    const result = await likePost(post.id);
-    
-    if (result.success) {
-      setIsLiked(!isLiked);
-      setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+    try {
+      const response = await fetch(`/api/posts/${post.id}/like`, {
+        method: isLiked ? 'DELETE' : 'POST'
+      });
+      
+      if (response.ok) {
+        setIsLiked(!isLiked);
+        setLikesCount(prev => isLiked ? Math.max(0, prev - 1) : prev + 1);
+      }
+    } catch (error) {
+      console.error('Like error:', error);
+    } finally {
+      setIsLiking(false);
     }
-    setIsLiking(false);
+  };
+
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  const handleComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !user || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const response = await fetch(`/api/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newComment.trim() })
+      });
+
+      if (response.ok) {
+        setNewComment('');
+        setShowComments(true);
+        // Optionally refresh comments count
+        window.location.reload(); // Or use a callback to refresh
+      }
+    } catch (error) {
+      console.error('Comment error:', error);
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   const getPostIcon = () => {
@@ -183,17 +219,20 @@ export default function DynamicPostCard({
 
         {/* Media */}
         {post.image_url && (
-          <div className="mb-4">
+          <div className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
             <img 
               src={post.image_url} 
-              alt={post.title}
-              className="w-full rounded-lg object-cover max-h-96"
+              alt={post.title || 'Post image'}
+              className="w-full h-auto object-cover max-h-96"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
             />
           </div>
         )}
 
         {post.media_url && (
-          <div className="mb-4">
+          <div className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
             <video 
               src={post.media_url} 
               controls
@@ -210,21 +249,33 @@ export default function DynamicPostCard({
         <div className="flex items-center space-x-6">
           <button
             onClick={handleLike}
-            disabled={isLiking}
+            disabled={isLiking || !user}
             className={`flex items-center space-x-2 transition-colors ${
               isLiked 
                 ? 'text-red-500 hover:text-red-600' 
                 : 'text-gray-500 hover:text-red-500'
-            }`}
+            } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+            {isLiking ? (
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin" />
+            ) : (
+              <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+            )}
             <span className="text-sm">{likesCount}</span>
           </button>
           
-          <div className="flex items-center space-x-2 text-gray-500">
+          <button
+            onClick={() => setShowComments(!showComments)}
+            disabled={!user}
+            className={`flex items-center space-x-2 transition-colors ${
+              showComments 
+                ? 'text-blue-500 hover:text-blue-600' 
+                : 'text-gray-500 hover:text-blue-500'
+            } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
             <MessageCircle className="w-4 h-4" />
             <span className="text-sm">{post.comments_count || 0}</span>
-          </div>
+          </button>
           
           <div className="flex items-center space-x-2 text-gray-500">
             <Eye className="w-4 h-4" />
@@ -237,6 +288,62 @@ export default function DynamicPostCard({
           <span>Share</span>
         </Button>
       </div>
+
+      {/* Comments Section */}
+      {showComments && (
+        <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+          {/* Add Comment Form */}
+          {user && (
+            <form onSubmit={handleComment} className="flex space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                {user.email?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <div className="flex-1 space-y-2">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="w-full p-3 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700"
+                  rows={3}
+                />
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    size="sm"
+                    disabled={!newComment.trim() || isSubmittingComment}
+                  >
+                    {isSubmittingComment ? 'Posting...' : 'Comment'}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {/* Comments List */}
+          {post.comments && post.comments.length > 0 && (
+            <div className="space-y-3">
+              {post.comments.slice(0, 5).map((comment: any) => (
+                <div key={comment.id} className="flex space-x-3">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                    {comment.user?.display_name?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <div className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                        {comment.user?.display_name || 'Unknown'}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {formatDate(comment.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{comment.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 } 

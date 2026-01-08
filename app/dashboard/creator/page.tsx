@@ -100,6 +100,15 @@ export default function CreatorDashboard() {
     };
 
     fetchDashboardData();
+    
+    // Refresh every 30 seconds to keep data updated
+    const refreshInterval = setInterval(() => {
+      if (isAuthenticated && userProfile && creatorProfile) {
+        fetchDashboardData();
+      }
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
   }, [isAuthenticated, userProfile, creatorProfile, user?.id]);
 
   const handleRegisterAsCreator = async () => {

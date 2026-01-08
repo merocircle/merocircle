@@ -103,12 +103,7 @@ export default function SupporterDashboard() {
     },
   ];
 
-  const supportHistory = [
-    { creator: 'Rajesh Thapa', amount: 1000, date: '2024-01-15', message: 'Keep creating amazing art!' },
-    { creator: 'Priya Sharma', amount: 750, date: '2024-01-10', message: 'Love your photography style' },
-    { creator: 'Amit Nepal', amount: 500, date: '2024-01-05', message: 'Beautiful music!' },
-    { creator: 'Rajesh Thapa', amount: 1200, date: '2023-12-28', message: 'Happy New Year!' },
-  ];
+  const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
 
   const discoverCreators = [
     {

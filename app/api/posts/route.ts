@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, image_url, media_url, is_public = true, tier_required = 'free' } = body;
+    const { title, content, image_url, is_public = true, tier_required = 'free' } = body;
 
     const validation = validatePostContent(title, content);
     if (!validation.valid) {
@@ -150,9 +150,8 @@ export async function POST(request: NextRequest) {
         title: sanitizeString(title),
         content: sanitizeString(content),
         image_url: image_url || null,
-        media_url: media_url || null,
-        is_public,
-        tier_required
+        is_public: is_public ?? true,
+        tier_required: tier_required || 'free'
       })
       .select('*, users!posts_creator_id_fkey(id, display_name, photo_url, role)')
       .single();

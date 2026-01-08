@@ -8,6 +8,7 @@ import { Header } from '@/components/header'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails'
 import { useFollow } from '@/hooks/useSocial'
+import DynamicPostCard from '@/components/posts/DynamicPostCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -387,63 +388,42 @@ export default function CreatorProfilePage() {
 
               {/* Posts Tab */}
               <TabsContent value="posts" className="space-y-6">
-                {recentPosts.length > 0 ? recentPosts.map((post) => (
+                {recentPosts.length > 0 ? recentPosts.map((post: any) => (
                   <motion.div
                     key={post.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                   >
-                    <Card className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center">
-                            {post.type === 'image' && <Camera className="w-5 h-5 text-white" />}
-                            {post.type === 'audio' && <Music className="w-5 h-5 text-white" />}
-                            {post.type === 'text' && <FileText className="w-5 h-5 text-white" />}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{post.title || 'Untitled Post'}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{formatPostDate(post.createdAt)}</p>
-                          </div>
-                        </div>
-                        {!post.isPublic && (
-                          <Badge variant="outline" className="bg-yellow-50 border-yellow-200 text-yellow-800">
-                            <Crown className="w-3 h-3 mr-1" />
-                            Supporters Only
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <p className="text-gray-700 dark:text-gray-300 mb-4">{post.content}</p>
-                      
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center space-x-6">
-                          <div className="flex items-center space-x-2">
-                            <Heart className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{post.likes}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <MessageCircle className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{post.comments}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Eye className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{post.views}</span>
-                          </div>
-                        </div>
-                        
-                        {!post.isPublic && !hasActiveSubscription && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setActiveTab('subscriptions')}
-                          >
-                            Subscribe to View
-                          </Button>
-                        )}
-                      </div>
-                    </Card>
+                    <DynamicPostCard 
+                      post={{
+                        id: post.id,
+                        title: post.title,
+                        content: post.content,
+                        image_url: post.image_url,
+                        media_url: post.media_url,
+                        is_public: post.is_public ?? post.isPublic ?? true,
+                        tier_required: post.tier_required || 'free',
+                        created_at: post.created_at || post.createdAt,
+                        updated_at: post.updated_at || post.created_at || post.createdAt,
+                        creator_id: post.creator_id || creatorId,
+                        creator: post.creator || {
+                          id: creatorId,
+                          display_name: creatorDetails?.display_name || 'Unknown',
+                          photo_url: creatorDetails?.avatar_url,
+                          role: 'creator'
+                        },
+                        creator_profile: post.creator_profile || {
+                          category: creatorDetails?.category || null,
+                          is_verified: creatorDetails?.is_verified || false
+                        },
+                        likes: post.likes || [],
+                        comments: post.comments || [],
+                        likes_count: post.likes_count || post.likes?.length || 0,
+                        comments_count: post.comments_count || post.comments?.length || 0
+                      }}
+                      showActions={false}
+                    />
                   </motion.div>
                 )) : (
                   <Card className="p-8 text-center">

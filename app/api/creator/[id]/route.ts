@@ -39,7 +39,12 @@ export async function GET(
 
     const { data: posts } = await supabase
       .from('posts')
-      .select('*, post_likes(id, user_id)')
+      .select(`
+        *,
+        post_likes(id, user_id),
+        post_comments(id, content, created_at, user_id, users(id, display_name, photo_url)),
+        users!posts_creator_id_fkey(id, display_name, photo_url, role)
+      `)
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -49,13 +54,26 @@ export async function GET(
       title: post.title,
       content: post.content,
       image_url: post.image_url,
-      type: post.image_url ? 'image' : 'text',
-      likes: post.post_likes?.length || 0,
-      comments: 0,
-      views: 0,
-      createdAt: post.created_at,
-      isPublic: post.is_public,
-      isLiked: user ? post.post_likes?.some((like: any) => like.user_id === user.id) : false
+      media_url: post.media_url || null,
+      is_public: post.is_public,
+      tier_required: post.tier_required || 'free',
+      created_at: post.created_at,
+      updated_at: post.updated_at,
+      creator_id: post.creator_id,
+      creator: {
+        id: post.users?.id || creatorId,
+        display_name: post.users?.display_name || creatorProfile.users.display_name,
+        photo_url: post.users?.photo_url || creatorProfile.users.photo_url,
+        role: post.users?.role || 'creator'
+      },
+      creator_profile: {
+        category: creatorProfile.category,
+        is_verified: creatorProfile.is_verified
+      },
+      likes: post.post_likes || [],
+      comments: post.post_comments || [],
+      likes_count: post.post_likes?.length || 0,
+      comments_count: post.post_comments?.length || 0
     }))
 
     return NextResponse.json({

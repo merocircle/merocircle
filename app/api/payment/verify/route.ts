@@ -35,12 +35,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify amount matches
-    if (transaction.amount !== total_amount) {
+    // Verify amount matches (compare as numbers)
+    const transactionAmount = Number(transaction.amount);
+    const receivedAmount = Number(total_amount);
+    
+    if (Math.abs(transactionAmount - receivedAmount) > 0.01) {
       logger.warn('Amount mismatch', 'PAYMENT_VERIFY', {
         transaction_uuid,
         expected: transaction.amount,
-        received: total_amount
+        received: total_amount,
+        transactionAmount,
+        receivedAmount
       });
       return NextResponse.json(
         { error: 'Amount mismatch' },
@@ -62,50 +67,44 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // In test mode, auto-verify
-    if (config.esewa.testMode) {
-      await supabase
-        .from('supporter_transactions')
-        .update({
-          status: 'completed',
-          esewa_data: {
-            ...transaction.esewa_data,
-            status: 'COMPLETE',
-            ref_id: `TEST-${Date.now()}`,
-            verified_at: new Date().toISOString(),
-          }
-        })
-        .eq('id', transaction.id);
+    // Mark transaction as completed
+    const updateData: any = {
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      esewa_data: {
+        ...transaction.esewa_data,
+        status: 'COMPLETE',
+        verified_at: new Date().toISOString(),
+      }
+    };
 
-      return NextResponse.json({
-        success: true,
-        status: 'completed',
-        transaction: {
-          id: transaction.id,
-          amount: transaction.amount,
-          transaction_uuid: transaction.transaction_uuid,
-          created_at: transaction.created_at,
-        },
-        test_mode: true
-      });
+    if (config.esewa.testMode) {
+      updateData.esewa_data.ref_id = `TEST-${Date.now()}`;
     }
 
-    // Production mode: Verify with eSewa API
-    // Note: eSewa verification requires server-to-server call
-    // For now, we'll mark as completed if transaction exists and amount matches
-    // In production, you should call eSewa verification API here
-    
-    await supabase
+    const { error: updateError } = await supabase
       .from('supporter_transactions')
-      .update({
-        status: 'completed',
-        esewa_data: {
-          ...transaction.esewa_data,
-          status: 'COMPLETE',
-          verified_at: new Date().toISOString(),
-        }
-      })
+      .update(updateData)
       .eq('id', transaction.id);
+
+    if (updateError) {
+      logger.error('Failed to update transaction status', 'PAYMENT_VERIFY', {
+        error: updateError.message,
+        transactionId: transaction.id
+      });
+      return NextResponse.json(
+        { error: 'Failed to update transaction' },
+        { status: 500 }
+      );
+    }
+
+
+    logger.info('Transaction completed successfully', 'PAYMENT_VERIFY', {
+      transactionId: transaction.id,
+      creatorId: transaction.creator_id,
+      supporterId: transaction.supporter_id,
+      amount: transactionAmount
+    });
 
     return NextResponse.json({
       success: true,
@@ -115,7 +114,8 @@ export async function GET(request: NextRequest) {
         amount: transaction.amount,
         transaction_uuid: transaction.transaction_uuid,
         created_at: transaction.created_at,
-      }
+      },
+      test_mode: config.esewa.testMode
     });
   } catch (error) {
     logger.error('Payment verification failed', 'PAYMENT_VERIFY', {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,6 +64,26 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'follow') {
+      // Check if already following first
+      const { data: existingFollow } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', user.id)
+        .eq('following_id', creatorId)
+        .single()
+
+      if (existingFollow) {
+        logger.info('Already following creator', 'FOLLOW_API', { 
+          followerId: user.id, 
+          followingId: creatorId 
+        })
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Already following this creator',
+          action: 'already_following'
+        })
+      }
+
       // Add follow relationship
       const { error: followError } = await supabase
         .from('follows')
@@ -72,15 +93,22 @@ export async function POST(request: NextRequest) {
         })
 
       if (followError) {
-        // Check if already following
-        if (followError.code === '23505') {
-          return NextResponse.json(
-            { error: 'Already following this creator' },
-            { status: 409 }
-          )
-        }
-        throw followError
+        logger.error('Failed to follow creator', 'FOLLOW_API', { 
+          error: followError.message, 
+          code: followError.code,
+          followerId: user.id, 
+          followingId: creatorId 
+        })
+        return NextResponse.json(
+          { error: 'Failed to follow creator', details: followError.message },
+          { status: 500 }
+        )
       }
+
+      logger.info('Successfully followed creator', 'FOLLOW_API', { 
+        followerId: user.id, 
+        followingId: creatorId 
+      })
 
       supabase
         .from('user_activities')
@@ -108,8 +136,21 @@ export async function POST(request: NextRequest) {
         .eq('following_id', creatorId)
 
       if (unfollowError) {
-        throw unfollowError
+        logger.error('Failed to unfollow creator', 'FOLLOW_API', { 
+          error: unfollowError.message, 
+          followerId: user.id, 
+          followingId: creatorId 
+        })
+        return NextResponse.json(
+          { error: 'Failed to unfollow creator', details: unfollowError.message },
+          { status: 500 }
+        )
       }
+
+      logger.info('Successfully unfollowed creator', 'FOLLOW_API', { 
+        followerId: user.id, 
+        followingId: creatorId 
+      })
 
       return NextResponse.json({ 
         success: true, 
@@ -119,8 +160,12 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
+    logger.error('Follow API error', 'FOLLOW_API', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
