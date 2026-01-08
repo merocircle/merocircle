@@ -410,7 +410,7 @@ export default function CreatorDashboard() {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 gap-1 sm:gap-2 h-auto overflow-x-auto">
+          <TabsList className="flex flex-wrap sm:flex-nowrap w-full sm:w-auto gap-1 sm:gap-2 h-auto overflow-x-auto sm:overflow-x-visible">
             <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap">Overview</TabsTrigger>
             <TabsTrigger value="posts" className="text-xs sm:text-sm whitespace-nowrap">Posts</TabsTrigger>
             <TabsTrigger value="supporters" className="text-xs sm:text-sm whitespace-nowrap">Supporters</TabsTrigger>

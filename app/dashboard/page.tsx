@@ -160,7 +160,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-hidden">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -201,12 +201,12 @@ export default function DashboardPage() {
         </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-2 h-auto">
+          <TabsList className="flex flex-wrap sm:flex-nowrap w-full sm:w-auto gap-1 sm:gap-2 h-auto">
             <TabsTrigger value="feed" className="text-xs sm:text-sm whitespace-nowrap">Feed</TabsTrigger>
             <TabsTrigger value="following" className="text-xs sm:text-sm whitespace-nowrap">Following</TabsTrigger>
             <TabsTrigger value="discover" className="text-xs sm:text-sm whitespace-nowrap">Discover</TabsTrigger>
             <TabsTrigger value="history" className="text-xs sm:text-sm whitespace-nowrap">History</TabsTrigger>
-            <TabsTrigger value="stats" className="text-xs sm:text-sm whitespace-nowrap col-span-2 sm:col-span-1">Stats</TabsTrigger>
+            <TabsTrigger value="stats" className="text-xs sm:text-sm whitespace-nowrap w-full sm:w-auto">Stats</TabsTrigger>
           </TabsList>
 
           <TabsContent value="feed" className="space-y-6">

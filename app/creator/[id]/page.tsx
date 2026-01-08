@@ -399,7 +399,7 @@ export default function CreatorProfilePage() {
           {/* Main Content Area */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 gap-1 sm:gap-2 h-auto">
+              <TabsList className="flex flex-wrap sm:flex-nowrap w-full sm:w-auto gap-1 sm:gap-2 h-auto">
                 <TabsTrigger value="posts" className="text-xs sm:text-sm whitespace-nowrap">Posts</TabsTrigger>
                 <TabsTrigger value="subscriptions" className="text-xs sm:text-sm whitespace-nowrap">Subscriptions</TabsTrigger>
                 <TabsTrigger value="about" className="text-xs sm:text-sm whitespace-nowrap">About</TabsTrigger>
