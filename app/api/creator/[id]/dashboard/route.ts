@@ -15,15 +15,57 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { data: creatorProfile } = await supabase
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', creatorId)
+      .single();
+
+    if (!userData || userData.role !== 'creator') {
+      return NextResponse.json({ error: 'User is not a creator' }, { status: 403 });
+    }
+
+    let creatorProfile = null;
+    const { data: profileData, error: profileError } = await supabase
       .from('creator_profiles')
       .select('*')
       .eq('user_id', creatorId)
       .single();
 
-    if (!creatorProfile) {
-      return NextResponse.json({ error: 'Creator profile not found' }, { status: 404 });
+    creatorProfile = profileData;
+
+    if (!creatorProfile && profileError?.code === 'PGRST116') {
+      const { data: newProfile } = await supabase
+        .from('creator_profiles')
+        .insert({
+          user_id: creatorId,
+          bio: null,
+          category: null,
+          is_verified: false,
+          total_earnings: 0,
+          supporters_count: 0,
+          followers_count: 0
+        })
+        .select()
+        .single();
+
+      if (newProfile) {
+        creatorProfile = newProfile;
+      }
     }
+
+    const profileToUse = creatorProfile || {
+      id: creatorId,
+      user_id: creatorId,
+      bio: null,
+      category: null,
+      is_verified: false,
+      total_earnings: 0,
+      supporters_count: 0,
+      followers_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
     const { data: posts } = await supabase
       .from('posts')
@@ -63,7 +105,7 @@ export async function GET(
         totalEarnings,
         supporters: supporters?.length || 0,
         posts: posts?.length || 0,
-        followers: creatorProfile.followers_count || 0
+        followers: profileToUse.followers_count || 0
       },
       posts: (posts || []).map((p: any) => ({
         id: p.id,
@@ -83,8 +125,8 @@ export async function GET(
           role: p.users?.role || 'creator'
         },
         creator_profile: {
-          category: creatorProfile.category || null,
-          is_verified: creatorProfile.is_verified || false
+          category: profileToUse.category || null,
+          is_verified: profileToUse.is_verified || false
         },
         likes: p.post_likes || [],
         comments: (p.post_comments || []).map((c: any) => ({

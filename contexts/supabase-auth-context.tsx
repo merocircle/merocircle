@@ -1,9 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { logger } from '@/lib/logger';
 
 interface UserProfile {
   id: string;
@@ -23,57 +22,47 @@ interface CreatorProfile {
   is_verified: boolean;
   total_earnings: number;
   supporters_count: number;
+  followers_count: number;
+  posts_count: number;
+  likes_count: number;
   created_at: string;
   updated_at: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   userProfile: UserProfile | null;
   creatorProfile: CreatorProfile | null;
-  session: Session | null;
   isAuthenticated: boolean;
   isCreator: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<{ data: any; error: any }>;
-  signInWithEmail: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<{ data: any; error: any }>;
-  signOut: () => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
   updateUserRole: (role: 'user' | 'creator') => Promise<{ error: any }>;
   createCreatorProfile: (bio: string, category: string) => Promise<{ error: any }>;
-  createUserProfile: (role: 'user' | 'creator') => Promise<{ error: any }>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [creatorProfile, setCreatorProfile] = useState<CreatorProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
-  const loadUserProfile = async (userId: string, retryCount = 0): Promise<void> => {
-    const maxRetries = 2;
-    
+  const loadProfile = async (userId: string) => {
     try {
-      logger.debug('Loading user profile', 'AUTH_CONTEXT', { userId, retryCount });
-      
-      if (retryCount > 0) {
-        await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
-      }
-      
-      const { data: profile, error } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          logger.info('No user profile found, creating automatically', 'AUTH_CONTEXT', { userId, retryCount });
-          
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
           const { data: { user: authUser } } = await supabase.auth.getUser();
           if (authUser) {
             const { data: newProfile, error: createError } = await supabase
@@ -81,8 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .insert({
                 id: authUser.id,
                 email: authUser.email || '',
-                display_name: authUser.user_metadata?.display_name || 
-                             authUser.user_metadata?.full_name || 
+                display_name: authUser.user_metadata?.full_name || 
                              authUser.user_metadata?.name ||
                              authUser.email?.split('@')[0] || 
                              'User',
@@ -94,62 +82,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select()
               .single();
 
-            if (createError) {
-              if (createError.code === '23505' && retryCount < 1) {
-                logger.debug('Profile creation conflict, retrying', 'AUTH_CONTEXT', {
-                  retryCount: retryCount + 1
-                });
-                return loadUserProfile(userId, retryCount + 1);
+            if (createError?.code === '23505') {
+              const { data: existingProfile } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+              if (existingProfile) {
+                setUserProfile(existingProfile);
               }
-              
-              logger.warn('Failed to auto-create user profile, will continue without profile', 'AUTH_CONTEXT', {
-                userId,
-                error: createError.message,
-                errorCode: createError.code
-              });
               return;
             }
             
-            logger.info('User profile auto-created successfully', 'AUTH_CONTEXT', {
-              userId,
-              profileId: newProfile.id
-            });
-            setUserProfile(newProfile);
-            setCreatorProfile(null);
-            return;
-          } else {
-            logger.warn('No auth user found when trying to create profile', 'AUTH_CONTEXT', { userId });
-            return;
+            if (newProfile) {
+              setUserProfile(newProfile);
+            }
           }
         }
-        
-        if (retryCount < maxRetries) {
-          logger.debug('Error loading profile, retrying', 'AUTH_CONTEXT', {
-            userId,
-            retryCount: retryCount + 1,
-            error: error.message
-          });
-          return loadUserProfile(userId, retryCount + 1);
-        }
-        
-        logger.warn('Error loading user profile after retries, continuing anyway', 'AUTH_CONTEXT', {
-          userId,
-          error: error.message,
-          errorCode: error.code
-        });
         return;
       }
 
-      logger.debug('User profile loaded', 'AUTH_CONTEXT', {
-        userId,
-        role: profile.role,
-        displayName: profile.display_name
-      });
       setUserProfile(profile);
 
-      if (profile.role === 'creator') {
-        logger.debug('Loading creator profile', 'AUTH_CONTEXT', { userId });
-        
+      if (profile?.role === 'creator') {
         const { data: creatorData, error: creatorError } = await supabase
           .from('creator_profiles')
           .select('*')
@@ -157,501 +112,167 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (!creatorError && creatorData) {
-          logger.debug('Creator profile loaded', 'AUTH_CONTEXT', {
-            userId,
-            creatorProfileId: creatorData.id
-          });
           setCreatorProfile(creatorData);
-        } else if (creatorError?.code === 'PGRST116') {
-          logger.debug('No creator profile found yet', 'AUTH_CONTEXT', { userId });
-          setCreatorProfile(null);
         } else {
-          logger.warn('Error loading creator profile', 'AUTH_CONTEXT', {
-            userId,
-            error: creatorError?.message
-          });
           setCreatorProfile(null);
         }
       } else {
         setCreatorProfile(null);
       }
     } catch (error) {
-      logger.warn('Exception in loadUserProfile, continuing anyway', 'AUTH_CONTEXT', {
-        userId,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      console.error('Error loading profile:', error);
     }
   };
 
   useEffect(() => {
-    if (initialized) return;
+    let mounted = true;
 
-    const getInitialSession = async () => {
-      const timeoutId = setTimeout(() => {
-        logger.warn('Initial session check timeout, setting loading to false', 'AUTH_CONTEXT');
-        setLoading(false);
-        setInitialized(true);
-      }, 5000); // 5 second timeout
-
+    const initialize = async () => {
       try {
-        logger.debug('Getting initial session', 'AUTH_CONTEXT');
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          logger.error('Error getting session', 'AUTH_CONTEXT', {
-            error: error.message,
-            errorCode: error.status
-          });
-          
-          // Clear invalid session
-          if (error.message.includes('refresh_token_not_found') || error.message.includes('Invalid Refresh Token')) {
-            logger.info('Clearing invalid session', 'AUTH_CONTEXT');
-            await supabase.auth.signOut();
-          }
+        if (!mounted) return;
+
+        if (currentSession?.user) {
+          setSession(currentSession);
+          setUser(currentSession.user);
+          await loadProfile(currentSession.user.id);
         }
-        
-        logger.debug('Initial session retrieved', 'AUTH_CONTEXT', {
-          hasSession: !!session,
-          userId: session?.user?.id,
-          userEmail: session?.user?.email
-        });
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          loadUserProfile(session.user.id).catch(err => {
-            logger.warn('Profile load failed in initial session, continuing', 'AUTH_CONTEXT', {
-              error: err instanceof Error ? err.message : String(err)
-            });
-          });
-        }
-        
-        clearTimeout(timeoutId);
-        setLoading(false);
-        setInitialized(true);
       } catch (error) {
-        logger.error('Exception in getInitialSession', 'AUTH_CONTEXT', {
-          error: error instanceof Error ? error.message : String(error)
-        });
-        clearTimeout(timeoutId);
-        setLoading(false);
-        setInitialized(true);
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    getInitialSession();
+    initialize();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        logger.info('Auth state changed', 'AUTH_CONTEXT', {
-          event,
-          hasSession: !!session,
-          userId: session?.user?.id,
-          userEmail: session?.user?.email
-        });
-        
-        if (event === 'SIGNED_OUT') {
-          logger.info('User signed out', 'AUTH_CONTEXT');
-          setUserProfile(null);
-          setCreatorProfile(null);
+      (event, newSession) => {
+        if (!mounted) return;
+
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          setSession(newSession);
+          setUser(newSession.user);
+          setLoading(true);
+          
+          setTimeout(async () => {
+            try {
+              await loadProfile(newSession.user.id);
+            } catch (error) {
+              console.error('Error loading profile on sign in:', error);
+            } finally {
+              if (mounted) {
+                setLoading(false);
+              }
+            }
+          }, 0);
+        } else if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        if (event === 'TOKEN_REFRESHED') {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (userProfile && session?.user?.id === userProfile.id) {
-            logger.debug('Token refreshed, profile already loaded', 'AUTH_CONTEXT');
-            setLoading(false);
-            return;
-          }
-          
-          if (session?.user) {
-            logger.debug('Token refreshed, loading missing profile', 'AUTH_CONTEXT', {
-              userId: session.user.id,
-              hasProfile: !!userProfile
-            });
-            loadUserProfile(session.user.id).catch(err => {
-              logger.warn('Profile load failed after token refresh, continuing', 'AUTH_CONTEXT', {
-                error: err instanceof Error ? err.message : String(err)
-              });
-            });
-          }
-          setLoading(false);
-          return;
-        }
-        
-        setLoading(true);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          try {
-            await loadUserProfile(session.user.id);
-          } catch (error) {
-            logger.error('Error loading profile in auth state change', 'AUTH_CONTEXT', {
-              error: error instanceof Error ? error.message : String(error)
-            });
-          }
-        } else {
           setUserProfile(null);
           setCreatorProfile(null);
+          setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
+          setSession(newSession);
+          setUser(newSession.user);
         }
-        
-        setLoading(false);
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [initialized]);
+  }, []);
 
   const signInWithGoogle = async () => {
     try {
-      logger.info('Initiating Google sign-in', 'AUTH_CONTEXT');
-      
       const redirectUrl = `${window.location.origin}/auth/callback`;
-      logger.debug('Google OAuth redirect URL', 'AUTH_CONTEXT', { redirectUrl });
-      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
+        },
       });
-      
-      if (error) {
-        logger.error('Google sign-in error', 'AUTH_CONTEXT', {
-          error: error.message,
-          errorCode: error.status
-        });
-      } else {
-        logger.info('Google sign-in initiated successfully', 'AUTH_CONTEXT', {
-          url: data?.url
-        });
-      }
-      
       return { data, error };
-    } catch (error) {
-      logger.error('Exception in signInWithGoogle', 'AUTH_CONTEXT', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return { data: null, error };
-    }
-  };
-
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      logger.info('Signing in with email', 'AUTH_CONTEXT', { email });
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        logger.error('Email sign-in error', 'AUTH_CONTEXT', {
-          error: error.message,
-          email
-        });
-      } else {
-        logger.info('Email sign-in successful', 'AUTH_CONTEXT', {
-          userId: data.user?.id,
-          email
-        });
-      }
-      
-      return { data, error };
-    } catch (error) {
-      logger.error('Exception in signInWithEmail', 'AUTH_CONTEXT', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return { data: null, error };
-    }
-  };
-
-  const signUpWithEmail = async (email: string, password: string, displayName: string) => {
-    try {
-      logger.info('Signing up with email', 'AUTH_CONTEXT', { email, displayName });
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            display_name: displayName
-          }
-        }
-      });
-      
-      if (error) {
-        logger.error('Email sign-up error', 'AUTH_CONTEXT', {
-          error: error.message,
-          email
-        });
-      } else {
-        logger.info('Email sign-up successful', 'AUTH_CONTEXT', {
-          userId: data.user?.id,
-          email
-        });
-      }
-      
-      return { data, error };
-    } catch (error) {
-      logger.error('Exception in signUpWithEmail', 'AUTH_CONTEXT', {
-        error: error instanceof Error ? error.message : String(error)
-      });
+    } catch (error: any) {
       return { data: null, error };
     }
   };
 
   const signOut = async () => {
-    try {
-      logger.info('Signing out', 'AUTH_CONTEXT', { userId: user?.id });
-      
-      const { error } = await supabase.auth.signOut();
-      
-      if (!error) {
-        setUser(null);
-        setUserProfile(null);
-        setCreatorProfile(null);
-        setSession(null);
-        logger.info('Sign out successful', 'AUTH_CONTEXT');
-      } else {
-        logger.error('Sign out error', 'AUTH_CONTEXT', {
-          error: error.message
-        });
-      }
-      
-      return { error };
-    } catch (error) {
-      logger.error('Exception in signOut', 'AUTH_CONTEXT', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return { error };
-    }
+    await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    setUserProfile(null);
+    setCreatorProfile(null);
   };
 
   const updateUserRole = async (role: 'user' | 'creator') => {
-    if (!user) {
-      logger.warn('Cannot update role: no user logged in', 'AUTH_CONTEXT');
-      return { error: new Error('No user logged in') };
+    if (!user) return { error: new Error('Not authenticated') };
+
+    const { error } = await supabase
+      .from('users')
+      .update({ role })
+      .eq('id', user.id);
+
+    if (!error && userProfile) {
+      setUserProfile({ ...userProfile, role });
     }
 
-    try {
-      logger.info('Updating user role', 'AUTH_CONTEXT', { userId: user.id, role });
-      
-      const { error } = await supabase
-        .from('users')
-        .update({ role })
-        .eq('id', user.id);
-
-      if (error) {
-        logger.error('Error updating user role', 'AUTH_CONTEXT', {
-          userId: user.id,
-          role,
-          error: error.message
-        });
-        return { error };
-      }
-
-      logger.info('User role updated successfully', 'AUTH_CONTEXT', {
-        userId: user.id,
-        role
-      });
-
-      // Reload user profile to get updated role
-      await loadUserProfile(user.id);
-
-      return { error: null };
-    } catch (error) {
-      logger.error('Exception in updateUserRole', 'AUTH_CONTEXT', {
-        userId: user.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return { error };
-    }
+    return { error };
   };
 
   const createCreatorProfile = async (bio: string, category: string) => {
-    if (!user) {
-      logger.warn('Cannot create creator profile: no user logged in', 'AUTH_CONTEXT');
-      return { error: new Error('No user logged in') };
-    }
+    if (!user) return { error: new Error('Not authenticated') };
 
     try {
-      logger.info('Creating creator profile', 'AUTH_CONTEXT', {
-        userId: user.id,
-        bio,
-        category
-      });
+      await updateUserRole('creator');
 
-      // First update user role to creator
-      const { error: roleError } = await updateUserRole('creator');
-      if (roleError) {
-        logger.error('Failed to update role to creator', 'AUTH_CONTEXT', {
-          userId: user.id,
-          error: roleError
-        });
-        return { error: roleError };
-      }
-
-      // Create creator profile
-      const { data, error } = await supabase
+      const { error: profileError } = await supabase
         .from('creator_profiles')
         .insert({
           user_id: user.id,
           bio,
-          category
-        })
-        .select()
-        .single();
-
-      if (error) {
-        logger.error('Error creating creator profile', 'AUTH_CONTEXT', {
-          userId: user.id,
-          error: error.message,
-          errorCode: error.code
+          category,
         });
-        return { error };
+
+      if (profileError) {
+        return { error: profileError };
       }
 
-      logger.info('Creator profile created successfully', 'AUTH_CONTEXT', {
-        userId: user.id,
-        creatorProfileId: data.id
-      });
-
-      setCreatorProfile(data);
-
-      // Reload user profile one more time to ensure everything is synced
-      await loadUserProfile(user.id);
-
+      await loadProfile(user.id);
       return { error: null };
-    } catch (error) {
-      logger.error('Exception in createCreatorProfile', 'AUTH_CONTEXT', {
-        userId: user.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
+    } catch (error: any) {
       return { error };
     }
   };
 
-  const createUserProfile = async (role: 'user' | 'creator' = 'user') => {
-    if (!user) {
-      logger.warn('Cannot create user profile: no user logged in', 'AUTH_CONTEXT');
-      return { error: new Error('No user logged in') };
-    }
-
-    try {
-      logger.info('Manually creating user profile', 'AUTH_CONTEXT', {
-        userId: user.id,
-        role
-      });
-
-      // Check if profile already exists
-      const { data: existingProfile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (existingProfile) {
-        logger.info('User profile already exists', 'AUTH_CONTEXT', {
-          userId: user.id,
-          existingRole: existingProfile.role
-        });
-        
-        if (existingProfile.role !== role) {
-          logger.info('Updating existing profile role', 'AUTH_CONTEXT', {
-            userId: user.id,
-            oldRole: existingProfile.role,
-            newRole: role
-          });
-          
-          const { error } = await supabase
-            .from('users')
-            .update({ role })
-            .eq('id', user.id);
-          
-          if (!error) {
-            await loadUserProfile(user.id);
-          }
-          return { error };
-        }
-        return { error: null };
-      }
-
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          id: user.id,
-          email: user.email || '',
-          display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-          photo_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-          role: role
-        })
-        .select()
-        .single();
-
-      if (error) {
-        logger.error('Error creating user profile', 'AUTH_CONTEXT', {
-          userId: user.id,
-          error: error.message,
-          errorCode: error.code
-        });
-        return { error };
-      }
-
-      logger.info('User profile created successfully', 'AUTH_CONTEXT', {
-        userId: user.id,
-        profileId: data.id,
-        role
-      });
-
-      setUserProfile(data);
-      return { error: null };
-    } catch (error) {
-      logger.error('Exception in createUserProfile', 'AUTH_CONTEXT', {
-        userId: user.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return { error };
+  const refreshProfile = async () => {
+    if (user) {
+      await loadProfile(user.id);
     }
   };
 
-  const value: AuthContextType = {
+  const value = {
     user,
+    session,
     userProfile,
     creatorProfile,
-    session,
-    isAuthenticated: !!user,
-    isCreator: userProfile?.role === 'creator',
+    isAuthenticated: !!user && !!userProfile,
+    isCreator: userProfile?.role === 'creator' && !!creatorProfile,
     loading,
     signInWithGoogle,
-    signInWithEmail,
-    signUpWithEmail,
     signOut,
     updateUserRole,
     createCreatorProfile,
-    createUserProfile
+    refreshProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

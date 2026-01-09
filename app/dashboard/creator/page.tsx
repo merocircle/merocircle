@@ -70,7 +70,7 @@ import {
 } from '@/lib/tailwind-utils';
 
 export default function CreatorDashboard() {
-  const { user, userProfile, creatorProfile, isAuthenticated, loading, createCreatorProfile } = useAuth();
+  const { user, userProfile, creatorProfile, isAuthenticated, loading, createCreatorProfile, isCreator } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [newPostTitle, setNewPostTitle] = useState('');
@@ -96,34 +96,63 @@ export default function CreatorDashboard() {
 
   React.useEffect(() => {
     const fetchDashboardData = async () => {
-      if (isAuthenticated && userProfile && creatorProfile) {
+      const isUserCreator = isCreator || userProfile?.role === 'creator';
+      
+      if (isAuthenticated && userProfile && isUserCreator && user?.id) {
         setDataLoading(true);
         try {
-          const response = await fetch(`/api/creator/${user?.id}/dashboard`);
+          const response = await fetch(`/api/creator/${user.id}/dashboard`);
           if (response.ok) {
             const data = await response.json();
             setDashboardData(data);
+          } else {
+            setDashboardData({
+              stats: {
+                monthlyEarnings: 0,
+                totalEarnings: 0,
+                supporters: 0,
+                posts: 0,
+                followers: 0
+              },
+              posts: [],
+              supporters: []
+            });
           }
         } catch (error) {
           console.error('Failed to fetch dashboard data:', error);
+          setDashboardData({
+            stats: {
+              monthlyEarnings: 0,
+              totalEarnings: 0,
+              supporters: 0,
+              posts: 0,
+              followers: 0
+            },
+            posts: [],
+            supporters: []
+          });
         } finally {
           setDataLoading(false);
         }
-      } else if (isAuthenticated && userProfile && !creatorProfile) {
+      } else if (isAuthenticated && userProfile && !isUserCreator) {
         setDataLoading(false);
+        setDashboardData(null);
+      } else if (!isAuthenticated || !userProfile) {
+        setDataLoading(true);
       }
     };
 
     fetchDashboardData();
     
     const refreshInterval = setInterval(() => {
-      if (isAuthenticated && userProfile && creatorProfile) {
+      const isUserCreator = isCreator || userProfile?.role === 'creator';
+      if (isAuthenticated && userProfile && isUserCreator && user?.id) {
         fetchDashboardData();
       }
     }, 30000);
 
     return () => clearInterval(refreshInterval);
-  }, [isAuthenticated, userProfile, creatorProfile, user?.id]);
+  }, [isAuthenticated, userProfile, creatorProfile, isCreator, user?.id]);
 
   const handleRegisterAsCreator = async () => {
     if (!registrationData.bio || !registrationData.category) {
@@ -136,12 +165,17 @@ export default function CreatorDashboard() {
       const { error } = await createCreatorProfile(registrationData.bio, registrationData.category);
       if (error) {
         alert(error.message || 'Failed to create creator profile');
+        setRegistrationLoading(false);
       } else {
+        // Success - reload the page to show creator dashboard
         setIsRegistering(false);
+        setRegistrationData({ bio: '', category: '' });
+        // Force reload to refresh auth context
+        window.location.reload();
       }
     } catch (error) {
-      alert('Failed to register as creator');
-    } finally {
+      console.error('Failed to register as creator:', error);
+      alert('Failed to register as creator. Please try again.');
       setRegistrationLoading(false);
     }
   };
@@ -233,11 +267,20 @@ export default function CreatorDashboard() {
     );
   }
 
-  if (!isAuthenticated || !userProfile) {
-    return null;
+  if (loading || !isAuthenticated || !userProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <LoadingSpinner size="lg" className="h-64" />
+        </div>
+      </div>
+    );
   }
 
-  if (!creatorProfile && !isRegistering) {
+  const isUserCreator = isCreator || userProfile?.role === 'creator';
+  
+  if (!isUserCreator && !isRegistering) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Header />
@@ -255,7 +298,10 @@ export default function CreatorDashboard() {
               </p>
             </div>
 
-            <div className="space-y-6">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleRegisterAsCreator();
+            }} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Bio *
@@ -266,6 +312,7 @@ export default function CreatorDashboard() {
                   onChange={(e) => setRegistrationData({ ...registrationData, bio: e.target.value })}
                   rows={4}
                   className="w-full"
+                  required
                 />
               </div>
 
@@ -277,6 +324,7 @@ export default function CreatorDashboard() {
                   value={registrationData.category}
                   onChange={(e) => setRegistrationData({ ...registrationData, category: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                  required
                 >
                   <option value="">Select a category</option>
                   <option value="Art">Art</option>
@@ -296,8 +344,8 @@ export default function CreatorDashboard() {
 
               <div className="flex items-center space-x-4">
                 <Button
-                  onClick={handleRegisterAsCreator}
-                  disabled={registrationLoading}
+                  type="submit"
+                  disabled={registrationLoading || !registrationData.bio || !registrationData.category}
                   className="flex-1 bg-gradient-to-r from-red-500 to-pink-600"
                 >
                   {registrationLoading ? (
@@ -313,13 +361,14 @@ export default function CreatorDashboard() {
                   )}
                 </Button>
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() => router.push('/dashboard')}
                 >
                   Cancel
                 </Button>
               </div>
-            </div>
+            </form>
           </Card>
         </div>
       </div>
@@ -437,7 +486,7 @@ export default function CreatorDashboard() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6"
             >
-              {dataLoading ? (
+              {dataLoading || !dashboardData ? (
                 <>
                   {[1, 2, 3, 4].map((i) => (
                     <Card key={i} className="p-6">

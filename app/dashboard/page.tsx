@@ -89,6 +89,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -166,8 +167,6 @@ export default function DashboardPage() {
   const followingCreators = Array.isArray(dashboardData?.followingCreators) ? dashboardData.followingCreators : [];
   const recentActivity = Array.isArray(dashboardData?.recentActivity) ? dashboardData.recentActivity : [];
   const feedPosts = Array.isArray(dashboardData?.feedPosts) ? dashboardData.feedPosts : [];
-  
-  const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
 
   return (
     <div className={cn("min-h-screen", colors.bg.page)}>

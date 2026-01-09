@@ -7,54 +7,29 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Heart, ArrowLeft, Chrome, Shield, Zap, Users, Crown, Sparkles, Check, X } from 'lucide-react';
+import { Heart, ArrowLeft, Chrome, Shield, Zap, Users, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCreatorPrompt, setShowCreatorPrompt] = useState(false);
-  const [showCreatorForm, setShowCreatorForm] = useState(false);
-  const [creatorData, setCreatorData] = useState({ bio: '', category: '' });
-  const [isSubmittingCreator, setIsSubmittingCreator] = useState(false);
   const router = useRouter();
-  const { user, userProfile, creatorProfile, signInWithGoogle, createCreatorProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, signInWithGoogle, loading: authLoading } = useAuth();
 
-  // Check for error in URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
     if (errorParam) {
       setError(errorParam);
-      // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user && userProfile && !authLoading) {
-      // If they have a creator profile, go to dashboard
-      if (creatorProfile) {
-        router.push('/dashboard');
-        return;
-      }
-      // If they're logged in but don't have creator profile, show prompt
-      // Only show once - check if we've already shown it
-      const hasShownPrompt = sessionStorage.getItem('creatorPromptShown');
-      if (!hasShownPrompt) {
-        setShowCreatorPrompt(true);
-        sessionStorage.setItem('creatorPromptShown', 'true');
-      } else {
-        // They've seen the prompt, just go to dashboard
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
     }
-  }, [user, userProfile, creatorProfile, authLoading, router]);
+  }, [user, userProfile, authLoading, router]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -65,56 +40,14 @@ export default function AuthPage() {
       
       if (error) {
         setError(error.message || 'Failed to sign in');
-        return;
       }
-      
-      // Will be redirected by the useEffect watching user state
     } catch (error: any) {
-      console.error('Auth error:', error);
       setError(error.message || 'Failed to sign in. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBecomeCreator = () => {
-    setShowCreatorPrompt(false);
-    setShowCreatorForm(true);
-  };
-
-  const handleSkipCreator = () => {
-    setShowCreatorPrompt(false);
-    sessionStorage.setItem('creatorPromptShown', 'true');
-    router.push('/dashboard');
-  };
-
-  const handleCreatorSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!creatorData.bio || !creatorData.category) {
-      setError('Please fill in all fields');
-      return;
-    }
-
-    setIsSubmittingCreator(true);
-    setError(null);
-
-    try {
-      const { error: createError } = await createCreatorProfile(creatorData.bio, creatorData.category);
-      
-      if (createError) {
-        setError(createError.message || 'Failed to create creator profile');
-        return;
-      }
-
-      setShowCreatorForm(false);
-      router.push('/dashboard/creator');
-    } catch (error: any) {
-      console.error('Creator setup error:', error);
-      setError(error.message || 'Failed to set up creator profile. Please try again.');
-    } finally {
-      setIsSubmittingCreator(false);
-    }
-  };
 
   const features = [
     {
@@ -134,12 +67,7 @@ export default function AuthPage() {
     }
   ];
 
-  const categories = [
-    'Art', 'Music', 'Photography', 'Writing', 'Cooking', 'Tech',
-    'Fashion', 'Travel', 'Gaming', 'Education', 'Fitness', 'Crafts'
-  ];
 
-  // Show loading while checking auth state
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center">
@@ -303,138 +231,6 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* Creator Prompt Dialog */}
-      <Dialog open={showCreatorPrompt} onOpenChange={setShowCreatorPrompt}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500">
-              <Crown className="w-8 h-8 text-white" />
-            </div>
-            <DialogTitle className="text-2xl text-center">Become a Creator?</DialogTitle>
-            <DialogDescription className="text-center">
-              You're currently a supporter. Would you like to become a creator and start sharing your work?
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span>Build your creator profile</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span>Receive support from fans</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span>Monetize your content</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span>Track earnings in NPR</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={handleSkipCreator}
-                className="flex-1"
-              >
-                Maybe Later
-              </Button>
-              <Button
-                onClick={handleBecomeCreator}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
-              >
-                <Crown className="w-4 h-4 mr-2" />
-                Become Creator
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Creator Registration Form Dialog */}
-      <Dialog open={showCreatorForm} onOpenChange={setShowCreatorForm}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Set Up Your Creator Profile</DialogTitle>
-            <DialogDescription>
-              Tell us about yourself and your creative work
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleCreatorSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio *</Label>
-              <Textarea
-                id="bio"
-                placeholder="Tell us about yourself and your creative work..."
-                value={creatorData.bio}
-                onChange={(e) => setCreatorData({ ...creatorData, bio: e.target.value })}
-                rows={4}
-                required
-                className="resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <select
-                id="category"
-                value={creatorData.category}
-                onChange={(e) => setCreatorData({ ...creatorData, category: e.target.value })}
-                required
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowCreatorForm(false);
-                  router.push('/dashboard');
-                }}
-                className="flex-1"
-              >
-                Skip for Now
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmittingCreator || !creatorData.bio || !creatorData.category}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
-              >
-                {isSubmittingCreator ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Create Profile
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
