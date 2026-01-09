@@ -85,8 +85,61 @@ export default function CreatorDashboard() {
     category: ''
   });
   const [registrationLoading, setRegistrationLoading] = useState(false);
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<{
+    stats?: { monthlyEarnings: number; totalEarnings: number; supporters: number; posts: number; followers: number };
+    posts?: Array<{
+      id: string;
+      title: string;
+      content: string;
+      image_url?: string | null;
+      media_url?: string | null;
+      tier_required?: string;
+      likes_count?: number;
+      comments_count?: number;
+      created_at?: string;
+      createdAt?: string;
+      creator?: { id: string; display_name: string; photo_url?: string | null; role?: string };
+      creator_profile?: { category?: string | null; is_verified?: boolean };
+    }>;
+    supporters?: Array<{
+      id: string;
+      name: string;
+      avatar?: string | null;
+      amount: number;
+      joined?: string;
+      tier?: string;
+    }>;
+  } | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+
+  const creatorStats = dashboardData?.stats || {
+    monthlyEarnings: 0,
+    totalEarnings: 0,
+    supporters: 0,
+    posts: 0,
+    followers: 0
+  };
+
+  const recentPosts = dashboardData?.posts || [];
+  const supporters = dashboardData?.supporters || [];
+
+  const analyticsData = React.useMemo(() => {
+    const totalLikes = recentPosts.reduce((sum: number, post: { likes_count?: number }) => sum + (post.likes_count || 0), 0);
+    const totalComments = recentPosts.reduce((sum: number, post: { comments_count?: number }) => sum + (post.comments_count || 0), 0);
+    const avgLikesPerPost = recentPosts.length > 0 ? Math.round(totalLikes / recentPosts.length) : 0;
+    const avgCommentsPerPost = recentPosts.length > 0 ? Math.round(totalComments / recentPosts.length) : 0;
+    const engagementRate = recentPosts.length > 0 && creatorStats.followers > 0 
+      ? ((totalLikes + totalComments) / creatorStats.followers * 100).toFixed(1)
+      : '0';
+
+    return {
+      totalLikes,
+      totalComments,
+      avgLikesPerPost,
+      avgCommentsPerPost,
+      engagementRate
+    };
+  }, [recentPosts, creatorStats.followers]);
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -375,35 +428,6 @@ export default function CreatorDashboard() {
     );
   }
 
-  const creatorStats = dashboardData?.stats || {
-    monthlyEarnings: 0,
-    totalEarnings: 0,
-    supporters: 0,
-    posts: 0,
-    followers: 0
-  };
-
-  const recentPosts = dashboardData?.posts || [];
-  const supporters = dashboardData?.supporters || [];
-
-  const analyticsData = React.useMemo(() => {
-    const totalLikes = recentPosts.reduce((sum: number, post: any) => sum + (post.likes_count || 0), 0);
-    const totalComments = recentPosts.reduce((sum: number, post: any) => sum + (post.comments_count || 0), 0);
-    const avgLikesPerPost = recentPosts.length > 0 ? Math.round(totalLikes / recentPosts.length) : 0;
-    const avgCommentsPerPost = recentPosts.length > 0 ? Math.round(totalComments / recentPosts.length) : 0;
-    const engagementRate = recentPosts.length > 0 && creatorStats.followers > 0 
-      ? ((totalLikes + totalComments) / creatorStats.followers * 100).toFixed(1)
-      : '0';
-
-    return {
-      totalLikes,
-      totalComments,
-      avgLikesPerPost,
-      avgCommentsPerPost,
-      engagementRate
-    };
-  }, [recentPosts, creatorStats.followers]);
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
@@ -566,7 +590,7 @@ export default function CreatorDashboard() {
                   <Button variant="ghost" size="sm" className="text-xs sm:text-sm">View All</Button>
                 </div>
                 <div className="space-y-4">
-                  {recentPosts.length > 0 ? recentPosts.slice(0, 3).map((post: any) => (
+                  {recentPosts.length > 0 ? recentPosts.slice(0, 3).map((post: { id: string; title: string; image_url?: string | null; likes_count?: number; comments_count?: number; created_at?: string; createdAt?: string }) => (
                     <PostListItem
                       key={post.id}
                       id={post.id}
@@ -574,7 +598,7 @@ export default function CreatorDashboard() {
                       type={post.image_url ? 'image' : 'text'}
                       likes={post.likes_count || 0}
                       comments={post.comments_count || 0}
-                      createdAt={post.created_at || post.createdAt}
+                      createdAt={post.created_at || post.createdAt || ''}
                     />
                   )) : (
                     <EmptyState
@@ -594,7 +618,7 @@ export default function CreatorDashboard() {
                   <Button variant="ghost" size="sm" className="text-xs sm:text-sm">View All</Button>
                 </div>
                 <div className="space-y-4">
-                  {supporters.length > 0 ? supporters.slice(0, 5).map((supporter: any) => (
+                  {supporters.length > 0 ? supporters.slice(0, 5).map((supporter: { id: string; name: string; avatar?: string | null; amount: number; joined?: string }) => (
                     <SupporterListItem
                       key={supporter.id}
                       id={supporter.id}
@@ -710,26 +734,26 @@ export default function CreatorDashboard() {
             </Card>
 
             <div className="space-y-4 sm:space-y-6">
-              {recentPosts.length > 0 ? recentPosts.map((post: any) => (
+              {recentPosts.length > 0 ? recentPosts.map((post) => (
                 <EnhancedPostCard 
                   key={post.id} 
                   post={{
                     id: post.id,
                     title: post.title,
                     content: post.content,
-                    image_url: post.image_url,
-                    media_url: post.media_url,
+                    image_url: post.image_url || undefined,
+                    media_url: post.media_url || undefined,
                     tier_required: post.tier_required || 'free',
-                    created_at: post.created_at,
-                    creator: post.creator || {
-                      id: user?.id || '',
-                      display_name: userProfile?.display_name || 'You',
-                      photo_url: userProfile?.photo_url,
-                      role: 'creator'
+                    created_at: post.created_at || '',
+                    creator: {
+                      id: post.creator?.id || user?.id || '',
+                      display_name: post.creator?.display_name || userProfile?.display_name || 'You',
+                      photo_url: post.creator?.photo_url || userProfile?.photo_url || undefined,
+                      role: post.creator?.role || 'creator'
                     },
-                    creator_profile: post.creator_profile || {
-                      category: creatorProfile?.category || null,
-                      is_verified: creatorProfile?.is_verified || false
+                    creator_profile: {
+                      category: post.creator_profile?.category || creatorProfile?.category || undefined,
+                      is_verified: post.creator_profile?.is_verified ?? creatorProfile?.is_verified ?? false
                     },
                     likes_count: post.likes_count || 0,
                     comments_count: post.comments_count || 0
@@ -773,7 +797,7 @@ export default function CreatorDashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {supporters.length > 0 ? supporters.map((supporter: any) => (
+              {supporters.length > 0 ? supporters.map((supporter) => (
                 <Card key={supporter.id} className="p-6">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
@@ -786,7 +810,7 @@ export default function CreatorDashboard() {
                         {supporter.name}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Joined {new Date(supporter.joined).toLocaleDateString()}
+                        Joined {supporter.joined ? new Date(supporter.joined).toLocaleDateString() : 'Unknown'}
                       </p>
                     </div>
                   </div>
@@ -800,7 +824,7 @@ export default function CreatorDashboard() {
                           supporter.tier === 'silver' ? 'secondary' : 'outline'
                         }
                       >
-                        {supporter.tier}
+                        {supporter.tier || 'basic'}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
@@ -859,9 +883,9 @@ export default function CreatorDashboard() {
                 <div className="space-y-3">
                   {recentPosts.length > 0 ? (() => {
                     const topPosts = [...recentPosts]
-                      .sort((a: any, b: any) => (b.likes_count || 0) - (a.likes_count || 0))
+                      .sort((a: { likes_count?: number }, b: { likes_count?: number }) => (b.likes_count || 0) - (a.likes_count || 0))
                       .slice(0, 3);
-                    return topPosts.map((post: any) => (
+                    return topPosts.map((post: { id: string; title: string; likes_count?: number; comments_count?: number; created_at?: string }) => (
                       <div key={post.id} className="flex items-center justify-between text-sm">
                         <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">{post.title || 'Untitled Post'}</span>
                         <span className="text-green-600 font-medium whitespace-nowrap">{post.likes_count || 0} likes</span>
@@ -1035,7 +1059,7 @@ export default function CreatorDashboard() {
                           {supporter.name}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {supporter.tier} • {new Date(supporter.joined).toLocaleDateString()}
+                          {supporter.tier || 'basic'} • {supporter.joined ? new Date(supporter.joined).toLocaleDateString() : 'Unknown'}
                         </p>
                       </div>
                     </div>

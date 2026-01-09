@@ -8,7 +8,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const transaction_uuid = searchParams.get('transaction_uuid');
     const total_amount = searchParams.get('total_amount');
-    searchParams.get('product_code') || config.esewa.merchantCode;
 
     if (!transaction_uuid || !total_amount) {
       return NextResponse.json(

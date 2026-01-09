@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { fetchCreatorProfiles, fetchCreatorDetails, calculateMonthlyTotal, calculateTotalAmount } from '@/lib/api-helpers';
 
@@ -166,7 +166,7 @@ export async function GET() {
           is_verified: profile?.is_verified || false
         },
         likes: p.post_likes || [],
-        comments: (p.post_comments || []).map((c: any) => ({
+        comments: ((p.post_comments as Array<{ id: string; content: string; created_at: string; user?: { id: string; display_name: string; photo_url: string | null } }>) || []).map((c) => ({
           id: c.id,
           content: c.content,
           created_at: c.created_at,

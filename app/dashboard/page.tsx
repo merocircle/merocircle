@@ -87,8 +87,8 @@ function SupportJourneyStats({
   supportedCreators, 
   totalSupported 
 }: { 
-  supportHistory: any[];
-  supportedCreators: any[];
+  supportHistory: Array<{ date: string; creator?: { id: string; name: string }; amount?: number }>;
+  supportedCreators: Array<{ category?: string | null }>;
   totalSupported: number;
 }) {
   const calculateFirstSupport = () => {
@@ -225,7 +225,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('feed');
   const [searchQuery, setSearchQuery] = useState('');
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<{
+    stats?: { totalSupported: number; creatorsSupported: number; thisMonth: number; favoriteCreators: number };
+    followingCreators?: Array<unknown>;
+    recentActivity?: Array<unknown>;
+    feedPosts?: Array<unknown>;
+  } | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
   const { creators: supportedCreators } = useSupportedCreators();
@@ -403,7 +408,7 @@ export default function DashboardPage() {
             <div className={layout.gapLarge}>
               <h3 className={typography.h3}>Posts from Creators You Follow</h3>
               {feedPosts && Array.isArray(feedPosts) && feedPosts.length > 0 ? (
-                feedPosts.map((post: any) => {
+                feedPosts.map((post: Record<string, unknown>) => {
                   if (!post || !post.id) return null;
                   return (
                     <motion.div
@@ -465,7 +470,7 @@ export default function DashboardPage() {
                     description="Follow creators and support them to see activity here"
                   />
                 ) : (
-                  recentActivity && Array.isArray(recentActivity) && recentActivity.map((activity: any) => {
+                  recentActivity && Array.isArray(recentActivity) && recentActivity.map((activity: Record<string, unknown>) => {
                     if (!activity) return null;
                     return (
                       <ActivityItem
@@ -508,7 +513,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {followingCreators && Array.isArray(followingCreators) && followingCreators.length > 0 ? followingCreators.map((creator: any, index: number) => {
+              {followingCreators && Array.isArray(followingCreators) && followingCreators.length > 0 ? followingCreators.map((creator: Record<string, unknown>, index: number) => {
                 if (!creator) return null;
                 return (
                   <EnhancedCreatorCard
