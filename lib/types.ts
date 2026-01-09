@@ -71,9 +71,9 @@ export interface Transaction {
   transaction_uuid: string | null;
   product_code: string | null;
   signature: string | null;
-  esewa_data: any | null;
-  khalti_data: any | null;
-  bank_data: any | null;
+  esewa_data: Record<string, unknown> | null;
+  khalti_data: Record<string, unknown> | null;
+  bank_data: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
@@ -98,11 +98,11 @@ export interface UserActivity {
   activity_type: 'post_created' | 'post_liked' | 'comment_added' | 'user_followed' | 'support_given';
   target_id: string;
   target_type: 'post' | 'user' | 'comment' | 'transaction';
-  metadata: any;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
