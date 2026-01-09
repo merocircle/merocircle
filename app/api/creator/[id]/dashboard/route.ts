@@ -107,7 +107,21 @@ export async function GET(
         posts: posts?.length || 0,
         followers: profileToUse.followers_count || 0
       },
-      posts: (posts || []).map((p: any) => ({
+      posts: (posts || []).map((p: {
+        id: string;
+        title: string;
+        content: string;
+        image_url: string | null;
+        media_url: string | null;
+        is_public: boolean;
+        tier_required: string | null;
+        created_at: string;
+        updated_at: string;
+        creator_id: string;
+        users?: { id: string; display_name: string; photo_url: string | null; role: string };
+        post_likes?: Array<{ id: string; user_id: string }>;
+        post_comments?: Array<{ id: string; content: string; created_at: string; user?: { id: string; display_name: string; photo_url: string | null } }>;
+      }) => ({
         id: p.id,
         title: p.title,
         content: p.content,
@@ -129,7 +143,7 @@ export async function GET(
           is_verified: profileToUse.is_verified || false
         },
         likes: p.post_likes || [],
-        comments: (p.post_comments || []).map((c: any) => ({
+        comments: (p.post_comments || []).map((c: { id: string; content: string; created_at: string; user?: { id: string; display_name: string; photo_url: string | null } }) => ({
           id: c.id,
           content: c.content,
           created_at: c.created_at,
@@ -138,7 +152,7 @@ export async function GET(
         likes_count: p.post_likes?.length || 0,
         comments_count: p.post_comments?.length || 0
       })),
-      supporters: (supporters || []).map((s: any) => ({
+      supporters: (supporters || []).map((s: { supporter_id: string; amount: number | string; created_at: string; users?: { display_name: string; photo_url: string | null } }) => ({
         id: s.supporter_id,
         name: s.users?.display_name || 'Supporter',
         amount: Number(s.amount) || 0,
@@ -146,7 +160,7 @@ export async function GET(
         avatar: s.users?.photo_url
       }))
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

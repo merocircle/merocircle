@@ -10,12 +10,12 @@ interface LogEntry {
   level: LogLevel;
   message: string;
   context?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp: string;
 }
 
 class Logger {
-  private formatMessage(level: LogLevel, message: string, context?: string, data?: any): string {
+  private formatMessage(level: LogLevel, message: string, context?: string, data?: Record<string, unknown>): string {
     const timestamp = new Date().toISOString();
     const contextStr = context ? `[${context}]` : '';
     const dataStr = data ? `\nData: ${JSON.stringify(data, null, 2)}` : '';
@@ -27,7 +27,7 @@ class Logger {
     return isLoggingEnabled;
   }
 
-  private log(level: LogLevel, message: string, context?: string, data?: any) {
+  private log(level: LogLevel, message: string, context?: string, data?: Record<string, unknown>) {
     if (!isLoggingEnabled) return;
 
     const formatted = this.formatMessage(level, message, context, data);
@@ -52,19 +52,19 @@ class Logger {
     // Example: Sentry.captureMessage(message, { level, extra: data });
   }
 
-  info(message: string, context?: string, data?: any) {
+  info(message: string, context?: string, data?: Record<string, unknown>) {
     this.log('info', message, context, data);
   }
 
-  warn(message: string, context?: string, data?: any) {
+  warn(message: string, context?: string, data?: Record<string, unknown>) {
     this.log('warn', message, context, data);
   }
 
-  error(message: string, context?: string, data?: any) {
+  error(message: string, context?: string, data?: Record<string, unknown>) {
     this.log('error', message, context, data);
   }
 
-  debug(message: string, context?: string, data?: any) {
+  debug(message: string, context?: string, data?: Record<string, unknown>) {
     this.log('debug', message, context, data);
   }
 }

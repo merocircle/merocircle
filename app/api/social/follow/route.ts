@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-  } catch (error) {
+  } catch {
     logger.error('Follow API error', 'FOLLOW_API', { 
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
@@ -225,7 +225,7 @@ export async function GET(request: NextRequest) {
       isFollowing: !!follow 
     })
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { fetchCreatorProfiles, fetchCreatorDetails, calculateMonthlyTotal, calculateTotalAmount } from '@/lib/api-helpers';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     const supportedCreatorIds = activeSupporters?.map(s => s.creator_id) || [];
     const allCreatorIds = [...new Set([...followingIds, ...supportedCreatorIds])];
     
-    let recentActivity = [];
-    let feedPosts: any[] = [];
+    let recentActivity: Array<Record<string, unknown>> = [];
+    let feedPosts: Array<Record<string, unknown>> = [];
     
     if (allCreatorIds.length > 0) {
       const publicPostsQuery = supabase
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       
       const { data: publicPosts } = await publicPostsQuery;
       
-      let supporterOnlyPosts: any[] = [];
+      let supporterOnlyPosts: Array<Record<string, unknown>> = [];
       if (supportedCreatorIds.length > 0) {
         const { data: allCreatorPosts } = await supabase
           .from('posts')
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
           .in('creator_id', supportedCreatorIds)
           .order('created_at', { ascending: false });
         
-        supporterOnlyPosts = (allCreatorPosts || []).filter((post: any) => 
+        supporterOnlyPosts = (allCreatorPosts || []).filter((post: Record<string, unknown>) => 
           post.is_public === false || (post.tier_required && post.tier_required !== 'free')
         );
       }
@@ -90,13 +90,13 @@ export async function GET(request: NextRequest) {
       .eq('status', 'completed')
       .order('created_at', { ascending: false });
 
-    const creatorIds = [...new Set((supportTransactions || []).map((t: any) => t.creator_id))];
+    const creatorIds = [...new Set((supportTransactions || []).map((t: { creator_id: string }) => t.creator_id))];
     const creatorsMap = await fetchCreatorDetails(creatorIds);
 
     const totalSupported = calculateTotalAmount(supportTransactions || []);
     const thisMonthSupport = calculateMonthlyTotal(supportTransactions || []);
 
-    const supportActivities = (supportTransactions || []).slice(0, 10).map((t: any) => {
+    const supportActivities = (supportTransactions || []).slice(0, 10).map((t: { id: string; creator_id: string; amount: number | string; created_at: string }) => {
       const creator = creatorsMap.get(t.creator_id) || {
         id: t.creator_id,
         display_name: 'Creator',
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const postActivities = (recentActivity || []).map((p: any) => ({
+    const postActivities = (recentActivity || []).map((p: Record<string, unknown>) => ({
       id: p.id,
       creator: p.users?.display_name || 'Creator',
       creatorId: p.creator_id,
@@ -133,16 +133,16 @@ export async function GET(request: NextRequest) {
 
     let profilesMap = new Map();
     if (feedPosts.length > 0) {
-      const creatorProfileIds = [...new Set(feedPosts.map((p: any) => p.creator_id))];
+      const creatorProfileIds = [...new Set(feedPosts.map((p: Record<string, unknown>) => p.creator_id as string))];
       const { data: creatorProfiles } = await supabase
         .from('creator_profiles')
         .select('user_id, category, is_verified')
         .in('user_id', creatorProfileIds);
       
-      profilesMap = new Map((creatorProfiles || []).map((cp: any) => [cp.user_id, cp]));
+      profilesMap = new Map((creatorProfiles || []).map((cp: { user_id: string; category: string | null; is_verified: boolean }) => [cp.user_id, cp]));
     }
 
-    const formattedFeedPosts = feedPosts.map((p: any) => {
+    const formattedFeedPosts = feedPosts.map((p: Record<string, unknown>) => {
       const profile = profilesMap.get(p.creator_id);
       return {
         id: p.id,
@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
       recentActivity: allRecentActivity,
       feedPosts: formattedFeedPosts
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

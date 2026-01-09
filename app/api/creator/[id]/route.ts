@@ -85,7 +85,7 @@ export async function GET(
       ? creatorProfile.posts_count 
       : (actualPostsCount || 0);
 
-    let subscriptionTiers: any[] = [];
+    let subscriptionTiers: Array<Record<string, unknown>> = [];
     try {
       const { data: tiers } = await supabase
         .from('subscription_tiers')
@@ -94,11 +94,25 @@ export async function GET(
         .eq('is_active', true)
         .order('price', { ascending: true });
       subscriptionTiers = tiers || [];
-    } catch (error) {
+    } catch {
       subscriptionTiers = [];
     }
 
-    const formattedPosts = (posts || []).map((post: any) => ({
+    const formattedPosts = (posts || []).map((post: {
+      id: string;
+      title: string;
+      content: string;
+      image_url: string | null;
+      media_url: string | null;
+      is_public: boolean;
+      tier_required: string | null;
+      created_at: string;
+      updated_at: string;
+      creator_id: string;
+      users?: { id: string; display_name: string; photo_url: string | null; role: string };
+      post_likes?: Array<{ id: string; user_id: string }>;
+      post_comments?: Array<{ id: string; content: string; created_at: string }>;
+    }) => ({
       id: post.id,
       title: post.title,
       content: post.content,
@@ -141,7 +155,16 @@ export async function GET(
         created_at: creatorProfile.created_at,
         isFollowing: isFollowing
       },
-      paymentMethods: (paymentMethods || []).map((m: any) => ({
+      paymentMethods: (paymentMethods || []).map((m: {
+        id: string;
+        payment_type: string;
+        phone_number: string | null;
+        qr_code_url: string | null;
+        account_number: string | null;
+        merchant_id: string | null;
+        is_active: boolean;
+        is_verified: boolean;
+      }) => ({
         id: m.id,
         payment_type: m.payment_type,
         details: {
@@ -153,7 +176,7 @@ export async function GET(
         is_active: m.is_active,
         is_verified: m.is_verified
       })),
-      subscriptionTiers: (subscriptionTiers || []).map((tier: any) => ({
+      subscriptionTiers: (subscriptionTiers || []).map((tier: Record<string, unknown>) => ({
         id: tier.id,
         tier_name: tier.tier_name || tier.name,
         price: Number(tier.price || 0),
@@ -164,7 +187,7 @@ export async function GET(
       })),
       posts: formattedPosts
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

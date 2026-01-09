@@ -4,13 +4,13 @@ export interface AppError {
   message: string;
   code?: string;
   statusCode?: number;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export class ApiError extends Error {
   statusCode: number;
   code?: string;
-  details?: any;
+  details?: Record<string, unknown>;
 
   constructor(message: string, statusCode: number = 500, code?: string, details?: any) {
     super(message);
@@ -63,7 +63,7 @@ export function handleApiError(error: unknown, context: string): {
 }
 
 // Supabase error handler
-export function handleSupabaseError(error: any, defaultMessage: string = 'Database operation failed'): ApiError {
+export function handleSupabaseError(error: { code?: string; message?: string }, defaultMessage: string = 'Database operation failed'): ApiError {
   // Map common Supabase error codes to user-friendly messages
   const errorMap: Record<string, { message: string; statusCode: number }> = {
     'PGRST116': { message: 'Resource not found', statusCode: 404 },
@@ -85,7 +85,7 @@ export function handleSupabaseError(error: any, defaultMessage: string = 'Databa
 }
 
 // Validation error
-export function createValidationError(message: string, details?: any): ApiError {
+export function createValidationError(message: string, details?: Record<string, unknown>): ApiError {
   return new ApiError(message, 400, 'VALIDATION_ERROR', details);
 }
 

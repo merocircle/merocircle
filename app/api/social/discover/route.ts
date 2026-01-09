@@ -6,7 +6,7 @@ import { Database } from '@/lib/supabase'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '20')
+    parseInt(searchParams.get('limit') || '20')
     
     const cookieStore = await cookies()
     
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       }
     )
     
-    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.auth.getUser()
 
     const [trendingResult, postsResult, suggestedResult] = await Promise.all([
       supabase
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const recentPosts = postsResult.data
     const suggestedCreators = suggestedResult.data
 
-    const trending_creators = (trendingCreators || []).map((cp: any) => ({
+    const trending_creators = (trendingCreators || []).map((cp: { user_id: string; bio: string | null; followers_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
       bio: cp.bio,
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       isFollowing: false
     }))
 
-    const recent_posts = (recentPosts || []).map((post: any) => ({
+    const recent_posts = (recentPosts || []).map((post: { id: string; creator_id: string; content: string; image_url: string | null; created_at: string; users: { id: string; display_name: string; photo_url: string | null } }) => ({
       id: post.id,
       creator_id: post.creator_id,
       content: post.content,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       }
     }))
 
-    const suggested_creators = (suggestedCreators || []).map((cp: any) => ({
+    const suggested_creators = (suggestedCreators || []).map((cp: { user_id: string; bio: string | null; followers_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
       bio: cp.bio,

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -185,7 +185,7 @@ export async function GET(request: NextRequest) {
       userHasLiked
     })
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

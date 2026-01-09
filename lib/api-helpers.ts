@@ -15,7 +15,7 @@ export async function fetchCreatorDetails(creatorIds: string[]) {
     return new Map();
   }
 
-  return new Map((creators || []).map((c: any) => [c.id, c]));
+  return new Map((creators || []).map((c: { id: string; display_name: string; photo_url: string | null }) => [c.id, c]));
 }
 
 export async function fetchCreatorProfiles(userIds: string[]) {
@@ -32,7 +32,7 @@ export async function fetchCreatorProfiles(userIds: string[]) {
     return [];
   }
 
-  return (profiles || []).map((p: any) => ({
+  return (profiles || []).map((p: { user_id: string; category: string | null; followers_count: number | null; is_verified: boolean | null; posts_count: number | null; users?: { display_name: string; photo_url: string | null } }) => ({
     id: p.user_id,
     name: p.users?.display_name || 'Creator',
     category: p.category || 'Creator',
@@ -43,7 +43,7 @@ export async function fetchCreatorProfiles(userIds: string[]) {
   }));
 }
 
-export function calculateMonthlyTotal(transactions: any[]) {
+export function calculateMonthlyTotal(transactions: Array<{ created_at: string; amount: number | string }>) {
   const thisMonth = new Date();
   thisMonth.setDate(1);
   
@@ -52,6 +52,6 @@ export function calculateMonthlyTotal(transactions: any[]) {
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 }
 
-export function calculateTotalAmount(transactions: any[]) {
+export function calculateTotalAmount(transactions: Array<{ amount: number | string }>) {
   return transactions.reduce((sum, t) => sum + Number(t.amount || 0), 0);
 }

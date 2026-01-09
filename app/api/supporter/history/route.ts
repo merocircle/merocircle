@@ -36,10 +36,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ history: [] });
     }
 
-    const creatorIds = [...new Set(transactions.map((t: any) => t.creator_id))];
+    const creatorIds = [...new Set(transactions.map((t: { creator_id: string }) => t.creator_id))];
     const creatorsMap = await fetchCreatorDetails(creatorIds);
 
-    const history = transactions.map((t: any) => {
+    const history = transactions.map((t: { id: string; creator_id: string; amount: number | string; supporter_message: string | null; status: string; completed_at: string | null; created_at: string }) => {
       const creator = creatorsMap.get(t.creator_id) || {
         id: t.creator_id,
         display_name: 'Creator',

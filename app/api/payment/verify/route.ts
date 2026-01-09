@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { generateEsewaSignature } from '@/lib/generateEsewaSignature';
 import { config } from '@/lib/config';
 import { logger } from '@/lib/logger';
 
@@ -9,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const transaction_uuid = searchParams.get('transaction_uuid');
     const total_amount = searchParams.get('total_amount');
-    const product_code = searchParams.get('product_code') || config.esewa.merchantCode;
+    searchParams.get('product_code') || config.esewa.merchantCode;
 
     if (!transaction_uuid || !total_amount) {
       return NextResponse.json(
@@ -64,7 +63,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const updateData: any = {
+    const updateData: {
+      status: string;
+      completed_at: string;
+      esewa_data: Record<string, unknown>;
+    } = {
       status: 'completed',
       completed_at: new Date().toISOString(),
       esewa_data: {
