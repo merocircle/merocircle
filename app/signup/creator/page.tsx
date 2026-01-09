@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
@@ -88,7 +87,7 @@ export default function CreatorSignupPage() {
       }
       
       // After OAuth redirect, the useEffect will handle the rest
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Creator signup error:', error);
       setError(error.message || 'Failed to create account. Please try again.');
       localStorage.removeItem('isCreatorSignupFlow');
@@ -122,7 +121,7 @@ export default function CreatorSignupPage() {
       setTimeout(() => {
         router.push('/dashboard/creator');
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Creator setup error:', error);
       setError(error.message || 'Failed to set up creator profile. Please try again.');
     } finally {

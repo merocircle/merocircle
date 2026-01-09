@@ -13,7 +13,6 @@ import {
   User, 
   Check,
   ArrowRight,
-  Crown
 } from 'lucide-react';
 
 export default function SignupPage() {
@@ -58,7 +57,7 @@ export default function SignupPage() {
               Join Creators Nepal
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Choose how you want to be part of Nepal's creative community
+              Choose how you want to be part of Nepal&apos;s creative community
             </p>
           </div>
 
@@ -78,7 +77,7 @@ export default function SignupPage() {
                   </div>
                   
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                    I'm a Supporter
+                    I&apos;m a Supporter
                   </h2>
                   
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -129,7 +128,7 @@ export default function SignupPage() {
                   </div>
                   
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                    I'm a Creator
+                    I&apos;m a Creator
                   </h2>
                   
                   <p className="text-gray-600 dark:text-gray-400 mb-6">

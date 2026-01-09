@@ -31,7 +31,7 @@ export function Header() {
     try {
       await signOut();
       router.push('/');
-    } catch (error) {
+    } catch {
       // Silently handle error
     }
   };

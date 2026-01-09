@@ -6,12 +6,9 @@ import { Header } from '@/components/header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useDiscoveryFeed } from '@/hooks/useSocial'
-import CreatorCard from '@/components/social/CreatorCard'
 import { EnhancedCreatorCard } from '@/components/social/EnhancedCreatorCard'
-import PostCard from '@/components/social/PostCard'
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
 import CreatorSearch from '@/components/social/CreatorSearch'
 import { cn } from '@/lib/utils';
@@ -26,7 +23,6 @@ import {
   animations 
 } from '@/lib/tailwind-utils';
 import { 
-  Search, 
   TrendingUp, 
   Users, 
   Sparkles,
@@ -37,7 +33,7 @@ import {
 } from 'lucide-react'
 
 export default function DiscoverPage() {
-  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { loading: authLoading } = useAuth()
   const { feed, loading, error, refetch } = useDiscoveryFeed()
   const [activeTab, setActiveTab] = useState('trending')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')

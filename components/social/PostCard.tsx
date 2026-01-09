@@ -28,7 +28,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
       setIsLiked(newIsLiked)
       setLikeCount(newLikeCount)
       onLikeChange?.(post.id, newIsLiked, newLikeCount)
-    } catch (error) {
+    } catch {
       // Silently handle error - optimistic update already applied
     }
   }

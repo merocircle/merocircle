@@ -35,6 +35,7 @@ export default function CreatorSearch({
     } else {
       clearResults()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery])
 
   const handleClear = () => {
@@ -81,7 +82,7 @@ export default function CreatorSearch({
 
         {!loading && !error && debouncedQuery && results.length === 0 && (
           <div className="text-center py-8">
-            <p className={colors.text.muted}>No creators found for "{debouncedQuery}"</p>
+            <p className={colors.text.muted}>No creators found for &quot;{debouncedQuery}&quot;</p>
           </div>
         )}
 

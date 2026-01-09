@@ -21,7 +21,6 @@ interface ActivityItemProps {
 }
 
 export function ActivityItem({
-  id,
   creator,
   creatorId,
   action,

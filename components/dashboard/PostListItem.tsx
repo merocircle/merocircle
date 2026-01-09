@@ -13,7 +13,6 @@ interface PostListItemProps {
 }
 
 export function PostListItem({
-  id,
   title,
   type = 'text',
   likes,

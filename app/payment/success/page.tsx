@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, ArrowLeft, ExternalLink } from 'lucide-react';
+import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -11,10 +11,16 @@ export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
-  const [transaction, setTransaction] = useState<any>(null);
+  const [transaction, setTransaction] = useState<{
+    id?: string;
+    amount?: number;
+    status?: string;
+    created_at?: string;
+  } | null>(null);
 
   useEffect(() => {
     verifyPayment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verifyPayment = async () => {

@@ -8,22 +8,18 @@ import { Header } from '@/components/header'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails'
 import { useFollow } from '@/hooks/useSocial'
-import DynamicPostCard from '@/components/posts/DynamicPostCard'
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
 import { StatsCard } from '@/components/dashboard/StatsCard'
-import { BauhausCard } from '@/components/ui/bauhaus-card'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils';
 import { 
   common, 
-  spacing, 
   typography, 
   layout, 
   responsive, 
@@ -37,7 +33,6 @@ import {
   FileText, 
   Calendar, 
   Star, 
-  Shield, 
   CreditCard,
   Smartphone,
   Building2,
@@ -47,36 +42,18 @@ import {
   ArrowLeft,
   Share2,
   Gift,
-  DollarSign,
-  Eye,
   MessageCircle,
-  TrendingUp,
-  Clock,
-  ExternalLink,
   Coins,
   Play,
-  Pause,
-  ArrowRight,
-  Plus,
   Camera,
   Music,
-  Palette,
-  MapPin,
-  Link as LinkIcon,
-  Settings,
-  BarChart3,
-  Filter,
-  MoreHorizontal,
-  Edit3,
-  Upload,
-  Phone,
-  Sparkles
+  Palette
 } from 'lucide-react'
 
 export default function CreatorProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const { user, userProfile } = useAuth()
+  const { user } = useAuth()
   const creatorId = params.id as string
   
   const { 
@@ -90,7 +67,7 @@ export default function CreatorProfilePage() {
   } = useCreatorDetails(creatorId)
   
   const { followCreator, unfollowCreator, loading: followLoading } = useFollow();
-  const { subscribe, unsubscribe, loading: subscriptionLoading } = useSubscription();
+  const { subscribe, unsubscribe } = useSubscription();
   
   const [isFollowing, setIsFollowing] = useState(creatorDetails?.isFollowing || false);
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
@@ -99,8 +76,6 @@ export default function CreatorProfilePage() {
   const [paymentAmount, setPaymentAmount] = useState('1000');
   const [customAmount, setCustomAmount] = useState('');
   const [supporterMessage, setSupporterMessage] = useState('');
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
@@ -120,7 +95,7 @@ export default function CreatorProfilePage() {
         await followCreator(creatorId);
       }
       await refreshCreatorDetails();
-    } catch (error) {
+    } catch {
       setIsFollowing(wasFollowing);
       alert('Failed to update follow status');
     }
@@ -194,7 +169,7 @@ export default function CreatorProfilePage() {
       } else {
         throw new Error(result.error || 'Invalid payment response')
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('[PAYMENT] Error:', error)
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.')
     } finally {
@@ -218,7 +193,7 @@ export default function CreatorProfilePage() {
         alert('Subscribed successfully!')
       }
       refreshCreatorDetails()
-    } catch (error) {
+    } catch {
       alert('Subscription failed. Please try again.')
     }
   }
@@ -240,9 +215,6 @@ export default function CreatorProfilePage() {
     { amount: '2500', label: 'NPR 2,500', icon: <Star className="w-4 h-4" /> },
   ]
 
-  // Format post dates
-  const formatPostDate = (dateString: string) => {
-    const date = new Date(dateString)
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffMins = Math.floor(diffMs / 60000)
@@ -276,7 +248,7 @@ export default function CreatorProfilePage() {
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Creator Not Found</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">The creator you're looking for doesn't exist.</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">The creator you&apos;re looking for doesn&apos;t exist.</p>
             <Button onClick={() => router.back()}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go Back
@@ -445,7 +417,7 @@ export default function CreatorProfilePage() {
                           role: 'creator'
                         },
                         creator_profile: post.creator_profile || {
-                          category: creatorDetails?.category || null,
+                          category: creatorDetails?.category || undefined,
                           is_verified: creatorDetails?.is_verified || false
                         },
                         likes_count: post.likes_count || post.likes?.length || 0,
@@ -462,7 +434,7 @@ export default function CreatorProfilePage() {
                       No Posts Yet
                     </h3>
                     <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                      This creator hasn't posted anything yet.
+                      This creator hasn&apos;t posted anything yet.
                     </p>
                   </Card>
                 )}
@@ -478,7 +450,7 @@ export default function CreatorProfilePage() {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Active Subscription</h3>
-                        <p className="text-green-600 dark:text-green-400">You're supporting this creator</p>
+                        <p className="text-green-600 dark:text-green-400">You&apos;re supporting this creator</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
@@ -558,7 +530,7 @@ export default function CreatorProfilePage() {
                       No Subscription Tiers Available
                     </h3>
                     <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                      This creator hasn't set up subscription tiers yet.
+                      This creator hasn&apos;t set up subscription tiers yet.
                     </p>
                   </Card>
                 )}

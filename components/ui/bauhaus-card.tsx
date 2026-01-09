@@ -193,7 +193,6 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
   onOutlinedButtonClick,
   onMoreOptionsClick,
   mirrored = false,
-  ChronicleButtonHoverColor = "#156ef6",
   textColorTop = "#bfc7d5",
   textColorMain = "#f0f0f1",
   textColorSub = "#a0a1b3",

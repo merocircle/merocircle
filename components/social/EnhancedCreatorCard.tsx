@@ -65,7 +65,7 @@ export function EnhancedCreatorCard({ creator, onFollowChange }: EnhancedCreator
       } else {
         await followCreator(creator.user_id);
       }
-    } catch (error) {
+    } catch {
       setIsFollowing(wasFollowing);
       setFollowerCount(followerCount);
       onFollowChange?.(creator.user_id, wasFollowing);

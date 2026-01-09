@@ -20,33 +20,17 @@ import {
   BarChart3,
   Settings,
   PlusCircle,
-  Eye,
-  Share2,
   Calendar,
-  Gift,
-  Star,
-  ArrowUpRight,
-  ArrowDownRight,
-  Edit3,
-  Video,
   FileText,
-  Bell,
   CreditCard,
   Target,
   Upload,
-  Bookmark,
   Download,
   Filter,
-  MoreHorizontal,
-  Trash2,
-  ExternalLink,
-  Copy,
-  Sparkles,
   Shield,
   Phone,
   Save,
-  Camera,
-  Play
+  Camera
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -55,16 +39,13 @@ import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { PostListItem } from '@/components/dashboard/PostListItem';
 import { SupporterListItem } from '@/components/dashboard/SupporterListItem';
-import PostCard from '@/components/posts/PostCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { cn } from '@/lib/utils';
 import { 
   common, 
   spacing, 
   typography, 
-  layout, 
   responsive, 
-  colors, 
   effects, 
   animations 
 } from '@/lib/tailwind-utils';
@@ -1046,7 +1027,7 @@ export default function CreatorDashboard() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Supporters</h3>
               <div className="space-y-4">
-                {supporters.length > 0 ? supporters.slice(0, 5).map((supporter: any) => (
+                {supporters.length > 0 ? supporters.slice(0, 5).map((supporter) => (
                   <div key={supporter.id} className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
@@ -1398,7 +1379,7 @@ export default function CreatorDashboard() {
                   </Button>
                   
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    You'll be redirected to eSewa for secure payment
+                    You&apos;ll be redirected to eSewa for secure payment
                   </p>
                 </div>
               </div>
@@ -1412,11 +1393,11 @@ export default function CreatorDashboard() {
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">eSewa ePay Integration</h4>
                   <div className="bg-gray-900 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-x-auto">
-                    <div className="text-green-400">// Payment Form Submission</div>
+                    <div className="text-green-400">{/* Payment Form Submission */}</div>
                     <div className="text-blue-400">const</div> <div className="text-yellow-400">paymentData</div> = {`{`}<br/>
-                    &nbsp;&nbsp;<div className="text-red-400">amount</div>: <div className="text-green-300">'100'</div>,<br/>
-                    &nbsp;&nbsp;<div className="text-red-400">product_code</div>: <div className="text-green-300">'EPAYTEST'</div>,<br/>
-                    &nbsp;&nbsp;<div className="text-red-400">signature</div>: <div className="text-green-300">'HMAC_SHA256'</div><br/>
+                    &nbsp;&nbsp;<div className="text-red-400">amount</div>: <div className="text-green-300">&apos;100&apos;</div>,<br/>
+                    &nbsp;&nbsp;<div className="text-red-400">product_code</div>: <div className="text-green-300">&apos;EPAYTEST&apos;</div>,<br/>
+                    &nbsp;&nbsp;<div className="text-red-400">signature</div>: <div className="text-green-300">&apos;HMAC_SHA256&apos;</div><br/>
                     {`}`};
                   </div>
                 </div>
@@ -1424,7 +1405,7 @@ export default function CreatorDashboard() {
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Status Verification</h4>
                   <div className="bg-gray-900 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-x-auto">
-                    <div className="text-green-400">// Transaction Verification</div>
+                    <div className="text-green-400">{/* Transaction Verification */}</div>
                     <div className="text-blue-400">GET</div> <div className="text-yellow-400">/api/epay/transaction/status/</div><br/>
                     <div className="text-gray-400">?product_code=EPAYTEST</div><br/>
                     <div className="text-gray-400">&total_amount=100</div><br/>

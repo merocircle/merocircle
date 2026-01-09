@@ -17,7 +17,6 @@ interface SupportHistoryItemProps {
 }
 
 export function SupportHistoryItem({
-  id,
   creator,
   amount,
   message,

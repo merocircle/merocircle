@@ -5,12 +5,9 @@ import { motion } from 'framer-motion'
 import { Header } from '@/components/header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useDiscoveryFeed } from '@/hooks/useSocial'
 import { StatsCard } from '@/components/dashboard/StatsCard'
-import CreatorCard from '@/components/social/CreatorCard'
 import { EnhancedCreatorCard } from '@/components/social/EnhancedCreatorCard'
 import CreatorSearch from '@/components/social/CreatorSearch'
 import { cn } from '@/lib/utils';
@@ -25,15 +22,11 @@ import {
   animations 
 } from '@/lib/tailwind-utils';
 import { 
-  Search, 
   TrendingUp, 
   Users, 
-  Sparkles,
   Filter,
   Star,
   Heart,
-  Eye,
-  MapPin,
   Globe
 } from 'lucide-react'
 
@@ -53,10 +46,9 @@ const categories = [
 ]
 
 export default function ExplorePage() {
-  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { loading: authLoading } = useAuth()
   const { feed, loading, error, refetch } = useDiscoveryFeed()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
 
   if (authLoading) {
     return (
@@ -84,10 +76,10 @@ export default function ExplorePage() {
             <Globe className={cn(responsive.iconLarge, 'text-white')} />
           </div>
           <h1 className={cn('text-4xl md:text-5xl font-bold mb-4', colors.text.primary)}>
-            Explore Nepal's Creative Community
+            Explore Nepal&apos;s Creative Community
           </h1>
           <p className={cn('text-xl max-w-2xl mx-auto', colors.text.secondary)}>
-            Discover talented creators, support their work, and be part of Nepal's growing creative economy
+            Discover talented creators, support their work, and be part of Nepal&apos;s growing creative economy
           </p>
         </motion.div>
 
@@ -200,7 +192,7 @@ export default function ExplorePage() {
               <p className="text-gray-600 dark:text-gray-400">
                 {selectedCategory 
                   ? `Discover talented ${selectedCategory.toLowerCase()} creators` 
-                  : 'Top creators making waves in Nepal'
+                  : &apos;Top creators making waves in Nepal&apos;
                 }
               </p>
             </div>
@@ -244,7 +236,7 @@ export default function ExplorePage() {
               Are you a creator?
             </h2>
             <p className="text-xl mb-6 opacity-90">
-              Join Nepal's largest creator community and start earning today
+              Join Nepal&apos;s largest creator community and start earning today
             </p>
             <div className="flex items-center justify-center space-x-4">
               <Button size="lg" variant="secondary">

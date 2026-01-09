@@ -6,13 +6,6 @@ const isLoggingEnabled = process.env.ENABLE_LOGGING === 'true' || isDevelopment;
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
-interface LogEntry {
-  level: LogLevel;
-  message: string;
-  context?: string;
-  data?: Record<string, unknown>;
-  timestamp: string;
-}
 
 class Logger {
   private formatMessage(level: LogLevel, message: string, context?: string, data?: Record<string, unknown>): string {

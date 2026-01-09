@@ -54,7 +54,7 @@ export default function SupporterSignupPage() {
       // Mark this as supporter signup flow
       localStorage.setItem('isSupporterSignupFlow', 'true');
       
-      const { data, error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle();
       
       if (error) {
         setError(error.message || 'Failed to sign in with Google');
@@ -63,7 +63,7 @@ export default function SupporterSignupPage() {
       }
       
       // After OAuth redirect, the useEffect will handle the rest
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Supporter signup error:', error);
       setError(error.message || 'Failed to create account. Please try again.');
       localStorage.removeItem('isSupporterSignupFlow');
@@ -113,7 +113,7 @@ export default function SupporterSignupPage() {
                   Support Amazing Creators
                 </h1>
                 <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-                  Join Nepal's creative community and support your favorite creators
+                  Join Nepal&apos;s creative community and support your favorite creators
                 </p>
               </div>
 

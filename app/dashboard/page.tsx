@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Header } from '@/components/header';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { 
@@ -20,20 +19,13 @@ import {
   effects, 
   animations 
 } from '@/lib/tailwind-utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
-  Wallet,
-  BarChart3,
   Heart, 
-  Eye,
   History,
   Calendar,
   DollarSign,
   Users,
   Search,
-  User,
   Settings,
   ArrowRight,
   TrendingUp,
@@ -41,45 +33,17 @@ import {
   Star,
   Crown,
   Sparkles,
-  Share2,
-  Gift,
-  Clock,
-  CheckCircle,
-  ArrowUp,
-  ArrowDown,
-  Plus,
-  Filter,
-  Bell,
-  Bookmark,
-  Trophy,
-  Target,
-  PieChart,
-  Coins,
-  CreditCard,
-  Zap,
-  Flame,
-  Music,
-  Palette,
-  ThumbsUp,
-  ThumbsDown,
-  MoreHorizontal,
-  ExternalLink,
-  Copy,
-  Minus,
   FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
-import { useCreatorSearch } from '@/hooks/useSocial';
 import { useSupportHistory, useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import CreatorSearch from '@/components/social/CreatorSearch';
-import CreatorCard from '@/components/social/CreatorCard';
 import { EnhancedCreatorCard } from '@/components/social/EnhancedCreatorCard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { ActivityItem } from '@/components/dashboard/ActivityItem';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { SupportHistoryItem } from '@/components/dashboard/SupportHistoryItem';
-import DynamicPostCard from '@/components/posts/DynamicPostCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 
 function SupportJourneyStats({ 

@@ -63,7 +63,7 @@ export default function DynamicPostCard({
 }: DynamicPostCardProps) {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(
-    post.likes?.some((like: any) => like.user_id === user?.id) || false
+    post.likes?.some((like) => like.user_id === user?.id) || false
   );
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [isLiking, setIsLiking] = useState(false);
@@ -105,26 +105,17 @@ export default function DynamicPostCard({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         setNewComment('');
         setShowComments(true);
-        // Update comments count optimistically
-        if (post.comments_count !== undefined) {
-          // The count will be updated on next page refresh
-        }
       }
-    } catch (error) {
-      console.error('Comment error:', error);
+    } catch {
+      // Silently handle error
     } finally {
       setIsSubmittingComment(false);
     }
   };
 
-  const getPostIcon = () => {
-    if (post.image_url) return <Camera className="w-5 h-5 text-white" />;
-    if (post.media_url) return <Play className="w-5 h-5 text-white" />;
-    return <FileText className="w-5 h-5 text-white" />;
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -335,7 +326,7 @@ export default function DynamicPostCard({
           {/* Comments List */}
           {post.comments && Array.isArray(post.comments) && post.comments.length > 0 ? (
             <div className="space-y-3">
-              {post.comments.slice(0, 5).map((comment: any) => (
+              {post.comments.slice(0, 5).map((comment: { id: string; content: string; created_at: string; user?: { photo_url?: string; display_name: string } }) => (
                 <div key={comment.id || Math.random()} className="flex space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                     {comment.user?.photo_url ? (

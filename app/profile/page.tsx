@@ -7,14 +7,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { useAuth } from '@/contexts/supabase-auth-context'
-import { useCreatorDetails } from '@/hooks/useCreatorDetails'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
-  User,
-  Edit3,
   Settings,
   Heart,
   Users,
@@ -25,12 +22,8 @@ import {
   Share2,
   Camera,
   Mail,
-  MapPin,
-  Link as LinkIcon,
   CheckCircle,
-  TrendingUp,
   DollarSign,
-  Eye,
   MessageCircle
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -51,7 +44,15 @@ export default function ProfilePage() {
   const router = useRouter()
   const { user, userProfile, creatorProfile, isAuthenticated, loading } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
-  const [posts, setPosts] = useState<any[]>([])
+  const [posts, setPosts] = useState<Array<{
+    id: string;
+    title: string;
+    content: string;
+    image_url?: string | null;
+    created_at: string;
+    likes_count?: number;
+    comments_count?: number;
+  }>>([])
   const [postsLoading, setPostsLoading] = useState(true)
 
   // Redirect if not authenticated
@@ -77,7 +78,13 @@ export default function ProfilePage() {
             .limit(20)
 
           if (!error && data) {
-            setPosts(data.map((post: any) => ({
+            setPosts(data.map((post: {
+              id: string;
+              title: string;
+              content: string;
+              image_url: string | null;
+              created_at: string;
+            }) => ({
               id: post.id,
               title: post.title,
               content: post.content,

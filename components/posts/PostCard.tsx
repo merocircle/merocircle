@@ -121,7 +121,7 @@ export default function PostCard({
         setNewComment('');
         onComment?.(post.id, newComment.trim());
       }
-    } catch (error) {
+    } catch {
       // Silently handle error
     } finally {
       setIsSubmittingComment(false);

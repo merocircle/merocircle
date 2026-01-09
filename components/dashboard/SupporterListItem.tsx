@@ -13,13 +13,10 @@ interface SupporterListItemProps {
 }
 
 export function SupporterListItem({
-  id,
   name,
   avatar,
   amount,
-  tier,
-  joined,
-  creatorId
+  tier
 }: SupporterListItemProps) {
   return (
     <div className={cn(layout.flexBetween, 'py-2')}>

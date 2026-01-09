@@ -36,12 +36,12 @@ export default function AuthPage() {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle();
       
       if (error) {
         setError(error.message || 'Failed to sign in');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message || 'Failed to sign in. Please try again.');
     } finally {
       setLoading(false);
@@ -119,7 +119,7 @@ export default function AuthPage() {
                 Get Started
               </h1>
               <p className="text-gray-600 dark:text-gray-300">
-                Sign in or create your account to join Nepal's creative community
+                Sign in or create your account to join Nepal&apos;s creative community
               </p>
             </div>
 
@@ -195,7 +195,7 @@ export default function AuthPage() {
               transition={{ delay: 0.4, duration: 0.6 }}
             >
               <h2 className="text-4xl font-bold mb-6">
-                Join Nepal's Growing
+                Join Nepal&apos;s Growing
                 <br />
                 Creator Economy
               </h2>

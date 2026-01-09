@@ -17,7 +17,6 @@ import {
   ArrowRight,
   Star,
   Coffee,
-  Palette,
   Play,
   CheckCircle,
   ArrowDown,
@@ -70,7 +69,7 @@ const features = [
   {
     icon: Heart,
     title: "Local Payment Solutions",
-    description: "Seamlessly receive payments through eSewa and Khalti - Nepal's most trusted payment gateways.",
+    description: "Seamlessly receive payments through eSewa and Khalti - Nepal&apos;s most trusted payment gateways.",
     gradient: "from-red-500 to-pink-500"
   },
   {
@@ -331,7 +330,7 @@ export default function LandingPage() {
               </Badge>
             </motion.div>
             <motion.h2 variants={fadeInUp} className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Loved by Nepal's
+              Loved by Nepal&apos;s
               <span className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent"> Top Creators</span>
             </motion.h2>
           </motion.div>
@@ -445,7 +444,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 CreatorsNepal. Made with ❤️ for Nepal's creative community.</p>
+            <p>&copy; 2024 CreatorsNepal. Made with ❤️ for Nepal&apos;s creative community.</p>
           </div>
         </div>
       </footer>
