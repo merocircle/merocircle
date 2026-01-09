@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import NextImage from 'next/image';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
@@ -59,30 +59,40 @@ export default function DynamicPostCard({
   onDelete 
 }: DynamicPostCardProps) {
   const { user } = useAuth();
-  const [isLiked, setIsLiked] = useState(
-    post.likes?.some((like) => like.user_id === user?.id) || false
-  );
-  const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+  
+  // Check if current user has liked the post
+  const checkIsLiked = () => {
+    if (!user?.id || !post.likes) return false;
+    return post.likes.some((like: Record<string, unknown>) => 
+      (like.user_id as string) === user.id
+    );
+  };
+  
+  const [isLiked, setIsLiked] = useState(checkIsLiked());
+  const [likesCount, setLikesCount] = useState(post.likes_count || post.likes?.length || 0);
   const [isLiking, setIsLiking] = useState(false);
 
-  const handleLike = async () => {
-    if (!user || isLiking) return;
+  // Update isLiked when post.likes or user changes
+  useEffect(() => {
+    setIsLiked(checkIsLiked());
+    setLikesCount(post.likes_count || post.likes?.length || 0);
+  }, [post.likes, post.likes_count, user?.id]);
+
+  const handleLike = () => {
+    if (!user) return;
     
-    setIsLiking(true);
-    try {
-      const response = await fetch(`/api/posts/${post.id}/like`, {
-        method: isLiked ? 'DELETE' : 'POST'
+    const wasLiked = isLiked;
+    const previousCount = likesCount;
+    
+    setIsLiked(!wasLiked);
+    setLikesCount(prev => wasLiked ? Math.max(0, prev - 1) : prev + 1);
+    
+    fetch(`/api/posts/${post.id}/like`, { method: wasLiked ? 'DELETE' : 'POST' })
+      .then(res => !res.ok && Promise.reject())
+      .catch(() => {
+        setIsLiked(wasLiked);
+        setLikesCount(previousCount);
       });
-      
-      if (response.ok) {
-        setIsLiked(!isLiked);
-        setLikesCount(prev => isLiked ? Math.max(0, prev - 1) : prev + 1);
-      }
-    } catch (error) {
-      console.error('Like error:', error);
-    } finally {
-      setIsLiking(false);
-    }
   };
 
   const [showComments, setShowComments] = useState(false);

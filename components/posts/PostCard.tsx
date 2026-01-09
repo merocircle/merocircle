@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Calendar, User } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,13 +75,23 @@ export default function PostCard({
   onDelete,
   showActions = true 
 }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(
-    post.likes?.some(like => like.user_id === currentUserId) || false
-  );
+  // Check if current user has liked the post
+  const checkIsLiked = () => {
+    if (!currentUserId || !post.likes) return false;
+    return post.likes.some(like => like.user_id === currentUserId);
+  };
+  
+  const [isLiked, setIsLiked] = useState(checkIsLiked());
   const [likesCount, setLikesCount] = useState(post.likes_count || post.likes?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  // Update isLiked when post.likes or currentUserId changes
+  useEffect(() => {
+    setIsLiked(checkIsLiked());
+    setLikesCount(post.likes_count || post.likes?.length || 0);
+  }, [post.likes, post.likes_count, currentUserId]);
 
   const isOwner = currentUserId === post.creator.id;
   

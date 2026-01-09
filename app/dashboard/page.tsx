@@ -377,9 +377,7 @@ export default function DashboardPage() {
 
             <div className={layout.gapLarge}>
               <h3 className={typography.h3}>
-                {dashboardData?.hasFollowedCreators 
-                  ? 'Posts from Creators You Follow' 
-                  : 'Discover Posts'}
+                Posts from Creators You Follow
               </h3>
               {feedPosts && Array.isArray(feedPosts) && feedPosts.length > 0 ? (
                 feedPosts.map((post: Record<string, unknown>) => {
@@ -420,8 +418,8 @@ export default function DashboardPage() {
               ) : (
                 <EmptyState
                   icon={FileText}
-                  title="No posts yet"
-                  description="Follow creators to see their public posts here"
+                  title="No posts from followed creators"
+                  description="Follow creators to see their posts here"
                   actionLabel="Explore Creators"
                   actionHref="/explore"
                 />

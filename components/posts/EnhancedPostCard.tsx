@@ -31,6 +31,10 @@ interface Post {
     category?: string;
     is_verified?: boolean;
   };
+  likes?: Array<{
+    id: string;
+    user_id: string;
+  }>;
   likes_count?: number;
   comments_count?: number;
 }
@@ -63,9 +67,14 @@ export function EnhancedPostCard({
   onShare,
   showActions = true
 }: EnhancedPostCardProps) {
-  const [isLiked, setIsLiked] = useState(false);
+  // Check if current user has liked the post from the likes array
+  const initialIsLiked = currentUserId 
+    ? (post.likes?.some((like: { user_id: string }) => like.user_id === currentUserId) || false)
+    : false;
+  
+  const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+  const [likesCount, setLikesCount] = useState(post.likes_count || post.likes?.length || 0);
   const [commentsCount, setCommentsCount] = useState(post.comments_count || 0);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -78,23 +87,22 @@ export function EnhancedPostCard({
     ? '/profile' 
     : `/creator/${post.creator.id}`;
 
-  const handleLike = async () => {
+  const handleLike = () => {
     if (!currentUserId) return;
     
-    try {
-      if (isLiked) {
-        await fetch(`/api/posts/${post.id}/like`, { method: 'DELETE' });
-        setIsLiked(false);
-        setLikesCount(prev => Math.max(0, prev - 1));
-      } else {
-        await fetch(`/api/posts/${post.id}/like`, { method: 'POST' });
-        setIsLiked(true);
-        setLikesCount(prev => prev + 1);
-      }
-      onLike?.(post.id);
-    } catch {
-      // Silently handle error
-    }
+    const wasLiked = isLiked;
+    const previousCount = likesCount;
+    
+    setIsLiked(!wasLiked);
+    setLikesCount(prev => wasLiked ? Math.max(0, prev - 1) : prev + 1);
+    onLike?.(post.id);
+    
+    fetch(`/api/posts/${post.id}/like`, { method: wasLiked ? 'DELETE' : 'POST' })
+      .then(res => !res.ok && Promise.reject())
+      .catch(() => {
+        setIsLiked(wasLiked);
+        setLikesCount(previousCount);
+      });
   };
 
   const handleShare = async () => {
@@ -110,6 +118,16 @@ export function EnhancedPostCard({
     }
     onShare?.(post.id);
   };
+
+  // Update isLiked when post.likes or currentUserId changes
+  useEffect(() => {
+    if (currentUserId && post.likes) {
+      const userLiked = post.likes.some((like: { user_id: string }) => like.user_id === currentUserId);
+      setIsLiked(userLiked);
+    } else {
+      setIsLiked(false);
+    }
+  }, [post.likes, currentUserId]);
 
   useEffect(() => {
     if (showComments) {
