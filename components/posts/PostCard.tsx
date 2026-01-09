@@ -84,6 +84,11 @@ export default function PostCard({
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const isOwner = currentUserId === post.creator.id;
+  
+  // Determine profile link - if viewing own post, go to own profile
+  const creatorProfileLink = currentUserId === post.creator.id 
+    ? '/profile' 
+    : `/creator/${post.creator.id}`;
 
   const handleLike = async () => {
     if (!currentUserId) return;
@@ -152,7 +157,7 @@ export default function PostCard({
         <div className={cn(layout.flexStart, layout.flexBetween)}>
           <div className={cn(layout.flexRow, 'space-x-3')}>
             <Link 
-              href={`/creator/${post.creator.id}`}
+              href={creatorProfileLink}
               className="flex-shrink-0 hover:opacity-80 transition-opacity"
             >
               <Avatar className={cn(responsive.avatar, 'cursor-pointer')}>
@@ -175,7 +180,7 @@ export default function PostCard({
             <div className="flex-1">
               <div className={cn(layout.flexRow, 'space-x-2')}>
                 <Link 
-                  href={`/creator/${post.creator.id}`}
+                  href={creatorProfileLink}
                   className="hover:text-blue-600 transition-colors"
                 >
                   <h4 className={cn('font-semibold cursor-pointer inline-block', colors.text.primary)}>

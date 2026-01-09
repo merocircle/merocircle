@@ -8,6 +8,7 @@ import { Header } from '@/components/header';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { 
@@ -196,6 +197,7 @@ export default function DashboardPage() {
     followingCreators?: Array<unknown>;
     recentActivity?: Array<unknown>;
     feedPosts?: Array<unknown>;
+    trendingPosts?: Array<unknown>;
   } | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
@@ -277,6 +279,7 @@ export default function DashboardPage() {
   const followingCreators = Array.isArray(dashboardData?.followingCreators) ? dashboardData.followingCreators : [];
   const recentActivity = Array.isArray(dashboardData?.recentActivity) ? dashboardData.recentActivity : [];
   const feedPosts = Array.isArray(dashboardData?.feedPosts) ? dashboardData.feedPosts : [];
+  const trendingPosts = Array.isArray(dashboardData?.trendingPosts) ? dashboardData.trendingPosts : [];
 
   return (
     <div className={cn("min-h-screen", colors.bg.page)}>
@@ -419,6 +422,53 @@ export default function DashboardPage() {
                 />
               )}
             </div>
+
+            {/* Trending Posts Section */}
+            {trendingPosts && trendingPosts.length > 0 && (
+              <div className={layout.gapLarge}>
+                <div className="flex items-center justify-between">
+                  <h3 className={typography.h3}>Trending Posts</h3>
+                  <Badge variant="outline" className="text-xs">
+                    Discover new creators
+                  </Badge>
+                </div>
+                {trendingPosts.map((post: Record<string, unknown>) => {
+                  if (!post || !post.id) return null;
+                  return (
+                    <motion.div
+                      key={post.id}
+                      {...animations.fadeIn}
+                    >
+                      <EnhancedPostCard 
+                        post={{
+                          id: post.id,
+                          title: post.title || 'Untitled',
+                          content: post.content || '',
+                          image_url: post.image_url,
+                          media_url: post.media_url,
+                          tier_required: post.tier_required || 'free',
+                          created_at: post.created_at || post.createdAt || new Date().toISOString(),
+                          creator: post.creator || {
+                            id: post.creator_id || '',
+                            display_name: post.creator?.display_name || 'Unknown',
+                            photo_url: post.creator?.photo_url,
+                            role: 'creator'
+                          },
+                          creator_profile: post.creator_profile || {
+                            category: post.category || null,
+                            is_verified: post.is_verified || false
+                          },
+                          likes_count: post.likes_count || post.likes?.length || 0,
+                          comments_count: post.comments_count || post.comments?.length || 0
+                        }}
+                        currentUserId={user?.id}
+                        showActions={true}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
 
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">

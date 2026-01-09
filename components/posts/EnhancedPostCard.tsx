@@ -73,6 +73,11 @@ export function EnhancedPostCard({
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
+  // Determine profile link - if viewing own post, go to own profile
+  const creatorProfileLink = currentUserId === post.creator.id 
+    ? '/profile' 
+    : `/creator/${post.creator.id}`;
+
   const handleLike = async () => {
     if (!currentUserId) return;
     
@@ -169,7 +174,7 @@ export function EnhancedPostCard({
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
           <div className="flex items-center gap-3">
-            <Link href={`/creator/${post.creator.id}`}>
+            <Link href={creatorProfileLink}>
               <Avatar className="h-11 w-11 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
                 {post.creator.photo_url ? (
                   <Image
@@ -187,7 +192,7 @@ export function EnhancedPostCard({
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <Link href={`/creator/${post.creator.id}`}>
+                <Link href={creatorProfileLink}>
                   <p className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
                     {post.creator.display_name}
                   </p>
