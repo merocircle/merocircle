@@ -78,7 +78,7 @@ export default function CreatorSignupPage() {
       // Mark this as creator signup flow
       localStorage.setItem('isCreatorSignupFlow', 'true');
       
-      const { data, error } = await signInWithGoogle();
+      const { error } = await signInWithGoogle();
       
       if (error) {
         setError(error.message || 'Failed to sign in with Google');

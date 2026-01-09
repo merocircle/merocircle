@@ -100,7 +100,7 @@ export default function PostCard({
         setLikesCount(prev => prev + 1);
         onLike?.(post.id);
       }
-    } catch (error) {
+    } catch {
       // Silently handle error - user feedback handled by optimistic update
     }
   };

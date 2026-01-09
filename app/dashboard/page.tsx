@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Header } from '@/components/header';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { 
@@ -33,7 +34,8 @@ import {
   Star,
   Crown,
   Sparkles,
-  FileText
+  FileText,
+  Filter
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useSupportHistory, useSupportedCreators } from '@/hooks/useSupporterDashboard';
@@ -80,7 +82,7 @@ function SupportJourneyStats({
 
     let maxCreator = null;
     let maxTotal = 0;
-    creatorMap.forEach((value, key) => {
+    creatorMap.forEach((value) => {
       if (value.total > maxTotal) {
         maxTotal = value.total;
         maxCreator = value.name;

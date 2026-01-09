@@ -42,31 +42,31 @@ export async function GET() {
 
     const creatorMap = new Map();
     
-    supportedCreators?.forEach(transaction => {
-      const creatorId = transaction.creator_id
-      const creator = transaction.users
-      const profile = transaction.creator_profiles
+    supportedCreators?.forEach((transaction: Record<string, unknown>) => {
+      const creatorId = transaction.creator_id as string
+      const creator = transaction.users as Record<string, unknown> | null
+      const profile = transaction.creator_profiles as Record<string, unknown> | null
       
       if (!creator || !profile) return
       
       if (creatorMap.has(creatorId)) {
         const existing = creatorMap.get(creatorId)
-        existing.totalSupported += transaction.amount
+        existing.totalSupported += transaction.amount as number
         existing.transactionCount += 1
-        if (new Date(transaction.created_at) > new Date(existing.lastSupportDate)) {
-          existing.lastSupportDate = transaction.created_at
+        if (new Date(transaction.created_at as string) > new Date(existing.lastSupportDate)) {
+          existing.lastSupportDate = transaction.created_at as string
         }
       } else {
         creatorMap.set(creatorId, {
           id: creatorId,
-          name: creator.display_name,
-          photo_url: creator.photo_url,
-          category: profile.category,
-          bio: profile.bio,
-          is_verified: profile.is_verified,
-          totalSupported: transaction.amount,
+          name: creator.display_name ? String(creator.display_name) : 'Unknown',
+          photo_url: creator.photo_url ? String(creator.photo_url) : null,
+          category: profile.category ? String(profile.category) : null,
+          bio: profile.bio ? String(profile.bio) : null,
+          is_verified: profile.is_verified === true,
+          totalSupported: transaction.amount as number,
           transactionCount: 1,
-          lastSupportDate: transaction.created_at
+          lastSupportDate: transaction.created_at as string
         })
       }
     })

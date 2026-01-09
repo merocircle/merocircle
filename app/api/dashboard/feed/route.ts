@@ -116,20 +116,25 @@ export async function GET() {
       };
     });
 
-    const postActivities = (recentActivity || []).map((p: Record<string, unknown>) => ({
-      id: p.id,
-      creator: p.users?.display_name || 'Creator',
-      creatorId: p.creator_id,
-      action: 'posted',
-      title: p.title || 'New post',
-      content: p.content,
-      time: p.created_at,
-      type: (p.image_url ? 'image' : 'text') as 'image' | 'text',
-      imageUrl: p.image_url || null,
-      postId: p.id,
-      likes: p.post_likes?.length || 0,
-      comments: p.post_comments?.length || 0
-    }));
+    const postActivities = (recentActivity || []).map((p: Record<string, unknown>) => {
+      const users = p.users as Record<string, unknown> | undefined;
+      const postLikes = p.post_likes as Array<Record<string, unknown>> | undefined;
+      const postComments = p.post_comments as Array<Record<string, unknown>> | undefined;
+      return {
+        id: p.id,
+        creator: users?.display_name ? String(users.display_name) : 'Creator',
+        creatorId: p.creator_id,
+        action: 'posted',
+        title: p.title ? String(p.title) : 'New post',
+        content: p.content ? String(p.content) : undefined,
+        time: p.created_at,
+        type: (p.image_url ? 'image' : 'text') as 'image' | 'text',
+        imageUrl: p.image_url ? String(p.image_url) : null,
+        postId: p.id,
+        likes: postLikes?.length || 0,
+        comments: postComments?.length || 0
+      };
+    });
 
     let profilesMap = new Map();
     if (feedPosts.length > 0) {
@@ -144,6 +149,7 @@ export async function GET() {
 
     const formattedFeedPosts = feedPosts.map((p: Record<string, unknown>) => {
       const profile = profilesMap.get(p.creator_id);
+      const users = p.users as Record<string, unknown> | undefined;
       return {
         id: p.id,
         title: p.title,
@@ -156,9 +162,9 @@ export async function GET() {
         updated_at: p.updated_at,
         creator_id: p.creator_id,
         creator: {
-          id: p.users?.id || p.creator_id,
-          display_name: p.users?.display_name || 'Creator',
-          photo_url: p.users?.photo_url || null,
+          id: (users?.id ? String(users.id) : String(p.creator_id || '')),
+          display_name: users?.display_name ? String(users.display_name) : 'Creator',
+          photo_url: users?.photo_url ? String(users.photo_url) : null,
           role: 'creator'
         },
         creator_profile: {
@@ -172,15 +178,15 @@ export async function GET() {
           created_at: c.created_at,
           user: c.user || { id: null, display_name: 'Unknown', photo_url: null }
         })),
-        likes_count: p.post_likes?.length || 0,
-        comments_count: p.post_comments?.length || 0
+        likes_count: (p.post_likes as Array<Record<string, unknown>> | undefined)?.length || 0,
+        comments_count: (p.post_comments as Array<Record<string, unknown>> | undefined)?.length || 0
       };
     });
 
     const allRecentActivity = [...supportActivities, ...postActivities]
       .sort((a, b) => {
-        const timeA = a.time ? new Date(a.time).getTime() : 0;
-        const timeB = b.time ? new Date(b.time).getTime() : 0;
+        const timeA = a.time ? new Date(String(a.time)).getTime() : 0;
+        const timeB = b.time ? new Date(String(b.time)).getTime() : 0;
         return timeB - timeA;
       })
       .slice(0, 20);

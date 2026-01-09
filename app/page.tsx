@@ -280,7 +280,7 @@ export default function LandingPage() {
               </Badge>
             </motion.div>
             <motion.h2 variants={fadeInUp} className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Built for Nepal's
+              Built for Nepal&apos;s
               <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent"> Creative Future</span>
             </motion.h2>
             <motion.p variants={fadeInUp} className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -359,7 +359,7 @@ export default function LandingPage() {
                       <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                     ))}
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed">"{testimonial.content}"</p>
+                  <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed">&quot;{testimonial.content}&quot;</p>
                 </Card>
               </motion.div>
             ))}
@@ -414,7 +414,7 @@ export default function LandingPage() {
                 <h3 className="text-2xl font-bold">CreatorsNepal</h3>
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
-                Empowering Nepal's creative economy with local payment solutions, community building tools, and creator-focused features.
+                Empowering Nepal&apos;s creative economy with local payment solutions, community building tools, and creator-focused features.
               </p>
               <div className="flex space-x-4">
                 <CheckCircle className="w-5 h-5 text-green-400" />

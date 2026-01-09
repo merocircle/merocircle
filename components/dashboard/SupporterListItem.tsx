@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
+import { layout, colors, effects, typography } from '@/lib/tailwind-utils';
 
 interface SupporterListItemProps {
   id: string;

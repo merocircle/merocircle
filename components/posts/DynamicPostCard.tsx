@@ -12,10 +12,7 @@ import {
   Crown, 
   MoreHorizontal,
   Edit3,
-  Trash2,
-  Camera,
-  Play,
-  FileText
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { cn } from '@/lib/utils';
@@ -42,8 +39,8 @@ interface Post {
     category: string;
     is_verified: boolean;
   };
-  likes?: any[];
-  comments?: any[];
+  likes?: Array<Record<string, unknown>>;
+  comments?: Array<Record<string, unknown>>;
   likes_count?: number;
   comments_count?: number;
 }

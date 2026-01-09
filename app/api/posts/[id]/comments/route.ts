@@ -10,9 +10,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
+  const { id: postId } = await params;
   try {
     const supabase = await createClient();
-    const { id: postId } = await params;
     const searchParams = request.nextUrl.searchParams;
     
     const page = parseInt(searchParams.get('page') || '1');
@@ -73,9 +73,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
+  const { id: postId } = await params;
   try {
     const supabase = await createClient();
-    const { id: postId } = await params;
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     

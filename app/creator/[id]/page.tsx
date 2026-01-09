@@ -215,19 +215,6 @@ export default function CreatorProfilePage() {
     { amount: '2500', label: 'NPR 2,500', icon: <Star className="w-4 h-4" /> },
   ]
 
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
-    return date.toLocaleDateString()
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -394,40 +381,46 @@ export default function CreatorProfilePage() {
 
               {/* Posts Tab */}
               <TabsContent value="posts" className="space-y-4 sm:space-y-6">
-                {recentPosts.length > 0 ? recentPosts.map((post: any) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <EnhancedPostCard 
-                      post={{
-                        id: post.id,
-                        title: post.title,
-                        content: post.content,
-                        image_url: post.image_url,
-                        media_url: post.media_url,
-                        tier_required: post.tier_required || 'free',
-                        created_at: post.created_at || post.createdAt,
-                        creator: post.creator || {
-                          id: creatorId,
-                          display_name: creatorDetails?.display_name || 'Unknown',
-                          photo_url: creatorDetails?.avatar_url,
-                          role: 'creator'
-                        },
-                        creator_profile: post.creator_profile || {
-                          category: creatorDetails?.category || undefined,
-                          is_verified: creatorDetails?.is_verified || false
-                        },
-                        likes_count: post.likes_count || post.likes?.length || 0,
-                        comments_count: post.comments_count || post.comments?.length || 0
-                      }}
-                      currentUserId={user?.id}
-                      showActions={true}
-                    />
-                  </motion.div>
-                )) : (
+                {recentPosts.length > 0 ? (recentPosts as Array<Record<string, unknown>>).map((post: Record<string, unknown>) => {
+                  const postId = String(post.id || '');
+                  const likes = post.likes as Array<Record<string, unknown>> | undefined;
+                  const comments = post.comments as Array<Record<string, unknown>> | undefined;
+                  
+                  return (
+                    <motion.div
+                      key={postId}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <EnhancedPostCard 
+                        post={{
+                          id: postId,
+                          title: String(post.title || ''),
+                          content: String(post.content || ''),
+                          image_url: post.image_url ? String(post.image_url) : undefined,
+                          media_url: post.media_url ? String(post.media_url) : undefined,
+                          tier_required: String(post.tier_required || 'free'),
+                          created_at: String(post.created_at || post.createdAt || ''),
+                          creator: (post.creator as Record<string, unknown>) || {
+                            id: creatorId,
+                            display_name: creatorDetails?.display_name || 'Unknown',
+                            photo_url: creatorDetails?.avatar_url,
+                            role: 'creator'
+                          },
+                          creator_profile: (post.creator_profile as Record<string, unknown>) || {
+                            category: creatorDetails?.category || undefined,
+                            is_verified: creatorDetails?.is_verified || false
+                          },
+                          likes_count: (post.likes_count as number) || (likes?.length || 0),
+                          comments_count: (post.comments_count as number) || (comments?.length || 0)
+                        }}
+                        currentUserId={user?.id}
+                        showActions={true}
+                      />
+                    </motion.div>
+                  );
+                }) : (
                   <Card className="p-6 sm:p-8 text-center">
                     <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">

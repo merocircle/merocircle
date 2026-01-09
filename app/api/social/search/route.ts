@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform and add follow status for each creator
-    let resultsWithFollowStatus = (searchData || []).map(creator => ({
+    let resultsWithFollowStatus = (searchData || []).map((creator: Record<string, unknown>) => ({
       ...creator,
       avatar_url: creator.photo_url || null, // Map photo_url to avatar_url
       follower_count: creator.followers_count || 0, // Map followers_count to follower_count
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     }))
     
     if (user && searchData?.length) {
-      const creatorIds = searchData.map(creator => creator.user_id)
+      const creatorIds = searchData.map((creator: Record<string, unknown>) => creator.user_id as string)
       
       const { data: followData } = await supabase
         .from('follows')
@@ -72,9 +72,9 @@ export async function GET(request: NextRequest) {
 
       const followedCreatorIds = new Set(followData?.map(f => f.following_id) || [])
       
-      resultsWithFollowStatus = resultsWithFollowStatus.map(creator => ({
+      resultsWithFollowStatus = resultsWithFollowStatus.map((creator: Record<string, unknown>) => ({
         ...creator,
-        isFollowing: followedCreatorIds.has(creator.user_id)
+        isFollowing: followedCreatorIds.has(creator.user_id as string)
       }))
     }
 

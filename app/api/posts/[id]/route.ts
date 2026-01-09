@@ -67,9 +67,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
+  const { id } = await params;
   try {
     const supabase = await createClient();
-    const { id } = await params;
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -155,9 +155,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
+  const { id } = await params;
   try {
     const supabase = await createClient();
-    const { id } = await params;
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

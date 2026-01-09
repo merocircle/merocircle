@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
-export default function PaymentSuccessPage() {
+export const dynamic = 'force-dynamic';
+
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
@@ -128,5 +130,28 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <Card className="p-8 max-w-md w-full mx-4">
+          <div className="text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="w-12 h-12">
+                <div className="w-12 h-12 bg-primary animate-[morph_2s_ease-in-out_infinite] rounded-[6%]" />
+              </div>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Loading...
+            </h2>
+          </div>
+        </Card>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

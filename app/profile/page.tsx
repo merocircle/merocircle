@@ -24,20 +24,16 @@ import {
   Mail,
   CheckCircle,
   DollarSign,
-  MessageCircle
+  MessageCircle,
+  Eye
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { 
   common, 
-  spacing, 
-  typography, 
   layout, 
-  responsive, 
-  colors, 
-  effects, 
-  animations 
+  colors 
 } from '@/lib/tailwind-utils';
 
 export default function ProfilePage() {

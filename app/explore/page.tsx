@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import { 
   common, 
   spacing, 
-  typography, 
   layout, 
   responsive, 
   colors, 
@@ -192,7 +191,7 @@ export default function ExplorePage() {
               <p className="text-gray-600 dark:text-gray-400">
                 {selectedCategory 
                   ? `Discover talented ${selectedCategory.toLowerCase()} creators` 
-                  : &apos;Top creators making waves in Nepal&apos;
+                  : 'Top creators making waves in Nepal'
                 }
               </p>
             </div>

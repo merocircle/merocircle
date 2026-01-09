@@ -7,7 +7,7 @@ import { Search, X } from 'lucide-react'
 import CreatorCard from './CreatorCard'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils';
-import { layout, responsive, colors, typography, effects } from '@/lib/tailwind-utils';
+import { layout, responsive, colors, effects } from '@/lib/tailwind-utils';
 
 interface CreatorSearchProps {
   placeholder?: string

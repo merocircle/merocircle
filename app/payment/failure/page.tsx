@@ -5,6 +5,8 @@ import { XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
+export const dynamic = 'force-dynamic';
+
 export default function PaymentFailurePage() {
   const retryPayment = () => {
     window.history.back();

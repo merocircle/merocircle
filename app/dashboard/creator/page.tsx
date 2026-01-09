@@ -30,7 +30,8 @@ import {
   Shield,
   Phone,
   Save,
-  Camera
+  Camera,
+  MoreHorizontal
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { Skeleton } from '@/components/ui/skeleton';

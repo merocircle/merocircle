@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-  } catch {
+  } catch (error) {
     logger.error('Follow API error', 'FOLLOW_API', { 
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined

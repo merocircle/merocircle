@@ -9,8 +9,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
+  const { id: postId } = await params;
   try {
-    const { id: postId } = await params;
 
     // Redirect to the consolidated social like API
     const response = await fetch(`${request.nextUrl.origin}/api/social/like`, {
@@ -38,8 +38,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
+  const { id: postId } = await params;
   try {
-    const { id: postId } = await params;
 
     // Redirect to the consolidated social like API
     const response = await fetch(`${request.nextUrl.origin}/api/social/like`, {
