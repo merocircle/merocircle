@@ -1,6 +1,7 @@
 export const config = {
   app: {
-    baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    baseUrl: process.env.NEXT_PUBLIC_APP_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://creators-nepal.vercel.app'),
   },
   esewa: {
     merchantCode: process.env.ESEWA_MERCHANT_CODE || 'EPAYTEST',

@@ -33,6 +33,7 @@ export async function GET() {
     let feedPosts: Array<Record<string, unknown>> = [];
     
     if (allCreatorIds.length > 0) {
+      // Show posts from followed/supported creators
       const publicPostsQuery = supabase
         .from('posts')
         .select(`
@@ -81,6 +82,27 @@ export async function GET() {
       
       recentActivity = allPosts.slice(0, 10);
       feedPosts = allPosts;
+    } else {
+      // If user hasn't followed anyone, show trending public posts
+      const { data: trendingPosts } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          users(id, display_name, photo_url),
+          post_likes(id, user_id),
+          post_comments(
+            id,
+            content,
+            created_at,
+            user:users(id, display_name, photo_url)
+          )
+        `)
+        .eq('is_public', true)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      feedPosts = trendingPosts || [];
+      recentActivity = (trendingPosts || []).slice(0, 10);
     }
 
     const { data: supportTransactions } = await supabase
