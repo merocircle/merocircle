@@ -72,3 +72,47 @@ export function validatePostContent(title: string, content: string): ValidationR
   return { valid: true };
 }
 
+/**
+ * Validate file type
+ */
+export function validateFileType(file: File, allowedTypes: string[]): ValidationResult {
+  const fileType = file.type.toLowerCase();
+  const fileName = file.name.toLowerCase();
+  const fileExt = fileName.split('.').pop() || '';
+
+  const isAllowed = allowedTypes.some(type => {
+    const normalizedType = type.toLowerCase();
+    return fileType.includes(normalizedType) || 
+           fileExt === normalizedType.replace('.', '') ||
+           fileName.endsWith(normalizedType);
+  });
+
+  if (!isAllowed) {
+    return { 
+      valid: false, 
+      error: `File type not allowed. Allowed types: ${allowedTypes.join(', ')}` 
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate file size
+ */
+export function validateFileSize(size: number, maxSize: number): ValidationResult {
+  if (size <= 0) {
+    return { valid: false, error: 'File size must be greater than 0' };
+  }
+
+  if (size > maxSize) {
+    const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(2);
+    return { 
+      valid: false, 
+      error: `File size exceeds maximum allowed size of ${maxSizeMB}MB` 
+    };
+  }
+
+  return { valid: true };
+}
+

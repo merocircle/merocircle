@@ -37,7 +37,19 @@ export async function GET(
       .eq('creator_id', creatorId)
       .eq('is_active', true);
 
-    const { data: posts } = await supabase
+    let isSupporter = false;
+    if (user) {
+      const { data: supporterData } = await supabase
+        .from('supporters')
+        .select('id')
+        .eq('supporter_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('is_active', true)
+        .single();
+      isSupporter = !!supporterData;
+    }
+
+    let postsQuery = supabase
       .from('posts')
       .select(`
         *,
@@ -45,7 +57,13 @@ export async function GET(
         post_comments(id, content, created_at, user_id, users(id, display_name, photo_url)),
         users!posts_creator_id_fkey(id, display_name, photo_url, role)
       `)
-      .eq('creator_id', creatorId)
+      .eq('creator_id', creatorId);
+
+    if (!isSupporter) {
+      postsQuery = postsQuery.eq('is_public', true);
+    }
+
+    const { data: posts } = await postsQuery
       .order('created_at', { ascending: false })
       .limit(20);
 

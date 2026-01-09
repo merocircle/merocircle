@@ -70,7 +70,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useCreatorSearch } from '@/hooks/useSocial';
-import { useSupportHistory } from '@/hooks/useSupporterDashboard';
+import { useSupportHistory, useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import CreatorSearch from '@/components/social/CreatorSearch';
 import CreatorCard from '@/components/social/CreatorCard';
 import { EnhancedCreatorCard } from '@/components/social/EnhancedCreatorCard';
@@ -82,6 +82,144 @@ import { SupportHistoryItem } from '@/components/dashboard/SupportHistoryItem';
 import DynamicPostCard from '@/components/posts/DynamicPostCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 
+function SupportJourneyStats({ 
+  supportHistory, 
+  supportedCreators, 
+  totalSupported 
+}: { 
+  supportHistory: any[];
+  supportedCreators: any[];
+  totalSupported: number;
+}) {
+  const calculateFirstSupport = () => {
+    if (!supportHistory || supportHistory.length === 0) return null;
+    const dates = supportHistory.map(s => new Date(s.date)).sort((a, b) => a.getTime() - b.getTime());
+    return dates[0];
+  };
+
+  const calculateMostSupportedCreator = () => {
+    if (!supportHistory || supportHistory.length === 0) return null;
+    const creatorMap = new Map<string, { name: string; total: number }>();
+    
+    supportHistory.forEach(support => {
+      const creatorId = support.creator?.id;
+      const creatorName = support.creator?.name || 'Unknown';
+      if (creatorId) {
+        const existing = creatorMap.get(creatorId);
+        if (existing) {
+          existing.total += support.amount || 0;
+        } else {
+          creatorMap.set(creatorId, { name: creatorName, total: support.amount || 0 });
+        }
+      }
+    });
+
+    let maxCreator = null;
+    let maxTotal = 0;
+    creatorMap.forEach((value, key) => {
+      if (value.total > maxTotal) {
+        maxTotal = value.total;
+        maxCreator = value.name;
+      }
+    });
+
+    return maxCreator;
+  };
+
+  const calculateFavoriteCategory = () => {
+    if (!supportedCreators || supportedCreators.length === 0) return null;
+    const categoryMap = new Map<string, number>();
+    
+    supportedCreators.forEach(creator => {
+      const category = creator.category;
+      if (category) {
+        categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+      }
+    });
+
+    let maxCategory = null;
+    let maxCount = 0;
+    categoryMap.forEach((count, category) => {
+      if (count > maxCount) {
+        maxCount = count;
+        maxCategory = category;
+      }
+    });
+
+    return maxCategory;
+  };
+
+  const calculateCommunityRank = () => {
+    if (totalSupported === 0) return { rank: 'New Supporter', icon: Star, color: 'text-gray-500' };
+    if (totalSupported < 1000) return { rank: 'Bronze Supporter', icon: Star, color: 'text-amber-600' };
+    if (totalSupported < 5000) return { rank: 'Silver Supporter', icon: Star, color: 'text-gray-400' };
+    if (totalSupported < 10000) return { rank: 'Gold Supporter', icon: Star, color: 'text-yellow-500' };
+    if (totalSupported < 50000) return { rank: 'Platinum Supporter', icon: Crown, color: 'text-purple-500' };
+    return { rank: 'Diamond Supporter', icon: Crown, color: 'text-blue-500' };
+  };
+
+  const firstSupport = calculateFirstSupport();
+  const mostSupportedCreator = calculateMostSupportedCreator();
+  const favoriteCategory = calculateFavoriteCategory();
+  const communityRank = calculateCommunityRank();
+  const RankIcon = communityRank.icon;
+
+  return (
+    <div className="space-y-4">
+      <motion.div 
+        className="flex items-center justify-between"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <span className="text-gray-600 dark:text-gray-400">First Support</span>
+        <span className="font-medium">
+          {firstSupport 
+            ? new Date(firstSupport).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            : 'No support yet'}
+        </span>
+      </motion.div>
+      
+      <motion.div 
+        className="flex items-center justify-between"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <span className="text-gray-600 dark:text-gray-400">Most Supported Creator</span>
+        <span className="font-medium">
+          {mostSupportedCreator || 'None yet'}
+        </span>
+      </motion.div>
+      
+      <motion.div 
+        className="flex items-center justify-between"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <span className="text-gray-600 dark:text-gray-400">Favorite Category</span>
+        <span className="font-medium">
+          {favoriteCategory || 'None yet'}
+        </span>
+      </motion.div>
+      
+      <motion.div 
+        className="flex items-center justify-between"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <span className="text-gray-600 dark:text-gray-400">Community Rank</span>
+        <div className="flex items-center space-x-2">
+          <RankIcon className={cn("w-4 h-4", communityRank.color)} />
+          <span className="font-medium">{communityRank.rank}</span>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user, userProfile, isAuthenticated, loading } = useAuth();
   const router = useRouter();
@@ -90,6 +228,7 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
+  const { creators: supportedCreators } = useSupportedCreators();
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -592,27 +731,11 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Your Support Journey
               </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">First Support</span>
-                  <span className="font-medium">June 2023</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Most Supported Creator</span>
-                  <span className="font-medium">Rajesh Thapa</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Favorite Category</span>
-                  <span className="font-medium">Digital Art</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Community Rank</span>
-                  <div className="flex items-center space-x-2">
-                    <Star className="w-4 h-4 text-yellow-500" />
-                    <span className="font-medium">Gold Supporter</span>
-                  </div>
-                </div>
-              </div>
+              <SupportJourneyStats 
+                supportHistory={supportHistory}
+                supportedCreators={supportedCreators}
+                totalSupported={supporterStats.totalSupported}
+              />
             </Card>
           </TabsContent>
         </Tabs>

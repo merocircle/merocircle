@@ -20,10 +20,20 @@ export async function GET(request: NextRequest) {
     
     const followingCreators = await fetchCreatorProfiles(followingIds);
     
+    const { data: activeSupporters } = await supabase
+      .from('supporters')
+      .select('creator_id')
+      .eq('supporter_id', user.id)
+      .eq('is_active', true);
+    
+    const supportedCreatorIds = activeSupporters?.map(s => s.creator_id) || [];
+    const allCreatorIds = [...new Set([...followingIds, ...supportedCreatorIds])];
+    
     let recentActivity = [];
     let feedPosts: any[] = [];
-    if (followingIds.length > 0) {
-      const { data: posts } = await supabase
+    
+    if (allCreatorIds.length > 0) {
+      const publicPostsQuery = supabase
         .from('posts')
         .select(`
           *,
@@ -36,12 +46,41 @@ export async function GET(request: NextRequest) {
             user:users(id, display_name, photo_url)
           )
         `)
-        .in('creator_id', followingIds)
+        .in('creator_id', allCreatorIds)
         .eq('is_public', true)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      recentActivity = (posts || []).slice(0, 10);
-      feedPosts = posts || [];
+        .order('created_at', { ascending: false });
+      
+      const { data: publicPosts } = await publicPostsQuery;
+      
+      let supporterOnlyPosts: any[] = [];
+      if (supportedCreatorIds.length > 0) {
+        const { data: allCreatorPosts } = await supabase
+          .from('posts')
+          .select(`
+            *,
+            users(id, display_name, photo_url),
+            post_likes(id, user_id),
+            post_comments(
+              id,
+              content,
+              created_at,
+              user:users(id, display_name, photo_url)
+            )
+          `)
+          .in('creator_id', supportedCreatorIds)
+          .order('created_at', { ascending: false });
+        
+        supporterOnlyPosts = (allCreatorPosts || []).filter((post: any) => 
+          post.is_public === false || (post.tier_required && post.tier_required !== 'free')
+        );
+      }
+      
+      const allPosts = [...(publicPosts || []), ...supporterOnlyPosts]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 20);
+      
+      recentActivity = allPosts.slice(0, 10);
+      feedPosts = allPosts;
     }
 
     const { data: supportTransactions } = await supabase
