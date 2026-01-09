@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { calculateMonthlyTotal, calculateTotalAmount } from '@/lib/api-helpers';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -51,6 +52,10 @@ export async function GET(
 
       if (newProfile) {
         creatorProfile = newProfile;
+        // Channels will be automatically created by database trigger
+        logger.info('Creator profile created, channels will be auto-created by trigger', 'CREATOR_DASHBOARD_API', {
+          creatorId
+        });
       }
     }
 

@@ -198,6 +198,7 @@ export default function DashboardPage() {
     recentActivity?: Array<unknown>;
     feedPosts?: Array<unknown>;
     trendingPosts?: Array<unknown>;
+    hasFollowedCreators?: boolean;
   } | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const { history: supportHistory, loading: historyLoading } = useSupportHistory(20);
@@ -375,7 +376,11 @@ export default function DashboardPage() {
             </motion.div>
 
             <div className={layout.gapLarge}>
-              <h3 className={typography.h3}>Posts from Creators You Follow</h3>
+              <h3 className={typography.h3}>
+                {dashboardData?.hasFollowedCreators 
+                  ? 'Posts from Creators You Follow' 
+                  : 'Discover Posts'}
+              </h3>
               {feedPosts && Array.isArray(feedPosts) && feedPosts.length > 0 ? (
                 feedPosts.map((post: Record<string, unknown>) => {
                   if (!post || !post.id) return null;

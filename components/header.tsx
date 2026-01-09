@@ -15,7 +15,8 @@ import {
   LogOut, 
   ChevronDown,
   Crown,
-  BarChart3
+  BarChart3,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { cn } from '@/lib/utils';
@@ -85,7 +86,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className={cn('hidden md:flex', layout.flexRow, 'space-x-6')}>
+        <nav className={cn('hidden md:flex', layout.flexRow, 'space-x-6 items-center')}>
           <Link 
             href="/discover" 
             className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
@@ -101,13 +102,22 @@ export function Header() {
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
           </Link>
           {isAuthenticated && (
-          <Link 
-              href="/dashboard" 
-            className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
-          >
-              Dashboard
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-          </Link>
+            <>
+              <Link 
+                href="/dashboard" 
+                className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
+              >
+                Dashboard
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+              </Link>
+              <Link 
+                href="/community" 
+                className={cn('p-2 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-800', colors.text.secondary)}
+                title="Community"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </Link>
+            </>
           )}
         </nav>
 
@@ -242,13 +252,23 @@ export function Header() {
                 Explore
               </Link>
               {isAuthenticated && (
-              <Link 
-                  href="/dashboard" 
-                className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
-                onClick={closeMobileMenu}
-              >
-                  Dashboard
-              </Link>
+                <>
+                  <Link 
+                    href="/dashboard" 
+                    className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+                    onClick={closeMobileMenu}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    href="/community" 
+                    className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+                    onClick={closeMobileMenu}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Community</span>
+                  </Link>
+                </>
               )}
 
               {!isAuthenticated ? (

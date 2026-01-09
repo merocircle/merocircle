@@ -1,7 +1,14 @@
 // Production-ready logging utility
 // Only logs in development or when explicitly enabled
 
-const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+// Check multiple ways to determine if we're in development
+const isDevelopment = 
+  process.env.NODE_ENV === 'development' || 
+  !process.env.NODE_ENV ||
+  process.env.NEXT_PHASE === 'development' ||
+  process.env.VERCEL_ENV === 'development';
+
+// Always enable logging in development, or if explicitly enabled
 const isLoggingEnabled = process.env.ENABLE_LOGGING === 'true' || isDevelopment;
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';

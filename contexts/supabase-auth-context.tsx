@@ -229,9 +229,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const createCreatorProfile = async (bio: string, category: string) => {
     if (!user) return { error: new Error('Not authenticated') };
 
-    try {
-      await updateUserRole('creator');
+    console.log('[createCreatorProfile] Starting for user:', user.id);
 
+    try {
+      // Step 1: Ensure user exists in public.users
+      const { data: existingUser, error: userFetchError } = await supabase
+        .from('users')
+        .select('id, role')
+        .eq('id', user.id)
+        .single();
+
+      console.log('[createCreatorProfile] Existing user check:', { existingUser, error: userFetchError?.code });
+
+      if (userFetchError && userFetchError.code === 'PGRST116') {
+        // User doesn't exist, create them FIRST
+        console.log('[createCreatorProfile] Creating user in public.users');
+        const { data: newUser, error: createUserError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email || '',
+            display_name: user.user_metadata?.full_name || 
+                         user.user_metadata?.name ||
+                         user.email?.split('@')[0] || 
+                         'User',
+            photo_url: user.user_metadata?.avatar_url || 
+                      user.user_metadata?.picture || 
+                      null,
+            role: 'creator'
+          })
+          .select()
+          .single();
+
+        if (createUserError && createUserError.code !== '23505') {
+          console.error('[createCreatorProfile] Failed to create user:', createUserError);
+          return { error: createUserError };
+        }
+        console.log('[createCreatorProfile] User created:', newUser?.id);
+      } else if (existingUser && existingUser.role !== 'creator') {
+        // Step 2: Update role to creator if needed
+        console.log('[createCreatorProfile] Updating user role to creator');
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ role: 'creator' })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('[createCreatorProfile] Failed to update role:', updateError);
+          return { error: updateError };
+        }
+        console.log('[createCreatorProfile] Role updated to creator');
+      } else {
+        console.log('[createCreatorProfile] User already exists as creator');
+      }
+
+      // Step 3: Verify user now exists before creating profile
+      const { data: verifyUser } = await supabase
+        .from('users')
+        .select('id, role')
+        .eq('id', user.id)
+        .single();
+
+      console.log('[createCreatorProfile] Verified user exists:', verifyUser);
+
+      if (!verifyUser) {
+        console.error('[createCreatorProfile] User still does not exist after creation attempt');
+        return { error: new Error('Failed to create user record') };
+      }
+
+      // Step 4: Create creator profile - trigger will auto-create channels
+      console.log('[createCreatorProfile] Creating creator profile');
       const { error: profileError } = await supabase
         .from('creator_profiles')
         .insert({
@@ -241,12 +308,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
       if (profileError) {
+        console.error('[createCreatorProfile] Failed to create creator profile:', profileError);
         return { error: profileError };
       }
 
+      console.log('[createCreatorProfile] Creator profile created successfully');
       await loadProfile(user.id);
       return { error: null };
     } catch (error: any) {
+      console.error('[createCreatorProfile] Unexpected error:', error);
       return { error };
     }
   };

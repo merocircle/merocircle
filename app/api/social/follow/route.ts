@@ -105,6 +105,34 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Auto-join welcome channel if it exists
+      const { data: welcomeChannel } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('creator_id', creatorId)
+        .eq('category', 'welcome')
+        .eq('is_auto_join', true)
+        .single();
+
+      if (welcomeChannel) {
+        // Check if already a member
+        const { data: existingMember } = await supabase
+          .from('channel_members')
+          .select('id')
+          .eq('channel_id', welcomeChannel.id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (!existingMember) {
+          await supabase
+            .from('channel_members')
+            .insert({
+              channel_id: welcomeChannel.id,
+              user_id: user.id,
+            });
+        }
+      }
+
       logger.info('Successfully followed creator', 'FOLLOW_API', { 
         followerId: user.id, 
         followingId: creatorId 

@@ -36,7 +36,7 @@ export default function LoginPage() {
       }
       
       // Will be redirected by the useEffect watching user state
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Login error:', error);
       setError(error.message || 'Failed to sign in. Please try again.');
     } finally {
@@ -48,7 +48,7 @@ export default function LoginPage() {
     {
       icon: Shield,
       title: "Secure Authentication",
-      description: "Protected by Google&apos;s advanced security"
+      description: "Protected by Google's advanced security"
     },
     {
       icon: Zap,
@@ -168,7 +168,7 @@ export default function LoginPage() {
               transition={{ delay: 0.4, duration: 0.6 }}
             >
               <h2 className="text-4xl font-bold mb-6">
-                Join Nepal&apos;s Growing
+                Join Nepal's Growing
                 <br />
                 Creator Economy
               </h2>

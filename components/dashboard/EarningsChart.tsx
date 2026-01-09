@@ -13,7 +13,7 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 interface EarningsData {
   summary: {
@@ -68,7 +68,6 @@ export default function EarningsChart({ className }: EarningsChartProps) {
 
   useEffect(() => {
     fetchEarningsData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriod]);
 
   const fetchEarningsData = async () => {

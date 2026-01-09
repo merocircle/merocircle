@@ -96,6 +96,64 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Ensure supporter record exists
+    if (transaction.supporter_id && transaction.creator_id) {
+      const { data: existingSupporter } = await supabase
+        .from('supporters')
+        .select('id')
+        .eq('supporter_id', transaction.supporter_id)
+        .eq('creator_id', transaction.creator_id)
+        .single();
+
+      if (!existingSupporter) {
+        await supabase
+          .from('supporters')
+          .insert({
+            supporter_id: transaction.supporter_id,
+            creator_id: transaction.creator_id,
+            tier: 'basic',
+            amount: transactionAmount,
+            is_active: true,
+          });
+      } else {
+        await supabase
+          .from('supporters')
+          .update({
+            is_active: true,
+            amount: transactionAmount,
+          })
+          .eq('id', existingSupporter.id);
+      }
+
+      // Auto-join supporter channel if it exists
+      const { data: supporterChannel } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('creator_id', transaction.creator_id)
+        .eq('category', 'supporter')
+        .eq('requires_support', true)
+        .single();
+
+      if (supporterChannel && transaction.supporter_id) {
+        // Check if already a member
+        const { data: existingMember } = await supabase
+          .from('channel_members')
+          .select('id')
+          .eq('channel_id', supporterChannel.id)
+          .eq('user_id', transaction.supporter_id)
+          .single();
+
+        if (!existingMember) {
+          await supabase
+            .from('channel_members')
+            .insert({
+              channel_id: supporterChannel.id,
+              user_id: transaction.supporter_id,
+            });
+        }
+      }
+    }
+
     logger.info('Transaction completed successfully', 'PAYMENT_VERIFY', {
       transactionId: transaction.id,
       creatorId: transaction.creator_id,
