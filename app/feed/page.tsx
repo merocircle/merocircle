@@ -4,23 +4,19 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { SidebarNav } from '@/components/sidebar-nav'
 import { useAuth } from '@/contexts/supabase-auth-context'
+import { PageLayout } from '@/components/common/PageLayout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
-import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner'
-import { EmptyState } from '@/components/dashboard/EmptyState'
 import { 
   Rss,
   TrendingUp,
-  ArrowRight,
   Sparkles,
-  Compass
+  Compass,
+  ArrowRight
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface FeedData {
   feedPosts: Array<any>
@@ -75,63 +71,48 @@ export default function FeedPage() {
     }
   }, [isAuthenticated, user])
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-        <SidebarNav />
-        <main className="flex-1 flex items-center justify-center">
-          <LoadingSpinner />
-        </main>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return null
+  if (authLoading || loading || !isAuthenticated) {
+    return <PageLayout loading={authLoading || loading} />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-        <SidebarNav />
-        <main className="flex-1 flex items-center justify-center">
+      <PageLayout>
+        <div className="flex-1 flex items-center justify-center">
           <Card className="p-8 text-center">
             <p className="text-red-500 mb-4">{error}</p>
             <Button onClick={() => window.location.reload()}>Try Again</Button>
           </Card>
-        </main>
-      </div>
-    )
+        </div>
+      </PageLayout>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-      <SidebarNav />
-      
-      <main className="flex-1 overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <Rss className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    Your Feed
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Posts from creators you support
-                  </p>
-                </div>
+    <PageLayout>
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <Rss className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Your Feed
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Posts from creators you support
+                </p>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsList className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1">
@@ -222,9 +203,8 @@ export default function FeedPage() {
                 </Card>
               )}
             </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-    </div>
+        </Tabs>
+      </div>
+    </PageLayout>
   )
 }

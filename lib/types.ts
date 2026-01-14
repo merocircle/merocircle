@@ -160,7 +160,7 @@ export interface SearchCreatorResult {
   bio: string | null;
   category: string | null;
   is_verified: boolean;
-  supporters_count: number;
+  followers_count: number;
   posts_count: number;
   total_earnings: number;
 }
