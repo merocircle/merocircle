@@ -242,14 +242,6 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">New followers</p>
-                      <p className="text-sm text-gray-500">Get notified when someone follows you</p>
-                    </div>
-                    <Button variant="outline" size="sm">Enable</Button>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div>
                       <p className="font-medium">Comments</p>
                       <p className="text-sm text-gray-500">Get notified when someone comments on your posts</p>
                     </div>

@@ -1,7 +1,28 @@
+// Determine base URL based on environment
+const getBaseUrl = () => {
+  // First, check if explicitly set
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  
+  // In Vercel, use VERCEL_URL
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  // In local development, use localhost
+  if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
+    const port = process.env.PORT || '3000';
+    return `http://localhost:${port}`;
+  }
+  
+  // Production fallback
+  return 'https://creators-nepal.vercel.app';
+};
+
 export const config = {
   app: {
-    baseUrl: process.env.NEXT_PUBLIC_APP_URL || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://creators-nepal.vercel.app'),
+    baseUrl: getBaseUrl(),
   },
   esewa: {
     merchantCode: process.env.ESEWA_MERCHANT_CODE || 'EPAYTEST',

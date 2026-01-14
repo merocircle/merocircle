@@ -9,7 +9,6 @@ interface SupportedCreator {
   bio: string | null;
   is_verified: boolean;
   supporters_count: number;
-  followers_count: number;
   total_earnings: number;
   totalSupported: number;
   transactionCount: number;

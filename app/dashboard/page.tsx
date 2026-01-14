@@ -214,7 +214,7 @@ export default function DashboardPage() {
                       {creator.display_name}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {creator.follower_count || 0} followers
+                      {creator.supporter_count || 0} supporters
                     </p>
                   </Card>
                 </Link>

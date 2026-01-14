@@ -16,7 +16,6 @@ export interface CreatorProfile {
   is_verified: boolean;
   total_earnings: number;
   supporters_count: number;
-  followers_count: number;
   posts_count: number;
   likes_count: number;
   created_at: string;
@@ -120,14 +119,12 @@ export interface CreatorStats {
   monthlyEarnings: number;
   totalEarnings: number;
   supporters: number;
-  followers: number;
   posts: number;
   likes: number;
   comments: number;
   growth: {
     earnings: number;
     supporters: number;
-    followers: number;
     engagement: number;
   };
 }
@@ -153,7 +150,7 @@ export interface DiscoveryFeedPost {
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;
-  user_follows_creator: boolean;
+  user_is_supporter: boolean;
 }
 
 export interface SearchCreatorResult {
@@ -163,7 +160,7 @@ export interface SearchCreatorResult {
   bio: string | null;
   category: string | null;
   is_verified: boolean;
-  followers_count: number;
+  supporters_count: number;
   posts_count: number;
   total_earnings: number;
 }

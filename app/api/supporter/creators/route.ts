@@ -50,8 +50,7 @@ export async function GET() {
           category,
           is_verified,
           total_earnings,
-          supporters_count,
-          followers_count
+          supporters_count
         )
       `)
       .in('id', creatorIds);

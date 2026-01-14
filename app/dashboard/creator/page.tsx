@@ -64,7 +64,7 @@ export default function CreatorDashboard() {
   });
   const [registrationLoading, setRegistrationLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState<{
-    stats?: { monthlyEarnings: number; totalEarnings: number; supporters: number; posts: number; followers: number };
+    stats?: { monthlyEarnings: number; totalEarnings: number; supporters: number; posts: number };
     posts?: Array<{
       id: string;
       title: string;
@@ -94,8 +94,7 @@ export default function CreatorDashboard() {
     monthlyEarnings: 0,
     totalEarnings: 0,
     supporters: 0,
-    posts: 0,
-    followers: 0
+    posts: 0
   };
 
   const recentPosts = dashboardData?.posts || [];
@@ -106,8 +105,8 @@ export default function CreatorDashboard() {
     const totalComments = recentPosts.reduce((sum: number, post: { comments_count?: number }) => sum + (post.comments_count || 0), 0);
     const avgLikesPerPost = recentPosts.length > 0 ? Math.round(totalLikes / recentPosts.length) : 0;
     const avgCommentsPerPost = recentPosts.length > 0 ? Math.round(totalComments / recentPosts.length) : 0;
-    const engagementRate = recentPosts.length > 0 && creatorStats.followers > 0 
-      ? ((totalLikes + totalComments) / creatorStats.followers * 100).toFixed(1)
+    const engagementRate = recentPosts.length > 0 && creatorStats.supporters > 0 
+      ? ((totalLikes + totalComments) / creatorStats.supporters * 100).toFixed(1)
       : '0';
 
     return {
@@ -117,7 +116,7 @@ export default function CreatorDashboard() {
       avgCommentsPerPost,
       engagementRate
     };
-  }, [recentPosts, creatorStats.followers]);
+  }, [recentPosts, creatorStats.supporters]);
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -142,8 +141,7 @@ export default function CreatorDashboard() {
                 monthlyEarnings: 0,
                 totalEarnings: 0,
                 supporters: 0,
-                posts: 0,
-                followers: 0
+                posts: 0
               },
               posts: [],
               supporters: []
@@ -494,14 +492,6 @@ export default function CreatorDashboard() {
                       useBauhaus={true}
                       accentColor="#8b5cf6"
                     />
-                    <StatsCard
-                      label="Followers"
-                      value={creatorStats.followers}
-                      icon={Heart}
-                      iconColor="text-red-500"
-                      useBauhaus={true}
-                      accentColor="#ef4444"
-                    />
                   </>
                 )}
               </motion.div>
@@ -830,10 +820,6 @@ export default function CreatorDashboard() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">Total Posts</span>
                       <span className="font-medium text-green-600">{creatorStats.posts}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Followers</span>
-                      <span className="font-medium">{creatorStats.followers}</span>
                     </div>
                   </div>
                 </Card>

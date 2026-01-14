@@ -1,16 +1,19 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useAuth } from '@/contexts/supabase-auth-context';
 
 export const dynamic = 'force-dynamic';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
   const [transaction, setTransaction] = useState<{
@@ -25,18 +28,41 @@ function PaymentSuccessContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Redirect to creator page after verification and auth check
+  useEffect(() => {
+    if (verified && !authLoading) {
+      const creator_id = searchParams.get('creator_id');
+      // Wait a bit for auth to initialize after redirect
+      const timer = setTimeout(() => {
+        if (creator_id) {
+          // Redirect back to the creator page where payment was initiated
+          router.push(`/creator/${creator_id}`);
+        } else if (isAuthenticated) {
+          // Fallback to dashboard if no creator_id
+          router.push('/dashboard');
+        } else {
+          // If not authenticated, redirect to home page
+          router.push('/');
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [verified, isAuthenticated, authLoading, router, searchParams]);
+
   const verifyPayment = async () => {
     try {
       // Get parameters from eSewa callback
       const transaction_uuid = searchParams.get('transaction_uuid');
       const total_amount = searchParams.get('total_amount');
       const product_code = searchParams.get('product_code') || 'EPAYTEST';
+      const creator_id = searchParams.get('creator_id');
       const ref_id = searchParams.get('refId');
 
       console.log('[SUCCESS] Verifying payment:', {
         transaction_uuid,
         total_amount,
         product_code,
+        creator_id,
         ref_id,
       });
 
@@ -58,6 +84,8 @@ function PaymentSuccessContent() {
       if (result.success && result.status === 'completed') {
         setVerified(true);
         setTransaction(result.transaction);
+      } else {
+        console.error('[SUCCESS] Payment verification failed:', result.error);
       }
     } catch (error) {
       console.error('[SUCCESS] Verification error:', error);
@@ -113,10 +141,20 @@ function PaymentSuccessContent() {
             )}
 
             <div className="space-y-3 mt-6">
-              <Button asChild className="w-full">
-                <Link href="/dashboard">
-                  Go to Dashboard
-                </Link>
+              <Button 
+                onClick={() => {
+                  const creator_id = searchParams.get('creator_id');
+                  if (creator_id) {
+                    router.push(`/creator/${creator_id}`);
+                  } else if (isAuthenticated) {
+                    router.push('/dashboard');
+                  } else {
+                    router.push('/');
+                  }
+                }}
+                className="w-full"
+              >
+                {searchParams.get('creator_id') ? 'Back to Creator Page' : (isAuthenticated ? 'Go to Dashboard' : 'Go to Home')}
               </Button>
               
               <Button variant="outline" asChild className="w-full">

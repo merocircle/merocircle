@@ -32,12 +32,12 @@ export async function fetchCreatorProfiles(userIds: string[]) {
     return [];
   }
 
-  return (profiles || []).map((p: { user_id: string; category: string | null; followers_count: number | null; is_verified: boolean | null; posts_count: number | null; users?: { display_name: string; photo_url: string | null } }) => ({
+  return (profiles || []).map((p: { user_id: string; category: string | null; supporters_count: number | null; is_verified: boolean | null; posts_count: number | null; users?: { display_name: string; photo_url: string | null } }) => ({
     id: p.user_id,
     name: p.users?.display_name || 'Creator',
     category: p.category || 'Creator',
     avatar: p.users?.photo_url || null,
-    supporters: p.followers_count || 0,
+    supporters: p.supporters_count || 0,
     isVerified: p.is_verified || false,
     posts_count: p.posts_count || 0
   }));

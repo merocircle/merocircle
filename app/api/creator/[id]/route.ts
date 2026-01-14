@@ -20,16 +20,7 @@ export async function GET(
       return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
     }
 
-    let isFollowing = false;
-    if (user) {
-      const { data: followData } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('follower_id', user.id)
-        .eq('following_id', creatorId)
-        .single();
-      isFollowing = !!followData;
-    }
+    // Check if current user is a supporter
 
     const { data: paymentMethods } = await supabase
       .from('creator_payment_methods')
@@ -67,19 +58,13 @@ export async function GET(
       .order('created_at', { ascending: false })
       .limit(20);
 
-    const { count: actualFollowersCount } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', creatorId);
-
     const { count: actualPostsCount } = await supabase
       .from('posts')
       .select('*', { count: 'exact', head: true })
       .eq('creator_id', creatorId);
 
-    const followerCount = creatorProfile.followers_count > 0 
-      ? creatorProfile.followers_count 
-      : (actualFollowersCount || 0);
+    // Use supporters_count from creator_profiles (updated by trigger)
+    const supporterCount = creatorProfile.supporters_count || 0;
     
     const postsCount = creatorProfile.posts_count > 0 
       ? creatorProfile.posts_count 
@@ -149,11 +134,12 @@ export async function GET(
         bio: creatorProfile.bio,
         category: creatorProfile.category,
         is_verified: creatorProfile.is_verified,
-        follower_count: followerCount,
+        supporter_count: supporterCount,
+        supporters_count: supporterCount,
         posts_count: postsCount,
         total_earnings: creatorProfile.total_earnings || 0,
         created_at: creatorProfile.created_at,
-        isFollowing: isFollowing
+        is_supporter: isSupporter
       },
       paymentMethods: (paymentMethods || []).map((m: {
         id: string;

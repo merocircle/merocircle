@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       product_code: config.esewa.merchantCode,
       product_service_charge: "0",
       product_delivery_charge: "0",
-      success_url: `${config.app.baseUrl}/payment/success?transaction_uuid=${transactionUuid}&total_amount=${amountStr}&product_code=${config.esewa.merchantCode}`,
+      success_url: `${config.app.baseUrl}/payment/success?transaction_uuid=${transactionUuid}&total_amount=${amountStr}&product_code=${config.esewa.merchantCode}&creator_id=${creatorId}`,
       failure_url: `${config.app.baseUrl}/payment/failure`,
       signed_field_names: "total_amount,transaction_uuid,product_code",
     };

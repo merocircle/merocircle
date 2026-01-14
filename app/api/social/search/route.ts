@@ -50,38 +50,19 @@ export async function GET(request: NextRequest) {
       throw searchError
     }
 
-    // Transform and add follow status for each creator
-    let resultsWithFollowStatus = (searchData || []).map((creator: Record<string, unknown>) => ({
+    // Transform search results
+    const results = (searchData || []).map((creator: Record<string, unknown>) => ({
       ...creator,
-      avatar_url: creator.photo_url || null, // Map photo_url to avatar_url
-      follower_count: creator.followers_count || 0, // Map followers_count to follower_count
-      following_count: 0, // Not available from search, default to 0
-      total_earned: Number(creator.total_earnings) || 0, // Map total_earnings to total_earned
-      created_at: new Date().toISOString(), // Default value since not in search results
-      isFollowing: false // Default, will be updated if user is logged in
+      avatar_url: creator.photo_url || null,
+      supporter_count: creator.supporters_count || 0,
+      total_earned: Number(creator.total_earnings) || 0,
+      created_at: new Date().toISOString(),
     }))
-    
-    if (user && searchData?.length) {
-      const creatorIds = searchData.map((creator: Record<string, unknown>) => creator.user_id as string)
-      
-      const { data: followData } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', user.id)
-        .in('following_id', creatorIds)
-
-      const followedCreatorIds = new Set(followData?.map(f => f.following_id) || [])
-      
-      resultsWithFollowStatus = resultsWithFollowStatus.map((creator: Record<string, unknown>) => ({
-        ...creator,
-        isFollowing: followedCreatorIds.has(creator.user_id as string)
-      }))
-    }
 
     return NextResponse.json({
       success: true,
-      data: resultsWithFollowStatus,
-      total: resultsWithFollowStatus.length,
+      data: results,
+      total: results.length,
       query: query.trim()
     })
 
