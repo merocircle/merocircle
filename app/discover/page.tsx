@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Header } from '@/components/header'
+import { SidebarNav } from '@/components/sidebar-nav'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -40,22 +40,21 @@ export default function DiscoverPage() {
 
   if (authLoading) {
     return (
-      <div className={cn('min-h-screen', colors.bg.page)}>
-        <Header />
-        <div className={common.pageContainer}>
-          <div className={cn(layout.flexCenter, 'h-64')}>
-            <div className={cn('animate-spin rounded-full h-12 w-12 border-b-2 border-red-500')}></div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+        <SidebarNav />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+        </main>
       </div>
     )
   }
 
   return (
-    <div className={cn('min-h-screen', colors.bg.page)}>
-      <Header />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+      <SidebarNav />
       
-      <div className={common.pageContainer}>
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           {...animations.fadeIn}
           className="mb-8"
@@ -268,7 +267,8 @@ export default function DiscoverPage() {
             </div>
           </Card>
         </motion.div>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }

@@ -4,25 +4,22 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Heart, Users, FileText, Star, Bookmark } from 'lucide-react';
+import { Heart, Users, FileText, Star, Bookmark, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useFollow } from '@/hooks/useSocial';
 import type { Creator } from '@/hooks/useSocial';
 
 interface EnhancedCreatorCardProps {
   creator: Creator;
-  onFollowChange?: (creatorId: string, isFollowing: boolean) => void;
 }
 
-export function EnhancedCreatorCard({ creator, onFollowChange }: EnhancedCreatorCardProps) {
-  const [isFollowing, setIsFollowing] = useState(creator.isFollowing || false);
-  const [followerCount, setFollowerCount] = useState(creator.follower_count || 0);
+export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [animatedFollowers, setAnimatedFollowers] = useState(0);
+  const [animatedSupporters, setAnimatedSupporters] = useState(0);
   const [animatedPosts, setAnimatedPosts] = useState(0);
-  const { followCreator, unfollowCreator, loading } = useFollow();
+  const supporterCount = creator.supporter_count || 0;
 
   // Animate counters
   useEffect(() => {
@@ -30,14 +27,14 @@ export function EnhancedCreatorCard({ creator, onFollowChange }: EnhancedCreator
     const steps = 60;
     const stepDuration = duration / steps;
 
-    const followersIncrement = followerCount / steps;
+    const supportersIncrement = supporterCount / steps;
     const postsIncrement = (creator.posts_count || 0) / steps;
 
     let currentStep = 0;
     const timer = setTimeout(() => {
       const interval = setInterval(() => {
         currentStep++;
-        setAnimatedFollowers(Math.min(Math.floor(followersIncrement * currentStep), followerCount));
+        setAnimatedSupporters(Math.min(Math.floor(supportersIncrement * currentStep), supporterCount));
         setAnimatedPosts(Math.min(Math.floor(postsIncrement * currentStep), creator.posts_count || 0));
 
         if (currentStep >= steps) {
@@ -48,29 +45,7 @@ export function EnhancedCreatorCard({ creator, onFollowChange }: EnhancedCreator
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [followerCount, creator.posts_count]);
-
-  const handleFollowToggle = async () => {
-    const wasFollowing = isFollowing;
-    const newFollowingState = !wasFollowing;
-    const newFollowerCount = wasFollowing ? followerCount - 1 : followerCount + 1;
-    
-    setIsFollowing(newFollowingState);
-    setFollowerCount(newFollowerCount);
-    onFollowChange?.(creator.user_id, newFollowingState);
-    
-    try {
-      if (wasFollowing) {
-        await unfollowCreator(creator.user_id);
-      } else {
-        await followCreator(creator.user_id);
-      }
-    } catch {
-      setIsFollowing(wasFollowing);
-      setFollowerCount(followerCount);
-      onFollowChange?.(creator.user_id, wasFollowing);
-    }
-  };
+  }, [supporterCount, creator.posts_count]);
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -123,6 +98,11 @@ export function EnhancedCreatorCard({ creator, onFollowChange }: EnhancedCreator
                 </div>
               )}
             </div>
+            {creator.creator_profile?.is_verified && (
+              <Badge className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full p-0 flex items-center justify-center bg-blue-500 border-2 border-card">
+                <Star className="h-3 w-3 text-white fill-white" />
+              </Badge>
+            )}
           </div>
 
           {/* Name and Bio */}
@@ -137,18 +117,25 @@ export function EnhancedCreatorCard({ creator, onFollowChange }: EnhancedCreator
             </p>
           )}
 
+          {/* Category Badge */}
+          {creator.creator_profile?.category && (
+            <Badge variant="outline" className="mb-4">
+              {creator.creator_profile.category}
+            </Badge>
+          )}
+
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-4 py-3 border-t border-b border-border">
+          <div className="grid grid-cols-2 gap-3 mb-4 py-3 border-t border-b border-border">
             <div className="text-center">
               <div className="text-xl font-bold text-foreground mb-1">
-                {formatNumber(animatedFollowers)}
+                {formatNumber(animatedSupporters)}
               </div>
               <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                <Users className="h-3 w-3" />
-                Followers
+                <Heart className="h-3 w-3" />
+                Supporters
               </div>
             </div>
-            <div className="text-center border-l border-r border-border">
+            <div className="text-center border-l border-border">
               <div className="text-xl font-bold text-foreground mb-1">
                 {animatedPosts}
               </div>
@@ -157,31 +144,19 @@ export function EnhancedCreatorCard({ creator, onFollowChange }: EnhancedCreator
                 Posts
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-foreground mb-1">
-                4.8
-              </div>
-              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                Rating
-              </div>
-            </div>
           </div>
 
-          {/* Follow Button */}
-          <Button
-            onClick={handleFollowToggle}
-            disabled={loading[creator.user_id]}
-            variant={isFollowing ? "outline" : "default"}
-            className="w-full"
-            size="sm"
-          >
-            <Heart className={cn(
-              'h-4 w-4 mr-2 transition-all',
-              isFollowing && 'fill-current'
-            )} />
-            {loading[creator.user_id] ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
-          </Button>
+          {/* View Profile Button */}
+          <Link href={`/creator/${creator.user_id}`}>
+            <Button
+              variant="default"
+              className="w-full"
+              size="sm"
+            >
+              View Profile
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </Link>
         </div>
       </Card>
     </motion.div>

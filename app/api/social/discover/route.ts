@@ -30,11 +30,12 @@ export async function GET(request: NextRequest) {
     
     await supabase.auth.getUser()
 
+    // Fetch creators ordered by supporters (people who have paid)
     const [trendingResult, postsResult, suggestedResult] = await Promise.all([
       supabase
         .from('creator_profiles')
         .select('*, users!inner(id, display_name, photo_url, email)')
-        .order('followers_count', { ascending: false })
+        .order('supporters_count', { ascending: false })
         .limit(10),
       supabase
         .from('posts')
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
       supabase
         .from('creator_profiles')
         .select('*, users!inner(id, display_name, photo_url, email)')
+        .order('total_earnings', { ascending: false })
         .limit(10)
     ])
 
@@ -52,17 +54,16 @@ export async function GET(request: NextRequest) {
     const recentPosts = postsResult.data
     const suggestedCreators = suggestedResult.data
 
-    const trending_creators = (trendingCreators || []).map((cp: { user_id: string; bio: string | null; followers_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
+    // Map creators with supporters_count instead of follower_count
+    const trending_creators = (trendingCreators || []).map((cp: { user_id: string; bio: string | null; supporters_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
       bio: cp.bio,
       avatar_url: cp.users.photo_url,
-      follower_count: cp.followers_count || 0,
-      following_count: 0,
+      supporter_count: cp.supporters_count || 0,
       posts_count: cp.posts_count || 0,
       total_earned: cp.total_earnings || 0,
       created_at: cp.created_at,
-      isFollowing: false
     }))
 
     const recent_posts = (recentPosts || []).map((post: { id: string; creator_id: string; content: string; image_url: string | null; created_at: string; users: { id: string; display_name: string; photo_url: string | null } }) => ({
@@ -80,17 +81,15 @@ export async function GET(request: NextRequest) {
       }
     }))
 
-    const suggested_creators = (suggestedCreators || []).map((cp: { user_id: string; bio: string | null; followers_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
+    const suggested_creators = (suggestedCreators || []).map((cp: { user_id: string; bio: string | null; supporters_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
       bio: cp.bio,
       avatar_url: cp.users.photo_url,
-      follower_count: cp.followers_count || 0,
-      following_count: 0,
+      supporter_count: cp.supporters_count || 0,
       posts_count: cp.posts_count || 0,
       total_earned: cp.total_earnings || 0,
       created_at: cp.created_at,
-      isFollowing: false
     }))
 
     return NextResponse.json({

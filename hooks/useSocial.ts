@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/contexts/supabase-auth-context'
 
 export interface Creator {
   user_id: string
   display_name: string
   bio: string | null
   avatar_url: string | null
-  follower_count: number
-  following_count: number
+  supporter_count: number
   posts_count: number
   total_earned: number
   created_at: string
-  isFollowing?: boolean
+  creator_profile?: {
+    category?: string
+    is_verified?: boolean
+  }
 }
 
 export interface Post {
@@ -34,61 +35,6 @@ export interface DiscoveryFeed {
   trending_creators: Creator[]
   recent_posts: Post[]
   suggested_creators: Creator[]
-}
-
-// Hook for following/unfollowing creators with optimistic updates
-export const useFollow = () => {
-  const [loading, setLoading] = useState<Record<string, boolean>>({})
-
-  const followCreator = async (creatorId: string) => {
-    // Optimistic update - don't wait for API
-    setLoading(prev => ({ ...prev, [creatorId]: true }))
-    
-    try {
-      const response = await fetch('/api/social/follow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creatorId, action: 'follow' })
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to follow creator')
-      }
-      
-      return await response.json()
-    } catch (error) {
-      throw error
-    } finally {
-      setLoading(prev => ({ ...prev, [creatorId]: false }))
-    }
-  }
-
-  const unfollowCreator = async (creatorId: string) => {
-    // Optimistic update - don't wait for API
-    setLoading(prev => ({ ...prev, [creatorId]: true }))
-    
-    try {
-      const response = await fetch('/api/social/follow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creatorId, action: 'unfollow' })
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to unfollow creator')
-      }
-      
-      return await response.json()
-    } catch (error) {
-      throw error
-    } finally {
-      setLoading(prev => ({ ...prev, [creatorId]: false }))
-    }
-  }
-
-  return { followCreator, unfollowCreator, loading }
 }
 
 // Hook for discovery feed

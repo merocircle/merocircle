@@ -211,47 +211,7 @@ export default function LandingPage() {
           />
         </div>
 
-        <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial="hidden"
-            animate={controls}
-            variants={staggerContainer}
-            className="space-y-8"
-          >
-            {/* CTA Buttons */}
-            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
-              <Link href="/auth">
-                <Button size="lg" className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl relative z-10">
-                  Start Creating Today
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link href="/explore">
-                <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-white/30 hover:border-white/50 text-white font-semibold rounded-full transition-all duration-300 hover:bg-white/10 backdrop-blur-sm relative z-10">
-                  <Coffee className="mr-2 w-5 h-5" />
-                  Explore Creators
-                </Button>
-              </Link>
-            </motion.div>
-
-            {/* Hero Stats */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 relative z-10">
-              {heroStats.map((stat, index) => (
-                <motion.div
-                  key={index}
-                  variants={scaleIn}
-                  className="text-center group cursor-pointer"
-                >
-                  <div className="mb-2 mx-auto w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-white/20">
-                    <stat.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">{stat.value}</div>
-                  <div className="text-sm text-white/80 drop-shadow-md">{stat.label}</div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </div>
+        {/* Hero section now only contains the title - no buttons or stats */}
 
         {/* Scroll Indicator */}
         <motion.div 
@@ -262,6 +222,54 @@ export default function LandingPage() {
         >
           <ArrowDown className="w-6 h-6 animate-bounce" />
         </motion.div>
+      </section>
+
+      {/* Stats and CTA Section - New section between hero and features */}
+      <section className="py-24 bg-gradient-to-b from-[#030303] to-gray-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.03] via-transparent to-rose-500/[0.03]" />
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+            className="space-y-12"
+          >
+            {/* Hero Stats */}
+            <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {heroStats.map((stat, index) => (
+                <motion.div
+                  key={index}
+                  variants={scaleIn}
+                  className="text-center group cursor-pointer"
+                >
+                  <div className="mb-4 mx-auto w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-blue-500/30">
+                    <stat.icon className="w-8 h-8 text-blue-400" />
+                  </div>
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">{stat.value}</div>
+                  <div className="text-sm text-gray-400">{stat.label}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* CTA Buttons */}
+            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link href="/auth">
+                <Button size="lg" className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Start Creating Today
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link href="/explore">
+                <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-gray-600 hover:border-gray-500 text-white font-semibold rounded-full transition-all duration-300 hover:bg-white/10 backdrop-blur-sm">
+                  <Coffee className="mr-2 w-5 h-5" />
+                  Explore Creators
+                </Button>
+              </Link>
+            </motion.div>
+          </motion.div>
+        </div>
       </section>
 
       {/* Features Section */}
@@ -283,9 +291,25 @@ export default function LandingPage() {
               Built for Nepal&apos;s
               <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent"> Creative Future</span>
             </motion.h2>
-            <motion.p variants={fadeInUp} className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            <motion.p variants={fadeInUp} className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
               Every feature is designed with Nepali creators in mind, from local payment integration to community building tools.
             </motion.p>
+            
+            {/* CTA Buttons in Features Section */}
+            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+              <Link href="/auth">
+                <Button size="lg" className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Start Creating Today
+                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link href="/explore">
+                <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-600 dark:hover:border-blue-500 text-gray-900 dark:text-gray-100 font-semibold rounded-full transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <Coffee className="mr-2 w-5 h-5" />
+                  Explore Creators
+                </Button>
+              </Link>
+            </motion.div>
           </motion.div>
 
           <motion.div

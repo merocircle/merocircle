@@ -1,62 +1,24 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { memo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Creator, useFollow } from '@/hooks/useSocial'
+import { Creator } from '@/hooks/useSocial'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Heart, Users, FileText } from 'lucide-react'
+import { Users, FileText, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { spacing, layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils'
 
 interface CreatorCardProps {
   creator: Creator
-  onFollowChange?: (creatorId: string, isFollowing: boolean) => void
 }
 
-function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
-  const [isFollowing, setIsFollowing] = useState(creator.isFollowing || false)
-  const [followerCount, setFollowerCount] = useState(creator.follower_count || 0)
-  const { followCreator, unfollowCreator, loading } = useFollow()
-  const [isPending, startTransition] = useTransition()
-  
+function CreatorCard({ creator }: CreatorCardProps) {
   // Ensure required fields exist
   if (!creator || !creator.user_id || !creator.display_name) {
     return null
   }
-
-  const handleFollowToggle = () => {
-    // Optimistic UI update - instant feedback
-    const wasFollowing = isFollowing
-    const newFollowingState = !wasFollowing
-    const newFollowerCount = wasFollowing ? followerCount - 1 : followerCount + 1
-    
-    // Update UI immediately
-    setIsFollowing(newFollowingState)
-    setFollowerCount(newFollowerCount)
-    onFollowChange?.(creator.user_id, newFollowingState)
-    
-    // Perform API call in background
-    startTransition(async () => {
-      try {
-        if (wasFollowing) {
-          await unfollowCreator(creator.user_id)
-        } else {
-          await followCreator(creator.user_id)
-        }
-      } catch (error) {
-        // Revert on error
-        console.error('Follow toggle error:', error)
-        setIsFollowing(wasFollowing)
-        setFollowerCount(followerCount)
-        onFollowChange?.(creator.user_id, wasFollowing)
-      }
-    })
-  }
-
-  const isLoading = loading[creator.user_id] || isPending
 
   return (
     <Card className={cn('hover:shadow-lg transition-shadow duration-200')}>
@@ -94,7 +56,7 @@ function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
             <div className={cn(layout.flexRow, 'space-x-4', typography.small, colors.text.muted, 'mb-3')}>
               <div className={cn(layout.flexRow, 'space-x-1')}>
                 <Users className={responsive.icon} />
-                <span>{followerCount.toLocaleString()} followers</span>
+                <span>{(creator.supporter_count || 0).toLocaleString()} supporters</span>
               </div>
               <div className={cn(layout.flexRow, 'space-x-1')}>
                 <FileText className={responsive.icon} />
@@ -102,22 +64,18 @@ function CreatorCard({ creator, onFollowChange }: CreatorCardProps) {
               </div>
             </div>
 
-            <Button
-              onClick={handleFollowToggle}
-              disabled={isLoading}
-              variant={isFollowing ? "outline" : "default"}
-              size="sm"
-              className={cn('w-full sm:w-auto transition-all')}
-            >
-              <div className={cn(layout.flexRow, 'space-x-2')}>
-                {isLoading ? (
-                  <div className={cn('w-4 h-4 border-2 border-current border-t-transparent', effects.rounded.full, 'animate-spin opacity-50')} />
-                ) : (
-                  <Heart className={cn(responsive.icon, 'transition-all', isFollowing ? 'fill-current' : '')} />
-                )}
-                <span>{isFollowing ? 'Following' : 'Follow'}</span>
-              </div>
-            </Button>
+            <Link href={`/creator/${creator.user_id}`}>
+              <Button
+                variant="default"
+                size="sm"
+                className={cn('w-full sm:w-auto transition-all')}
+              >
+                <div className={cn(layout.flexRow, 'space-x-2')}>
+                  <span>View Profile</span>
+                  <ArrowRight className={responsive.icon} />
+                </div>
+              </Button>
+            </Link>
           </div>
         </div>
       </CardContent>

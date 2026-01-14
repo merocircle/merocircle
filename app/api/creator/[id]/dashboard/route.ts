@@ -44,8 +44,7 @@ export async function GET(
           category: null,
           is_verified: false,
           total_earnings: 0,
-          supporters_count: 0,
-          followers_count: 0
+          supporters_count: 0
         })
         .select()
         .single();
@@ -67,7 +66,6 @@ export async function GET(
       is_verified: false,
       total_earnings: 0,
       supporters_count: 0,
-      followers_count: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -109,8 +107,7 @@ export async function GET(
         monthlyEarnings,
         totalEarnings,
         supporters: supporters?.length || 0,
-        posts: posts?.length || 0,
-        followers: profileToUse.followers_count || 0
+        posts: posts?.length || 0
       },
       posts: (posts || []).map((p: {
         id: string;

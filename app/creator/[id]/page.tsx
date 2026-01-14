@@ -4,12 +4,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { Header } from '@/components/header'
+import { SidebarNav } from '@/components/sidebar-nav'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails'
-import { useFollow } from '@/hooks/useSocial'
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
-import { StatsCard } from '@/components/dashboard/StatsCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -17,16 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils';
-import { 
-  common, 
-  typography, 
-  layout, 
-  responsive, 
-  colors, 
-  effects, 
-  animations 
-} from '@/lib/tailwind-utils';
 import { 
   Heart, 
   Users, 
@@ -34,20 +25,15 @@ import {
   Calendar, 
   Star, 
   CreditCard,
-  Smartphone,
-  Building2,
-  QrCode,
   CheckCircle,
   Crown,
-  ArrowLeft,
   Share2,
-  Gift,
   MessageCircle,
   Coins,
-  Play,
-  Camera,
-  Music,
-  Palette
+  Gift,
+  MoreHorizontal,
+  ShoppingBag,
+  Info
 } from 'lucide-react'
 
 export default function CreatorProfilePage() {
@@ -56,9 +42,15 @@ export default function CreatorProfilePage() {
   const { user } = useAuth()
   const creatorId = params.id as string
   
+  // Redirect to own profile page if viewing self
+  useEffect(() => {
+    if (user && user.id === creatorId) {
+      router.push('/profile')
+    }
+  }, [user, creatorId, router])
+  
   const { 
     creatorDetails, 
-    paymentMethods, 
     subscriptionTiers,
     posts: recentPosts,
     loading, 
@@ -66,42 +58,38 @@ export default function CreatorProfilePage() {
     refreshCreatorDetails 
   } = useCreatorDetails(creatorId)
   
-  const { followCreator, unfollowCreator, loading: followLoading } = useFollow();
   const { subscribe, unsubscribe } = useSubscription();
   
-  const [isFollowing, setIsFollowing] = useState(creatorDetails?.isFollowing || false);
+  const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
   
-  const [activeTab, setActiveTab] = useState('posts');
+  const [activeTab, setActiveTab] = useState('home');
   const [paymentAmount, setPaymentAmount] = useState('1000');
   const [customAmount, setCustomAmount] = useState('');
   const [supporterMessage, setSupporterMessage] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
 
+  // Save to recently visited
   useEffect(() => {
-    if (creatorDetails?.isFollowing !== undefined) {
-      setIsFollowing(creatorDetails.isFollowing);
+    if (creatorDetails && !loading) {
+      const recentlyVisited = JSON.parse(localStorage.getItem('recentlyVisited') || '[]');
+      const newItem = {
+        id: creatorId,
+        name: creatorDetails.display_name,
+        avatar: creatorDetails.avatar_url,
+        type: 'creator',
+        href: `/creator/${creatorId}`,
+      };
+      
+      // Remove duplicates and add to front
+      const filtered = recentlyVisited.filter((item: any) => item.id !== creatorId);
+      const updated = [newItem, ...filtered].slice(0, 10);
+      localStorage.setItem('recentlyVisited', JSON.stringify(updated));
     }
-  }, [creatorDetails?.isFollowing]);
+  }, [creatorDetails, creatorId, loading]);
 
-  const handleFollow = async () => {
-    const wasFollowing = isFollowing;
-    setIsFollowing(!wasFollowing);
-    
-    try {
-      if (wasFollowing) {
-        await unfollowCreator(creatorId);
-      } else {
-        await followCreator(creatorId);
-      }
-      await refreshCreatorDetails();
-    } catch {
-      setIsFollowing(wasFollowing);
-      alert('Failed to update follow status');
-    }
-  };
+  // Supporters are automatically tracked when they make payments
 
-  // Handle one-time payment - Following Medium article exactly
   const handlePayment = async () => {
     if (!user) {
       router.push('/auth')
@@ -112,13 +100,6 @@ export default function CreatorProfilePage() {
     try {
       const amount = customAmount || paymentAmount
       
-      console.log('[PAYMENT] Initiating payment:', {
-        amount,
-        creatorId,
-        supporterId: user.id,
-      })
-      
-      // Call payment initiation API (following Medium article)
       const response = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,25 +117,16 @@ export default function CreatorProfilePage() {
 
       const result = await response.json()
       
-      console.log('[PAYMENT] API response:', result)
-      
-      // TEST MODE: Redirect directly to success page
       if (result.test_mode && result.redirect_url) {
-        console.log('[PAYMENT] TEST MODE: Redirecting to success')
         window.location.href = result.redirect_url
         return
       }
       
-      // PRODUCTION MODE: Submit to eSewa
       if (result.success && result.esewaConfig) {
-        console.log('[PAYMENT] eSewa config:', result.esewaConfig)
-        
-        // Create form and submit to eSewa
         const form = document.createElement('form')
         form.method = 'POST'
         form.action = result.payment_url
         
-        // Add all form fields from esewaConfig
         Object.entries(result.esewaConfig).forEach(([key, value]) => {
           const input = document.createElement('input')
           input.type = 'hidden'
@@ -163,7 +135,6 @@ export default function CreatorProfilePage() {
           form.appendChild(input)
         })
         
-        console.log('[PAYMENT] Submitting to eSewa:', result.payment_url)
         document.body.appendChild(form)
         form.submit()
       } else {
@@ -177,7 +148,6 @@ export default function CreatorProfilePage() {
     }
   }
 
-  // Handle subscription
   const handleSubscription = async (tierId: string) => {
     if (!user) {
       router.push('/auth')
@@ -198,16 +168,6 @@ export default function CreatorProfilePage() {
     }
   }
 
-  const getCategoryIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
-      case 'music': return <Music className="w-5 h-5" />
-      case 'art': return <Palette className="w-5 h-5" />
-      case 'photography': return <Camera className="w-5 h-5" />
-      case 'video': return <Play className="w-5 h-5" />
-      default: return <Star className="w-5 h-5" />
-    }
-  }
-
   const paymentOptions = [
     { amount: '100', label: 'NPR 100', icon: <Coins className="w-4 h-4" /> },
     { amount: '500', label: 'NPR 500', icon: <Gift className="w-4 h-4" /> },
@@ -217,183 +177,241 @@ export default function CreatorProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <Header />
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+        <SidebarNav />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+        </main>
       </div>
     )
   }
 
   if (error || !creatorDetails) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <Header />
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Creator Not Found</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">The creator you&apos;re looking for doesn&apos;t exist.</p>
-            <Button onClick={() => router.back()}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Back
-            </Button>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+        <SidebarNav />
+        <main className="flex-1 flex items-center justify-center">
+          <Card className="p-8 text-center">
+            <h2 className="text-2xl font-bold mb-4">Creator Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              This creator doesn&apos;t exist or has been removed
+            </p>
+            <Button onClick={() => router.back()}>Go Back</Button>
+          </Card>
+        </main>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Header />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+      <SidebarNav />
       
-      <div className={common.pageContainer}>
-        <motion.div
-          {...animations.fadeIn}
-          className="mb-4 sm:mb-6 md:mb-8"
-        >
-          <Card className={cn('p-4 sm:p-6 md:p-8')}>
-            <div className={cn('flex flex-col lg:flex-row items-start space-y-4 sm:space-y-6 lg:space-y-0 lg:space-x-8')}>
-              <div className="flex-shrink-0 w-full lg:w-auto flex justify-center lg:justify-start">
-                <div className="relative">
-                  <div className={cn(responsive.avatarLarge, effects.gradient.red, effects.rounded.full, layout.flexCenter, 'overflow-hidden')}>
-                    {creatorDetails.avatar_url ? (
-                      <Image 
-                        src={creatorDetails.avatar_url} 
-                        alt={creatorDetails.display_name} 
-                        width={128} 
-                        height={128}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span className={cn('text-3xl sm:text-4xl font-bold text-white')}>
-                        {creatorDetails.display_name?.[0]?.toUpperCase() || '?'}
-                      </span>
-                    )}
-                  </div>
-                  {creatorDetails.is_verified && (
-                    <div className={cn('absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2', responsive.avatarSmall, 'bg-blue-500', effects.rounded.full, layout.flexCenter, 'border-2 border-white dark:border-gray-950')}>
-                      <CheckCircle className={cn(responsive.icon, 'text-white')} />
-                    </div>
-                  )}
-                </div>
-              </div>
+      <main className="flex-1 overflow-y-auto">
+        {/* Hero Banner */}
+        <div className="relative h-64 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 overflow-hidden">
+          {/* Cover Image (if available) */}
+          {creatorDetails.cover_image_url && (
+            <Image 
+              src={creatorDetails.cover_image_url} 
+              alt={`${creatorDetails.display_name} cover`}
+              fill
+              className="object-cover"
+              priority
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
 
-              <div className="flex-grow">
-                <div className={cn('flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4')}>
+        {/* Profile Section */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative -mt-20 mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
+              {/* Profile Avatar */}
+              <Avatar className="w-32 h-32 border-4 border-white dark:border-gray-900 shadow-xl">
+                <AvatarImage src={creatorDetails.avatar_url} alt={creatorDetails.display_name} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-4xl">
+                  {creatorDetails.display_name?.[0]?.toUpperCase() || '?'}
+                </AvatarFallback>
+              </Avatar>
+
+              {/* Profile Info */}
+              <div className="flex-1 pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <h1 className={cn(typography.h1, 'mb-2')}>
-                      {creatorDetails.display_name || 'Creator'}
-                    </h1>
-                    {creatorDetails.category && (
-                      <Badge variant="outline" className="mb-3">
-                        {getCategoryIcon(creatorDetails.category)}
-                        <span className="ml-2">{creatorDetails.category}</span>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        {creatorDetails.display_name}
+                      </h1>
+                      {creatorDetails.is_verified && (
+                        <CheckCircle className="w-6 h-6 text-blue-500" />
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {creatorDetails.supporter_count || 0} supporters
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <FileText className="w-4 h-4" />
+                        {creatorDetails.posts_count || 0} posts
+                      </span>
+                      {creatorDetails.category && (
+                        <Badge variant="outline" className="gap-1">
+                          <Star className="w-3 h-3" />
+                          {creatorDetails.category}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    {isSupporter && (
+                      <Badge variant="secondary" className="gap-1 px-3 py-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Supporter
                       </Badge>
                     )}
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
-                    <Button
-                      onClick={handleFollow}
-                      variant={isFollowing ? "outline" : "default"}
-                      size="sm"
-                      className={`flex-1 sm:flex-initial ${isFollowing ? "" : "bg-red-500 hover:bg-red-600"}`}
-                      disabled={followLoading[creatorId] || false}
-                    >
-                      {followLoading[creatorId] ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                          {isFollowing ? 'Unfollowing...' : 'Following...'}
-                        </>
-                      ) : (
-                        <>
-                          <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
-                          {isFollowing ? 'Following' : 'Follow'}
-                        </>
-                      )}
-                    </Button>
                     
                     <Button variant="outline" size="icon">
                       <Share2 className="w-4 h-4" />
+                    </Button>
+                    
+                    <Button variant="outline" size="icon">
+                      <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
 
                 {creatorDetails.bio && (
-                  <p className={cn(typography.body, colors.text.secondary, 'mb-4 max-w-2xl')}>
+                  <p className="mt-4 text-gray-700 dark:text-gray-300 max-w-3xl">
                     {creatorDetails.bio}
                   </p>
                 )}
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                  <StatsCard
-                    label="Followers"
-                    value={creatorDetails.follower_count || 0}
-                    icon={Users}
-                    iconColor="text-blue-600"
-                    useBauhaus={true}
-                    accentColor="#3b82f6"
-                  />
-                  <StatsCard
-                    label="Posts"
-                    value={creatorDetails.posts_count || 0}
-                    icon={FileText}
-                    iconColor="text-purple-600"
-                    useBauhaus={true}
-                    accentColor="#8b5cf6"
-                  />
-                  <StatsCard
-                    label="Tiers"
-                    value={subscriptionTiers?.length || 0}
-                    icon={Crown}
-                    iconColor="text-yellow-600"
-                    useBauhaus={true}
-                    accentColor="#f59e0b"
-                  />
-                  <StatsCard
-                    label="Joined"
-                    value={creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
-                    icon={Calendar}
-                    iconColor="text-green-600"
-                    useBauhaus={true}
-                    accentColor="#10b981"
-                  />
-                </div>
               </div>
             </div>
-          </Card>
-        </motion.div>
+          </div>
 
-        {/* Main Content - Following dashboard pattern */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {/* Main Content Area */}
-          <div className="lg:col-span-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className={responsive.tabList}>
-                <TabsTrigger value="posts" className={responsive.tab}>Posts</TabsTrigger>
-                <TabsTrigger value="subscriptions" className={responsive.tab}>Subscriptions</TabsTrigger>
-                <TabsTrigger value="about" className={responsive.tab}>About</TabsTrigger>
+          {/* Tabs Navigation */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="border-b border-gray-200 dark:border-gray-800">
+              <TabsList className="h-auto p-0 bg-transparent">
+                <TabsTrigger 
+                  value="home" 
+                  className={cn(
+                    "rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:bg-transparent",
+                    "px-6 py-3 text-base font-medium"
+                  )}
+                >
+                  Home
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="posts"
+                  className={cn(
+                    "rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:bg-transparent",
+                    "px-6 py-3 text-base font-medium"
+                  )}
+                >
+                  Posts
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="shop"
+                  className={cn(
+                    "rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:bg-transparent",
+                    "px-6 py-3 text-base font-medium"
+                  )}
+                >
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Shop
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="about"
+                  className={cn(
+                    "rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:bg-transparent",
+                    "px-6 py-3 text-base font-medium"
+                  )}
+                >
+                  <Info className="w-4 h-4 mr-2" />
+                  About
+                </TabsTrigger>
               </TabsList>
+            </div>
 
-              {/* Posts Tab */}
-              <TabsContent value="posts" className="space-y-4 sm:space-y-6">
-                {recentPosts.length > 0 ? (recentPosts as Array<Record<string, unknown>>).map((post: Record<string, unknown>) => {
-                  const postId = String(post.id || '');
-                  const likes = post.likes as Array<Record<string, unknown>> | undefined;
-                  const comments = post.comments as Array<Record<string, unknown>> | undefined;
-                  
-                  return (
-                    <motion.div
-                      key={postId}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6 }}
-                    >
+            {/* Tab Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 pb-12">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Home Tab */}
+                <TabsContent value="home" className="mt-0 space-y-6">
+                  {/* Welcome Card */}
+                  <Card className="p-6">
+                    <h2 className="text-xl font-bold mb-4">
+                      Welcome to {creatorDetails.display_name}&apos;s page
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Support {creatorDetails.display_name} and get access to exclusive content and benefits!
+                    </p>
+                  </Card>
+
+                  {/* Recent Posts Preview */}
+                  {recentPosts.length > 0 && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Recent Posts</h3>
+                        <Button variant="ghost" size="sm" onClick={() => setActiveTab('posts')}>
+                          View All
+                        </Button>
+                      </div>
+                      {(recentPosts.slice(0, 3) as Array<Record<string, unknown>>).map((post: Record<string, unknown>) => {
+                        const postId = String(post.id || '');
+                        const likes = post.likes as Array<Record<string, unknown>> | undefined;
+                        const comments = post.comments as Array<Record<string, unknown>> | undefined;
+                        
+                        return (
+                          <EnhancedPostCard 
+                            key={postId}
+                            post={{
+                              id: postId,
+                              title: String(post.title || ''),
+                              content: String(post.content || ''),
+                              image_url: post.image_url ? String(post.image_url) : undefined,
+                              media_url: post.media_url ? String(post.media_url) : undefined,
+                              tier_required: String(post.tier_required || 'free'),
+                              created_at: String(post.created_at || post.createdAt || ''),
+                              creator: (post.creator as Record<string, unknown>) || {
+                                id: creatorId,
+                                display_name: creatorDetails?.display_name || 'Unknown',
+                                photo_url: creatorDetails?.avatar_url,
+                                role: 'creator'
+                              },
+                              creator_profile: (post.creator_profile as Record<string, unknown>) || {
+                                category: creatorDetails?.category || undefined,
+                                is_verified: creatorDetails?.is_verified || false
+                              },
+                              likes_count: (post.likes_count as number) || (likes?.length || 0),
+                              comments_count: (post.comments_count as number) || (comments?.length || 0)
+                            }}
+                            currentUserId={user?.id}
+                            showActions={true}
+                          />
+                        );
+                      })}
+                    </>
+                  )}
+                </TabsContent>
+
+                {/* Posts Tab */}
+                <TabsContent value="posts" className="mt-0 space-y-6">
+                  {recentPosts.length > 0 ? (recentPosts as Array<Record<string, unknown>>).map((post: Record<string, unknown>) => {
+                    const postId = String(post.id || '');
+                    const likes = post.likes as Array<Record<string, unknown>> | undefined;
+                    const comments = post.comments as Array<Record<string, unknown>> | undefined;
+                    
+                    return (
                       <EnhancedPostCard 
+                        key={postId}
                         post={{
                           id: postId,
                           title: String(post.title || ''),
@@ -418,337 +436,206 @@ export default function CreatorProfilePage() {
                         currentUserId={user?.id}
                         showActions={true}
                       />
-                    </motion.div>
-                  );
-                }) : (
-                  <Card className="p-6 sm:p-8 text-center">
-                    <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                      No Posts Yet
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                      This creator hasn&apos;t posted anything yet.
+                    );
+                  }) : (
+                    <Card className="p-12 text-center">
+                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Posts Yet</h3>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        This creator hasn&apos;t posted anything yet.
+                      </p>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                {/* Shop Tab */}
+                <TabsContent value="shop" className="mt-0">
+                  <Card className="p-12 text-center">
+                    <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Shop Coming Soon</h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      This creator will be able to sell products and merchandise here.
                     </p>
                   </Card>
-                )}
-              </TabsContent>
+                </TabsContent>
 
-              {/* Subscriptions Tab */}
-              <TabsContent value="subscriptions" className="space-y-4 sm:space-y-6">
-                {hasActiveSubscription && (
-                  <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                        <Crown className="w-6 h-6 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Active Subscription</h3>
-                        <p className="text-green-600 dark:text-green-400">You&apos;re supporting this creator</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Current Plan</p>
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">Premium Supporter</p>
-                      </div>
-                      <Button variant="outline" onClick={() => handleSubscription('')}>
-                        Manage Subscription
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-
-                {subscriptionTiers && subscriptionTiers.length > 0 ? (
-                  <div className="grid gap-6">
-                    {subscriptionTiers.map((tier) => (
-                      <motion.div
-                        key={tier.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Card className="p-4 sm:p-6">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0 mb-3 sm:mb-4">
-                            <div>
-                              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                                {tier.tier_name}
-                              </h3>
-                              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                                {tier.description}
-                              </p>
-                            </div>
-                            <div className="text-right sm:text-left sm:mt-0 mt-2">
-                              <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                NPR {tier.price}
-                              </div>
-                              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">per month</div>
-                            </div>
-                          </div>
-
-                          {tier.benefits && (
-                            <div className="mb-4 sm:mb-6">
-                              <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">Benefits</h4>
-                              <ul className="space-y-2">
-                                {(Array.isArray(tier.benefits) ? tier.benefits : tier.benefits ? [tier.benefits] : []).map((benefit: string, index: number) => (
-                                  <li key={index} className="flex items-center space-x-2">
-                                    <CheckCircle className="w-4 h-4 text-green-500" />
-                                    <span className="text-gray-700 dark:text-gray-300">{benefit.trim()}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-                            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                              {tier.current_subscribers || 0} supporters
-                            </div>
-                            <Button 
-                              size="sm"
-                              className="bg-red-500 hover:bg-red-600 text-xs sm:text-sm w-full sm:w-auto"
-                              onClick={() => handleSubscription(tier.id)}
-                              disabled={paymentLoading}
-                            >
-                              {hasActiveSubscription ? 'Switch Plan' : 'Subscribe Now'}
-                            </Button>
-                          </div>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <Card className="p-6 sm:p-8 text-center">
-                    <Crown className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                      No Subscription Tiers Available
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                      This creator hasn&apos;t set up subscription tiers yet.
-                    </p>
-                  </Card>
-                )}
-              </TabsContent>
-
-              {/* About Tab */}
-              <TabsContent value="about" className="space-y-4 sm:space-y-6">
-                <Card className="p-4 sm:p-6">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">About</h3>
-                  <div className="space-y-4">
-                    {creatorDetails.bio && (
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Bio</h4>
-                        <p className="text-gray-700 dark:text-gray-300">{creatorDetails.bio}</p>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {creatorDetails.category && (
+                {/* About Tab */}
+                <TabsContent value="about" className="mt-0">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">About</h3>
+                    <div className="space-y-4">
+                      {creatorDetails.bio && (
                         <div>
-                          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Category</h4>
-                          <div className="flex items-center space-x-2">
-                            {getCategoryIcon(creatorDetails.category)}
-                            <span className="text-gray-700 dark:text-gray-300">{creatorDetails.category}</span>
-                          </div>
+                          <h4 className="font-medium text-sm text-gray-500 dark:text-gray-400 mb-2">Bio</h4>
+                          <p className="text-gray-700 dark:text-gray-300">{creatorDetails.bio}</p>
                         </div>
                       )}
                       
-                      {creatorDetails.created_at && (
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Joined</h4>
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="w-4 h-4 text-gray-500" />
-                            <span className="text-gray-700 dark:text-gray-300">
+                      <Separator />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        {creatorDetails.category && (
+                          <div>
+                            <h4 className="font-medium text-sm text-gray-500 dark:text-gray-400 mb-2">Category</h4>
+                            <Badge variant="outline">{creatorDetails.category}</Badge>
+                          </div>
+                        )}
+                        
+                        {creatorDetails.created_at && (
+                          <div>
+                            <h4 className="font-medium text-sm text-gray-500 dark:text-gray-400 mb-2">Joined</h4>
+                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                              <Calendar className="w-4 h-4" />
                               {new Date(creatorDetails.created_at).toLocaleDateString('en-US', {
                                 year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
+                                month: 'long'
                               })}
-                            </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
+                  </Card>
+                </TabsContent>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Support Card */}
+                <Card className="p-6 sticky top-4">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Support {creatorDetails.display_name}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {/* Quick amounts */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {paymentOptions.map((option) => (
+                        <Button
+                          key={option.amount}
+                          variant={paymentAmount === option.amount ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPaymentAmount(option.amount)}
+                          className="h-auto py-3 flex flex-col items-center gap-1"
+                        >
+                          {option.icon}
+                          <span className="text-xs">{option.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+
+                    {/* Custom amount */}
+                    <div>
+                      <Label htmlFor="custom-amount" className="text-sm mb-2 block">
+                        Custom Amount (NPR)
+                      </Label>
+                      <Input
+                        id="custom-amount"
+                        type="number"
+                        placeholder="Enter amount"
+                        value={customAmount}
+                        onChange={(e) => setCustomAmount(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Message */}
+                    <div>
+                      <Label htmlFor="message" className="text-sm mb-2 block">
+                        Message (Optional)
+                      </Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Say something nice..."
+                        value={supporterMessage}
+                        onChange={(e) => setSupporterMessage(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+
+                    <Button 
+                      className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                      onClick={handlePayment}
+                      disabled={paymentLoading}
+                      size="lg"
+                    >
+                      {paymentLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Pay NPR {customAmount || paymentAmount}
+                        </>
+                      )}
+                    </Button>
+                    
+                    <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                      Secure payment via eSewa
+                    </p>
                   </div>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
 
-          {/* Sidebar - Payment & Support */}
-          <div className="space-y-4 sm:space-y-6">
-            {/* Support Card with integrated inputs */}
-            <Card className="p-4 sm:p-6 overflow-hidden border-2 border-border">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">
-                Support {creatorDetails.display_name}
-              </h3>
-              
-              {/* Quick Amount Selection */}
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {paymentOptions.map((option) => (
-                  <Button
-                    key={option.amount}
-                    variant={paymentAmount === option.amount ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setPaymentAmount(option.amount)}
-                    className="text-xs"
-                  >
-                    {option.icon}
-                    <span className="ml-2">{option.label}</span>
-                  </Button>
-                ))}
-              </div>
-
-              {/* Custom Amount */}
-              <div className="mb-4">
-                <Label htmlFor="custom-amount" className="text-xs sm:text-sm font-medium text-foreground mb-2 block">
-                  Custom Amount (NPR)
-                </Label>
-                <Input
-                  id="custom-amount"
-                  type="number"
-                  placeholder="Enter amount"
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value)}
-                  className="text-sm sm:text-base"
-                />
-              </div>
-
-              {/* Support Message */}
-              <div className="mb-4">
-                <Label htmlFor="support-message" className="text-xs sm:text-sm font-medium text-foreground mb-2 block">
-                  Message (Optional)
-                </Label>
-                <Textarea
-                  id="support-message"
-                  placeholder="Say something nice..."
-                  value={supporterMessage}
-                  onChange={(e) => setSupporterMessage(e.target.value)}
-                  className="text-sm sm:text-base"
-                  rows={3}
-                />
-              </div>
-
-              {/* Payment Button */}
-              <Button 
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-                onClick={handlePayment}
-                disabled={paymentLoading}
-              >
-                {paymentLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Pay NPR {customAmount || paymentAmount || '1000'} with eSewa
-                  </>
-                )}
-              </Button>
-              
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Secure payment via eSewa
-              </p>
-            </Card>
-
-            {/* Payment Methods */}
-            {paymentMethods && paymentMethods.length > 0 && (
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Payment Methods
-                </h3>
-                
-                <div className="space-y-4">
-                  {paymentMethods.map((method, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        {method.payment_type === 'esewa' && <Smartphone className="w-5 h-5 text-green-600" />}
-                        {method.payment_type === 'khalti' && <Smartphone className="w-5 h-5 text-purple-600" />}
-                        {method.payment_type === 'bank_transfer' && <Building2 className="w-5 h-5 text-blue-600" />}
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">
-                            {method.payment_type === 'esewa' && 'eSewa'}
-                            {method.payment_type === 'khalti' && 'Khalti'}
-                            {method.payment_type === 'bank_transfer' && 'Bank Transfer'}
+                {/* Membership Tiers */}
+                {subscriptionTiers && subscriptionTiers.length > 0 && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-yellow-500" />
+                      Membership Tiers
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      {subscriptionTiers.map((tier) => (
+                        <div 
+                          key={tier.id}
+                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-red-500 transition-colors cursor-pointer"
+                          onClick={() => handleSubscription(tier.id)}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold">{tier.tier_name}</h4>
+                            <span className="text-lg font-bold text-red-500">
+                              NPR {tier.price}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            {tier.description}
                           </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {method.payment_type === 'esewa' && method.details?.phone_number && `Phone: ${method.details.phone_number}`}
-                            {method.payment_type === 'bank_transfer' && method.details?.account_number && `Account: ${method.details.account_number}`}
-                          </p>
+                          {tier.benefits && (
+                            <ul className="space-y-1">
+                              {(Array.isArray(tier.benefits) ? tier.benefits : [tier.benefits]).slice(0, 2).map((benefit: string, index: number) => (
+                                <li key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                  <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                  <span className="truncate">{benefit.trim()}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
-                      </div>
-                      
-                      {method.details?.qr_code_url && (
-                        <Button size="sm" variant="outline">
-                          <QrCode className="w-4 h-4" />
-                        </Button>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </Card>
-            )}
+                  </Card>
+                )}
 
-            {/* Creator Stats */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Creator Stats
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <StatsCard
-                  label="Followers"
-                  value={creatorDetails.follower_count || 0}
-                  icon={Users}
-                  iconColor="text-blue-600"
-                  useBauhaus={true}
-                  accentColor="#3b82f6"
-                />
-                <StatsCard
-                  label="Posts"
-                  value={creatorDetails.posts_count || 0}
-                  icon={FileText}
-                  iconColor="text-purple-600"
-                  useBauhaus={true}
-                  accentColor="#8b5cf6"
-                />
-                <StatsCard
-                  label="Tiers"
-                  value={subscriptionTiers?.length || 0}
-                  icon={Crown}
-                  iconColor="text-yellow-600"
-                  useBauhaus={true}
-                  accentColor="#f59e0b"
-                />
-                <StatsCard
-                  label="Since"
-                  value={creatorDetails.created_at ? new Date(creatorDetails.created_at).getFullYear() : 'N/A'}
-                  icon={Calendar}
-                  iconColor="text-green-600"
-                  useBauhaus={true}
-                  accentColor="#10b981"
-                />
+                {/* Social Links */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Connect</h3>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Profile
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Send Message
+                    </Button>
+                  </div>
+                </Card>
               </div>
-            </Card>
-
-            {/* Social Actions */}
-            <Card className="p-6">
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Profile
-                </Button>
-                
-                <Button variant="outline" className="w-full">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Send Message
-                </Button>
-              </div>
-            </Card>
-          </div>
+            </div>
+          </Tabs>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

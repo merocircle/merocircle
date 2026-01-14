@@ -33,10 +33,9 @@ export interface CreatorDetails {
   category: string | null
   is_verified: boolean
   total_earnings: number
-  follower_count: number
-  following_count: number
+  supporter_count: number
   posts_count: number
-  isFollowing: boolean
+  is_supporter: boolean
   current_subscription: {
     id: string
     tier_name: string
@@ -91,7 +90,9 @@ export const useCreatorDetails = (creatorId: string | null) => {
       const creatorDetails = data.creatorDetails ? {
         ...data.creatorDetails,
         is_verified: data.creatorDetails.is_verified ?? data.creatorDetails.verified ?? false,
-        created_at: data.creatorDetails.created_at || data.creatorDetails.join_date
+        created_at: data.creatorDetails.created_at || data.creatorDetails.join_date,
+        supporter_count: data.creatorDetails.supporter_count || data.creatorDetails.supporters_count || 0,
+        is_supporter: data.creatorDetails.is_supporter || false
       } : null;
       
       setProfile({

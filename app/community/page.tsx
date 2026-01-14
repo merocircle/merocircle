@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/header';
+import { SidebarNav } from '@/components/sidebar-nav';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   MessageCircle, 
   Hash, 
@@ -15,7 +17,12 @@ import {
   Send, 
   Crown,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Search,
+  Smile,
+  Paperclip,
+  MoreVertical,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
@@ -107,12 +114,6 @@ export default function CommunityPage() {
   }, [selectedChannel, newMessage, sending, fetchMessages]);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth');
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  useEffect(() => {
     if (isAuthenticated && user) {
       fetchChannels();
     }
@@ -146,9 +147,9 @@ export default function CommunityPage() {
   , [channels]);
 
   const categoryLabels = useMemo(() => ({
-    welcome: 'WELCOME',
-    supporter: 'SUPPORTER',
-    custom: 'CUSTOM CHANNELS',
+    welcome: 'GENERAL',
+    supporter: 'MEMBERS',
+    custom: 'CHANNELS',
   }), []);
 
   const currentChannel = useMemo(() => 
@@ -157,11 +158,11 @@ export default function CommunityPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <Header />
-        <div className="flex items-center justify-center h-screen">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+        <SidebarNav />
+        <main className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
-        </div>
+        </main>
       </div>
     );
   }
@@ -171,52 +172,69 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
-      <Header />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+      <SidebarNav />
       
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - Channels */}
-        <div className="w-64 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+      <main className="flex-1 flex overflow-hidden bg-white dark:bg-gray-900">
+        {/* Channels Sidebar */}
+        <div className="w-60 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+          {/* Server/Community Header */}
+          <div className="h-14 border-b border-gray-200 dark:border-gray-800 px-4 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
               {isCreator ? 'Your Community' : 'Communities'}
             </h2>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ChevronDown className="w-4 h-4" />
+            </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2">
+          {/* Search Channels */}
+          <div className="p-3 border-b border-gray-200 dark:border-gray-800">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search"
+                className="pl-9 h-8 text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+              />
+            </div>
+          </div>
+
+          {/* Channel List */}
+          <div className="flex-1 overflow-y-auto py-2">
             {Object.entries(groupedChannels).map(([category, categoryChannels]) => (
-              <div key={category} className="mb-4">
+              <div key={category} className="mb-2">
                 <button
                   onClick={() => toggleCategory(category)}
-                  className="w-full flex items-center justify-between px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
                   <span>{categoryLabels[category] || category}</span>
                   {expandedCategories.has(category) ? (
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-3 h-3" />
                   ) : (
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-3 h-3" />
                   )}
                 </button>
 
                 {expandedCategories.has(category) && (
-                  <div className="mt-1 space-y-1">
+                  <div className="mt-1 space-y-0.5 px-2">
                     {categoryChannels.map((channel) => (
                       <button
                         key={channel.id}
                         onClick={() => setSelectedChannel(channel.id)}
                         className={cn(
-                          'w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors',
+                          'w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors group',
                           selectedChannel === channel.id
-                            ? 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'
+                            ? 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium'
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
                         )}
                       >
                         {channel.channel_type === 'text' ? (
-                          <Hash className="w-4 h-4" />
+                          <Hash className="w-4 h-4 flex-shrink-0" />
                         ) : (
-                          <Volume2 className="w-4 h-4" />
+                          <Volume2 className="w-4 h-4 flex-shrink-0" />
                         )}
                         <span className="flex-1 text-left truncate">{channel.name}</span>
+                        <SettingsIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     ))}
                   </div>
@@ -225,55 +243,67 @@ export default function CommunityPage() {
             ))}
 
             {isCreator && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-4"
-                onClick={() => router.push('/community/create')}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Channel
-              </Button>
+              <div className="px-2 mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start h-8 text-sm"
+                  onClick={() => router.push('/community/create')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Channel
+                </Button>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Main Content - Messages */}
+        {/* Main Chat Area */}
         <div className="flex-1 flex flex-col bg-white dark:bg-gray-950">
           {selectedChannel ? (
             <>
               {/* Channel Header */}
-              <div className="h-14 border-b border-gray-200 dark:border-gray-800 px-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="h-14 border-b border-gray-200 dark:border-gray-800 px-4 flex items-center justify-between bg-white dark:bg-gray-900">
+                <div className="flex items-center gap-3">
                   {currentChannel?.channel_type === 'text' ? (
                     <Hash className="w-5 h-5 text-gray-500" />
                   ) : (
                     <Volume2 className="w-5 h-5 text-gray-500" />
                   )}
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                    {currentChannel?.name}
-                  </h3>
-                  {currentChannel?.description && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {currentChannel.description}
-                    </span>
-                  )}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                      {currentChannel?.name}
+                    </h3>
+                    {currentChannel?.description && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {currentChannel.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {isCreator && currentChannel?.creator_id === user?.id && (
-                  <Button variant="ghost" size="sm">
-                    <Settings className="w-4 h-4" />
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Search className="w-4 h-4" />
                   </Button>
-                )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400">
-                        No messages yet. Start the conversation!
+                    <div className="text-center max-w-md">
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <MessageCircle className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        Welcome to #{currentChannel?.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        This is the start of your conversation. Say hello!
                       </p>
                     </div>
                   </div>
@@ -285,25 +315,42 @@ export default function CommunityPage() {
                       new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000;
 
                     return (
-                      <div key={message.id} className={cn('flex gap-3', showAvatar && 'mt-4')}>
-                        {showAvatar ? (
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={message.user?.photo_url} alt={message.user?.display_name} />
-                            <AvatarFallback>
-                              {message.user?.display_name?.[0]?.toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <div className="w-10" />
+                      <div 
+                        key={message.id} 
+                        className={cn(
+                          'flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 -mx-4 px-4 py-1 rounded transition-colors',
+                          showAvatar && 'mt-4'
                         )}
-                        <div className="flex-1">
+                      >
+                        <div className="flex-shrink-0">
+                          {showAvatar ? (
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={message.user?.photo_url} alt={message.user?.display_name} />
+                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                                {message.user?.display_name?.[0]?.toUpperCase() || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <div className="w-10 h-10 flex items-center justify-center">
+                              <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100">
+                                {new Date(message.created_at).toLocaleTimeString([], { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
                           {showAvatar && (
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                              <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                                 {message.user?.display_name || 'Unknown'}
                               </span>
                               {message.user_id === currentChannel?.creator_id && (
-                                <Crown className="w-4 h-4 text-yellow-500" />
+                                <Badge variant="secondary" className="h-4 px-1.5 text-xs">
+                                  <Crown className="w-3 h-3 text-yellow-500" />
+                                </Badge>
                               )}
                               {showTimestamp && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -315,7 +362,7 @@ export default function CommunityPage() {
                               )}
                             </div>
                           )}
-                          <p className="text-gray-900 dark:text-gray-100">
+                          <p className="text-sm text-gray-900 dark:text-gray-100 break-words">
                             {message.content}
                           </p>
                         </div>
@@ -327,23 +374,38 @@ export default function CommunityPage() {
               </div>
 
               {/* Message Input */}
-              <div className="border-t border-gray-200 dark:border-gray-800 p-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder={`Message #${currentChannel?.name}`}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    className="flex-1"
-                  />
+              <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                <div className="flex items-end gap-2">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 mb-0.5">
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                  <div className="flex-1 relative">
+                    <Input
+                      placeholder={`Message #${currentChannel?.name}`}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="pr-20 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Paperclip className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Smile className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || sending}
+                    size="icon"
+                    className="h-10 w-10 bg-red-500 hover:bg-red-600"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
@@ -352,16 +414,52 @@ export default function CommunityPage() {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <div className="text-center max-w-md">
+                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <MessageCircle className="w-10 h-10 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Welcome to Community
+                </h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Select a channel to start chatting
+                  Select a channel from the sidebar to start chatting
                 </p>
               </div>
             </div>
           )}
         </div>
-      </div>
+
+        {/* Members Sidebar (Optional) */}
+        <div className="hidden xl:block w-60 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 p-4">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            Members — {messages.filter((m, i, arr) => arr.findIndex(msg => msg.user_id === m.user_id) === i).length}
+          </h3>
+          <div className="space-y-2">
+            {messages
+              .filter((m, i, arr) => arr.findIndex(msg => msg.user_id === m.user_id) === i)
+              .slice(0, 10)
+              .map((message) => (
+                <div 
+                  key={message.user_id} 
+                  className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                >
+                  <div className="relative">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={message.user?.photo_url} alt={message.user?.display_name} />
+                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {message.user?.display_name?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-50 dark:border-gray-900" />
+                  </div>
+                  <span className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                    {message.user?.display_name || 'Unknown'}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
