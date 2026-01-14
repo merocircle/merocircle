@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
+import { useRealtimeChat, type ChatMessage } from '@/hooks/useRealtimeChat';
 
 interface Channel {
   id: string;
@@ -36,29 +37,28 @@ interface Channel {
   creator_id: string;
 }
 
-interface Message {
-  id: string;
-  content: string;
-  user_id: string;
-  created_at: string;
-  user?: {
-    id: string;
-    display_name: string;
-    photo_url?: string;
-  };
-}
+type Message = ChatMessage;
 
 export default function CommunityPage() {
   const { user, isAuthenticated, loading: authLoading, isCreator } = useAuth();
   const router = useRouter();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['welcome', 'supporter', 'custom']));
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Use realtime chat hook
+  const {
+    messages,
+    loading: messagesLoading,
+    error: messagesError,
+    sendMessage
+  } = useRealtimeChat({
+    channelId: selectedChannel,
+    enabled: isAuthenticated && !!selectedChannel
+  });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -81,51 +81,27 @@ export default function CommunityPage() {
     }
   }, [selectedChannel]);
 
-  const fetchMessages = useCallback(async (channelId: string) => {
-    try {
-      const response = await fetch(`/api/community/channels/${channelId}/messages`);
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.messages || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch messages');
-    }
-  }, []);
+  const [sending, setSending] = useState(false);
 
   const handleSendMessage = useCallback(async () => {
     if (!selectedChannel || !newMessage.trim() || sending) return;
 
     setSending(true);
     try {
-      const response = await fetch(`/api/community/channels/${selectedChannel}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newMessage.trim() }),
-      });
-
-      if (response.ok) {
-        setNewMessage('');
-        await fetchMessages(selectedChannel);
-      }
+      await sendMessage(newMessage.trim());
+      setNewMessage('');
+    } catch (err) {
+      console.error('Failed to send message:', err);
     } finally {
       setSending(false);
     }
-  }, [selectedChannel, newMessage, sending, fetchMessages]);
+  }, [selectedChannel, newMessage, sending, sendMessage]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
       fetchChannels();
     }
   }, [isAuthenticated, user, fetchChannels]);
-
-  useEffect(() => {
-    if (selectedChannel) {
-      fetchMessages(selectedChannel);
-      const interval = setInterval(() => fetchMessages(selectedChannel), 5000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedChannel, fetchMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

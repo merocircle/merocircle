@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { supabase } from '@/lib/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface Notification {
   id: string;
@@ -39,6 +41,9 @@ export function useNotifications(type?: string): UseNotificationsReturn {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const isSubscribedRef = useRef(false);
+  const fetchNotificationsRef = useRef<() => Promise<void>>();
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
@@ -77,6 +82,11 @@ export function useNotifications(type?: string): UseNotificationsReturn {
       setLoading(false);
     }
   }, [user, type]);
+
+  // Keep ref updated with latest fetchNotifications
+  useEffect(() => {
+    fetchNotificationsRef.current = fetchNotifications;
+  }, [fetchNotifications]);
 
   const markAsRead = useCallback(async (notificationIds: string[]) => {
     if (!user || notificationIds.length === 0) return;
@@ -125,6 +135,68 @@ export function useNotifications(type?: string): UseNotificationsReturn {
       console.error('Error marking all notifications as read:', err);
     }
   }, [user]);
+
+  // Subscribe to real-time notification updates
+  useEffect(() => {
+    if (!user) {
+      // Clean up subscription if user logs out
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
+      return;
+    }
+
+    // Clean up previous subscription
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+      isSubscribedRef.current = false;
+    }
+
+    // Create new channel subscription
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refetch notifications when a new one is inserted
+          fetchNotificationsRef.current?.();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refetch notifications when one is updated (e.g., marked as read)
+          fetchNotificationsRef.current?.();
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+    isSubscribedRef.current = true;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
+    };
+  }, [user]); // Only depend on user, not fetchNotifications
 
   useEffect(() => {
     fetchNotifications();

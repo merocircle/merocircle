@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { 
   Heart, 
   Menu, 
@@ -122,8 +121,6 @@ export function Header() {
         </nav>
 
         <div className={cn(layout.flexRow, 'space-x-4')}>
-          <ThemeToggle />
-          
           {loading && !isAuthenticated ? (
             <div className="w-8 h-8 animate-pulse bg-gray-200 dark:bg-gray-700 rounded-full" />
           ) : isAuthenticated && user ? (

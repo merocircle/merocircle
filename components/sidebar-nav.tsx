@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { useNotifications } from '@/hooks/useNotifications';
 import { 
   Home, 
   Compass,
@@ -25,6 +26,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { useTheme } from 'next-themes';
+import { Moon, Sun } from 'lucide-react';
 
 interface NavItem {
   label: string;
@@ -41,19 +44,56 @@ interface RecentlyVisited {
   href: string;
 }
 
+// Theme toggle button for sidebar
+function ThemeToggleButton() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" className="w-full justify-start">
+        <div className="w-5 h-5 mr-3" />
+        <span>Theme</span>
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      className="w-full justify-start text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+    >
+      {theme === "light" ? (
+        <Moon className="w-5 h-5 mr-3" />
+      ) : (
+        <Sun className="w-5 h-5 mr-3" />
+      )}
+      <span>{theme === "light" ? "Dark Mode" : "Light Mode"}</span>
+    </Button>
+  );
+}
+
 export function SidebarNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, userProfile, isAuthenticated, isCreator, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [recentlyVisited, setRecentlyVisited] = useState<RecentlyVisited[]>([]);
+  
+  // Get real-time unread count for notifications badge
+  const { unreadCount } = useNotifications();
 
   const navItems: NavItem[] = [
     { label: 'Home', href: '/dashboard', icon: Home },
     { label: 'Feed', href: '/feed', icon: Rss },
     { label: 'Explore', href: '/explore', icon: Compass },
     { label: 'Chats', href: '/community', icon: MessageCircle },
-    { label: 'Notifications', href: '/notifications', icon: Bell, badge: 0 },
+    { label: 'Notifications', href: '/notifications', icon: Bell, badge: unreadCount },
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -124,7 +164,7 @@ export function SidebarNav() {
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center space-x-3">
               <Avatar className="w-10 h-10">
-                <AvatarImage src={userProfile?.photo_url} alt={userProfile?.display_name || 'User'} />
+                <AvatarImage src={userProfile?.photo_url || undefined} alt={userProfile?.display_name || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                   {userProfile?.display_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
@@ -235,7 +275,10 @@ export function SidebarNav() {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
+          {isAuthenticated && (
+            <ThemeToggleButton />
+          )}
           {isAuthenticated ? (
             <Button
               variant="ghost"
