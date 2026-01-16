@@ -226,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  const createCreatorProfile = async (bio: string, category: string) => {
+  const createCreatorProfile = async (bio: string, category: string, socialLinks?: Record<string, string>) => {
     if (!user) return { error: new Error('Not authenticated') };
 
     console.log('[createCreatorProfile] Starting for user:', user.id);
@@ -305,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user_id: user.id,
           bio,
           category,
+          social_links: socialLinks || {},
         });
 
       if (profileError) {

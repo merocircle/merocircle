@@ -115,6 +115,7 @@ export async function GET(
         supporters: supporters?.length || 0,
         posts: posts?.length || 0
       },
+      onboardingCompleted: profileToUse.onboarding_completed || false,
       posts: (posts || []).map((p: {
         id: string;
         title: string;

@@ -18,12 +18,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils';
-import { 
-  Heart, 
-  Users, 
-  FileText, 
-  Calendar, 
-  Star, 
+import {
+  Heart,
+  Users,
+  FileText,
+  Calendar,
+  Star,
   CreditCard,
   CheckCircle,
   Crown,
@@ -33,7 +33,14 @@ import {
   Gift,
   MoreHorizontal,
   ShoppingBag,
-  Info
+  Info,
+  Facebook,
+  Youtube,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Globe,
+  Link as LinkIcon
 } from 'lucide-react'
 
 export default function CreatorProfilePage() {
@@ -474,9 +481,9 @@ export default function CreatorProfilePage() {
                           <p className="text-gray-700 dark:text-gray-300">{creatorDetails.bio}</p>
                         </div>
                       )}
-                      
+
                       <Separator />
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         {creatorDetails.category && (
                           <div>
@@ -484,7 +491,7 @@ export default function CreatorProfilePage() {
                             <Badge variant="outline">{creatorDetails.category}</Badge>
                           </div>
                         )}
-                        
+
                         {creatorDetails.created_at && (
                           <div>
                             <h4 className="font-medium text-sm text-gray-500 dark:text-gray-400 mb-2">Joined</h4>
@@ -498,6 +505,82 @@ export default function CreatorProfilePage() {
                           </div>
                         )}
                       </div>
+
+                      {/* Social Links in About Tab */}
+                      {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 && (
+                        <>
+                          <Separator />
+                          <div>
+                            <h4 className="font-medium text-sm text-gray-500 dark:text-gray-400 mb-3">Social Media</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {creatorDetails.social_links.facebook && (
+                                <a href={creatorDetails.social_links.facebook} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <Facebook className="w-4 h-4 text-blue-600" />
+                                    Facebook
+                                  </Button>
+                                </a>
+                              )}
+                              {creatorDetails.social_links.youtube && (
+                                <a href={creatorDetails.social_links.youtube} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <Youtube className="w-4 h-4 text-red-600" />
+                                    YouTube
+                                  </Button>
+                                </a>
+                              )}
+                              {creatorDetails.social_links.instagram && (
+                                <a href={creatorDetails.social_links.instagram} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <Instagram className="w-4 h-4 text-pink-600" />
+                                    Instagram
+                                  </Button>
+                                </a>
+                              )}
+                              {creatorDetails.social_links.linkedin && (
+                                <a href={creatorDetails.social_links.linkedin} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <Linkedin className="w-4 h-4 text-blue-700" />
+                                    LinkedIn
+                                  </Button>
+                                </a>
+                              )}
+                              {creatorDetails.social_links.twitter && (
+                                <a href={creatorDetails.social_links.twitter} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <Twitter className="w-4 h-4 text-sky-500" />
+                                    Twitter
+                                  </Button>
+                                </a>
+                              )}
+                              {creatorDetails.social_links.tiktok && (
+                                <a href={creatorDetails.social_links.tiktok} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <MessageCircle className="w-4 h-4" />
+                                    TikTok
+                                  </Button>
+                                </a>
+                              )}
+                              {creatorDetails.social_links.website && (
+                                <a href={creatorDetails.social_links.website} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <Globe className="w-4 h-4 text-purple-600" />
+                                    Website
+                                  </Button>
+                                </a>
+                              )}
+                              {creatorDetails.social_links.other && (
+                                <a href={creatorDetails.social_links.other} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <LinkIcon className="w-4 h-4" />
+                                    Other
+                                  </Button>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </Card>
                 </TabsContent>
@@ -622,19 +705,77 @@ export default function CreatorProfilePage() {
                 )}
 
                 {/* Social Links */}
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Connect</h3>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share Profile
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Send Message
-                    </Button>
-                  </div>
-                </Card>
+                {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Connect</h3>
+                    <div className="space-y-2">
+                      {creatorDetails.social_links.facebook && (
+                        <a href={creatorDetails.social_links.facebook} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950">
+                            <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+                            Facebook
+                          </Button>
+                        </a>
+                      )}
+                      {creatorDetails.social_links.youtube && (
+                        <a href={creatorDetails.social_links.youtube} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start hover:bg-red-50 dark:hover:bg-red-950">
+                            <Youtube className="w-4 h-4 mr-2 text-red-600" />
+                            YouTube
+                          </Button>
+                        </a>
+                      )}
+                      {creatorDetails.social_links.instagram && (
+                        <a href={creatorDetails.social_links.instagram} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start hover:bg-pink-50 dark:hover:bg-pink-950">
+                            <Instagram className="w-4 h-4 mr-2 text-pink-600" />
+                            Instagram
+                          </Button>
+                        </a>
+                      )}
+                      {creatorDetails.social_links.linkedin && (
+                        <a href={creatorDetails.social_links.linkedin} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950">
+                            <Linkedin className="w-4 h-4 mr-2 text-blue-700" />
+                            LinkedIn
+                          </Button>
+                        </a>
+                      )}
+                      {creatorDetails.social_links.twitter && (
+                        <a href={creatorDetails.social_links.twitter} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start hover:bg-sky-50 dark:hover:bg-sky-950">
+                            <Twitter className="w-4 h-4 mr-2 text-sky-500" />
+                            Twitter (X)
+                          </Button>
+                        </a>
+                      )}
+                      {creatorDetails.social_links.tiktok && (
+                        <a href={creatorDetails.social_links.tiktok} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start hover:bg-gray-50 dark:hover:bg-gray-900">
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            TikTok
+                          </Button>
+                        </a>
+                      )}
+                      {creatorDetails.social_links.website && (
+                        <a href={creatorDetails.social_links.website} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start hover:bg-purple-50 dark:hover:bg-purple-950">
+                            <Globe className="w-4 h-4 mr-2 text-purple-600" />
+                            Website
+                          </Button>
+                        </a>
+                      )}
+                      {creatorDetails.social_links.other && (
+                        <a href={creatorDetails.social_links.other} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="w-full justify-start">
+                            <LinkIcon className="w-4 h-4 mr-2" />
+                            Other Link
+                          </Button>
+                        </a>
+                      )}
+                    </div>
+                  </Card>
+                )}
               </div>
             </div>
           </Tabs>

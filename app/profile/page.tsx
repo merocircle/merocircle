@@ -377,7 +377,7 @@ export default function ProfilePage() {
                         </Link>
                       </>
                     ) : (
-                      <Link href="/dashboard/creator">
+                      <Link href="/signup/creator">
                         <Button className="w-full bg-gradient-to-r from-red-500 to-pink-600">
                           <Crown className="w-4 h-4 mr-2" />
                           Become a Creator
@@ -471,7 +471,7 @@ export default function ProfilePage() {
                       </Button>
                     </Link>
                   ) : (
-                    <Link href="/dashboard/creator">
+                    <Link href="/signup/creator">
                       <Button>
                         <Crown className="w-4 h-4 mr-2" />
                         Become Creator

@@ -47,6 +47,7 @@ import {
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
+import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
 import { cn } from '@/lib/utils';
 
 interface AnalyticsData {
@@ -89,6 +90,7 @@ export default function EnhancedCreatorDashboard() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
   // Post creation states
   const [newPostTitle, setNewPostTitle] = useState('');
@@ -132,6 +134,8 @@ export default function EnhancedCreatorDashboard() {
         if (dashboardRes.ok) {
           const dashboardJson = await dashboardRes.json();
           setDashboardData(dashboardJson);
+          // Check if onboarding is completed
+          setShowOnboardingBanner(!dashboardJson.onboardingCompleted);
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -335,6 +339,14 @@ export default function EnhancedCreatorDashboard() {
 
             {/* Overview & Analytics Tab */}
             <TabsContent value="overview" className="space-y-6">
+              {/* Onboarding Banner */}
+              {showOnboardingBanner && user && (
+                <OnboardingBanner
+                  creatorId={user.id}
+                  onDismiss={() => setShowOnboardingBanner(false)}
+                />
+              )}
+
               {/* Key Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>

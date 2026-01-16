@@ -145,7 +145,8 @@ export async function GET(
         posts_count: postsCount,
         total_earnings: creatorProfile.total_earnings || 0,
         created_at: creatorProfile.created_at,
-        is_supporter: isSupporter
+        is_supporter: isSupporter,
+        social_links: creatorProfile.social_links || {}
       },
       paymentMethods: (paymentMethods || []).map((m: {
         id: string;

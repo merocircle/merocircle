@@ -9,15 +9,17 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Heart, 
-  ArrowLeft, 
-  Chrome, 
-  Sparkles, 
+import {
+  Heart,
+  ArrowLeft,
+  Chrome,
+  Sparkles,
   Check,
   ArrowRight,
   Crown,
-  User
+  User,
+  Plus,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { supabase } from '@/lib/supabase';
@@ -29,13 +31,25 @@ const CREATOR_CATEGORIES = [
   'Science', 'Sports', 'Politics & News', 'Religion & Spirituality', 'Other'
 ];
 
+const SOCIAL_PLATFORMS = [
+  { id: 'facebook', name: 'Facebook', icon: '📘' },
+  { id: 'youtube', name: 'YouTube', icon: '📺' },
+  { id: 'instagram', name: 'Instagram', icon: '📷' },
+  { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
+  { id: 'twitter', name: 'Twitter (X)', icon: '🐦' },
+  { id: 'tiktok', name: 'TikTok', icon: '🎵' },
+  { id: 'website', name: 'Personal Website', icon: '🌐' },
+  { id: 'other', name: 'Other', icon: '🔗' }
+];
+
 export default function CreatorSignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'signup' | 'creator-details' | 'complete'>('signup');
   const [creatorData, setCreatorData] = useState({
     bio: '',
-    category: ''
+    category: '',
+    socialLinks: {} as Record<string, string>
   });
   const router = useRouter();
   const { user, userProfile, signInWithGoogle, createCreatorProfile } = useAuth();
@@ -52,7 +66,7 @@ export default function CreatorSignupPage() {
             .select('*')
             .eq('user_id', user.id)
             .single();
-          
+
           if (!data) {
             // Creator profile doesn't exist, show setup form
             setStep('creator-details');
@@ -61,11 +75,11 @@ export default function CreatorSignupPage() {
             router.push('/dashboard/creator');
           }
         };
-        
+
         checkCreatorProfile();
       } else {
-        // User is not a creator yet, redirect to dashboard
-        router.push('/dashboard');
+        // User is a supporter wanting to become a creator - show creator setup form
+        setStep('creator-details');
       }
     }
   }, [user, userProfile, router]);
@@ -104,9 +118,14 @@ export default function CreatorSignupPage() {
       setError(null);
       
       console.log('Creating creator profile for user:', user.id);
-      
+
+      // Filter out empty social links
+      const filteredSocialLinks = Object.fromEntries(
+        Object.entries(creatorData.socialLinks).filter(([_, url]) => url.trim() !== '')
+      );
+
       // Create creator profile
-      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category);
+      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks);
       
       if (error) {
         console.error('Creator profile creation failed:', error);
@@ -258,15 +277,19 @@ export default function CreatorSignupPage() {
               transition={{ duration: 0.4 }}
             >
               <div className="text-center mb-8">
-                <Badge className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-full mb-4">
-                  Step 2 of 2
-                </Badge>
-                
+                {!user && (
+                  <Badge className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-full mb-4">
+                    Step 2 of 2
+                  </Badge>
+                )}
+
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Complete Your Creator Profile
+                  {user ? 'Upgrade to Creator' : 'Complete Your Creator Profile'}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Tell your future supporters about yourself and what you create
+                  {user
+                    ? 'Tell your supporters about yourself and what you create'
+                    : 'Tell your future supporters about yourself and what you create'}
                 </p>
               </div>
 
@@ -342,6 +365,37 @@ export default function CreatorSignupPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       {creatorData.bio.length}/500 characters (optional)
                     </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">
+                      Social Media Platforms <span className="text-gray-500">(optional)</span>
+                    </Label>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Add your social media profiles to help supporters find you across platforms
+                    </p>
+                    <div className="space-y-3">
+                      {SOCIAL_PLATFORMS.map((platform) => (
+                        <div key={platform.id} className="flex items-center gap-3">
+                          <span className="text-2xl">{platform.icon}</span>
+                          <div className="flex-1">
+                            <input
+                              type="url"
+                              placeholder={`${platform.name} profile URL`}
+                              value={creatorData.socialLinks[platform.id] || ''}
+                              onChange={(e) => setCreatorData({
+                                ...creatorData,
+                                socialLinks: {
+                                  ...creatorData.socialLinks,
+                                  [platform.id]: e.target.value
+                                }
+                              })}
+                              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {error && (
