@@ -38,7 +38,11 @@ import {
   BarChart3,
   ArrowUpRight,
   MessageCircle,
-  Eye
+  Eye,
+  Plus,
+  X,
+  BarChart2,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
@@ -93,6 +97,13 @@ export default function EnhancedCreatorDashboard() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [postVisibility, setPostVisibility] = useState('public');
+  const [postType, setPostType] = useState<'post' | 'poll'>('post');
+
+  // Poll creation states
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [allowsMultipleAnswers, setAllowsMultipleAnswers] = useState(false);
+  const [pollDuration, setPollDuration] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -162,40 +173,110 @@ export default function EnhancedCreatorDashboard() {
   };
 
   const handlePublishPost = async () => {
-    if (!newPostTitle || !newPostContent) {
-      alert('Title and content are required.');
-      return;
+    // For polls, only validate poll fields
+    if (postType === 'poll') {
+      if (!pollQuestion.trim()) {
+        alert('Poll question is required.');
+        return;
+      }
+      const validOptions = pollOptions.filter(opt => opt.trim());
+      if (validOptions.length < 2) {
+        alert('Poll must have at least 2 options.');
+        return;
+      }
+      if (validOptions.length > 10) {
+        alert('Poll cannot have more than 10 options.');
+        return;
+      }
+    } else {
+      // For regular posts, validate title and content
+      if (!newPostTitle || !newPostContent) {
+        alert('Title and content are required.');
+        return;
+      }
     }
 
     setIsPublishing(true);
     try {
+      const body: any = {
+        // For polls, use the question as both title and content
+        title: postType === 'poll' ? pollQuestion.trim() : newPostTitle,
+        content: postType === 'poll' ? pollQuestion.trim() : newPostContent,
+        image_url: uploadedImageUrl || null,
+        is_public: postVisibility === 'public',
+        tier_required: postVisibility === 'public' ? 'free' : postVisibility,
+        post_type: postType
+      };
+
+      // Add poll data if it's a poll
+      if (postType === 'poll') {
+        const validOptions = pollOptions.filter(opt => opt.trim());
+        body.poll_data = {
+          question: pollQuestion.trim(),
+          options: validOptions,
+          allows_multiple_answers: allowsMultipleAnswers,
+          expires_at: pollDuration ? new Date(Date.now() + pollDuration * 24 * 60 * 60 * 1000).toISOString() : null
+        };
+      }
+
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newPostTitle,
-          content: newPostContent,
-          image_url: uploadedImageUrl || null,
-          is_public: postVisibility === 'public',
-          tier_required: postVisibility === 'public' ? 'free' : postVisibility,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
         setNewPostTitle('');
         setNewPostContent('');
         setUploadedImageUrl('');
-        alert('Post published successfully!');
+        setPollQuestion('');
+        setPollOptions(['', '']);
+        setAllowsMultipleAnswers(false);
+        setPollDuration(null);
+        alert(postType === 'poll' ? 'Poll published successfully!' : 'Post published successfully!');
         window.location.reload();
       } else {
-        alert('Failed to publish post.');
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to publish.');
       }
     } catch (error) {
       console.error('Publish error:', error);
-      alert('Failed to publish post.');
+      alert('Failed to publish.');
     } finally {
       setIsPublishing(false);
     }
+  };
+
+  const handlePostTypeChange = (type: 'post' | 'poll') => {
+    setPostType(type);
+    // Clear fields when switching types
+    if (type === 'poll') {
+      setNewPostTitle('');
+      setNewPostContent('');
+    } else {
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setAllowsMultipleAnswers(false);
+      setPollDuration(null);
+    }
+  };
+
+  const addPollOption = () => {
+    if (pollOptions.length < 10) {
+      setPollOptions([...pollOptions, '']);
+    }
+  };
+
+  const removePollOption = (index: number) => {
+    if (pollOptions.length > 2) {
+      setPollOptions(pollOptions.filter((_, i) => i !== index));
+    }
+  };
+
+  const updatePollOption = (index: number, value: string) => {
+    const updated = [...pollOptions];
+    updated[index] = value;
+    setPollOptions(updated);
   };
 
   if (loading || dataLoading) {
@@ -489,42 +570,173 @@ export default function EnhancedCreatorDashboard() {
 
               {/* Create Post Card */}
               <Card className="p-6 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                    <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      {postType === 'post' ? (
+                        <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      ) : (
+                        <BarChart2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Create New {postType === 'post' ? 'Post' : 'Poll'}
+                    </h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Create New Post
-                  </h3>
+
+                  {/* Post Type Toggle */}
+                  <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                    <button
+                      onClick={() => handlePostTypeChange('post')}
+                      className={cn(
+                        "px-4 py-2 rounded-md text-sm font-medium transition-all",
+                        postType === 'post'
+                          ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <FileText className="w-4 h-4 inline mr-1" />
+                      Post
+                    </button>
+                    <button
+                      onClick={() => handlePostTypeChange('poll')}
+                      className={cn(
+                        "px-4 py-2 rounded-md text-sm font-medium transition-all",
+                        postType === 'poll'
+                          ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <BarChart2 className="w-4 h-4 inline mr-1" />
+                      Poll
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <Input
-                      placeholder="Give your post an engaging title..."
-                      value={newPostTitle}
-                      onChange={(e) => setNewPostTitle(e.target.value)}
-                      className="text-lg font-semibold border-2 focus:border-purple-400 dark:focus:border-purple-500"
-                    />
-                  </div>
+                  {/* Show title and content only for regular posts */}
+                  {postType === 'post' && (
+                    <>
+                      <div>
+                        <Input
+                          placeholder="Give your post an engaging title..."
+                          value={newPostTitle}
+                          onChange={(e) => setNewPostTitle(e.target.value)}
+                          className="text-lg font-semibold border-2 focus:border-purple-400 dark:focus:border-purple-500"
+                        />
+                      </div>
 
-                  <div>
-                    <Textarea
-                      placeholder="Share your story, updates, or thoughts... ✨
+                      <div>
+                        <Textarea
+                          placeholder={`Share your story, updates, or thoughts... ✨
 
 💡 Tips:
 • Paste YouTube links to embed videos automatically
 • Share behind-the-scenes content
 • Ask questions to engage your supporters
-• Add images for visual appeal"
-                      value={newPostContent}
-                      onChange={(e) => setNewPostContent(e.target.value)}
-                      rows={8}
-                      className="resize-none border-2 focus:border-purple-400 dark:focus:border-purple-500"
-                    />
-                  </div>
+• Add images for visual appeal`}
+                          value={newPostContent}
+                          onChange={(e) => setNewPostContent(e.target.value)}
+                          rows={8}
+                          className="resize-none border-2 focus:border-purple-400 dark:focus:border-purple-500"
+                        />
+                      </div>
+                    </>
+                  )}
 
-                  {uploadedImageUrl && (
+                  {/* Poll Creation UI */}
+                  {postType === 'poll' && (
+                    <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Poll Question *
+                        </label>
+                        <Input
+                          placeholder="What would you like to ask your supporters?"
+                          value={pollQuestion}
+                          onChange={(e) => setPollQuestion(e.target.value)}
+                          className="text-lg font-semibold border-2 focus:border-blue-400 dark:focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Options * (2-10)
+                        </label>
+                        <div className="space-y-2">
+                          {pollOptions.map((option, index) => (
+                            <div key={index} className="flex gap-2">
+                              <Input
+                                placeholder={`Option ${index + 1}`}
+                                value={option}
+                                onChange={(e) => updatePollOption(index, e.target.value)}
+                                className="flex-1 border-2 focus:border-blue-400 dark:focus:border-blue-500"
+                              />
+                              {pollOptions.length > 2 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removePollOption(index)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {pollOptions.length < 10 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={addPollOption}
+                            className="mt-2 w-full border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-600"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Option
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="multiple-answers"
+                            checked={allowsMultipleAnswers}
+                            onChange={(e) => setAllowsMultipleAnswers(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <label htmlFor="multiple-answers" className="text-sm text-gray-700 dark:text-gray-300">
+                            Allow multiple answers
+                          </label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <label htmlFor="poll-duration" className="text-sm text-gray-700 dark:text-gray-300">
+                            Duration:
+                          </label>
+                          <select
+                            id="poll-duration"
+                            value={pollDuration || ''}
+                            onChange={(e) => setPollDuration(e.target.value ? parseInt(e.target.value) : null)}
+                            className="px-3 py-1 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                          >
+                            <option value="">No expiration</option>
+                            <option value="1">1 day</option>
+                            <option value="3">3 days</option>
+                            <option value="7">1 week</option>
+                            <option value="14">2 weeks</option>
+                            <option value="30">1 month</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {uploadedImageUrl && postType === 'post' && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -551,28 +763,32 @@ export default function EnhancedCreatorDashboard() {
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="image-upload"
-                        disabled={isUploadingImage}
-                      />
-                      <label htmlFor="image-upload" className="flex-1 sm:flex-none">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isUploadingImage}
-                          className="w-full sm:w-auto border-2 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                          asChild
-                        >
-                          <span className="cursor-pointer">
-                            <Upload className="w-4 h-4 mr-2" />
-                            {isUploadingImage ? 'Uploading...' : 'Add Image'}
-                          </span>
-                        </Button>
-                      </label>
+                      {postType === 'post' && (
+                        <>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            id="image-upload"
+                            disabled={isUploadingImage}
+                          />
+                          <label htmlFor="image-upload" className="flex-1 sm:flex-none">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={isUploadingImage}
+                              className="w-full sm:w-auto border-2 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                              asChild
+                            >
+                              <span className="cursor-pointer">
+                                <Upload className="w-4 h-4 mr-2" />
+                                {isUploadingImage ? 'Uploading...' : 'Add Image'}
+                              </span>
+                            </Button>
+                          </label>
+                        </>
+                      )}
 
                       <div className="relative">
                         <select
@@ -593,7 +809,11 @@ export default function EnhancedCreatorDashboard() {
 
                     <Button
                       onClick={handlePublishPost}
-                      disabled={isPublishing || !newPostTitle.trim() || !newPostContent.trim()}
+                      disabled={
+                        isPublishing ||
+                        (postType === 'post' && (!newPostTitle.trim() || !newPostContent.trim())) ||
+                        (postType === 'poll' && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))
+                      }
                       size="lg"
                       className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
                     >
@@ -605,7 +825,7 @@ export default function EnhancedCreatorDashboard() {
                       ) : (
                         <>
                           <ArrowUpRight className="w-4 h-4 mr-2" />
-                          Publish Post
+                          Publish {postType === 'post' ? 'Post' : 'Poll'}
                         </>
                       )}
                     </Button>

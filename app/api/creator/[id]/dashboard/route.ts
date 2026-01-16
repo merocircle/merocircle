@@ -81,7 +81,13 @@ export async function GET(
           created_at,
           user:users(id, display_name, photo_url)
         ),
-        users!posts_creator_id_fkey(id, display_name, photo_url, role)
+        users!posts_creator_id_fkey(id, display_name, photo_url, role),
+        polls(
+          id,
+          question,
+          allows_multiple_answers,
+          expires_at
+        )
       `)
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
@@ -117,12 +123,14 @@ export async function GET(
         media_url: string | null;
         is_public: boolean;
         tier_required: string | null;
+        post_type?: string;
         created_at: string;
         updated_at: string;
         creator_id: string;
         users?: { id: string; display_name: string; photo_url: string | null; role: string };
         post_likes?: Array<{ id: string; user_id: string }>;
         post_comments?: Array<{ id: string; content: string; created_at: string; user?: { id: string; display_name: string; photo_url: string | null } }>;
+        polls?: Array<{ id: string; question: string; allows_multiple_answers: boolean; expires_at: string | null }>;
       }) => ({
         id: p.id,
         title: p.title,
@@ -131,6 +139,7 @@ export async function GET(
         media_url: p.media_url,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
+        post_type: p.post_type || 'post',
         created_at: p.created_at,
         updated_at: p.updated_at,
         creator_id: p.creator_id,
@@ -144,6 +153,8 @@ export async function GET(
           category: profileToUse.category || null,
           is_verified: profileToUse.is_verified || false
         },
+        // polls is an object (one-to-one relationship), not an array
+        poll: p.polls || null,
         likes: p.post_likes || [],
         comments: (p.post_comments || []).map((c: { id: string; content: string; created_at: string; user?: { id: string; display_name: string; photo_url: string | null } }) => ({
           id: c.id,

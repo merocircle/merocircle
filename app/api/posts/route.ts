@@ -22,6 +22,12 @@ export async function GET(request: NextRequest) {
           display_name,
           photo_url,
           role
+        ),
+        polls(
+          id,
+          question,
+          allows_multiple_answers,
+          expires_at
         )
       `)
       .eq('is_public', true)
@@ -90,7 +96,9 @@ export async function GET(request: NextRequest) {
       ...post,
       likes_count: likesCountMap[post.id] || 0,
       comments_count: commentsCountMap[post.id] || 0,
-      creator_profile: profilesMap[post.creator_id] || null
+      creator_profile: profilesMap[post.creator_id] || null,
+      // polls is an object (one-to-one relationship), not an array
+      poll: post.polls || null
     }));
 
     const { count } = await supabase
@@ -120,7 +128,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -136,13 +144,36 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, image_url, is_public = true, tier_required = 'free' } = body;
+    const {
+      title,
+      content,
+      image_url,
+      is_public = true,
+      tier_required = 'free',
+      post_type = 'post',
+      poll_data
+    } = body;
 
     const validation = validatePostContent(title, content);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
+    // Validate poll data if it's a poll post
+    if (post_type === 'poll') {
+      if (!poll_data || !poll_data.question || !poll_data.options || poll_data.options.length < 2) {
+        return NextResponse.json({
+          error: 'Poll must have a question and at least 2 options'
+        }, { status: 400 });
+      }
+      if (poll_data.options.length > 10) {
+        return NextResponse.json({
+          error: 'Poll cannot have more than 10 options'
+        }, { status: 400 });
+      }
+    }
+
+    // Create the post
     const { data: post, error } = await supabase
       .from('posts')
       .insert({
@@ -151,7 +182,8 @@ export async function POST(request: NextRequest) {
         content: sanitizeString(content),
         image_url: image_url || null,
         is_public: is_public ?? true,
-        tier_required: tier_required || 'free'
+        tier_required: tier_required || 'free',
+        post_type: post_type || 'post'
       })
       .select('*, users!posts_creator_id_fkey(id, display_name, photo_url, role)')
       .single();
@@ -159,6 +191,47 @@ export async function POST(request: NextRequest) {
     if (error) {
       logger.error('Post creation failed', 'POSTS_API', { error: error.message, userId: user.id });
       return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });
+    }
+
+    // If it's a poll, create the poll data
+    if (post_type === 'poll' && poll_data) {
+      // Create poll
+      const { data: pollRecord, error: pollError } = await supabase
+        .from('polls')
+        .insert({
+          post_id: post.id,
+          question: sanitizeString(poll_data.question),
+          allows_multiple_answers: poll_data.allows_multiple_answers || false,
+          expires_at: poll_data.expires_at || null
+        })
+        .select()
+        .single();
+
+      if (pollError) {
+        // Rollback: delete the post
+        await supabase.from('posts').delete().eq('id', post.id);
+        logger.error('Poll creation failed', 'POSTS_API', { error: pollError.message, userId: user.id });
+        return NextResponse.json({ error: 'Failed to create poll' }, { status: 500 });
+      }
+
+      // Create poll options
+      const optionsToInsert = poll_data.options.map((option: string, index: number) => ({
+        poll_id: pollRecord.id,
+        option_text: sanitizeString(option),
+        position: index
+      }));
+
+      const { error: optionsError } = await supabase
+        .from('poll_options')
+        .insert(optionsToInsert);
+
+      if (optionsError) {
+        // Rollback: delete poll and post
+        await supabase.from('polls').delete().eq('id', pollRecord.id);
+        await supabase.from('posts').delete().eq('id', post.id);
+        logger.error('Poll options creation failed', 'POSTS_API', { error: optionsError.message, userId: user.id });
+        return NextResponse.json({ error: 'Failed to create poll options' }, { status: 500 });
+      }
     }
 
     return NextResponse.json(post, { status: 201 });

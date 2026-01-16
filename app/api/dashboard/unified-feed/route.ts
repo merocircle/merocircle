@@ -72,6 +72,12 @@ export async function GET() {
           content,
           created_at,
           user:users(id, display_name, photo_url)
+        ),
+        polls(
+          id,
+          question,
+          allows_multiple_answers,
+          expires_at
         )
       `)
       .eq('is_public', true)
@@ -104,6 +110,7 @@ export async function GET() {
         media_url: p.media_url || null,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
+        post_type: p.post_type || 'post',
         created_at: p.created_at,
         updated_at: p.updated_at,
         creator_id: p.creator_id,
@@ -117,6 +124,8 @@ export async function GET() {
           category: profile?.category || null,
           is_verified: profile?.is_verified || false
         },
+        // polls is an object (one-to-one relationship), not an array
+        poll: p.polls || null,
         likes: p.post_likes || [],
         comments: (p.post_comments || []).map((c: any) => ({
           id: c.id,

@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from '@/lib/youtube';
+import { PollCard } from './PollCard';
 
 interface Post {
   id: string;
@@ -21,6 +22,7 @@ interface Post {
   image_url?: string;
   media_url?: string;
   tier_required: string;
+  post_type?: 'post' | 'poll';
   created_at: string;
   creator: {
     id: string;
@@ -38,6 +40,9 @@ interface Post {
   }>;
   likes_count?: number;
   comments_count?: number;
+  poll?: {
+    id: string;
+  };
 }
 
 interface EnhancedPostCardProps {
@@ -87,6 +92,14 @@ export function EnhancedPostCard({
   const youtubeVideoId = useMemo(() => {
     return extractVideoIdFromContent(post.content);
   }, [post.content]);
+
+  // Handle poll data
+  const pollData = useMemo(() => {
+    if (post.post_type === 'poll') {
+      return post.poll;
+    }
+    return null;
+  }, [post]);
 
   // Determine profile link - if viewing own post, go to own profile
   const creatorProfileLink = currentUserId === post.creator.id
@@ -263,8 +276,15 @@ export function EnhancedPostCard({
             {post.content}
           </p>
 
-          {/* YouTube Video Embed */}
-          {youtubeVideoId && (
+          {/* Poll */}
+          {post.post_type === 'poll' && pollData && pollData.id && (
+            <div className="mb-4">
+              <PollCard pollId={pollData.id} currentUserId={currentUserId} />
+            </div>
+          )}
+
+          {/* YouTube Video Embed (only for regular posts) */}
+          {post.post_type !== 'poll' && youtubeVideoId && (
             <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 bg-black">
               <iframe
                 src={getYouTubeEmbedUrl(youtubeVideoId)}
@@ -276,8 +296,8 @@ export function EnhancedPostCard({
             </div>
           )}
 
-          {/* Post Image */}
-          {post.image_url && (
+          {/* Post Image (only for regular posts) */}
+          {post.post_type !== 'poll' && post.image_url && (
             <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden mb-4">
               <Image
                 src={post.image_url}
