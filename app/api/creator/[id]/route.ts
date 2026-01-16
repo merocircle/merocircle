@@ -46,7 +46,8 @@ export async function GET(
         *,
         post_likes(id, user_id),
         post_comments(id, content, created_at, user_id, users(id, display_name, photo_url)),
-        users!posts_creator_id_fkey(id, display_name, photo_url, role)
+        users!posts_creator_id_fkey(id, display_name, photo_url, role),
+        polls(id, question, allows_multiple_answers, expires_at)
       `)
       .eq('creator_id', creatorId);
 
@@ -91,12 +92,14 @@ export async function GET(
       media_url: string | null;
       is_public: boolean;
       tier_required: string | null;
+      post_type?: string;
       created_at: string;
       updated_at: string;
       creator_id: string;
       users?: { id: string; display_name: string; photo_url: string | null; role: string };
       post_likes?: Array<{ id: string; user_id: string }>;
       post_comments?: Array<{ id: string; content: string; created_at: string }>;
+      polls?: { id: string; question: string; allows_multiple_answers: boolean; expires_at: string | null };
     }) => ({
       id: post.id,
       title: post.title,
@@ -105,6 +108,7 @@ export async function GET(
       media_url: post.media_url || null,
       is_public: post.is_public,
       tier_required: post.tier_required || 'free',
+      post_type: post.post_type || 'post',
       created_at: post.created_at,
       updated_at: post.updated_at,
       creator_id: post.creator_id,
@@ -118,6 +122,8 @@ export async function GET(
         category: creatorProfile.category,
         is_verified: creatorProfile.is_verified
       },
+      // polls is an object (one-to-one relationship), not an array
+      poll: post.polls || null,
       likes: post.post_likes || [],
       comments: post.post_comments || [],
       likes_count: post.post_likes?.length || 0,

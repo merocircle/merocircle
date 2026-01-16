@@ -368,9 +368,9 @@ export default function CreatorProfilePage() {
                         const postId = String(post.id || '');
                         const likes = post.likes as Array<Record<string, unknown>> | undefined;
                         const comments = post.comments as Array<Record<string, unknown>> | undefined;
-                        
+
                         return (
-                          <EnhancedPostCard 
+                          <EnhancedPostCard
                             key={postId}
                             post={{
                               id: postId,
@@ -379,6 +379,7 @@ export default function CreatorProfilePage() {
                               image_url: post.image_url ? String(post.image_url) : undefined,
                               media_url: post.media_url ? String(post.media_url) : undefined,
                               tier_required: String(post.tier_required || 'free'),
+                              post_type: String(post.post_type || 'post'),
                               created_at: String(post.created_at || post.createdAt || ''),
                               creator: (post.creator as Record<string, unknown>) || {
                                 id: creatorId,
@@ -390,6 +391,7 @@ export default function CreatorProfilePage() {
                                 category: creatorDetails?.category || undefined,
                                 is_verified: creatorDetails?.is_verified || false
                               },
+                              poll: post.poll as Record<string, unknown> | undefined,
                               likes_count: (post.likes_count as number) || (likes?.length || 0),
                               comments_count: (post.comments_count as number) || (comments?.length || 0)
                             }}
@@ -408,9 +410,9 @@ export default function CreatorProfilePage() {
                     const postId = String(post.id || '');
                     const likes = post.likes as Array<Record<string, unknown>> | undefined;
                     const comments = post.comments as Array<Record<string, unknown>> | undefined;
-                    
+
                     return (
-                      <EnhancedPostCard 
+                      <EnhancedPostCard
                         key={postId}
                         post={{
                           id: postId,
@@ -419,6 +421,7 @@ export default function CreatorProfilePage() {
                           image_url: post.image_url ? String(post.image_url) : undefined,
                           media_url: post.media_url ? String(post.media_url) : undefined,
                           tier_required: String(post.tier_required || 'free'),
+                          post_type: String(post.post_type || 'post'),
                           created_at: String(post.created_at || post.createdAt || ''),
                           creator: (post.creator as Record<string, unknown>) || {
                             id: creatorId,
@@ -430,6 +433,7 @@ export default function CreatorProfilePage() {
                             category: creatorDetails?.category || undefined,
                             is_verified: creatorDetails?.is_verified || false
                           },
+                          poll: post.poll as Record<string, unknown> | undefined,
                           likes_count: (post.likes_count as number) || (likes?.length || 0),
                           comments_count: (post.comments_count as number) || (comments?.length || 0)
                         }}

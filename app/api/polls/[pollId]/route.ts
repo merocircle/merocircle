@@ -3,12 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { pollId: string } }
+  { params }: { params: Promise<{ pollId: string }> }
 ) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const { pollId } = params;
+    const { pollId } = await params;
 
     // Get poll details
     const { data: poll, error: pollError } = await supabase
