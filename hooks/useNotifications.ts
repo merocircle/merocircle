@@ -35,15 +35,73 @@ interface UseNotificationsReturn {
   markAllAsRead: () => Promise<void>;
 }
 
+// Global channel management to prevent multiple subscriptions
+let globalChannel: RealtimeChannel | null = null;
+let globalUserId: string | null = null;
+const subscribers = new Set<() => void>();
+
+function setupGlobalChannel(userId: string) {
+  // If channel exists for same user, reuse it
+  if (globalChannel && globalUserId === userId) {
+    return globalChannel;
+  }
+
+  // Clean up old channel if user changed
+  if (globalChannel) {
+    supabase.removeChannel(globalChannel);
+    globalChannel = null;
+    subscribers.clear();
+  }
+
+  // Create new channel
+  globalUserId = userId;
+  globalChannel = supabase
+    .channel(`notifications:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`
+      },
+      () => {
+        // Notify all subscribers
+        subscribers.forEach(callback => callback());
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`
+      },
+      () => {
+        // Notify all subscribers
+        subscribers.forEach(callback => callback());
+      }
+    )
+    .subscribe();
+
+  return globalChannel;
+}
+
+function cleanupGlobalChannel() {
+  if (globalChannel && subscribers.size === 0) {
+    supabase.removeChannel(globalChannel);
+    globalChannel = null;
+    globalUserId = null;
+  }
+}
+
 export function useNotifications(type?: string): UseNotificationsReturn {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const isSubscribedRef = useRef(false);
-  const fetchNotificationsRef = useRef<() => Promise<void>>();
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
@@ -82,11 +140,6 @@ export function useNotifications(type?: string): UseNotificationsReturn {
       setLoading(false);
     }
   }, [user, type]);
-
-  // Keep ref updated with latest fetchNotifications
-  useEffect(() => {
-    fetchNotificationsRef.current = fetchNotifications;
-  }, [fetchNotifications]);
 
   const markAsRead = useCallback(async (notificationIds: string[]) => {
     if (!user || notificationIds.length === 0) return;
@@ -136,67 +189,28 @@ export function useNotifications(type?: string): UseNotificationsReturn {
     }
   }, [user]);
 
-  // Subscribe to real-time notification updates
+  // Subscribe to real-time notification updates using global channel
   useEffect(() => {
     if (!user) {
-      // Clean up subscription if user logs out
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-        isSubscribedRef.current = false;
-      }
       return;
     }
 
-    // Clean up previous subscription
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-      isSubscribedRef.current = false;
-    }
+    // Setup global channel (will reuse if already exists)
+    setupGlobalChannel(user.id);
 
-    // Create new channel subscription
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          // Refetch notifications when a new one is inserted
-          fetchNotificationsRef.current?.();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          // Refetch notifications when one is updated (e.g., marked as read)
-          fetchNotificationsRef.current?.();
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
-    isSubscribedRef.current = true;
+    // Register this component's fetch callback
+    const callback = () => {
+      fetchNotifications();
+    };
+    subscribers.add(callback);
 
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-        isSubscribedRef.current = false;
-      }
+      // Unregister callback when component unmounts
+      subscribers.delete(callback);
+      // Cleanup channel if no more subscribers
+      cleanupGlobalChannel();
     };
-  }, [user]); // Only depend on user, not fetchNotifications
+  }, [user, fetchNotifications]);
 
   useEffect(() => {
     fetchNotifications();
