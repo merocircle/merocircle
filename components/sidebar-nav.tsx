@@ -7,12 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useNotifications } from '@/hooks/useNotifications';
-import { 
-  Home, 
-  Compass,
-  Rss,
-  MessageCircle, 
-  Bell, 
+import {
+  Home,
+  MessageCircle,
+  Bell,
   Settings,
   Menu,
   X,
@@ -20,7 +18,6 @@ import {
   User,
   LogOut,
   Crown,
-  Search,
   ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -90,8 +87,6 @@ export function SidebarNav() {
 
   const navItems: NavItem[] = [
     { label: 'Home', href: '/dashboard', icon: Home },
-    { label: 'Feed', href: '/feed', icon: Rss },
-    { label: 'Explore', href: '/explore', icon: Compass },
     { label: 'Chats', href: '/community', icon: MessageCircle },
     { label: 'Notifications', href: '/notifications', icon: Bell, badge: unreadCount },
     { label: 'Settings', href: '/settings', icon: Settings },

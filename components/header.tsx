@@ -93,11 +93,11 @@ export function Header() {
             Discover
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
           </Link>
-          <Link 
-            href="/explore" 
+          <Link
+            href="/dashboard"
             className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
           >
-            Explore
+            Browse Creators
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
           </Link>
           {isAuthenticated && (
@@ -241,12 +241,12 @@ export function Header() {
               >
                 Discover
               </Link>
-              <Link 
-                href="/explore" 
+              <Link
+                href="/dashboard"
                 className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
                 onClick={closeMobileMenu}
               >
-                Explore
+                Browse Creators
               </Link>
               {isAuthenticated && (
                 <>

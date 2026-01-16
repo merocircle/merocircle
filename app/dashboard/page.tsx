@@ -4,27 +4,30 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/supabase-auth-context';
-import { useDiscoveryFeed } from '@/hooks/useSocial';
 import { PageLayout } from '@/components/common/PageLayout';
-import { SearchHeader } from '@/components/common/SearchHeader';
-import { WelcomeBanner } from '@/components/common/WelcomeBanner';
 import { SectionHeader } from '@/components/common/SectionHeader';
-import { CreatorGrid } from '@/components/common/CreatorGrid';
 import { CreatorMiniCard } from '@/components/common/CreatorMiniCard';
 import { EmptyStateCard } from '@/components/common/EmptyStateCard';
-import { CTABanner } from '@/components/common/CTABanner';
-import { 
-  Search, 
-  TrendingUp, 
+import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
+import { Input } from '@/components/ui/input';
+import {
+  Search,
   Sparkles,
-  Heart,
-  Users,
+  Rss,
 } from 'lucide-react';
 
+interface UnifiedFeedData {
+  creators: Array<any>;
+  posts: Array<any>;
+}
+
+const CATEGORIES = ['All', 'Music', 'Art', 'Photography', 'Video', 'Writing', 'Tech', 'Other'];
+
 export default function DashboardPage() {
-  const { isAuthenticated, loading: authLoading, userProfile } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
-  const { feed, loading } = useDiscoveryFeed();
+  const [feedData, setFeedData] = useState<UnifiedFeedData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -34,24 +37,38 @@ export default function DashboardPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  useEffect(() => {
+    const fetchUnifiedFeed = async () => {
+      if (!isAuthenticated || !user) return;
+
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard/unified-feed');
+        if (!response.ok) throw new Error('Failed to fetch feed');
+
+        const data = await response.json();
+        setFeedData(data);
+      } catch (error) {
+        console.error('Feed error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated && user) {
+      fetchUnifiedFeed();
+    }
+  }, [isAuthenticated, user]);
+
   if (authLoading || loading || !isAuthenticated) {
-    return <PageLayout loading={authLoading || loading} />;
+    return <PageLayout loading={authLoading || loading}><div /></PageLayout>;
   }
 
-  // Combine creators and deduplicate by user_id
-  const allCreatorsMap = new Map();
-  [...(feed?.trending_creators || []), ...(feed?.suggested_creators || [])].forEach(creator => {
-    if (!allCreatorsMap.has(creator.user_id)) {
-      allCreatorsMap.set(creator.user_id, creator);
-    }
-  });
-  const allCreators = Array.from(allCreatorsMap.values());
-  
-  // Filter creators for "Creators for you" section - only show trending (exclude suggested)
-  const creatorsForYou = (feed?.trending_creators || []).filter(creator => {
-    const matchesCategory = selectedCategory === 'All' || 
-      creator.creator_profile?.category?.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesSearch = !searchQuery || 
+  // Filter creators based on category and search
+  const filteredCreators = (feedData?.creators || []).filter(creator => {
+    const matchesCategory = selectedCategory === 'All' ||
+      creator.category?.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesSearch = !searchQuery ||
       creator.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       creator.bio?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -59,106 +76,120 @@ export default function DashboardPage() {
 
   return (
     <PageLayout>
-      <SearchHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        showCategoryFilter
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        actionIcon={Search}
-      />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <WelcomeBanner
-          title={`Welcome back, ${userProfile?.display_name || 'Creator'}! 👋`}
-          description="Discover amazing creators and support their work"
-          stats={[
-            { icon: Users, label: 'Creators', value: allCreators.length },
-            { icon: Heart, label: 'Supporters', value: '50K+' }
-          ]}
+        {/* Search Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
           className="mb-8"
-        />
+        >
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 text-base bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+            />
+          </div>
+        </motion.div>
 
+        {/* Category Filter */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mb-8"
         >
-          <SectionHeader
-            title="Recently Visited"
-            action={{ label: 'See All', onClick: () => {} }}
-          />
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {allCreators.slice(0, 6).map((creator) => (
-              <CreatorMiniCard
-                key={creator.user_id}
-                id={creator.user_id}
-                name={creator.display_name}
-                avatarUrl={creator.avatar_url}
-                supporterCount={creator.supporter_count || 0}
-              />
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {CATEGORIES.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
+                  selectedCategory === category
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {category}
+              </button>
             ))}
           </div>
         </motion.div>
 
+        {/* Creators for You Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <SectionHeader
-            title="Based on your recent visits"
-            description="Creators you might like"
-            icon={Sparkles}
-            iconColor="text-yellow-500"
-          />
-          
-          <CreatorGrid
-            creators={feed?.suggested_creators?.slice(0, 6) || []}
-            columns={{ default: 1, md: 2, xl: 3 }}
-            gap={6}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          className="mb-12"
         >
           <SectionHeader
             title="Creators for you"
-            description={selectedCategory !== 'All' ? `${selectedCategory} creators` : 'Trending creators making waves'}
-            icon={TrendingUp}
-            iconColor="text-green-500"
-            action={{ label: 'View All', onClick: () => {} }}
+            description={selectedCategory !== 'All' ? `${selectedCategory} creators` : 'Trending creators'}
+            icon={Sparkles}
+            iconColor="text-yellow-500"
           />
 
-          {creatorsForYou.length === 0 ? (
+          {filteredCreators.length === 0 ? (
             <EmptyStateCard
               icon={Search}
               title="No creators found"
               description="Try adjusting your search or filters"
             />
           ) : (
-            <CreatorGrid
-              creators={creatorsForYou}
-              columns={{ default: 1, md: 2, xl: 3 }}
-              gap={6}
-            />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {filteredCreators.slice(0, 6).map((creator: any) => (
+                <CreatorMiniCard
+                  key={creator.user_id}
+                  id={creator.user_id}
+                  name={creator.display_name}
+                  avatarUrl={creator.avatar_url}
+                  supporterCount={creator.supporter_count || 0}
+                />
+              ))}
+            </div>
           )}
         </motion.div>
 
-        <CTABanner
-          title="Are you a creator?"
-          description="Join thousands of creators earning on Creators Nepal"
-          buttons={[
-            { label: 'Start Creating', href: '/signup/creator', variant: 'secondary' }
-          ]}
-          className="mt-12 mb-8"
-        />
+        {/* Feed Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="space-y-6"
+        >
+          <SectionHeader
+            title="Feed"
+            description="Discover trending posts from amazing creators"
+            icon={Rss}
+            iconColor="text-blue-500"
+          />
+
+          {feedData?.posts && feedData.posts.length > 0 ? (
+            feedData.posts.map((post: any) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <EnhancedPostCard
+                  post={post}
+                  currentUserId={user?.id}
+                  showActions={true}
+                />
+              </motion.div>
+            ))
+          ) : (
+            <EmptyStateCard
+              icon={Rss}
+              title="No posts yet"
+              description="Check back later for content from creators"
+            />
+          )}
+        </motion.div>
       </div>
     </PageLayout>
   );

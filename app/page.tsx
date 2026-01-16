@@ -261,7 +261,7 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/explore">
+              <Link href="/dashboard">
                 <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-gray-600 hover:border-gray-500 text-white font-semibold rounded-full transition-all duration-300 hover:bg-white/10 backdrop-blur-sm">
                   <Coffee className="mr-2 w-5 h-5" />
                   Explore Creators
@@ -303,7 +303,7 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/explore">
+              <Link href="/dashboard">
                 <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-600 dark:hover:border-blue-500 text-gray-900 dark:text-gray-100 font-semibold rounded-full transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <Coffee className="mr-2 w-5 h-5" />
                   Explore Creators
@@ -450,7 +450,7 @@ export default function LandingPage() {
               <h4 className="font-bold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/auth" className="hover:text-white transition-colors">Get Started</Link></li>
-                <li><Link href="/explore" className="hover:text-white transition-colors">Explore Creators</Link></li>
+                <li><Link href="/dashboard" className="hover:text-white transition-colors">Explore Creators</Link></li>
                 <li><Link href="/discover" className="hover:text-white transition-colors">Discover</Link></li>
                 <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
               </ul>
