@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { extractVideoIdFromContent, getYouTubeEmbedUrl } from '@/lib/youtube';
 
 interface Post {
   id: string;
@@ -68,10 +69,10 @@ export function EnhancedPostCard({
   showActions = true
 }: EnhancedPostCardProps) {
   // Check if current user has liked the post from the likes array
-  const initialIsLiked = currentUserId 
+  const initialIsLiked = currentUserId
     ? (post.likes?.some((like: { user_id: string }) => like.user_id === currentUserId) || false)
     : false;
-  
+
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count || post.likes?.length || 0);
@@ -82,9 +83,14 @@ export function EnhancedPostCard({
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
+  // Detect YouTube video in content
+  const youtubeVideoId = useMemo(() => {
+    return extractVideoIdFromContent(post.content);
+  }, [post.content]);
+
   // Determine profile link - if viewing own post, go to own profile
-  const creatorProfileLink = currentUserId === post.creator.id 
-    ? '/profile' 
+  const creatorProfileLink = currentUserId === post.creator.id
+    ? '/profile'
     : `/creator/${post.creator.id}`;
 
   const handleLike = () => {
@@ -256,6 +262,19 @@ export function EnhancedPostCard({
           <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 mb-4">
             {post.content}
           </p>
+
+          {/* YouTube Video Embed */}
+          {youtubeVideoId && (
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 bg-black">
+              <iframe
+                src={getYouTubeEmbedUrl(youtubeVideoId)}
+                title="YouTube video player"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+          )}
 
           {/* Post Image */}
           {post.image_url && (
