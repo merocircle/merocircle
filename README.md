@@ -9,7 +9,8 @@ Platform for supporting Nepali creators with local payment integration.
 ## Features
 
 - Creator profiles with content management
-- eSewa/Khalti payment integration
+- **Payment Gateways** (eSewa & Khalti)
+- Payment gateway selector
 - Social features (follow, like, comment)
 - Analytics dashboard
 - Dark mode support
@@ -19,13 +20,23 @@ Platform for supporting Nepali creators with local payment integration.
 ```bash
 npm install
 cp .env.example .env.local
-# Edit .env.local with your Supabase credentials
+# Add Supabase credentials to .env.local
 npm run dev
 ```
 
-See `docs/QUICK_START.md` for detailed setup guide.
+## Test Payments
 
-**eSewa Test Mode**: Enabled by default. Payments auto-complete for development.
+```bash
+# 1. Start ngrok
+ngrok http 3000
+
+# 2. Update NEXT_PUBLIC_APP_URL in .env.local with ngrok URL
+
+# 3. Test eSewa
+# ID: 9806800001, Password: Nepal@123, MPIN: 1122
+```
+
+See `docs/QUICK_TEST.md` for Khalti setup.
 
 ## Tech Stack
 
@@ -41,11 +52,16 @@ Tables: `users`, `creator_profiles`, `supporter_transactions`, `follows`, `posts
 
 Functions: `get_discovery_feed()`, `search_creators()`, `get_creator_posts()`
 
-## Payment Integration
+## Payment Gateways
 
-**eSewa**: See `docs/ESEWA_SETUP.md`
-- Test mode available for development
-- Requires merchant registration for production
+**eSewa**: Test immediately
+- ID: `9806800001` / Password: `Nepal@123` / MPIN: `1122`
+
+**Khalti**: Register at https://test-admin.khalti.com (FREE, 5 min)
+- Get test keys from dashboard
+- Mobile: `9800000000` / MPIN: `1111` / OTP: `987654`
+
+**Testing**: See `docs/QUICK_TEST.md`
 
 ## Deployment
 

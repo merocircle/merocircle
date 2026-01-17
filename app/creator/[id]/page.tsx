@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/supabase-auth-context'
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails'
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
 import { TierSelection } from '@/components/creator/TierSelection'
+import { PaymentGatewaySelector } from '@/components/payment/PaymentGatewaySelector'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -64,7 +65,9 @@ export default function CreatorProfilePage() {
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
   
   const [activeTab, setActiveTab] = useState('home');
-  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [showGatewaySelector, setShowGatewaySelector] = useState(false)
+  const [pendingPayment, setPendingPayment] = useState<{ tierLevel: number; amount: number; message?: string } | null>(null);
 
   // Save to recently visited
   useEffect(() => {
@@ -93,8 +96,51 @@ export default function CreatorProfilePage() {
       return
     }
 
+    // Store payment details and show gateway selector
+    setPendingPayment({ tierLevel, amount, message })
+    setShowGatewaySelector(true)
+  }
+
+  const handleGatewaySelection = async (gateway: 'esewa' | 'khalti') => {
+    if (!pendingPayment || !user) return
+
+    setShowGatewaySelector(false)
     setPaymentLoading(true)
+
     try {
+      const { tierLevel, amount, message } = pendingPayment
+
+      if (gateway === 'khalti') {
+        // Handle Khalti payment
+        const response = await fetch('/api/payment/khalti/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amount,
+            creatorId,
+            supporterId: user.id,
+            supporterMessage: message || '',
+            tier_level: tierLevel,
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Khalti payment initiation failed')
+        }
+
+        const result = await response.json()
+
+        console.log('[PAYMENT] Khalti Response:', result)
+
+        if (result.success && result.payment_url) {
+          window.location.href = result.payment_url
+          return
+        } else {
+          throw new Error(result.error || 'Invalid Khalti response')
+        }
+      }
+
+      // Handle eSewa payment
       const response = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,8 +185,8 @@ export default function CreatorProfilePage() {
     } catch (error: unknown) {
       console.error('[PAYMENT] Error:', error)
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.')
-    } finally {
       setPaymentLoading(false)
+      setPendingPayment(null)
     }
   }
 
@@ -702,6 +748,20 @@ export default function CreatorProfilePage() {
           </Tabs>
         </div>
       </main>
+
+      {/* Payment Gateway Selector Modal */}
+      {pendingPayment && (
+        <PaymentGatewaySelector
+          open={showGatewaySelector}
+          onClose={() => {
+            setShowGatewaySelector(false)
+            setPendingPayment(null)
+          }}
+          onSelectGateway={handleGatewaySelection}
+          amount={pendingPayment.amount}
+          tierLevel={pendingPayment.tierLevel}
+        />
+      )}
     </div>
   )
 }
