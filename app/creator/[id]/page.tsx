@@ -334,16 +334,6 @@ export default function CreatorProfilePage() {
               <div className="lg:col-span-2 space-y-6">
                 {/* Home Tab */}
                 <TabsContent value="home" className="mt-0 space-y-6">
-                  {/* Welcome Card */}
-                  <Card className="p-6">
-                    <h2 className="text-xl font-bold mb-4">
-                      Welcome to {creatorDetails.display_name}&apos;s page
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Support {creatorDetails.display_name} and get access to exclusive content and benefits!
-                    </p>
-                  </Card>
-
                   {/* Tier Selection - Centered */}
                   <div className="flex justify-center">
                     <div className="w-full max-w-2xl">

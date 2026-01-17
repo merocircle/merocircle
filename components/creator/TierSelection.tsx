@@ -50,27 +50,27 @@ export function TierSelection({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 mb-4">
-          <Sparkles className="w-8 h-8 text-white" />
+      <div className="text-center mb-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 mb-3">
+          <Sparkles className="w-6 h-6 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
           Support {creatorName}
         </h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">
+        <p className="text-gray-600 dark:text-gray-400 text-xs">
           Choose a tier and unlock exclusive benefits
         </p>
       </div>
 
       {/* Tier Cards - Vertical Layout */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {tiers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No tiers available. Please check back later.
           </div>
         ) : (
           tiers.map((tier) => {
-            const tierConfig = tierIcons.find(t => t.tier_level === tier.tier_level);
+            const tierConfig = tierIcons.find(t => t.level === tier.tier_level);
             const isCurrent = currentTierLevel === tier.tier_level;
             const Icon = tierConfig?.icon || Star;
             
@@ -111,13 +111,6 @@ export function TierSelection({
                 whileHover={{ scale: 1.02 }}
                 className="relative"
               >
-                {tier.tier_level === 3 && (
-                  <div className={styles.badge}>
-                    <Crown className="w-3 h-3 inline mr-1" />
-                    Most Popular
-                  </div>
-                )}
-                
                 <Card
                   className={`relative overflow-hidden border-2 ${styles.border} ${styles.hoverBorder} bg-gradient-to-br ${styles.gradient} cursor-pointer transition-all duration-300 ${
                     loading ? 'opacity-50 cursor-not-allowed' : ''

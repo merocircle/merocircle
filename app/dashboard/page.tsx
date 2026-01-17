@@ -140,7 +140,7 @@ export default function DashboardPage() {
               description="Try adjusting your search or filters"
             />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {filteredCreators.slice(0, 6).map((creator: any) => (
                 <CreatorMiniCard
                   key={creator.user_id}
@@ -148,6 +148,8 @@ export default function DashboardPage() {
                   name={creator.display_name}
                   avatarUrl={creator.avatar_url}
                   supporterCount={creator.supporter_count || 0}
+                  bio={creator.bio}
+                  category={creator.category}
                 />
               ))}
             </div>
