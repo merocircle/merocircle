@@ -1,0 +1,182 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { validateAmount, validateUUID, sanitizeString } from '@/lib/validation';
+import { logger } from '@/lib/logger';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { amount, creatorId, supporterId, supporterMessage, tier_level } = body;
+
+    // Validate amount
+    const amountValidation = validateAmount(amount);
+    if (!amountValidation.valid) {
+      return NextResponse.json({ error: amountValidation.error }, { status: 400 });
+    }
+
+    // Validate UUIDs
+    if (!validateUUID(creatorId) || !validateUUID(supporterId)) {
+      return NextResponse.json({ error: 'Invalid user IDs' }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+
+    // Verify creator exists
+    const { data: creator } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .eq('id', creatorId)
+      .single();
+
+    if (!creator) {
+      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+    }
+
+    // Generate transaction UUID
+    const transactionUuid = `DIRECT-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    const amountStr = amountValidation.value!.toString();
+    const tierLevel = tier_level || 1;
+
+    // Create transaction as completed (bypassing payment gateway)
+    const insertData: any = {
+      supporter_id: supporterId,
+      creator_id: creatorId,
+      amount: amountStr,
+      payment_method: 'direct',
+      status: 'completed',
+      supporter_message: supporterMessage ? sanitizeString(supporterMessage) : null,
+      transaction_uuid: transactionUuid,
+      completed_at: new Date().toISOString(),
+      esewa_data: {
+        transaction_uuid: transactionUuid,
+        payment_method: 'direct',
+        bypassed: true,
+        tier_level: tierLevel,
+        created_at: new Date().toISOString(),
+      }
+    };
+
+    const { data: transaction, error: transactionError } = await supabase
+      .from('supporter_transactions')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (transactionError) {
+      logger.error('Direct transaction creation failed', 'DIRECT_PAYMENT', { 
+        error: transactionError.message 
+      });
+      return NextResponse.json({ error: 'Failed to create transaction' }, { status: 500 });
+    }
+
+    logger.info('Direct transaction created', 'DIRECT_PAYMENT', { 
+      transactionId: transaction.id, 
+      amount: amountStr 
+    });
+
+    // Ensure supporter record exists
+    const transactionAmount = Number(amountStr);
+
+    const { data: existingSupporter } = await supabase
+      .from('supporters')
+      .select('id')
+      .eq('supporter_id', supporterId)
+      .eq('creator_id', creatorId)
+      .single();
+
+    if (!existingSupporter) {
+      await supabase
+        .from('supporters')
+        .insert({
+          supporter_id: supporterId,
+          creator_id: creatorId,
+          tier: 'basic',
+          tier_level: tierLevel,
+          amount: transactionAmount,
+          is_active: true,
+        });
+    } else {
+      await supabase
+        .from('supporters')
+        .update({
+          is_active: true,
+          tier_level: tierLevel,
+          amount: transactionAmount,
+        })
+        .eq('id', existingSupporter.id);
+    }
+
+    // Auto-join supporter channel if tier 2 or 3 (chat access)
+    if (tierLevel >= 2) {
+      const { data: supporterChannel } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('creator_id', creatorId)
+        .eq('category', 'supporter')
+        .eq('requires_support', true)
+        .single();
+
+      if (supporterChannel) {
+        // Check if already a member
+        const { data: existingMember } = await supabase
+          .from('channel_members')
+          .select('id')
+          .eq('channel_id', supporterChannel.id)
+          .eq('user_id', supporterId)
+          .single();
+
+        if (!existingMember) {
+          await supabase
+            .from('channel_members')
+            .insert({
+              channel_id: supporterChannel.id,
+              user_id: supporterId,
+            });
+        }
+      }
+    } else if (tierLevel === 1) {
+      // Remove from chat if tier 1
+      const { data: supporterChannel } = await supabase
+        .from('channels')
+        .select('id')
+        .eq('creator_id', creatorId)
+        .eq('category', 'supporter')
+        .eq('requires_support', true)
+        .single();
+
+      if (supporterChannel) {
+        await supabase
+          .from('channel_members')
+          .delete()
+          .eq('channel_id', supporterChannel.id)
+          .eq('user_id', supporterId);
+      }
+    }
+
+    logger.info('Direct payment completed successfully', 'DIRECT_PAYMENT', {
+      transactionId: transaction.id,
+      creatorId,
+      supporterId,
+      amount: transactionAmount
+    });
+
+    return NextResponse.json({
+      success: true,
+      transaction: {
+        id: transaction.id,
+        amount: transaction.amount,
+        transaction_uuid: transaction.transaction_uuid,
+        created_at: transaction.created_at,
+      },
+      message: 'Support registered successfully'
+    });
+  } catch (error) {
+    logger.error('Direct payment failed', 'DIRECT_PAYMENT', {
+      error: error instanceof Error ? error.message : 'Unknown'
+    });
+    return NextResponse.json(
+      { error: 'Direct payment failed' },
+      { status: 500 }
+    );
+  }
+}

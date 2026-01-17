@@ -22,10 +22,11 @@ export async function GET() {
     const isCreator = userResult.data?.role === 'creator';
     const memberChannelIds = memberResult.data?.map(m => m.channel_id) || [];
 
-    // Build query based on user type
+    // Build query based on user type - exclude welcome/general channels
     let channelsQuery = supabase
       .from('channels')
       .select('*')
+      .neq('category', 'welcome')  // Exclude welcome/general channels
       .order('category', { ascending: true })
       .order('position', { ascending: true });
 
@@ -40,13 +41,52 @@ export async function GET() {
     }
 
     const { data: channels } = await channelsQuery;
+    
+    // Fetch creator info for supporter channels
+    const creatorIds = [...new Set((channels || []).map((c: any) => c.creator_id).filter(Boolean))];
+    let creatorMap = new Map();
+    
+    if (creatorIds.length > 0) {
+      const { data: creators } = await supabase
+        .from('users')
+        .select('id, display_name, photo_url')
+        .in('id', creatorIds);
+      
+      creatorMap = new Map((creators || []).map((c: any) => [c.id, c]));
+    }
+    
+    // Transform channels to include creator name for supporter channels
+    const transformedChannels = (channels || []).map((channel: any) => {
+      const creator = creatorMap.get(channel.creator_id);
+      // For supporter channels, use creator name instead of channel name
+      if (channel.category === 'supporter' && creator?.display_name) {
+        return {
+          ...channel,
+          display_name: creator.display_name,
+          original_name: channel.name,
+          creator: {
+            id: creator.id,
+            display_name: creator.display_name,
+            photo_url: creator.photo_url
+          }
+        };
+      }
+      return {
+        ...channel,
+        creator: creator ? {
+          id: creator.id,
+          display_name: creator.display_name,
+          photo_url: creator.photo_url
+        } : undefined
+      };
+    });
 
     logger.info('Channels fetched', 'CHANNELS_API', {
       userId: user.id,
-      channelCount: channels?.length || 0
+      channelCount: transformedChannels?.length || 0
     });
 
-    return NextResponse.json({ channels: channels || [] });
+    return NextResponse.json({ channels: transformedChannels || [] });
   } catch (error) {
     logger.error('Error fetching channels', 'CHANNELS_API', {
       error: error instanceof Error ? error.message : 'Unknown'

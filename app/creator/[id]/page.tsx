@@ -101,8 +101,18 @@ export default function CreatorProfilePage() {
     setShowGatewaySelector(true)
   }
 
-  const handleGatewaySelection = async (gateway: 'esewa' | 'khalti') => {
+  const handleGatewaySelection = async (gateway: 'esewa' | 'khalti' | 'direct') => {
     if (!pendingPayment || !user) return
+
+    // Direct payment is already handled in PaymentGatewaySelector
+    // Just refresh and show success without setting loading state
+    if (gateway === 'direct') {
+      setShowGatewaySelector(false)
+      setPendingPayment(null)
+      refreshCreatorDetails()
+      alert('Support registered successfully!')
+      return
+    }
 
     setShowGatewaySelector(false)
     setPaymentLoading(true)
@@ -750,7 +760,7 @@ export default function CreatorProfilePage() {
       </main>
 
       {/* Payment Gateway Selector Modal */}
-      {pendingPayment && (
+      {pendingPayment && user && (
         <PaymentGatewaySelector
           open={showGatewaySelector}
           onClose={() => {
@@ -760,6 +770,9 @@ export default function CreatorProfilePage() {
           onSelectGateway={handleGatewaySelection}
           amount={pendingPayment.amount}
           tierLevel={pendingPayment.tierLevel}
+          creatorId={creatorId}
+          supporterId={user.id}
+          supporterMessage={pendingPayment.message}
         />
       )}
     </div>

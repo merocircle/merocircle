@@ -39,7 +39,13 @@ export function useRealtimeChat({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const onMessageRef = useRef(onMessage);
   const isSubscribedRef = useRef(false);
+  
+  // Keep onMessage ref updated
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   // Fetch initial messages
   const fetchMessages = useCallback(async () => {
@@ -99,23 +105,20 @@ export function useRealtimeChat({
   // Subscribe to real-time updates
   useEffect(() => {
     if (!channelId || !enabled) {
-      // Clean up subscription if channel changes
-      if (channelRef.current && isSubscribedRef.current) {
+      if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
-        isSubscribedRef.current = false;
       }
       return;
     }
 
     // Clean up previous subscription
-    if (channelRef.current && isSubscribedRef.current) {
+    if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
-      isSubscribedRef.current = false;
     }
 
-    // Create new channel subscription
+    // Create realtime subscription
     const channel = supabase
       .channel(`channel_messages:${channelId}`)
       .on(
@@ -127,75 +130,104 @@ export function useRealtimeChat({
           filter: `channel_id=eq.${channelId}`
         },
         async (payload) => {
-          // Fetch the full message with user data
-          const { data: messageData, error: msgError } = await supabase
-            .from('channel_messages')
-            .select(`
-              id,
-              content,
-              user_id,
-              created_at,
-              users!channel_messages_user_id_fkey(
-                id,
-                display_name,
-                photo_url
-              )
-            `)
-            .eq('id', payload.new.id)
-            .single();
+          console.log('[REALTIME] Received message:', payload.new.id);
+          const payloadData = payload.new;
+          
+          // Fetch user data
+          let userData = null;
+          if (payloadData.user_id) {
+            const { data: user } = await supabase
+              .from('users')
+              .select('id, display_name, photo_url')
+              .eq('id', payloadData.user_id)
+              .single();
+            userData = user;
+          }
 
-          if (!msgError && messageData) {
-            const newMessage: ChatMessage = {
-              id: messageData.id,
-              content: messageData.content,
-              user_id: messageData.user_id,
-              created_at: messageData.created_at,
-              user: messageData.users ? {
-                id: messageData.users.id,
-                display_name: messageData.users.display_name,
-                photo_url: messageData.users.photo_url
-              } : undefined
-            };
+          const newMessage: ChatMessage = {
+            id: payloadData.id,
+            content: payloadData.content,
+            user_id: payloadData.user_id,
+            created_at: payloadData.created_at || new Date().toISOString(),
+            user: userData ? {
+              id: userData.id,
+              display_name: userData.display_name,
+              photo_url: userData.photo_url
+            } : undefined
+          };
 
-            setMessages((prev) => {
-              // Avoid duplicates
-              if (prev.some((msg) => msg.id === newMessage.id)) {
-                return prev;
-              }
-              return [...prev, newMessage];
-            });
-
-            // Call optional callback
-            if (onMessage) {
-              onMessage(newMessage);
+          setMessages((prev) => {
+            if (prev.some((msg) => msg.id === newMessage.id)) {
+              console.log('[REALTIME] Duplicate message ignored:', newMessage.id);
+              return prev;
             }
+            console.log('[REALTIME] Adding message to state:', newMessage.id);
+            return [...prev, newMessage];
+          });
+
+          if (onMessageRef.current) {
+            onMessageRef.current(newMessage);
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
+        console.log('[REALTIME] Subscription status:', status, 'for channel:', channelId);
+        if (err) {
+          console.error('[REALTIME] Subscription error:', err);
+          setError(`Realtime error: ${err.message}`);
+          isSubscribedRef.current = false;
+        }
         if (status === 'SUBSCRIBED') {
+          console.log('[REALTIME] Successfully subscribed to channel:', channelId);
           isSubscribedRef.current = true;
+          setError(null);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[REALTIME] Channel error for:', channelId);
+          setError('Failed to subscribe to realtime updates');
+          isSubscribedRef.current = false;
+        } else if (status === 'TIMED_OUT') {
+          console.error('[REALTIME] Subscription timed out for:', channelId);
+          setError('Realtime subscription timed out');
+          isSubscribedRef.current = false;
+        } else if (status === 'CLOSED') {
+          console.log('[REALTIME] Channel closed for:', channelId);
+          isSubscribedRef.current = false;
         }
       });
 
     channelRef.current = channel;
 
-    // Cleanup function
     return () => {
       if (channelRef.current) {
+        console.log('[REALTIME] Cleaning up subscription for channel:', channelId);
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
         isSubscribedRef.current = false;
       }
     };
-  }, [channelId, enabled, onMessage]);
+  }, [channelId, enabled]);
 
   // Initial fetch
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Send message via API route (for authentication and RLS)
+  // Fallback polling: Refresh messages periodically to catch any missed realtime events
+  useEffect(() => {
+    if (!channelId || !enabled) return;
+
+    // Poll every 3 seconds if subscription isn't active, every 5 seconds as backup
+    const pollTimer = setInterval(() => {
+      if (!isSubscribedRef.current) {
+        console.log('[REALTIME] Using polling fallback (subscription not active)');
+        fetchMessages();
+      }
+    }, 3000);
+
+    return () => clearInterval(pollTimer);
+  }, [channelId, enabled, fetchMessages]);
+
+  // Send message
   const sendMessage = useCallback(async (content: string) => {
     if (!channelId || !content.trim()) {
       return;
@@ -213,8 +245,33 @@ export function useRealtimeChat({
         throw new Error(error.error || 'Failed to send message');
       }
 
-      // Message will be received via realtime subscription
-      // No need to manually refresh
+      // Optimistically add message for sender
+      const { message: newMessage } = await response.json();
+      
+      if (newMessage) {
+        const formattedMessage: ChatMessage = {
+          id: newMessage.id,
+          content: newMessage.content,
+          user_id: newMessage.user_id,
+          created_at: newMessage.created_at,
+          user: newMessage.users ? {
+            id: newMessage.users.id,
+            display_name: newMessage.users.display_name,
+            photo_url: newMessage.users.photo_url
+          } : undefined
+        };
+
+        setMessages((prev) => {
+          if (prev.some((msg) => msg.id === formattedMessage.id)) {
+            return prev;
+          }
+          return [...prev, formattedMessage];
+        });
+
+        if (onMessageRef.current) {
+          onMessageRef.current(formattedMessage);
+        }
+      }
     } catch (err) {
       console.error('Error sending message:', err);
       throw err;

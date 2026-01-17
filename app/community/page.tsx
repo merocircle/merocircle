@@ -31,10 +31,17 @@ import { useRealtimeChat, type ChatMessage } from '@/hooks/useRealtimeChat';
 interface Channel {
   id: string;
   name: string;
+  display_name?: string;  // Creator name for supporter channels
+  original_name?: string;  // Original channel name
   description?: string;
   category: 'welcome' | 'supporter' | 'custom';
   channel_type: 'text' | 'voice';
   creator_id: string;
+  creator?: {
+    id: string;
+    display_name: string;
+    photo_url?: string;
+  };
 }
 
 type Message = ChatMessage;
@@ -46,7 +53,8 @@ export default function CommunityPage() {
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['welcome', 'supporter', 'custom']));
+  const [sending, setSending] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['supporter']));
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Use realtime chat hook
@@ -81,8 +89,6 @@ export default function CommunityPage() {
     }
   }, [selectedChannel]);
 
-  const [sending, setSending] = useState(false);
-
   const handleSendMessage = useCallback(async () => {
     if (!selectedChannel || !newMessage.trim() || sending) return;
 
@@ -115,17 +121,23 @@ export default function CommunityPage() {
     });
   }, []);
 
-  const groupedChannels = useMemo(() => 
-    channels.reduce((acc, channel) => {
-      (acc[channel.category] ||= []).push(channel);
-      return acc;
-    }, {} as Record<string, Channel[]>)
+  // Filter out welcome channels and group only supporter channels
+  const filteredChannels = useMemo(() => 
+    channels.filter(channel => channel.category !== 'welcome')
   , [channels]);
 
+  const groupedChannels = useMemo(() => 
+    filteredChannels.reduce((acc, channel) => {
+      // Only show supporter channels
+      if (channel.category === 'supporter') {
+        (acc['supporter'] ||= []).push(channel);
+      }
+      return acc;
+    }, {} as Record<string, Channel[]>)
+  , [filteredChannels]);
+
   const categoryLabels = useMemo(() => ({
-    welcome: 'GENERAL',
     supporter: 'MEMBERS',
-    custom: 'CHANNELS',
   }), []);
 
   const currentChannel = useMemo(() => 
@@ -209,7 +221,11 @@ export default function CommunityPage() {
                         ) : (
                           <Volume2 className="w-4 h-4 flex-shrink-0" />
                         )}
-                        <span className="flex-1 text-left truncate">{channel.name}</span>
+                        <span className="flex-1 text-left truncate">
+                          {channel.category === 'supporter' && channel.display_name 
+                            ? channel.display_name 
+                            : channel.name}
+                        </span>
                         <SettingsIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     ))}
@@ -248,7 +264,9 @@ export default function CommunityPage() {
                   )}
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                      {currentChannel?.name}
+                      {currentChannel?.category === 'supporter' && currentChannel?.display_name
+                        ? currentChannel.display_name
+                        : currentChannel?.name}
                     </h3>
                     {currentChannel?.description && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -276,7 +294,9 @@ export default function CommunityPage() {
                         <MessageCircle className="w-8 h-8 text-gray-400" />
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                        Welcome to #{currentChannel?.name}
+                        Welcome to {currentChannel?.category === 'supporter' && currentChannel?.display_name
+                          ? currentChannel.display_name
+                          : `#${currentChannel?.name}`}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         This is the start of your conversation. Say hello!
@@ -357,7 +377,9 @@ export default function CommunityPage() {
                   </Button>
                   <div className="flex-1 relative">
                     <Input
-                      placeholder={`Message #${currentChannel?.name}`}
+                      placeholder={`Message ${currentChannel?.category === 'supporter' && currentChannel?.display_name
+                        ? currentChannel.display_name
+                        : `#${currentChannel?.name}`}`}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={(e) => {

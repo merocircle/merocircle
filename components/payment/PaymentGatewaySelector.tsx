@@ -1,16 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
 interface PaymentGatewaySelectorProps {
   open: boolean;
   onClose: () => void;
-  onSelectGateway: (gateway: 'esewa' | 'khalti') => void;
+  onSelectGateway: (gateway: 'esewa' | 'khalti' | 'direct') => void;
   amount: number;
   tierLevel: number;
+  creatorId: string;
+  supporterId: string;
+  supporterMessage?: string;
 }
 
 export function PaymentGatewaySelector({
@@ -19,6 +23,9 @@ export function PaymentGatewaySelector({
   onSelectGateway,
   amount,
   tierLevel,
+  creatorId,
+  supporterId,
+  supporterMessage,
 }: PaymentGatewaySelectorProps) {
   const gateways = [
     {
@@ -108,6 +115,56 @@ export function PaymentGatewaySelector({
               </Card>
             );
           })}
+        </div>
+
+        {/* Direct Payment Button */}
+        <div className="mt-4 pt-4 border-t">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/payment/direct', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    amount,
+                    creatorId,
+                    supporterId,
+                    supporterMessage: supporterMessage || '',
+                    tier_level: tierLevel,
+                  }),
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({}));
+                  throw new Error(errorData.error || 'Direct payment failed');
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                  // Close modal first
+                  onClose();
+                  // Then trigger the callback to refresh data
+                  // Use setTimeout to ensure modal closes before callback
+                  setTimeout(() => {
+                    onSelectGateway('direct');
+                  }, 100);
+                } else {
+                  throw new Error(result.error || 'Payment failed');
+                }
+              } catch (error) {
+                console.error('Direct payment error:', error);
+                alert(error instanceof Error ? error.message : 'Failed to register support. Please try again.');
+              }
+            }}
+          >
+            Skip Payment Gateway & Register Support
+          </Button>
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+            This will register your support without going through a payment gateway
+          </p>
         </div>
       </DialogContent>
     </Dialog>
