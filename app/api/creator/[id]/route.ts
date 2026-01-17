@@ -100,9 +100,10 @@ export async function GET(
       return {
         id: post.id,
         title: post.title,
-        // Hide content for non-supporters viewing supporter-only posts
-        content: shouldHideContent ? '' : post.content,
-        // Hide image/media URLs for non-supporters viewing supporter-only posts
+        // For non-supporters viewing supporter-only posts: hide actual content and image URLs
+        // This prevents them from accessing the content via inspect element
+        content: shouldHideContent ? null : post.content,
+        // Don't send image_url to non-supporters - they can't access it even via inspect
         image_url: shouldHideContent ? null : post.image_url,
         media_url: shouldHideContent ? null : (post.media_url || null),
         is_public: post.is_public,
@@ -147,7 +148,8 @@ export async function GET(
         created_at: creatorProfile.created_at,
         is_supporter: isSupporter,
         supporter_tier_level: supporterTierLevel,
-        social_links: creatorProfile.social_links || {}
+        social_links: creatorProfile.social_links || {},
+        cover_image_url: creatorProfile.cover_image_url || null
       },
       tiers: (tiers || []).map((tier: any) => ({
         id: tier.id,

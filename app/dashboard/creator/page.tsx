@@ -92,6 +92,8 @@ export default function EnhancedCreatorDashboard() {
   const [dataLoading, setDataLoading] = useState(true);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showErrorMessage, setShowErrorMessage] = useState<string | null>(null);
 
   // Post creation states
   const [newPostTitle, setNewPostTitle] = useState('');
@@ -240,15 +242,43 @@ export default function EnhancedCreatorDashboard() {
         setPollOptions(['', '']);
         setAllowsMultipleAnswers(false);
         setPollDuration(null);
-        alert(postType === 'poll' ? 'Poll published successfully!' : 'Post published successfully!');
-        window.location.reload();
+        setPostVisibility('public');
+        
+        // Show success notification
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 3000);
+        
+        // Refresh data without reloading page
+        const fetchData = async () => {
+          try {
+            const [analyticsRes, dashboardRes] = await Promise.all([
+              fetch('/api/creator/analytics'),
+              fetch(`/api/creator/${user.id}/dashboard`)
+            ]);
+
+            if (analyticsRes.ok) {
+              const analyticsJson = await analyticsRes.json();
+              setAnalyticsData(analyticsJson);
+            }
+
+            if (dashboardRes.ok) {
+              const dashboardJson = await dashboardRes.json();
+              setDashboardData(dashboardJson);
+            }
+          } catch (error) {
+            console.error('Failed to refresh dashboard data:', error);
+          }
+        };
+        fetchData();
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Failed to publish.');
+        setShowErrorMessage(errorData.error || 'Failed to publish.');
+        setTimeout(() => setShowErrorMessage(null), 3000);
       }
     } catch (error) {
       console.error('Publish error:', error);
-      alert('Failed to publish.');
+      setShowErrorMessage('Failed to publish. Please try again.');
+      setTimeout(() => setShowErrorMessage(null), 3000);
     } finally {
       setIsPublishing(false);
     }
@@ -556,6 +586,28 @@ export default function EnhancedCreatorDashboard() {
                 </Card>
               </div>
             </TabsContent>
+
+            {/* Success/Error Messages */}
+            {showSuccessMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg"
+              >
+                {postType === 'poll' ? 'Poll published successfully!' : 'Post published successfully!'}
+              </motion.div>
+            )}
+            {showErrorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg"
+              >
+                {showErrorMessage}
+              </motion.div>
+            )}
 
             {/* Posts Tab */}
             <TabsContent value="posts" className="space-y-6">

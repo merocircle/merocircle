@@ -67,8 +67,30 @@ export default function SettingsPage() {
   }
   const handleSave = async () => {
     setIsSaving(true);
-    // Save logic here
-    setTimeout(() => setIsSaving(false), 1000);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: profileData.display_name,
+          bio: profileData.bio,
+          category: profileData.category
+        })
+      });
+
+      if (response.ok) {
+        alert('Profile updated successfully!');
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -101,30 +123,10 @@ export default function SettingsPage() {
         {/* Settings Content */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1 grid w-full grid-cols-3 lg:grid-cols-6">
+            <TabsList className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1">
               <TabsTrigger value="profile" className="gap-2">
                 <User className="w-4 h-4" />
-                <span className="hidden sm:inline">Profile</span>
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="gap-2">
-                <Bell className="w-4 h-4" />
-                <span className="hidden sm:inline">Notifications</span>
-              </TabsTrigger>
-              <TabsTrigger value="privacy" className="gap-2">
-                <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">Privacy</span>
-              </TabsTrigger>
-              <TabsTrigger value="appearance" className="gap-2">
-                <Palette className="w-4 h-4" />
-                <span className="hidden sm:inline">Appearance</span>
-              </TabsTrigger>
-              <TabsTrigger value="billing" className="gap-2">
-                <CreditCard className="w-4 h-4" />
-                <span className="hidden sm:inline">Billing</span>
-              </TabsTrigger>
-              <TabsTrigger value="language" className="gap-2">
-                <Globe className="w-4 h-4" />
-                <span className="hidden sm:inline">Language</span>
+                <span>Profile</span>
               </TabsTrigger>
             </TabsList>
 
@@ -141,10 +143,52 @@ export default function SettingsPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <Button variant="outline" size="sm">
-                      <Camera className="w-4 h-4 mr-2" />
-                      Change Avatar
-                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        
+                        try {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          formData.append('folder', 'avatars');
+
+                          const uploadRes = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData,
+                          });
+
+                          const uploadResult = await uploadRes.json();
+                          if (uploadResult.success) {
+                            const updateRes = await fetch('/api/profile', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ photo_url: uploadResult.url })
+                            });
+
+                            if (updateRes.ok) {
+                              alert('Avatar updated successfully!');
+                              window.location.reload();
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Upload error:', error);
+                          alert('Failed to upload avatar');
+                        }
+                      }}
+                      className="hidden"
+                      id="avatar-upload"
+                    />
+                    <label htmlFor="avatar-upload">
+                      <Button variant="outline" size="sm" asChild>
+                        <span className="cursor-pointer">
+                          <Camera className="w-4 h-4 mr-2" />
+                          Change Avatar
+                        </span>
+                      </Button>
+                    </label>
                     <p className="text-sm text-gray-500 mt-2">
                       Recommended: Square image, at least 400x400px
                     </p>
@@ -232,114 +276,6 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
 
-            {/* Notifications Settings */}
-            <TabsContent value="notifications" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Notification Preferences</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                  Choose what notifications you want to receive
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Comments</p>
-                      <p className="text-sm text-gray-500">Get notified when someone comments on your posts</p>
-                    </div>
-                    <Button variant="outline" size="sm">Enable</Button>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Payments</p>
-                      <p className="text-sm text-gray-500">Get notified when you receive payments</p>
-                    </div>
-                    <Button variant="outline" size="sm">Enable</Button>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* Privacy Settings */}
-            <TabsContent value="privacy" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Privacy Settings</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Profile visibility</p>
-                      <p className="text-sm text-gray-500">Control who can see your profile</p>
-                    </div>
-                    <Button variant="outline" size="sm">Public</Button>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Activity status</p>
-                      <p className="text-sm text-gray-500">Show when you&apos;re active</p>
-                    </div>
-                    <Button variant="outline" size="sm">On</Button>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* Appearance Settings */}
-            <TabsContent value="appearance" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Appearance</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Theme</p>
-                      <p className="text-sm text-gray-500">Choose your preferred theme</p>
-                    </div>
-                    <ThemeToggle />
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* Billing Settings */}
-            <TabsContent value="billing" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Billing Information</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Manage your payment methods and billing information
-                </p>
-                <div className="mt-6">
-                  <Button>Add Payment Method</Button>
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* Language Settings */}
-            <TabsContent value="language" className="space-y-6">
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Language & Region</h2>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="language">Language</Label>
-                    <select 
-                      id="language" 
-                      className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2"
-                    >
-                      <option>English</option>
-                      <option>नेपाली (Nepali)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="timezone">Timezone</Label>
-                    <select 
-                      id="timezone" 
-                      className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2"
-                    >
-                      <option>Asia/Kathmandu</option>
-                    </select>
-                  </div>
-                  <Button>Save Changes</Button>
-                </div>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
       </main>

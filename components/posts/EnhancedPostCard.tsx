@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Calendar, Send, Loader2, Lock } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Calendar, Send, Loader2, Lock, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from '@/lib/youtube';
 import { PollCard } from './PollCard';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Post {
   id: string;
@@ -21,6 +22,7 @@ interface Post {
   content: string;
   image_url?: string;
   media_url?: string;
+  is_public?: boolean;
   tier_required: string;
   post_type?: 'post' | 'poll';
   created_at: string;
@@ -66,6 +68,38 @@ interface Comment {
   };
 }
 
+// Post Image Modal Component
+function PostImageModal({ imageUrl, title, children }: { imageUrl: string; title: string; children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)}>
+        {children}
+      </div>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-5xl w-full p-0 bg-black/95">
+          <div className="relative w-full h-[80vh] flex items-center justify-center">
+            <Image
+              src={imageUrl}
+              alt={title}
+              fill
+              className="object-contain"
+              priority
+            />
+            <button
+              onClick={() => setIsOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function EnhancedPostCard({
   post,
   currentUserId,
@@ -105,21 +139,33 @@ export function EnhancedPostCard({
 
   // Check if post should be blurred (supporter-only content for non-supporters)
   const shouldBlur = useMemo(() => {
-    // If post is public (free), never blur
-    if (post.tier_required === 'free' || !post.tier_required) {
+    // If post is public and free tier, never blur
+    const isPublicAndFree = (post.is_public === true || post.is_public === undefined) && 
+                            (post.tier_required === 'free' || !post.tier_required);
+    if (isPublicAndFree) {
       return false;
     }
+    
+    // If post is not public OR requires a tier (supporter-only), check if user has access
+    const isSupporterOnly = post.is_public === false || (post.tier_required && post.tier_required !== 'free');
+    
+    if (!isSupporterOnly) {
+      return false;
+    }
+    
     // If user is a supporter, don't blur
     if (isSupporter) {
       return false;
     }
+    
     // If user is the creator, don't blur
     if (currentUserId === post.creator.id) {
       return false;
     }
+    
     // Otherwise, blur supporter-only content
     return true;
-  }, [post.tier_required, isSupporter, currentUserId, post.creator.id]);
+  }, [post.is_public, post.tier_required, isSupporter, currentUserId, post.creator.id]);
 
   // Determine profile link - if viewing own post, go to own profile
   const creatorProfileLink = currentUserId === post.creator.id
@@ -288,36 +334,41 @@ export function EnhancedPostCard({
         {/* Content */}
         <div className="px-5 pb-4 relative">
           {shouldBlur ? (
-            /* For non-supporters: Show only placeholder, don't render actual content */
-            <div className="relative min-h-[300px] flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg">
-              {/* Blurred placeholder for image if post has one */}
-              {post.image_url && (
-                <div className="absolute inset-0 opacity-20 blur-2xl">
-                  <div className="w-full h-full bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-900 dark:to-pink-900" />
-                </div>
-              )}
+            /* For non-supporters: Show title only, no actual content/image URLs are sent from API */
+            <>
+              <Link href={`/posts/${post.id}`}>
+                <h3 className="text-lg font-bold text-foreground mb-2 hover:text-primary transition-colors cursor-pointer line-clamp-2">
+                  {post.title}
+                </h3>
+              </Link>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                This post is available for supporters only.
+              </p>
               
-              {/* Lock message overlay */}
-              <div className="relative z-10 text-center p-6 max-w-sm">
-                <div className="mb-4 flex justify-center">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                    <Lock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              {/* Placeholder for locked content - no actual image URL in DOM */}
+              <div className="relative w-full h-96 md:h-[500px] rounded-xl overflow-hidden mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+                {/* Lock message overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center p-6 max-w-sm z-10">
+                    <div className="mb-4 flex justify-center">
+                      <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                        <Lock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Support this creator to view this content
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      This post is available for supporters only. Support {post.creator.display_name} to unlock exclusive content.
+                    </p>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Support this creator to view this content
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  This post is available for supporters only. Support {post.creator.display_name} to unlock exclusive content.
-                </p>
-                {/* Show only title as a teaser */}
-                <div className="mt-4 p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg backdrop-blur-sm">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {post.title}
-                  </p>
+                {/* Decorative blur pattern - not an actual image */}
+                <div className="absolute inset-0 opacity-20">
+                  <div className="w-full h-full bg-gradient-to-br from-purple-200 via-pink-200 to-red-200 dark:from-purple-900 dark:via-pink-900 dark:to-red-900 blur-3xl" />
                 </div>
               </div>
-            </div>
+            </>
           ) : (
             /* For supporters/creators: Show actual content */
             <>
@@ -352,14 +403,19 @@ export function EnhancedPostCard({
 
               {/* Post Image (only for regular posts) */}
               {post.post_type !== 'poll' && post.image_url && (
-                <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden mb-4">
-                  <Image
-                    src={post.image_url}
-                    alt={post.title}
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+                <PostImageModal imageUrl={post.image_url} title={post.title}>
+                  <div className="relative w-full h-96 md:h-[500px] rounded-xl overflow-hidden mb-4 cursor-pointer group">
+                    <Image
+                      src={post.image_url}
+                      alt={post.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                </PostImageModal>
               )}
             </>
           )}

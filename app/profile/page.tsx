@@ -45,9 +45,14 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState<Array<any>>([])
   const [postsLoading, setPostsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingCover, setIsUploadingCover] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
   const [editData, setEditData] = useState({
     display_name: '',
-    bio: ''
+    bio: '',
+    category: ''
   })
 
   // Redirect if not authenticated
@@ -95,14 +100,110 @@ export default function ProfilePage() {
     if (userProfile) {
       setEditData({
         display_name: userProfile.display_name || '',
-        bio: creatorProfile?.bio || ''
+        bio: creatorProfile?.bio || '',
+        category: creatorProfile?.category || ''
       })
+      setCoverImageUrl(creatorProfile?.cover_image_url || null)
     }
   }, [userProfile, creatorProfile])
 
   const handleSaveProfile = async () => {
-    // Save profile logic here
-    setIsEditing(false)
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: editData.display_name,
+          bio: editData.bio,
+          category: editData.category
+        })
+      })
+
+      if (response.ok) {
+        setIsEditing(false)
+        window.location.reload()
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to update profile')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      alert('Failed to update profile')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingCover(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'covers')
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const uploadResult = await uploadRes.json()
+      if (uploadResult.success) {
+        const updateRes = await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cover_image_url: uploadResult.url })
+        })
+
+        if (updateRes.ok) {
+          setCoverImageUrl(uploadResult.url)
+          window.location.reload()
+        }
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload cover photo')
+    } finally {
+      setIsUploadingCover(false)
+    }
+  }
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingAvatar(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'avatars')
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const uploadResult = await uploadRes.json()
+      if (uploadResult.success) {
+        const updateRes = await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photo_url: uploadResult.url })
+        })
+
+        if (updateRes.ok) {
+          window.location.reload()
+        }
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload avatar')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
   }
 
   if (loading) {
@@ -136,15 +237,37 @@ export default function ProfilePage() {
       <main className="flex-1 overflow-y-auto">
         {/* Hero Banner */}
         <div className="relative h-48 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600">
+          {coverImageUrl && (
+            <Image
+              src={coverImageUrl}
+              alt="Cover"
+              fill
+              className="object-cover"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <Button
-            variant="secondary"
-            size="sm"
-            className="absolute top-4 right-4 z-10"
-          >
-            <Camera className="w-4 h-4 mr-2" />
-            Change Cover
-          </Button>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleCoverUpload}
+            className="hidden"
+            id="cover-upload"
+            disabled={isUploadingCover}
+          />
+          <label htmlFor="cover-upload">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute top-4 right-4 z-10 cursor-pointer"
+              disabled={isUploadingCover}
+              asChild
+            >
+              <span>
+                <Camera className="w-4 h-4 mr-2" />
+                {isUploadingCover ? 'Uploading...' : 'Change Cover'}
+              </span>
+            </Button>
+          </label>
         </div>
 
         {/* Profile Section */}
@@ -159,13 +282,27 @@ export default function ProfilePage() {
                     {userProfile.display_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="absolute bottom-0 right-0 rounded-full h-10 w-10"
-                >
-                  <Camera className="w-4 h-4" />
-                </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  id="avatar-upload"
+                  disabled={isUploadingAvatar}
+                />
+                <label htmlFor="avatar-upload">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute bottom-0 right-0 rounded-full h-10 w-10 cursor-pointer"
+                    disabled={isUploadingAvatar}
+                    asChild
+                  >
+                    <span>
+                      <Camera className="w-4 h-4" />
+                    </span>
+                  </Button>
+                </label>
                 {creatorProfile?.is_verified && (
                   <CheckCircle className="absolute -top-1 -right-1 w-8 h-8 text-blue-500 bg-white rounded-full" />
                 )}
@@ -198,11 +335,21 @@ export default function ProfilePage() {
                     <Button
                       variant={isEditing ? "default" : "outline"}
                       onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
+                      disabled={isSaving}
                     >
                       {isEditing ? (
                         <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+                          {isSaving ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 mr-2" />
+                              Save Changes
+                            </>
+                          )}
                         </>
                       ) : (
                         <>
@@ -241,15 +388,39 @@ export default function ProfilePage() {
                       />
                     </div>
                     {isCreator && (
-                      <div>
-                        <Label>Bio</Label>
-                        <Textarea
-                          value={editData.bio}
-                          onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
-                          className="mt-2"
-                          rows={3}
-                        />
-                      </div>
+                      <>
+                        <div>
+                          <Label>Bio</Label>
+                          <Textarea
+                            value={editData.bio}
+                            onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                            className="mt-2"
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <Label>Category</Label>
+                          <select
+                            value={editData.category}
+                            onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+                            className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
+                          >
+                            <option value="">Select a category</option>
+                            <option value="Art">Art</option>
+                            <option value="Music">Music</option>
+                            <option value="Photography">Photography</option>
+                            <option value="Writing">Writing</option>
+                            <option value="Cooking">Cooking</option>
+                            <option value="Tech">Tech</option>
+                            <option value="Fashion">Fashion</option>
+                            <option value="Travel">Travel</option>
+                            <option value="Gaming">Gaming</option>
+                            <option value="Education">Education</option>
+                            <option value="Fitness">Fitness</option>
+                            <option value="Crafts">Crafts</option>
+                          </select>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
