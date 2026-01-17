@@ -75,6 +75,7 @@ export async function GET() {
     }));
 
     // Get all public posts with engagement data
+    // Exclude current user's own posts
     const { data: allPosts } = await supabase
       .from('posts')
       .select(`
@@ -95,6 +96,7 @@ export async function GET() {
         )
       `)
       .eq('is_public', true)
+      .neq('creator_id', user.id) // Exclude current user's own posts
       .order('created_at', { ascending: false })
       .limit(50);
 
