@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Share2, Bookmark, Calendar, Send, Loader2, Lock, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -172,8 +173,13 @@ export function EnhancedPostCard({
     ? '/profile'
     : `/creator/${post.creator.id}`;
 
+  const router = useRouter();
+
   const handleLike = () => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      router.push('/auth');
+      return;
+    }
     
     const wasLiked = isLiked;
     const previousCount = likesCount;
@@ -235,13 +241,21 @@ export function EnhancedPostCard({
   }, [showComments, post.id]);
 
   const handleCommentClick = () => {
+    if (!currentUserId) {
+      router.push('/auth');
+      return;
+    }
     setShowComments(!showComments);
     onComment?.(post.id);
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !currentUserId || isSubmittingComment) return;
+    if (!newComment.trim() || isSubmittingComment) return;
+    if (!currentUserId) {
+      router.push('/auth');
+      return;
+    }
 
     setIsSubmittingComment(true);
     try {

@@ -25,12 +25,8 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get trending creators for "Creators for you" section
-    // Exclude the current user if they are a creator
+    // Allow unauthenticated access - show public creator data
     let trendingCreatorsQuery = supabase
       .from('creator_profiles')
       .select(`
@@ -46,15 +42,17 @@ export async function GET() {
       .order('supporters_count', { ascending: false })
       .limit(12);
 
-    // Exclude current user's creator profile if they are a creator
-    const { data: userProfile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Exclude current user's creator profile if they are authenticated and a creator
+    if (user) {
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-    if (userProfile?.role === 'creator') {
-      trendingCreatorsQuery = trendingCreatorsQuery.neq('user_id', user.id);
+      if (userProfile?.role === 'creator') {
+        trendingCreatorsQuery = trendingCreatorsQuery.neq('user_id', user.id);
+      }
     }
 
     const { data: trendingCreators } = await trendingCreatorsQuery;
@@ -74,9 +72,22 @@ export async function GET() {
       }
     }));
 
-    // Get all public posts with engagement data
-    // Exclude current user's own posts
-    const { data: allPosts } = await supabase
+    // Get supporter relationships if user is authenticated
+    let supportedCreatorIds: string[] = [];
+    if (user) {
+      const { data: supporterData } = await supabase
+        .from('supporters')
+        .select('creator_id')
+        .eq('supporter_id', user.id)
+        .eq('is_active', true);
+      
+      supportedCreatorIds = (supporterData || []).map((s: any) => s.creator_id);
+    }
+
+    // Get all posts with engagement data
+    // For authenticated users: show public posts + supporter-only posts from creators they support
+    // For unauthenticated users: show only public posts
+    let allPostsQuery = supabase
       .from('posts')
       .select(`
         *,
@@ -95,15 +106,44 @@ export async function GET() {
           expires_at
         )
       `)
-      .eq('is_public', true)
-      .neq('creator_id', user.id) // Exclude current user's own posts
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100); // Fetch more to filter after
+
+    // Exclude current user's own posts if authenticated
+    if (user) {
+      allPostsQuery = allPostsQuery.neq('creator_id', user.id);
+    }
+
+    const { data: allPosts } = await allPostsQuery;
+
+    // Filter posts based on visibility and supporter status
+    // A post is supporter-only if: is_public is false OR tier_required is not 'free'
+    const filteredPosts = (allPosts || []).filter((p: any) => {
+      // Check if this is a supporter-only post
+      const isSupporterOnly = !p.is_public || (p.tier_required && p.tier_required !== 'free');
+      
+      // Always show public posts (not supporter-only)
+      if (!isSupporterOnly) {
+        return true;
+      }
+      
+      // For supporter-only posts:
+      // - If user is authenticated and supports this creator, show it
+      // - If user is not authenticated or not a supporter, don't show it in feed
+      if (isSupporterOnly) {
+        if (user && supportedCreatorIds.includes(p.creator_id)) {
+          return true; // User is a supporter, show supporter-only post
+        }
+        return false; // Not a supporter or not authenticated, don't show in feed
+      }
+      
+      return true; // Default: show the post
+    });
 
     // Get creator profiles for posts
     let profilesMap = new Map();
-    if (allPosts && allPosts.length > 0) {
-      const creatorIds = [...new Set(allPosts.map((p: any) => p.creator_id))];
+    if (filteredPosts && filteredPosts.length > 0) {
+      const creatorIds = [...new Set(filteredPosts.map((p: any) => p.creator_id))];
       const { data: creatorProfiles } = await supabase
         .from('creator_profiles')
         .select('user_id, category, is_verified')
@@ -113,10 +153,15 @@ export async function GET() {
     }
 
     // Format posts and calculate scores
-    const formattedPosts = (allPosts || []).map((p: any) => {
+    const formattedPosts = (filteredPosts || []).map((p: any) => {
       const profile = profilesMap.get(p.creator_id);
       const likesCount = (p.post_likes || []).length;
       const commentsCount = (p.post_comments || []).length;
+      
+      // Determine if user is a supporter of this creator
+      // If post is supporter-only and appears in feed, user must be a supporter
+      const isSupporterOnly = !p.is_public || (p.tier_required && p.tier_required !== 'free');
+      const isSupporter = user ? supportedCreatorIds.includes(p.creator_id) : false;
 
       return {
         id: p.id,
@@ -151,6 +196,7 @@ export async function GET() {
         })),
         likes_count: likesCount,
         comments_count: commentsCount,
+        is_supporter: isSupporter, // Add supporter status for frontend
         engagement_score: 0 // Will be calculated next
       };
     });

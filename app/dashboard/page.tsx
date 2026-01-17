@@ -31,16 +31,9 @@ export default function DashboardPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth');
-    }
-  }, [authLoading, isAuthenticated, router]);
-
+  // Allow unauthenticated browsing - no redirect to /auth
   useEffect(() => {
     const fetchUnifiedFeed = async () => {
-      if (!isAuthenticated || !user) return;
-
       try {
         setLoading(true);
         const response = await fetch('/api/dashboard/unified-feed');
@@ -55,12 +48,13 @@ export default function DashboardPage() {
       }
     };
 
-    if (isAuthenticated && user) {
+    // Fetch feed for both authenticated and unauthenticated users
+    if (!authLoading) {
       fetchUnifiedFeed();
     }
-  }, [isAuthenticated, user]);
+  }, [authLoading]);
 
-  if (authLoading || loading || !isAuthenticated) {
+  if (authLoading || loading) {
     return <PageLayout loading={authLoading || loading}><div /></PageLayout>;
   }
 
@@ -186,6 +180,7 @@ export default function DashboardPage() {
                   post={post}
                   currentUserId={user?.id}
                   showActions={true}
+                  isSupporter={post.is_supporter || false}
                 />
               </motion.div>
             ))

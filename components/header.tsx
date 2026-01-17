@@ -86,20 +86,6 @@ export function Header() {
         </Link>
 
         <nav className={cn('hidden md:flex', layout.flexRow, 'space-x-6 items-center')}>
-          <Link 
-            href="/discover" 
-            className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
-          >
-            Discover
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-          </Link>
-          <Link
-            href="/dashboard"
-            className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
-          >
-            Browse Creators
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-          </Link>
           {isAuthenticated && (
             <>
               <Link 
@@ -234,20 +220,6 @@ export function Header() {
             className="md:hidden border-t dark:border-gray-800 bg-white dark:bg-gray-950"
           >
             <div className="px-4 py-4 space-y-4">
-              <Link 
-                href="/discover" 
-                className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Discover
-              </Link>
-              <Link
-                href="/dashboard"
-                className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Browse Creators
-              </Link>
               {isAuthenticated && (
                 <>
                   <Link 
