@@ -286,7 +286,7 @@ export default function CommunityPage() {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center max-w-md">
@@ -306,16 +306,23 @@ export default function CommunityPage() {
                 ) : (
                   messages.map((message, index) => {
                     const prevMessage = index > 0 ? messages[index - 1] : null;
-                    const showAvatar = !prevMessage || prevMessage.user_id !== message.user_id;
-                    const showTimestamp = !prevMessage || 
-                      new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000;
+                    const isSameUser = prevMessage && prevMessage.user_id === message.user_id;
+                    const timeDiff = prevMessage 
+                      ? new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime()
+                      : Infinity;
+                    const showAvatar = !prevMessage || !isSameUser || timeDiff > 300000; // 5 minutes
+                    const showTimestamp = !prevMessage || timeDiff > 300000;
+                    const isNewGroup = showAvatar;
+                    const isDifferentSender = !isSameUser && prevMessage;
 
                     return (
                       <div 
                         key={message.id} 
                         className={cn(
-                          'flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 -mx-4 px-4 py-1 rounded transition-colors',
-                          showAvatar && 'mt-4'
+                          'flex gap-3 hover:bg-gray-50 dark:hover:bg-gray-900/50 -mx-4 px-4 py-0.5 rounded transition-colors',
+                          isDifferentSender && 'mt-3', // Gap between different senders
+                          isNewGroup && index > 0 && !isDifferentSender && 'mt-3', // Gap for time-based groups
+                          !isNewGroup && 'mt-0' // No gap for same user consecutive messages
                         )}
                       >
                         <div className="flex-shrink-0">
@@ -327,14 +334,7 @@ export default function CommunityPage() {
                               </AvatarFallback>
                             </Avatar>
                           ) : (
-                            <div className="w-10 h-10 flex items-center justify-center">
-                              <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100">
-                                {new Date(message.created_at).toLocaleTimeString([], { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </span>
-                            </div>
+                            <div className="w-10" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -358,7 +358,10 @@ export default function CommunityPage() {
                               )}
                             </div>
                           )}
-                          <p className="text-sm text-gray-900 dark:text-gray-100 break-words">
+                          <p className={cn(
+                            'text-sm text-gray-900 dark:text-gray-100 break-words',
+                            !showAvatar && 'ml-0'
+                          )}>
                             {message.content}
                           </p>
                         </div>
