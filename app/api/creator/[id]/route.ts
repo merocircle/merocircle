@@ -20,8 +20,7 @@ export async function GET(
       return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
     }
 
-    // Check if current user is a supporter
-
+    // Check if current user is a supporter and their tier level
     const { data: paymentMethods } = await supabase
       .from('creator_payment_methods')
       .select('*')
@@ -29,16 +28,26 @@ export async function GET(
       .eq('is_active', true);
 
     let isSupporter = false;
+    let supporterTierLevel = 0;
     if (user) {
       const { data: supporterData } = await supabase
         .from('supporters')
-        .select('id')
+        .select('id, tier_level')
         .eq('supporter_id', user.id)
         .eq('creator_id', creatorId)
         .eq('is_active', true)
         .single();
       isSupporter = !!supporterData;
+      supporterTierLevel = supporterData?.tier_level || 0;
     }
+
+    // Get subscription tiers for this creator
+    const { data: tiers } = await supabase
+      .from('subscription_tiers')
+      .select('*')
+      .eq('creator_id', creatorId)
+      .eq('is_active', true)
+      .order('tier_level', { ascending: true });
 
     let postsQuery = supabase
       .from('posts')
@@ -71,18 +80,6 @@ export async function GET(
       ? creatorProfile.posts_count 
       : (actualPostsCount || 0);
 
-    let subscriptionTiers: Array<Record<string, unknown>> = [];
-    try {
-      const { data: tiers } = await supabase
-        .from('subscription_tiers')
-        .select('*')
-        .eq('creator_id', creatorId)
-        .eq('is_active', true)
-        .order('price', { ascending: true });
-      subscriptionTiers = tiers || [];
-    } catch {
-      subscriptionTiers = [];
-    }
 
     const formattedPosts = (posts || []).map((post: {
       id: string;
@@ -146,8 +143,17 @@ export async function GET(
         total_earnings: creatorProfile.total_earnings || 0,
         created_at: creatorProfile.created_at,
         is_supporter: isSupporter,
+        supporter_tier_level: supporterTierLevel,
         social_links: creatorProfile.social_links || {}
       },
+      tiers: (tiers || []).map((tier: any) => ({
+        id: tier.id,
+        tier_level: tier.tier_level,
+        tier_name: tier.tier_name,
+        price: Number(tier.price),
+        description: tier.description,
+        benefits: tier.benefits || []
+      })),
       paymentMethods: (paymentMethods || []).map((m: {
         id: string;
         payment_type: string;
@@ -168,15 +174,6 @@ export async function GET(
         },
         is_active: m.is_active,
         is_verified: m.is_verified
-      })),
-      subscriptionTiers: (subscriptionTiers || []).map((tier: Record<string, unknown>) => ({
-        id: tier.id,
-        tier_name: tier.tier_name || tier.name,
-        price: Number(tier.price || 0),
-        description: tier.description,
-        benefits: tier.benefits || [],
-        max_subscribers: tier.max_subscribers,
-        current_subscribers: tier.current_subscribers || 0
       })),
       posts: formattedPosts
     });

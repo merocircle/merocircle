@@ -40,7 +40,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   updateUserRole: (role: 'user' | 'creator') => Promise<{ error: any }>;
-  createCreatorProfile: (bio: string, category: string) => Promise<{ error: any }>;
+  createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
 }
 

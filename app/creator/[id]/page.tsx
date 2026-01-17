@@ -8,29 +8,22 @@ import { SidebarNav } from '@/components/sidebar-nav'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails'
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
+import { TierSelection } from '@/components/creator/TierSelection'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils';
 import {
-  Heart,
   Users,
   FileText,
   Calendar,
   Star,
-  CreditCard,
   CheckCircle,
-  Crown,
   Share2,
   MessageCircle,
-  Coins,
-  Gift,
   MoreHorizontal,
   ShoppingBag,
   Info,
@@ -71,9 +64,6 @@ export default function CreatorProfilePage() {
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
   
   const [activeTab, setActiveTab] = useState('home');
-  const [paymentAmount, setPaymentAmount] = useState('1000');
-  const [customAmount, setCustomAmount] = useState('');
-  const [supporterMessage, setSupporterMessage] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Save to recently visited
@@ -97,7 +87,7 @@ export default function CreatorProfilePage() {
 
   // Supporters are automatically tracked when they make payments
 
-  const handlePayment = async () => {
+  const handlePayment = async (tierLevel: number, amount: number, message?: string) => {
     if (!user) {
       router.push('/auth')
       return
@@ -105,16 +95,15 @@ export default function CreatorProfilePage() {
 
     setPaymentLoading(true)
     try {
-      const amount = customAmount || paymentAmount
-      
       const response = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: parseInt(amount),
+          amount: amount,
           creatorId,
           supporterId: user.id,
-          supporterMessage,
+          supporterMessage: message || '',
+          tier_level: tierLevel,
         })
       })
 
@@ -123,17 +112,17 @@ export default function CreatorProfilePage() {
       }
 
       const result = await response.json()
-      
+
       if (result.test_mode && result.redirect_url) {
         window.location.href = result.redirect_url
         return
       }
-      
+
       if (result.success && result.esewaConfig) {
         const form = document.createElement('form')
         form.method = 'POST'
         form.action = result.payment_url
-        
+
         Object.entries(result.esewaConfig).forEach(([key, value]) => {
           const input = document.createElement('input')
           input.type = 'hidden'
@@ -141,7 +130,7 @@ export default function CreatorProfilePage() {
           input.value = String(value)
           form.appendChild(input)
         })
-        
+
         document.body.appendChild(form)
         form.submit()
       } else {
@@ -174,13 +163,6 @@ export default function CreatorProfilePage() {
       alert('Subscription failed. Please try again.')
     }
   }
-
-  const paymentOptions = [
-    { amount: '100', label: 'NPR 100', icon: <Coins className="w-4 h-4" /> },
-    { amount: '500', label: 'NPR 500', icon: <Gift className="w-4 h-4" /> },
-    { amount: '1000', label: 'NPR 1,000', icon: <Heart className="w-4 h-4" /> },
-    { amount: '2500', label: 'NPR 2,500', icon: <Star className="w-4 h-4" /> },
-  ]
 
   if (loading) {
     return (
@@ -361,6 +343,19 @@ export default function CreatorProfilePage() {
                       Support {creatorDetails.display_name} and get access to exclusive content and benefits!
                     </p>
                   </Card>
+
+                  {/* Tier Selection - Centered */}
+                  <div className="flex justify-center">
+                    <div className="w-full max-w-2xl">
+                      <TierSelection
+                        tiers={subscriptionTiers}
+                        creatorName={creatorDetails.display_name}
+                        currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                        onSelectTier={handlePayment}
+                        loading={paymentLoading}
+                      />
+                    </div>
+                  </div>
 
                   {/* Recent Posts Preview */}
                   {recentPosts.length > 0 && (
@@ -588,194 +583,130 @@ export default function CreatorProfilePage() {
 
               {/* Sidebar */}
               <div className="space-y-6">
-                {/* Support Card */}
-                <Card className="p-6 sticky top-4">
-                  <h3 className="text-lg font-semibold mb-4">
-                    Support {creatorDetails.display_name}
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {/* Quick amounts */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {paymentOptions.map((option) => (
-                        <Button
-                          key={option.amount}
-                          variant={paymentAmount === option.amount ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setPaymentAmount(option.amount)}
-                          className="h-auto py-3 flex flex-col items-center gap-1"
-                        >
-                          {option.icon}
-                          <span className="text-xs">{option.label}</span>
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Custom amount */}
-                    <div>
-                      <Label htmlFor="custom-amount" className="text-sm mb-2 block">
-                        Custom Amount (NPR)
-                      </Label>
-                      <Input
-                        id="custom-amount"
-                        type="number"
-                        placeholder="Enter amount"
-                        value={customAmount}
-                        onChange={(e) => setCustomAmount(e.target.value)}
-                      />
-                    </div>
-
-                    {/* Message */}
-                    <div>
-                      <Label htmlFor="message" className="text-sm mb-2 block">
-                        Message (Optional)
-                      </Label>
-                      <Textarea
-                        id="message"
-                        placeholder="Say something nice..."
-                        value={supporterMessage}
-                        onChange={(e) => setSupporterMessage(e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-
-                    <Button 
-                      className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-                      onClick={handlePayment}
-                      disabled={paymentLoading}
-                      size="lg"
-                    >
-                      {paymentLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Pay NPR {customAmount || paymentAmount}
-                        </>
-                      )}
-                    </Button>
-                    
-                    <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                      Secure payment via eSewa
-                    </p>
-                  </div>
-                </Card>
-
-                {/* Membership Tiers */}
-                {subscriptionTiers && subscriptionTiers.length > 0 && (
+                <div className="sticky top-4 space-y-6">
+                  {/* Creator Stats */}
                   <Card className="p-6">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Crown className="w-5 h-5 text-yellow-500" />
-                      Membership Tiers
+                      <Star className="w-5 h-5 text-purple-500" />
+                      Stats
                     </h3>
-                    
-                    <div className="space-y-3">
-                      {subscriptionTiers.map((tier) => (
-                        <div 
-                          key={tier.id}
-                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-red-500 transition-colors cursor-pointer"
-                          onClick={() => handleSubscription(tier.id)}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold">{tier.tier_name}</h4>
-                            <span className="text-lg font-bold text-red-500">
-                              NPR {tier.price}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            {tier.description}
-                          </p>
-                          {tier.benefits && (
-                            <ul className="space-y-1">
-                              {(Array.isArray(tier.benefits) ? tier.benefits : [tier.benefits]).slice(0, 2).map((benefit: string, index: number) => (
-                                <li key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                  <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
-                                  <span className="truncate">{benefit.trim()}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <Users className="w-4 h-4" />
+                          <span className="text-sm">Supporters</span>
                         </div>
-                      ))}
+                        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          {creatorDetails.supporter_count || 0}
+                        </span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <FileText className="w-4 h-4" />
+                          <span className="text-sm">Posts</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          {creatorDetails.posts_count || 0}
+                        </span>
+                      </div>
+                      {creatorDetails.category && (
+                        <>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                              <Star className="w-4 h-4" />
+                              <span className="text-sm">Category</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {creatorDetails.category}
+                            </Badge>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </Card>
-                )}
 
-                {/* Social Links */}
-                {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 && (
+                  {/* Social Links */}
                   <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Connect</h3>
-                    <div className="space-y-2">
-                      {creatorDetails.social_links.facebook && (
-                        <a href={creatorDetails.social_links.facebook} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950">
-                            <Facebook className="w-4 h-4 mr-2 text-blue-600" />
-                            Facebook
-                          </Button>
-                        </a>
-                      )}
-                      {creatorDetails.social_links.youtube && (
-                        <a href={creatorDetails.social_links.youtube} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start hover:bg-red-50 dark:hover:bg-red-950">
-                            <Youtube className="w-4 h-4 mr-2 text-red-600" />
-                            YouTube
-                          </Button>
-                        </a>
-                      )}
-                      {creatorDetails.social_links.instagram && (
-                        <a href={creatorDetails.social_links.instagram} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start hover:bg-pink-50 dark:hover:bg-pink-950">
-                            <Instagram className="w-4 h-4 mr-2 text-pink-600" />
-                            Instagram
-                          </Button>
-                        </a>
-                      )}
-                      {creatorDetails.social_links.linkedin && (
-                        <a href={creatorDetails.social_links.linkedin} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950">
-                            <Linkedin className="w-4 h-4 mr-2 text-blue-700" />
-                            LinkedIn
-                          </Button>
-                        </a>
-                      )}
-                      {creatorDetails.social_links.twitter && (
-                        <a href={creatorDetails.social_links.twitter} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start hover:bg-sky-50 dark:hover:bg-sky-950">
-                            <Twitter className="w-4 h-4 mr-2 text-sky-500" />
-                            Twitter (X)
-                          </Button>
-                        </a>
-                      )}
-                      {creatorDetails.social_links.tiktok && (
-                        <a href={creatorDetails.social_links.tiktok} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start hover:bg-gray-50 dark:hover:bg-gray-900">
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            TikTok
-                          </Button>
-                        </a>
-                      )}
-                      {creatorDetails.social_links.website && (
-                        <a href={creatorDetails.social_links.website} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start hover:bg-purple-50 dark:hover:bg-purple-950">
-                            <Globe className="w-4 h-4 mr-2 text-purple-600" />
-                            Website
-                          </Button>
-                        </a>
-                      )}
-                      {creatorDetails.social_links.other && (
-                        <a href={creatorDetails.social_links.other} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" className="w-full justify-start">
-                            <LinkIcon className="w-4 h-4 mr-2" />
-                            Other Link
-                          </Button>
-                        </a>
-                      )}
-                    </div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Share2 className="w-5 h-5 text-blue-500" />
+                      Connect
+                    </h3>
+                    {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 ? (
+                      <div className="space-y-2">
+                        {creatorDetails.social_links.facebook && (
+                          <a href={creatorDetails.social_links.facebook} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors">
+                              <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+                              Facebook
+                            </Button>
+                          </a>
+                        )}
+                        {creatorDetails.social_links.youtube && (
+                          <a href={creatorDetails.social_links.youtube} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start hover:bg-red-50 dark:hover:bg-red-950 transition-colors">
+                              <Youtube className="w-4 h-4 mr-2 text-red-600" />
+                              YouTube
+                            </Button>
+                          </a>
+                        )}
+                        {creatorDetails.social_links.instagram && (
+                          <a href={creatorDetails.social_links.instagram} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start hover:bg-pink-50 dark:hover:bg-pink-950 transition-colors">
+                              <Instagram className="w-4 h-4 mr-2 text-pink-600" />
+                              Instagram
+                            </Button>
+                          </a>
+                        )}
+                        {creatorDetails.social_links.linkedin && (
+                          <a href={creatorDetails.social_links.linkedin} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors">
+                              <Linkedin className="w-4 h-4 mr-2 text-blue-700" />
+                              LinkedIn
+                            </Button>
+                          </a>
+                        )}
+                        {creatorDetails.social_links.twitter && (
+                          <a href={creatorDetails.social_links.twitter} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start hover:bg-sky-50 dark:hover:bg-sky-950 transition-colors">
+                              <Twitter className="w-4 h-4 mr-2 text-sky-500" />
+                              Twitter (X)
+                            </Button>
+                          </a>
+                        )}
+                        {creatorDetails.social_links.tiktok && (
+                          <a href={creatorDetails.social_links.tiktok} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              TikTok
+                            </Button>
+                          </a>
+                        )}
+                        {creatorDetails.social_links.website && (
+                          <a href={creatorDetails.social_links.website} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors">
+                              <Globe className="w-4 h-4 mr-2 text-purple-600" />
+                              Website
+                            </Button>
+                          </a>
+                        )}
+                        {creatorDetails.social_links.other && (
+                          <a href={creatorDetails.social_links.other} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="w-full justify-start transition-colors">
+                              <LinkIcon className="w-4 h-4 mr-2" />
+                              Other Link
+                            </Button>
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                        No social links available
+                      </p>
+                    )}
                   </Card>
-                )}
+                </div>
               </div>
             </div>
           </Tabs>

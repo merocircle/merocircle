@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Turbopack configuration to fix WASM binding issues
+  experimental: {
+    turbo: {
+      resolveAlias: {},
+    },
+  },
 };
 
 export default nextConfig;

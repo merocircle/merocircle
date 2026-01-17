@@ -98,6 +98,9 @@ export async function GET(request: NextRequest) {
 
     // Ensure supporter record exists
     if (transaction.supporter_id && transaction.creator_id) {
+      // Get tier level from transaction metadata
+      const tierLevel = transaction.esewa_data?.tier_level || 1;
+
       const { data: existingSupporter } = await supabase
         .from('supporters')
         .select('id')
@@ -112,6 +115,7 @@ export async function GET(request: NextRequest) {
             supporter_id: transaction.supporter_id,
             creator_id: transaction.creator_id,
             tier: 'basic',
+            tier_level: tierLevel,
             amount: transactionAmount,
             is_active: true,
           });
@@ -120,36 +124,56 @@ export async function GET(request: NextRequest) {
           .from('supporters')
           .update({
             is_active: true,
+            tier_level: tierLevel,
             amount: transactionAmount,
           })
           .eq('id', existingSupporter.id);
       }
 
-      // Auto-join supporter channel if it exists
-      const { data: supporterChannel } = await supabase
-        .from('channels')
-        .select('id')
-        .eq('creator_id', transaction.creator_id)
-        .eq('category', 'supporter')
-        .eq('requires_support', true)
-        .single();
-
-      if (supporterChannel && transaction.supporter_id) {
-        // Check if already a member
-        const { data: existingMember } = await supabase
-          .from('channel_members')
+      // Auto-join supporter channel if tier 2 or 3 (chat access)
+      if (tierLevel >= 2) {
+        const { data: supporterChannel } = await supabase
+          .from('channels')
           .select('id')
-          .eq('channel_id', supporterChannel.id)
-          .eq('user_id', transaction.supporter_id)
+          .eq('creator_id', transaction.creator_id)
+          .eq('category', 'supporter')
+          .eq('requires_support', true)
           .single();
 
-        if (!existingMember) {
+        if (supporterChannel && transaction.supporter_id) {
+          // Check if already a member
+          const { data: existingMember } = await supabase
+            .from('channel_members')
+            .select('id')
+            .eq('channel_id', supporterChannel.id)
+            .eq('user_id', transaction.supporter_id)
+            .single();
+
+          if (!existingMember) {
+            await supabase
+              .from('channel_members')
+              .insert({
+                channel_id: supporterChannel.id,
+                user_id: transaction.supporter_id,
+              });
+          }
+        }
+      } else if (tierLevel === 1) {
+        // Remove from chat if downgrading to tier 1
+        const { data: supporterChannel } = await supabase
+          .from('channels')
+          .select('id')
+          .eq('creator_id', transaction.creator_id)
+          .eq('category', 'supporter')
+          .eq('requires_support', true)
+          .single();
+
+        if (supporterChannel && transaction.supporter_id) {
           await supabase
             .from('channel_members')
-            .insert({
-              channel_id: supporterChannel.id,
-              user_id: transaction.supporter_id,
-            });
+            .delete()
+            .eq('channel_id', supporterChannel.id)
+            .eq('user_id', transaction.supporter_id);
         }
       }
     }

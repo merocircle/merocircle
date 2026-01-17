@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const paymentData: PaymentRequestData = await request.json();
-    const { amount, creatorId, supporterId, supporterMessage } = paymentData;
+    const { amount, creatorId, supporterId, supporterMessage, tier_level } = paymentData;
 
     // Rate limiting
     if (!rateLimit(`payment:${supporterId}`, 5, 300000)) {
@@ -64,25 +64,28 @@ export async function POST(request: NextRequest) {
     const signature = generateEsewaSignature(config.esewa.secretKey, signatureString);
 
     // Store transaction in database
+    const insertData: any = {
+      supporter_id: supporterId,
+      creator_id: creatorId,
+      amount: amountStr,
+      payment_method: 'esewa',
+      status: 'pending',
+      supporter_message: supporterMessage ? sanitizeString(supporterMessage) : null,
+      transaction_uuid: transactionUuid,
+      esewa_product_code: config.esewa.merchantCode,
+      esewa_signature: signature,
+      esewa_data: {
+        transaction_uuid: transactionUuid,
+        product_code: config.esewa.merchantCode,
+        signature,
+        test_mode: config.esewa.testMode,
+        tier_level: tier_level || 1
+      }
+    };
+
     const { data: transaction, error: transactionError } = await supabase
       .from('supporter_transactions')
-      .insert({
-        supporter_id: supporterId,
-        creator_id: creatorId,
-        amount: amountStr,
-        payment_method: 'esewa',
-        status: 'pending',
-        supporter_message: supporterMessage ? sanitizeString(supporterMessage) : null,
-        transaction_uuid: transactionUuid,
-        esewa_product_code: config.esewa.merchantCode,
-        esewa_signature: signature,
-        esewa_data: {
-          transaction_uuid: transactionUuid,
-          product_code: config.esewa.merchantCode,
-          signature,
-          test_mode: config.esewa.testMode,
-        }
-      })
+      .insert(insertData)
       .select()
       .single();
 

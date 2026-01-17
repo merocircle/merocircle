@@ -45,14 +45,55 @@ const SOCIAL_PLATFORMS = [
 export default function CreatorSignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'signup' | 'creator-details' | 'complete'>('signup');
+  const [step, setStep] = useState<'signup' | 'creator-details' | 'tier-pricing' | 'complete'>('signup');
   const [creatorData, setCreatorData] = useState({
     bio: '',
     category: '',
     socialLinks: {} as Record<string, string>
   });
+  const [tierPrices, setTierPrices] = useState({
+    tier1: '100',
+    tier2: '500',
+    tier3: '1000'
+  });
+  const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const { user, userProfile, signInWithGoogle, createCreatorProfile } = useAuth();
+
+  // Validate URL format
+  const validateUrl = (url: string): boolean => {
+    if (!url || url.trim() === '') return true; // Empty is valid (optional field)
+    try {
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  const handleSocialLinkChange = (platformId: string, value: string) => {
+    // Update the value
+    setCreatorData({
+      ...creatorData,
+      socialLinks: {
+        ...creatorData.socialLinks,
+        [platformId]: value
+      }
+    });
+
+    // Validate URL
+    if (value.trim() !== '' && !validateUrl(value)) {
+      setSocialLinkErrors({
+        ...socialLinkErrors,
+        [platformId]: 'Please enter a valid URL (e.g., https://facebook.com/yourpage)'
+      });
+    } else {
+      // Clear error for this platform
+      const newErrors = { ...socialLinkErrors };
+      delete newErrors[platformId];
+      setSocialLinkErrors(newErrors);
+    }
+  };
   
   // Handle OAuth return - callback page will create profile, we just check if user is back
   useEffect(() => {
@@ -103,7 +144,7 @@ export default function CreatorSignupPage() {
       // After OAuth redirect, the useEffect will handle the rest
     } catch (error: unknown) {
       console.error('Creator signup error:', error);
-      setError(error.message || 'Failed to create account. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to create account. Please try again.');
       localStorage.removeItem('isCreatorSignupFlow');
     } finally {
       setLoading(false);
@@ -113,10 +154,28 @@ export default function CreatorSignupPage() {
   const handleCreatorSetup = async () => {
     if (!user || !creatorData.category) return;
 
+    // Validate all social links before proceeding
+    const hasInvalidLinks = Object.entries(creatorData.socialLinks).some(([platformId, url]) => {
+      if (url.trim() === '') return false; // Empty is fine
+      return !validateUrl(url);
+    });
+
+    if (hasInvalidLinks) {
+      setError('Please fix invalid social media URLs before continuing');
+      return;
+    }
+
+    // Move to tier pricing step
+    setStep('tier-pricing');
+  };
+
+  const handleCompleteTierSetup = async () => {
+    if (!user || !creatorData.category) return;
+
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('Creating creator profile for user:', user.id);
 
       // Filter out empty social links
@@ -126,23 +185,94 @@ export default function CreatorSignupPage() {
 
       // Create creator profile
       const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks);
-      
+
       if (error) {
         console.error('Creator profile creation failed:', error);
         setError(error.message || 'Failed to set up creator profile');
         return;
       }
-      
+
       console.log('Creator profile created successfully');
-      setStep('complete');
+
+      // Wait a moment for the database trigger to create default tiers
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Update tier prices - the trigger creates default tiers, so we update them
+      const tierData = [
+        { 
+          tier_level: 1, 
+          price: parseFloat(tierPrices.tier1),
+          tier_name: 'One Star Supporter',
+          description: 'Access to supporter posts',
+          benefits: ['Access to exclusive posts', 'Support the creator']
+        },
+        { 
+          tier_level: 2, 
+          price: parseFloat(tierPrices.tier2),
+          tier_name: 'Two Star Supporter',
+          description: 'Posts + Community chat access',
+          benefits: ['Access to exclusive posts', 'Join community chat', 'Direct interaction with creator']
+        },
+        { 
+          tier_level: 3, 
+          price: parseFloat(tierPrices.tier3),
+          tier_name: 'Three Star Supporter',
+          description: 'Posts + Chat + Special perks',
+          benefits: ['Access to exclusive posts', 'Join community chat', 'Special perks from creator', 'Priority support']
+        }
+      ];
+
+      // Update each tier with the user's custom prices
+      const updatePromises = tierData.map(tier => 
+        supabase
+          .from('subscription_tiers')
+          .update({
+            price: tier.price,
+            tier_name: tier.tier_name,
+            description: tier.description,
+            benefits: tier.benefits
+          })
+          .eq('creator_id', user.id)
+          .eq('tier_level', tier.tier_level)
+      );
+
+      const results = await Promise.all(updatePromises);
+      const errors = results.filter(r => r.error);
       
+      if (errors.length > 0) {
+        console.error('Failed to update tier prices:', errors);
+        // Try upsert as fallback
+        const { error: tierError } = await supabase
+          .from('subscription_tiers')
+          .upsert(
+            tierData.map(tier => ({
+              creator_id: user.id,
+              tier_level: tier.tier_level,
+              price: tier.price,
+              tier_name: tier.tier_name,
+              description: tier.description,
+              benefits: tier.benefits
+            })),
+            { onConflict: 'creator_id,tier_level' }
+          );
+        
+        if (tierError) {
+          console.error('Upsert also failed:', tierError);
+          setError('Profile created but tier prices could not be updated. Please update them in your dashboard.');
+        }
+      } else {
+        console.log('Tier prices updated successfully');
+      }
+
+      setStep('complete');
+
       // Redirect to creator dashboard
       setTimeout(() => {
         router.push('/dashboard/creator');
       }, 2000);
     } catch (error: unknown) {
       console.error('Creator setup error:', error);
-      setError(error.message || 'Failed to set up creator profile. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to set up creator profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -381,17 +511,18 @@ export default function CreatorSignupPage() {
                           <div className="flex-1">
                             <input
                               type="url"
-                              placeholder={`${platform.name} profile URL`}
+                              placeholder={`${platform.name} profile URL (e.g., https://facebook.com/yourpage)`}
                               value={creatorData.socialLinks[platform.id] || ''}
-                              onChange={(e) => setCreatorData({
-                                ...creatorData,
-                                socialLinks: {
-                                  ...creatorData.socialLinks,
-                                  [platform.id]: e.target.value
-                                }
-                              })}
-                              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                              onChange={(e) => handleSocialLinkChange(platform.id, e.target.value)}
+                              className={`w-full rounded-md border ${
+                                socialLinkErrors[platform.id] 
+                                  ? 'border-red-500 dark:border-red-500' 
+                                  : 'border-gray-300 dark:border-gray-600'
+                              } bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none`}
                             />
+                            {socialLinkErrors[platform.id] && (
+                              <p className="text-xs text-red-500 mt-1">{socialLinkErrors[platform.id]}</p>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -422,6 +553,155 @@ export default function CreatorSignupPage() {
                       'Complete Setup'
                     )}
                   </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
+          {step === 'tier-pricing' && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="text-center mb-8">
+                <Badge className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-full mb-4">
+                  Step 3 of 3
+                </Badge>
+
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Set Your Support Tiers
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Choose the base price for each tier level. Supporters can add custom amounts.
+                </p>
+              </div>
+
+              <Card className="p-8">
+                <div className="space-y-6">
+                  {/* Tier 1 */}
+                  <div className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
+                        <Check className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">One Star Supporter</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Access to exclusive posts</p>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="tier1" className="text-sm font-medium">Base Price (NPR)</Label>
+                      <input
+                        id="tier1"
+                        type="number"
+                        min="10"
+                        value={tierPrices.tier1}
+                        onChange={(e) => setTierPrices({ ...tierPrices, tier1: e.target.value })}
+                        className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tier 2 */}
+                  <div className="p-6 border-2 border-yellow-300 dark:border-yellow-600 rounded-xl bg-yellow-50/50 dark:bg-yellow-900/10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                        <Check className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Two Star Supporter</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Community chat access</p>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="tier2" className="text-sm font-medium">Base Price (NPR)</Label>
+                      <input
+                        id="tier2"
+                        type="number"
+                        min={parseInt(tierPrices.tier1) + 1}
+                        value={tierPrices.tier2}
+                        onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
+                        className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tier 3 */}
+                  <div className="p-6 border-2 border-purple-300 dark:border-purple-600 rounded-xl bg-purple-50/50 dark:bg-purple-900/10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                        <Crown className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Three Star Supporter</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Chat + Special perks</p>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="tier3" className="text-sm font-medium">Base Price (NPR)</Label>
+                      <input
+                        id="tier3"
+                        type="number"
+                        min={parseInt(tierPrices.tier2) + 1}
+                        value={tierPrices.tier3}
+                        onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
+                        className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                      💡 <strong>Tip:</strong> You can change these prices anytime from your creator dashboard.
+                    </p>
+                  </div>
+
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+                    >
+                      <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                    </motion.div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => setStep('creator-details')}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleCompleteTierSetup}
+                      disabled={loading}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      {loading ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                          Setting up...
+                        </div>
+                      ) : (
+                        'Complete Setup'
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </motion.div>

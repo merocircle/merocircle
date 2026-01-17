@@ -16,12 +16,11 @@ export interface PaymentMethod {
 
 export interface SubscriptionTier {
   id: string
+  tier_level: number
   tier_name: string
   price: number
-  description: string | null
+  description: string
   benefits: string[]
-  max_subscribers: number | null
-  current_subscribers: number
 }
 
 export interface CreatorDetails {
@@ -36,6 +35,8 @@ export interface CreatorDetails {
   supporter_count: number
   posts_count: number
   is_supporter: boolean
+  supporter_tier_level?: number
+  social_links?: Record<string, string>
   current_subscription: {
     id: string
     tier_name: string
@@ -98,7 +99,7 @@ export const useCreatorDetails = (creatorId: string | null) => {
       setProfile({
         creatorDetails,
         paymentMethods: data.paymentMethods || [],
-        subscriptionTiers: data.subscriptionTiers || [],
+        subscriptionTiers: data.tiers || data.subscriptionTiers || [],
         posts: data.posts || []
       });
     } catch (err) {
