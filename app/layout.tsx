@@ -7,7 +7,7 @@ import { AppBackground } from "@/components/ui/app-background";
 import { PageLoadingBar } from "@/components/common/PageLoadingBar";
 
 export const metadata: Metadata = {
-  title: "Creators Nepal - Support Local Creators",
+  title: "MeroCircle - Support Local Creators",
   description: "The leading platform for supporting and discovering amazing creators from Nepal. Join our community and help build the creator economy.",
 };
 

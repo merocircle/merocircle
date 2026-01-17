@@ -289,7 +289,7 @@ export default function CreatorSignupPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
             <Heart className="h-8 w-8 text-red-500" />
-            <span className="text-xl font-bold">Creators Nepal</span>
+            <span className="text-xl font-bold">MeroCircle</span>
           </Link>
           
           <Link href="/signup">
@@ -746,7 +746,7 @@ export default function CreatorSignupPage() {
               </motion.div>
               
               <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Welcome to Creators Nepal! 🎉
+                Welcome to MeroCircle! 🎉
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
                 Your creator profile has been set up successfully. Redirecting to your dashboard...

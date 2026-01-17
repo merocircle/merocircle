@@ -109,7 +109,7 @@ const testimonials = [
   {
     name: "Priya Sharma",
     role: "Digital Artist",
-    content: "CreatorsNepal transformed my art journey. Local payments made it so easy for my supporters!",
+    content: "MeroCircle transformed my art journey. Local payments made it so easy for my supporters!",
     avatar: "PS",
     rating: 5
   },
@@ -284,7 +284,7 @@ export default function LandingPage() {
           >
             <motion.div variants={fadeInUp}>
               <Badge className="px-4 py-2 bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 text-green-800 dark:text-green-200 text-sm font-medium rounded-full mb-4">
-                Why Choose CreatorsNepal?
+                Why Choose MeroCircle?
               </Badge>
             </motion.div>
             <motion.h2 variants={fadeInUp} className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
@@ -435,7 +435,7 @@ export default function LandingPage() {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
                 <Heart className="w-8 h-8 text-red-500 mr-3" />
-                <h3 className="text-2xl font-bold">CreatorsNepal</h3>
+                <h3 className="text-2xl font-bold">MeroCircle</h3>
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
                 Empowering Nepal&apos;s creative economy with local payment solutions, community building tools, and creator-focused features.
@@ -468,7 +468,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 CreatorsNepal. Made with ❤️ for Nepal&apos;s creative community.</p>
+            <p>&copy; 2024 MeroCircle. Made with ❤️ for Nepal&apos;s creative community.</p>
           </div>
         </div>
       </footer>

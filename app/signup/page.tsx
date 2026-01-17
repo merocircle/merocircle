@@ -33,7 +33,7 @@ export default function SignupPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
             <Heart className="h-8 w-8 text-red-500" />
-            <span className="text-xl font-bold">Creators Nepal</span>
+            <span className="text-xl font-bold">MeroCircle</span>
           </Link>
           
           <Link href="/">
@@ -54,7 +54,7 @@ export default function SignupPage() {
         >
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Join Creators Nepal
+              Join MeroCircle
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
               Choose how you want to be part of Nepal's creative community

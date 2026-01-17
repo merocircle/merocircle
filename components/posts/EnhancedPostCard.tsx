@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Calendar, Send, Loader2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Calendar, Send, Loader2, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -52,6 +52,7 @@ interface EnhancedPostCardProps {
   onComment?: (postId: string) => void;
   onShare?: (postId: string) => void;
   showActions?: boolean;
+  isSupporter?: boolean; // Whether the current user is a supporter of this creator
 }
 
 interface Comment {
@@ -71,7 +72,8 @@ export function EnhancedPostCard({
   onLike,
   onComment,
   onShare,
-  showActions = true
+  showActions = true,
+  isSupporter = false
 }: EnhancedPostCardProps) {
   // Check if current user has liked the post from the likes array
   const initialIsLiked = currentUserId
@@ -100,6 +102,24 @@ export function EnhancedPostCard({
     }
     return null;
   }, [post]);
+
+  // Check if post should be blurred (supporter-only content for non-supporters)
+  const shouldBlur = useMemo(() => {
+    // If post is public (free), never blur
+    if (post.tier_required === 'free' || !post.tier_required) {
+      return false;
+    }
+    // If user is a supporter, don't blur
+    if (isSupporter) {
+      return false;
+    }
+    // If user is the creator, don't blur
+    if (currentUserId === post.creator.id) {
+      return false;
+    }
+    // Otherwise, blur supporter-only content
+    return true;
+  }, [post.tier_required, isSupporter, currentUserId, post.creator.id]);
 
   // Determine profile link - if viewing own post, go to own profile
   const creatorProfileLink = currentUserId === post.creator.id
@@ -266,46 +286,82 @@ export function EnhancedPostCard({
         </div>
 
         {/* Content */}
-        <div className="px-5 pb-4">
-          <Link href={`/posts/${post.id}`}>
-            <h3 className="text-lg font-bold text-foreground mb-2 hover:text-primary transition-colors cursor-pointer line-clamp-2">
-              {post.title}
-            </h3>
-          </Link>
-          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 mb-4">
-            {post.content}
-          </p>
-
-          {/* Poll */}
-          {post.post_type === 'poll' && pollData && pollData.id && (
-            <div className="mb-4">
-              <PollCard pollId={pollData.id} currentUserId={currentUserId} />
+        <div className="px-5 pb-4 relative">
+          {shouldBlur ? (
+            /* For non-supporters: Show only placeholder, don't render actual content */
+            <div className="relative min-h-[300px] flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg">
+              {/* Blurred placeholder for image if post has one */}
+              {post.image_url && (
+                <div className="absolute inset-0 opacity-20 blur-2xl">
+                  <div className="w-full h-full bg-gradient-to-br from-purple-200 to-pink-200 dark:from-purple-900 dark:to-pink-900" />
+                </div>
+              )}
+              
+              {/* Lock message overlay */}
+              <div className="relative z-10 text-center p-6 max-w-sm">
+                <div className="mb-4 flex justify-center">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                    <Lock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Support this creator to view this content
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  This post is available for supporters only. Support {post.creator.display_name} to unlock exclusive content.
+                </p>
+                {/* Show only title as a teaser */}
+                <div className="mt-4 p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg backdrop-blur-sm">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {post.title}
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
+          ) : (
+            /* For supporters/creators: Show actual content */
+            <>
+              <Link href={`/posts/${post.id}`}>
+                <h3 className="text-lg font-bold text-foreground mb-2 hover:text-primary transition-colors cursor-pointer line-clamp-2">
+                  {post.title}
+                </h3>
+              </Link>
+              <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 mb-4">
+                {post.content}
+              </p>
 
-          {/* YouTube Video Embed (only for regular posts) */}
-          {post.post_type !== 'poll' && youtubeVideoId && (
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 bg-black">
-              <iframe
-                src={getYouTubeEmbedUrl(youtubeVideoId)}
-                title="YouTube video player"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-              />
-            </div>
-          )}
+              {/* Poll */}
+              {post.post_type === 'poll' && pollData && pollData.id && (
+                <div className="mb-4">
+                  <PollCard pollId={pollData.id} currentUserId={currentUserId} />
+                </div>
+              )}
 
-          {/* Post Image (only for regular posts) */}
-          {post.post_type !== 'poll' && post.image_url && (
-            <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden mb-4">
-              <Image
-                src={post.image_url}
-                alt={post.title}
-                fill
-                className="object-cover hover:scale-105 transition-transform duration-300"
-              />
-            </div>
+              {/* YouTube Video Embed (only for regular posts) */}
+              {post.post_type !== 'poll' && youtubeVideoId && (
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 bg-black">
+                  <iframe
+                    src={getYouTubeEmbedUrl(youtubeVideoId)}
+                    title="YouTube video player"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                  />
+                </div>
+              )}
+
+              {/* Post Image (only for regular posts) */}
+              {post.post_type !== 'poll' && post.image_url && (
+                <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden mb-4">
+                  <Image
+                    src={post.image_url}
+                    alt={post.title}
+                    fill
+                    className="object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 

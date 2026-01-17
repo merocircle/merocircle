@@ -30,7 +30,8 @@ export async function GET() {
     }
 
     // Get trending creators for "Creators for you" section
-    const { data: trendingCreators } = await supabase
+    // Exclude the current user if they are a creator
+    let trendingCreatorsQuery = supabase
       .from('creator_profiles')
       .select(`
         user_id,
@@ -44,6 +45,19 @@ export async function GET() {
       `)
       .order('supporters_count', { ascending: false })
       .limit(12);
+
+    // Exclude current user's creator profile if they are a creator
+    const { data: userProfile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (userProfile?.role === 'creator') {
+      trendingCreatorsQuery = trendingCreatorsQuery.neq('user_id', user.id);
+    }
+
+    const { data: trendingCreators } = await trendingCreatorsQuery;
 
     const formattedCreators = (trendingCreators || []).map((cp: any) => ({
       user_id: cp.user_id,

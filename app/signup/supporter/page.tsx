@@ -79,7 +79,7 @@ export default function SupporterSignupPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
             <Heart className="h-8 w-8 text-red-500" />
-            <span className="text-xl font-bold">Creators Nepal</span>
+            <span className="text-xl font-bold">MeroCircle</span>
           </Link>
           
           <Link href="/signup">

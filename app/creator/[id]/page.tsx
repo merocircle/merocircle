@@ -445,6 +445,7 @@ export default function CreatorProfilePage() {
                             }}
                             currentUserId={user?.id}
                             showActions={true}
+                            isSupporter={isSupporter}
                           />
                         );
                       })}
@@ -487,6 +488,7 @@ export default function CreatorProfilePage() {
                         }}
                         currentUserId={user?.id}
                         showActions={true}
+                        isSupporter={isSupporter}
                       />
                     );
                   }) : (

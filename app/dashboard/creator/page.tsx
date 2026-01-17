@@ -679,6 +679,29 @@ export default function EnhancedCreatorDashboard() {
                   "space-y-4",
                   !onboardingCompleted && "opacity-50 pointer-events-none"
                 )}>
+                  {/* Visibility Selector - Moved to top */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Visibility
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={postVisibility}
+                        onChange={(e) => setPostVisibility(e.target.value)}
+                        disabled={!onboardingCompleted}
+                        className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium hover:border-purple-400 dark:hover:border-purple-500 transition-colors appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="public">🌍 Public</option>
+                        <option value="supporters">👥 Supporters Only</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Show title and content only for regular posts */}
                   {postType === 'post' && (
                     <>
@@ -864,23 +887,6 @@ export default function EnhancedCreatorDashboard() {
                           </label>
                         </>
                       )}
-
-                      <div className="relative">
-                        <select
-                          value={postVisibility}
-                          onChange={(e) => setPostVisibility(e.target.value)}
-                          disabled={!onboardingCompleted}
-                          className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium hover:border-purple-400 dark:hover:border-purple-500 transition-colors appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <option value="public">🌍 Public</option>
-                          <option value="supporters">👥 Supporters Only</option>
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
                     </div>
 
                     <Button

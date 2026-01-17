@@ -67,7 +67,7 @@ export function OnboardingBanner({ onDismiss, creatorId }: OnboardingBannerProps
                     Complete Your Onboarding
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300 mb-4">
-                    Book a quick 30-minute call with our team to get the most out of Creators Nepal. We'll help you set up your profile, understand the platform, and answer any questions you have.
+                    Book a quick 30-minute call with our team to get the most out of MeroCircle. We'll help you set up your profile, understand the platform, and answer any questions you have.
                   </p>
 
                   <div className="flex flex-wrap gap-3">

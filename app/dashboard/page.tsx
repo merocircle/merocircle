@@ -65,7 +65,12 @@ export default function DashboardPage() {
   }
 
   // Filter creators based on category and search
+  // Also exclude current user's own creator card
   const filteredCreators = (feedData?.creators || []).filter(creator => {
+    // Exclude current user's own creator card
+    if (creator.user_id === user?.id) {
+      return false;
+    }
     const matchesCategory = selectedCategory === 'All' ||
       creator.category?.toLowerCase() === selectedCategory.toLowerCase();
     const matchesSearch = !searchQuery ||

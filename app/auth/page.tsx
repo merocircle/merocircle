@@ -83,7 +83,7 @@ export default function AuthPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
             <Heart className="h-8 w-8 text-red-500" />
-            <span className="text-xl font-bold">Creators Nepal</span>
+            <span className="text-xl font-bold">MeroCircle</span>
           </Link>
           
           <Link href="/">
@@ -111,7 +111,7 @@ export default function AuthPage() {
                 transition={{ delay: 0.2, duration: 0.5 }}
               >
                 <Badge className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-full mb-4">
-                  Welcome to Creators Nepal
+                  Welcome to MeroCircle
                 </Badge>
               </motion.div>
               

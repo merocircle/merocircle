@@ -69,7 +69,7 @@ export default function LoginPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
             <Heart className="h-8 w-8 text-red-500" />
-            <span className="text-xl font-bold">Creators Nepal</span>
+            <span className="text-xl font-bold">MeroCircle</span>
           </Link>
           
           <Link href="/">
@@ -140,7 +140,7 @@ export default function LoginPage() {
                 </Button>
 
                 <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                  New to Creators Nepal?{' '}
+                  New to MeroCircle?{' '}
                   <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
                     Create an account
                   </Link>

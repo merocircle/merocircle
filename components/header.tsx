@@ -81,7 +81,7 @@ export function Header() {
             <Heart className="absolute inset-0 animate-pulse" />
           </div>
           <span className={cn('text-lg sm:text-xl font-bold bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent')}>
-            Creators Nepal
+            MeroCircle
           </span>
         </Link>
 

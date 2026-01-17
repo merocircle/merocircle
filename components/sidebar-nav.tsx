@@ -193,7 +193,7 @@ export function SidebarNav() {
           <Link href="/" className="flex items-center space-x-2 group">
             <Heart className="w-6 h-6 text-red-500 fill-red-500" />
             <span className="text-lg font-bold bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
-              Creators Nepal
+              MeroCircle
             </span>
           </Link>
         </div>

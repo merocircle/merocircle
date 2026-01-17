@@ -130,7 +130,7 @@ function PaymentSuccessContent() {
             </h1>
             
             <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
-              Thank you for supporting a creator on CreatorsNepal
+              Thank you for supporting a creator on MeroCircle
             </p>
 
             {transaction && (

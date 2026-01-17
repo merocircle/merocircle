@@ -1,4 +1,4 @@
-# Creators Nepal 🇳🇵
+# MeroCircle 🇳🇵
 
 Platform for supporting Nepali creators with local payment integration.
 

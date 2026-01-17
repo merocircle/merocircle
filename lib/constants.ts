@@ -31,7 +31,7 @@ export const CATEGORIES: Category[] = [
 ];
 
 export const APP_CONFIG = {
-  name: 'Creators Nepal',
+  name: 'MeroCircle',
   description: 'Support Nepal\'s creative community',
   stats: {
     activeCreators: 1234,

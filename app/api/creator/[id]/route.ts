@@ -49,7 +49,8 @@ export async function GET(
       .eq('is_active', true)
       .order('tier_level', { ascending: true });
 
-    let postsQuery = supabase
+    // Fetch ALL posts (both public and supporter-only) so non-supporters can see they exist
+    const { data: posts } = await supabase
       .from('posts')
       .select(`
         *,
@@ -58,13 +59,7 @@ export async function GET(
         users!posts_creator_id_fkey(id, display_name, photo_url, role),
         polls(id, question, allows_multiple_answers, expires_at)
       `)
-      .eq('creator_id', creatorId);
-
-    if (!isSupporter) {
-      postsQuery = postsQuery.eq('is_public', true);
-    }
-
-    const { data: posts } = await postsQuery
+      .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -97,35 +92,43 @@ export async function GET(
       post_likes?: Array<{ id: string; user_id: string }>;
       post_comments?: Array<{ id: string; content: string; created_at: string }>;
       polls?: { id: string; question: string; allows_multiple_answers: boolean; expires_at: string | null };
-    }) => ({
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      image_url: post.image_url,
-      media_url: post.media_url || null,
-      is_public: post.is_public,
-      tier_required: post.tier_required || 'free',
-      post_type: post.post_type || 'post',
-      created_at: post.created_at,
-      updated_at: post.updated_at,
-      creator_id: post.creator_id,
-      creator: {
-        id: post.users?.id || creatorId,
-        display_name: post.users?.display_name || creatorProfile.users.display_name,
-        photo_url: post.users?.photo_url || creatorProfile.users.photo_url,
-        role: post.users?.role || 'creator'
-      },
-      creator_profile: {
-        category: creatorProfile.category,
-        is_verified: creatorProfile.is_verified
-      },
-      // polls is an object (one-to-one relationship), not an array
-      poll: post.polls || null,
-      likes: post.post_likes || [],
-      comments: post.post_comments || [],
-      likes_count: post.post_likes?.length || 0,
-      comments_count: post.post_comments?.length || 0
-    }));
+    }) => {
+      // Check if this is a supporter-only post and user is not a supporter
+      const isSupporterOnly = !post.is_public || (post.tier_required && post.tier_required !== 'free');
+      const shouldHideContent = isSupporterOnly && !isSupporter;
+
+      return {
+        id: post.id,
+        title: post.title,
+        // Hide content for non-supporters viewing supporter-only posts
+        content: shouldHideContent ? '' : post.content,
+        // Hide image/media URLs for non-supporters viewing supporter-only posts
+        image_url: shouldHideContent ? null : post.image_url,
+        media_url: shouldHideContent ? null : (post.media_url || null),
+        is_public: post.is_public,
+        tier_required: post.tier_required || 'free',
+        post_type: post.post_type || 'post',
+        created_at: post.created_at,
+        updated_at: post.updated_at,
+        creator_id: post.creator_id,
+        creator: {
+          id: post.users?.id || creatorId,
+          display_name: post.users?.display_name || creatorProfile.users.display_name,
+          photo_url: post.users?.photo_url || creatorProfile.users.photo_url,
+          role: post.users?.role || 'creator'
+        },
+        creator_profile: {
+          category: creatorProfile.category,
+          is_verified: creatorProfile.is_verified
+        },
+        // Hide poll data for non-supporters viewing supporter-only posts
+        poll: shouldHideContent ? null : (post.polls || null),
+        likes: post.post_likes || [],
+        comments: post.post_comments || [],
+        likes_count: post.post_likes?.length || 0,
+        comments_count: post.post_comments?.length || 0
+      };
+    });
 
     return NextResponse.json({
       success: true,
