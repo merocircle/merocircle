@@ -91,6 +91,7 @@ export default function EnhancedCreatorDashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   // Post creation states
   const [newPostTitle, setNewPostTitle] = useState('');
@@ -135,7 +136,9 @@ export default function EnhancedCreatorDashboard() {
           const dashboardJson = await dashboardRes.json();
           setDashboardData(dashboardJson);
           // Check if onboarding is completed
-          setShowOnboardingBanner(!dashboardJson.onboardingCompleted);
+          const isCompleted = dashboardJson.onboardingCompleted || false;
+          setOnboardingCompleted(isCompleted);
+          setShowOnboardingBanner(!isCompleted);
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -343,7 +346,23 @@ export default function EnhancedCreatorDashboard() {
               {showOnboardingBanner && user && (
                 <OnboardingBanner
                   creatorId={user.id}
-                  onDismiss={() => setShowOnboardingBanner(false)}
+                  onDismiss={async () => {
+                    setShowOnboardingBanner(false);
+                    setOnboardingCompleted(true);
+                    // Refresh data to reflect the change
+                    setDataLoading(true);
+                    try {
+                      const dashboardRes = await fetch(`/api/creator/${user?.id}/dashboard`);
+                      if (dashboardRes.ok) {
+                        const dashboardJson = await dashboardRes.json();
+                        setDashboardData(dashboardJson);
+                      }
+                    } catch (error) {
+                      console.error('Failed to refresh dashboard data:', error);
+                    } finally {
+                      setDataLoading(false);
+                    }
+                  }}
                 />
               )}
 
@@ -580,8 +599,32 @@ export default function EnhancedCreatorDashboard() {
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
               </motion.div>
 
+              {/* Onboarding Message for Posts */}
+              {!onboardingCompleted && (
+                <Card className="p-6 border-2 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/20">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                      <X className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        Complete Onboarding to Create Posts
+                      </h3>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                        Please complete your onboarding by booking a call or clicking "Already Done" in the banner above to unlock post creation and editing features.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
               {/* Create Post Card */}
-              <Card className="p-6 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
+              <Card className={cn(
+                "p-6 border-2 transition-colors",
+                onboardingCompleted 
+                  ? "border-dashed border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600"
+                  : "border-gray-300 dark:border-gray-700 opacity-60"
+              )}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
@@ -597,14 +640,19 @@ export default function EnhancedCreatorDashboard() {
                   </div>
 
                   {/* Post Type Toggle */}
-                  <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                  <div className={cn(
+                    "flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1",
+                    !onboardingCompleted && "opacity-50 pointer-events-none"
+                  )}>
                     <button
                       onClick={() => handlePostTypeChange('post')}
+                      disabled={!onboardingCompleted}
                       className={cn(
                         "px-4 py-2 rounded-md text-sm font-medium transition-all",
                         postType === 'post'
                           ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
+                        !onboardingCompleted && "cursor-not-allowed"
                       )}
                     >
                       <FileText className="w-4 h-4 inline mr-1" />
@@ -612,11 +660,13 @@ export default function EnhancedCreatorDashboard() {
                     </button>
                     <button
                       onClick={() => handlePostTypeChange('poll')}
+                      disabled={!onboardingCompleted}
                       className={cn(
                         "px-4 py-2 rounded-md text-sm font-medium transition-all",
                         postType === 'poll'
                           ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
+                        !onboardingCompleted && "cursor-not-allowed"
                       )}
                     >
                       <BarChart2 className="w-4 h-4 inline mr-1" />
@@ -625,7 +675,10 @@ export default function EnhancedCreatorDashboard() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className={cn(
+                  "space-y-4",
+                  !onboardingCompleted && "opacity-50 pointer-events-none"
+                )}>
                   {/* Show title and content only for regular posts */}
                   {postType === 'post' && (
                     <>
@@ -634,6 +687,7 @@ export default function EnhancedCreatorDashboard() {
                           placeholder="Give your post an engaging title..."
                           value={newPostTitle}
                           onChange={(e) => setNewPostTitle(e.target.value)}
+                          disabled={!onboardingCompleted}
                           className="text-lg font-semibold border-2 focus:border-purple-400 dark:focus:border-purple-500"
                         />
                       </div>
@@ -649,6 +703,7 @@ export default function EnhancedCreatorDashboard() {
 • Add images for visual appeal`}
                           value={newPostContent}
                           onChange={(e) => setNewPostContent(e.target.value)}
+                          disabled={!onboardingCompleted}
                           rows={8}
                           className="resize-none border-2 focus:border-purple-400 dark:focus:border-purple-500"
                         />
@@ -667,6 +722,7 @@ export default function EnhancedCreatorDashboard() {
                           placeholder="What would you like to ask your supporters?"
                           value={pollQuestion}
                           onChange={(e) => setPollQuestion(e.target.value)}
+                          disabled={!onboardingCompleted}
                           className="text-lg font-semibold border-2 focus:border-blue-400 dark:focus:border-blue-500"
                         />
                       </div>
@@ -682,6 +738,7 @@ export default function EnhancedCreatorDashboard() {
                                 placeholder={`Option ${index + 1}`}
                                 value={option}
                                 onChange={(e) => updatePollOption(index, e.target.value)}
+                                disabled={!onboardingCompleted}
                                 className="flex-1 border-2 focus:border-blue-400 dark:focus:border-blue-500"
                               />
                               {pollOptions.length > 2 && (
@@ -704,6 +761,7 @@ export default function EnhancedCreatorDashboard() {
                             variant="outline"
                             size="sm"
                             onClick={addPollOption}
+                            disabled={!onboardingCompleted}
                             className="mt-2 w-full border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-600"
                           >
                             <Plus className="w-4 h-4 mr-2" />
@@ -719,6 +777,7 @@ export default function EnhancedCreatorDashboard() {
                             id="multiple-answers"
                             checked={allowsMultipleAnswers}
                             onChange={(e) => setAllowsMultipleAnswers(e.target.checked)}
+                            disabled={!onboardingCompleted}
                             className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                           />
                           <label htmlFor="multiple-answers" className="text-sm text-gray-700 dark:text-gray-300">
@@ -734,6 +793,7 @@ export default function EnhancedCreatorDashboard() {
                             id="poll-duration"
                             value={pollDuration || ''}
                             onChange={(e) => setPollDuration(e.target.value ? parseInt(e.target.value) : null)}
+                            disabled={!onboardingCompleted}
                             className="px-3 py-1 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
                           >
                             <option value="">No expiration</option>
@@ -789,11 +849,14 @@ export default function EnhancedCreatorDashboard() {
                             <Button
                               variant="outline"
                               size="sm"
-                              disabled={isUploadingImage}
+                              disabled={isUploadingImage || !onboardingCompleted}
                               className="w-full sm:w-auto border-2 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
                               asChild
                             >
-                              <span className="cursor-pointer">
+                              <span className={cn(
+                                "cursor-pointer",
+                                !onboardingCompleted && "cursor-not-allowed"
+                              )}>
                                 <Upload className="w-4 h-4 mr-2" />
                                 {isUploadingImage ? 'Uploading...' : 'Add Image'}
                               </span>
@@ -806,7 +869,8 @@ export default function EnhancedCreatorDashboard() {
                         <select
                           value={postVisibility}
                           onChange={(e) => setPostVisibility(e.target.value)}
-                          className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium hover:border-purple-400 dark:hover:border-purple-500 transition-colors appearance-none pr-10"
+                          disabled={!onboardingCompleted}
+                          className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium hover:border-purple-400 dark:hover:border-purple-500 transition-colors appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <option value="public">🌍 Public</option>
                           <option value="supporters">👥 Supporters Only</option>
@@ -822,12 +886,16 @@ export default function EnhancedCreatorDashboard() {
                     <Button
                       onClick={handlePublishPost}
                       disabled={
+                        !onboardingCompleted ||
                         isPublishing ||
                         (postType === 'post' && (!newPostTitle.trim() || !newPostContent.trim())) ||
                         (postType === 'poll' && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))
                       }
                       size="lg"
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                      className={cn(
+                        "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all",
+                        !onboardingCompleted && "opacity-50 cursor-not-allowed"
+                      )}
                     >
                       {isPublishing ? (
                         <>
@@ -860,20 +928,25 @@ export default function EnhancedCreatorDashboard() {
                 </div>
 
                 {dashboardData?.posts && dashboardData.posts.length > 0 ? (
-                  dashboardData.posts.map((post, index) => (
-                    <motion.div
-                      key={post.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <EnhancedPostCard
-                        post={post}
-                        currentUserId={user?.id}
-                        showActions={true}
-                      />
-                    </motion.div>
-                  ))
+                  <div className={cn(
+                    "space-y-6",
+                    !onboardingCompleted && "opacity-60"
+                  )}>
+                    {dashboardData.posts.map((post, index) => (
+                      <motion.div
+                        key={post.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <EnhancedPostCard
+                          post={post}
+                          currentUserId={user?.id}
+                          showActions={onboardingCompleted}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
                 ) : (
                   <Card className="p-12 text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
                     <div className="flex flex-col items-center gap-4">

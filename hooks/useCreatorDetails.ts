@@ -21,6 +21,7 @@ export interface SubscriptionTier {
   price: number
   description: string
   benefits: string[]
+  tier3_extra_perks?: string | null
 }
 
 export interface CreatorDetails {

@@ -17,6 +17,7 @@ interface Tier {
   price: number;
   description: string;
   benefits: string[];
+  tier3_extra_perks?: string | null;
 }
 
 interface TierSelectionProps {
@@ -196,6 +197,30 @@ export function TierSelection({
                           </span>
                         </motion.div>
                       ))}
+                      
+                      {/* Tier 3 Extra Perks */}
+                      {tier.tier_level === 3 && tier.tier3_extra_perks && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 * tier.benefits.length }}
+                          className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mt-0.5">
+                              <Sparkles className="w-3 h-3 text-white" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">
+                                Special Perks:
+                              </p>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {tier.tier3_extra_perks}
+                              </p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
                     </div>
 
                     {/* CTA Button */}

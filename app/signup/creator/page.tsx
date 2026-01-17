@@ -56,6 +56,7 @@ export default function CreatorSignupPage() {
     tier2: '500',
     tier3: '1000'
   });
+  const [tier3ExtraPerks, setTier3ExtraPerks] = useState('');
   const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const { user, userProfile, signInWithGoogle, createCreatorProfile } = useAuth();
@@ -218,7 +219,8 @@ export default function CreatorSignupPage() {
           price: parseFloat(tierPrices.tier3),
           tier_name: 'Three Star Supporter',
           description: 'Posts + Chat + Special perks',
-          benefits: ['Access to exclusive posts', 'Join community chat', 'Special perks from creator', 'Priority support']
+          benefits: ['Access to exclusive posts', 'Join community chat', 'Special perks from creator', 'Priority support'],
+          tier3_extra_perks: tier3ExtraPerks.trim() || null
         }
       ];
 
@@ -230,7 +232,8 @@ export default function CreatorSignupPage() {
             price: tier.price,
             tier_name: tier.tier_name,
             description: tier.description,
-            benefits: tier.benefits
+            benefits: tier.benefits,
+            ...(tier.tier_level === 3 && tier.tier3_extra_perks ? { tier3_extra_perks: tier.tier3_extra_perks } : {})
           })
           .eq('creator_id', user.id)
           .eq('tier_level', tier.tier_level)
@@ -251,7 +254,8 @@ export default function CreatorSignupPage() {
               price: tier.price,
               tier_name: tier.tier_name,
               description: tier.description,
-              benefits: tier.benefits
+              benefits: tier.benefits,
+              ...(tier.tier_level === 3 && tier.tier3_extra_perks ? { tier3_extra_perks: tier.tier3_extra_perks } : {})
             })),
             { onConflict: 'creator_id,tier_level' }
           );
@@ -650,16 +654,34 @@ export default function CreatorSignupPage() {
                         <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Chat + Special perks</p>
                       </div>
                     </div>
-                    <div>
-                      <Label htmlFor="tier3" className="text-sm font-medium">Base Price (NPR)</Label>
-                      <input
-                        id="tier3"
-                        type="number"
-                        min={parseInt(tierPrices.tier2) + 1}
-                        value={tierPrices.tier3}
-                        onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
-                        className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
-                      />
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="tier3" className="text-sm font-medium">Base Price (NPR)</Label>
+                        <input
+                          id="tier3"
+                          type="number"
+                          min={parseInt(tierPrices.tier2) + 1}
+                          value={tierPrices.tier3}
+                          onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
+                          className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="tier3ExtraPerks" className="text-sm font-medium">
+                          Extra Perks (Optional)
+                        </Label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                          Describe any special perks or benefits that tier 3 supporters will receive
+                        </p>
+                        <textarea
+                          id="tier3ExtraPerks"
+                          value={tier3ExtraPerks}
+                          onChange={(e) => setTier3ExtraPerks(e.target.value)}
+                          placeholder="e.g., Monthly 1-on-1 call, Exclusive merchandise, Early access to content..."
+                          rows={3}
+                          className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none resize-none"
+                        />
+                      </div>
                     </div>
                   </div>
 

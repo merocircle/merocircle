@@ -92,16 +92,60 @@ export function SidebarNav() {
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
-  // Load recently visited from localStorage
+  // Load and validate recently visited from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('recentlyVisited');
-    if (stored) {
+    const loadAndValidateRecentlyVisited = async () => {
+      const stored = localStorage.getItem('recentlyVisited');
+      if (!stored) return;
+
       try {
-        setRecentlyVisited(JSON.parse(stored));
+        const items: RecentlyVisited[] = JSON.parse(stored);
+        
+        // Validate each item by checking if the creator still exists
+        const validatedItems = await Promise.all(
+          items.map(async (item) => {
+            if (item.type === 'creator') {
+              try {
+                const response = await fetch(`/api/creator/${item.id}`);
+                if (!response.ok) {
+                  // Creator doesn't exist, filter it out
+                  return null;
+                }
+                const data = await response.json();
+                // Update with current data in case name/avatar changed
+                return {
+                  ...item,
+                  name: data.display_name || item.name,
+                  avatar: data.photo_url || item.avatar,
+                };
+              } catch (error) {
+                // Error fetching creator, assume it doesn't exist
+                return null;
+              }
+            }
+            // For channels, keep as is (can add validation later if needed)
+            return item;
+          })
+        );
+
+        // Filter out null values (deleted creators) and update state
+        const validItems = validatedItems.filter((item): item is RecentlyVisited => item !== null);
+        
+        // Update localStorage with cleaned list
+        if (validItems.length !== items.length) {
+          localStorage.setItem('recentlyVisited', JSON.stringify(validItems));
+        }
+        
+        setRecentlyVisited(validItems);
       } catch (e) {
         console.error('Failed to parse recently visited', e);
+        // Clear corrupted data
+        localStorage.removeItem('recentlyVisited');
+        setRecentlyVisited([]);
       }
-    }
+    };
+
+    loadAndValidateRecentlyVisited();
   }, []);
 
   const handleSignOut = async () => {

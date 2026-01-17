@@ -152,7 +152,8 @@ export async function GET(
         tier_name: tier.tier_name,
         price: Number(tier.price),
         description: tier.description,
-        benefits: tier.benefits || []
+        benefits: tier.benefits || [],
+        tier3_extra_perks: tier.tier3_extra_perks || null
       })),
       paymentMethods: (paymentMethods || []).map((m: {
         id: string;
