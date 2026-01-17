@@ -9,6 +9,7 @@ interface CreatorMiniCardProps {
   avatarUrl?: string | null;
   supporterCount?: number;
   category?: string | null;
+  bio?: string | null;
   className?: string;
 }
 
@@ -18,13 +19,14 @@ export function CreatorMiniCard({
   avatarUrl,
   supporterCount = 0,
   category,
+  bio,
   className
 }: CreatorMiniCardProps) {
   const initials = name?.[0]?.toUpperCase() || '?';
 
   return (
     <Link href={`/creator/${id}`} className="group">
-      <Card className={className || "p-3 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col"}>
+      <Card className={className || "p-3 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col gap-0"}>
         {/* Creator Avatar - Square */}
         <div className="aspect-square w-full bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg mb-2 overflow-hidden">
           {avatarUrl ? (
@@ -41,17 +43,24 @@ export function CreatorMiniCard({
         </div>
 
         {/* Creator Name */}
-        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 text-center mb-1 line-clamp-1 group-hover:text-red-500 transition-colors">
+        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 text-center mb-0 line-clamp-1 group-hover:text-red-500 transition-colors">
           {name}
         </h3>
 
         {/* Category Badge */}
         {category && (
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-0.5">
             <Badge variant="outline" className="text-xs px-1.5 py-0">
               {category}
             </Badge>
           </div>
+        )}
+
+        {/* Bio */}
+        {bio && (
+          <p className="text-xs text-gray-600 dark:text-gray-400 text-center mb-0 line-clamp-2 leading-relaxed">
+            {bio}
+          </p>
         )}
 
         {/* Supporters Count with Visual Indicator */}
