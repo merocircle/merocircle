@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { useDashboardView } from '@/contexts/dashboard-context';
 import { useNotifications } from '@/hooks/useNotifications';
 import {
   Home,
@@ -28,7 +29,7 @@ import { Moon, Sun } from 'lucide-react';
 
 interface NavItem {
   label: string;
-  href: string;
+  view: 'home' | 'chat' | 'notifications' | 'settings';
   icon: React.ElementType;
   badge?: number;
 }
@@ -82,14 +83,27 @@ export function SidebarNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [recentlyVisited, setRecentlyVisited] = useState<RecentlyVisited[]>([]);
   
+  // Get dashboard view context (only available on dashboard page)
+  const isDashboardPage = pathname === '/dashboard';
+  let activeView = 'home';
+  let setActiveView: ((view: any) => void) | undefined;
+  
+  try {
+    const dashboardContext = useDashboardView();
+    activeView = dashboardContext.activeView;
+    setActiveView = dashboardContext.setActiveView;
+  } catch {
+    // Not on dashboard page, context not available
+  }
+  
   // Get real-time unread count for notifications badge
   const { unreadCount } = useNotifications();
 
   const navItems: NavItem[] = [
-    { label: 'Home', href: '/dashboard', icon: Home },
-    { label: 'Chats', href: '/community', icon: MessageCircle },
-    { label: 'Notifications', href: '/notifications', icon: Bell, badge: unreadCount },
-    { label: 'Settings', href: '/settings', icon: Settings },
+    { label: 'Home', view: 'home', icon: Home },
+    { label: 'Chats', view: 'chat', icon: MessageCircle },
+    { label: 'Notifications', view: 'notifications', icon: Bell, badge: unreadCount },
+    { label: 'Settings', view: 'settings', icon: Settings },
   ];
 
   // Load and validate recently visited from localStorage
@@ -228,28 +242,38 @@ export function SidebarNav() {
           <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isActive = isDashboardPage && activeView === item.view;
+              
+              const handleClick = (e: React.MouseEvent) => {
+                e.preventDefault();
+                setIsOpen(false);
+                
+                if (isDashboardPage && setActiveView) {
+                  setActiveView(item.view);
+                } else {
+                  router.push(`/dashboard?view=${item.view}`);
+                }
+              };
               
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
+                <button
+                  key={item.view}
+                  onClick={handleClick}
                   className={cn(
-                    'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     isActive
                       ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   )}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="flex-1">{item.label}</span>
+                  <span className="flex-1 text-left">{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
                     <span className="px-2 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full">
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
                   )}
-                </Link>
+                </button>
               );
             })}
           </div>

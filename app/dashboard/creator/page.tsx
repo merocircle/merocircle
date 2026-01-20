@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -17,6 +17,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -49,66 +50,34 @@ import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
 import { cn } from '@/lib/utils';
+import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
 
-interface AnalyticsData {
-  stats: {
-    totalEarnings: number;
-    supporters: number;
-    posts: number;
-    likes: number;
-    currentMonthEarnings: number;
-    earningsGrowth: number;
-  };
-  charts: {
-    earnings: Array<{ month: string; earnings: number }>;
-    supporterFlow: Array<{ date: string; supporters: number }>;
-    engagement: Array<{ date: string; likes: number; comments: number }>;
-  };
-  topSupporters: Array<{
-    id: string;
-    name: string;
-    photo_url: string | null;
-    total_amount: number;
-  }>;
-}
-
-interface DashboardData {
-  stats: {
-    monthlyEarnings: number;
-    totalEarnings: number;
-    supporters: number;
-    posts: number;
-  };
-  posts: Array<any>;
-  supporters: Array<any>;
-}
+const StatsCard = memo(({ children }: { children: React.ReactNode }) => children);
 
 export default function EnhancedCreatorDashboard() {
   const { user, userProfile, isAuthenticated, loading, isCreator } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [dataLoading, setDataLoading] = useState(true);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState<string | null>(null);
 
-  // Post creation states
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
   const [uploadedImageUrl, setUploadedImageUrl] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
   const [postVisibility, setPostVisibility] = useState('public');
   const [postType, setPostType] = useState<'post' | 'poll'>('post');
-
-  // Poll creation states
+  
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [allowsMultipleAnswers, setAllowsMultipleAnswers] = useState(false);
   const [pollDuration, setPollDuration] = useState<number | null>(null);
+
+  const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
+  const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
+  const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -120,39 +89,17 @@ export default function EnhancedCreatorDashboard() {
       router.push('/dashboard');
       return;
     }
-
-    const fetchData = async () => {
-      setDataLoading(true);
-      try {
-        const [analyticsRes, dashboardRes] = await Promise.all([
-          fetch('/api/creator/analytics'),
-          fetch(`/api/creator/${user.id}/dashboard`)
-        ]);
-
-        if (analyticsRes.ok) {
-          const analyticsJson = await analyticsRes.json();
-          setAnalyticsData(analyticsJson);
-        }
-
-        if (dashboardRes.ok) {
-          const dashboardJson = await dashboardRes.json();
-          setDashboardData(dashboardJson);
-          // Check if onboarding is completed
-          const isCompleted = dashboardJson.onboardingCompleted || false;
-          setOnboardingCompleted(isCompleted);
-          setShowOnboardingBanner(!isCompleted);
-        }
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-      } finally {
-        setDataLoading(false);
-      }
-    };
-
-    fetchData();
   }, [isAuthenticated, user, isCreator, userProfile, router]);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (dashboardData) {
+      const isCompleted = dashboardData.onboardingCompleted || false;
+      setOnboardingCompleted(isCompleted);
+      setShowOnboardingBanner(!isCompleted);
+    }
+  }, [dashboardData]);
+
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -171,70 +118,65 @@ export default function EnhancedCreatorDashboard() {
       if (result.success) {
         setUploadedImageUrl(result.url);
       } else {
-        alert(result.error || 'File upload failed.');
+        setShowErrorMessage(result.error || 'File upload failed.');
+        setTimeout(() => setShowErrorMessage(null), 3000);
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('File upload failed.');
+      setShowErrorMessage('File upload failed.');
+      setTimeout(() => setShowErrorMessage(null), 3000);
     } finally {
       setIsUploadingImage(false);
     }
-  };
+  }, []);
 
-  const handlePublishPost = async () => {
-    // For polls, only validate poll fields
+  const handlePublishPost = useCallback(() => {
     if (postType === 'poll') {
       if (!pollQuestion.trim()) {
-        alert('Poll question is required.');
+        setShowErrorMessage('Poll question is required.');
+        setTimeout(() => setShowErrorMessage(null), 3000);
         return;
       }
       const validOptions = pollOptions.filter(opt => opt.trim());
       if (validOptions.length < 2) {
-        alert('Poll must have at least 2 options.');
+        setShowErrorMessage('Poll must have at least 2 options.');
+        setTimeout(() => setShowErrorMessage(null), 3000);
         return;
       }
       if (validOptions.length > 10) {
-        alert('Poll cannot have more than 10 options.');
+        setShowErrorMessage('Poll cannot have more than 10 options.');
+        setTimeout(() => setShowErrorMessage(null), 3000);
         return;
       }
     } else {
-      // For regular posts, validate title and content
       if (!newPostTitle || !newPostContent) {
-        alert('Title and content are required.');
+        setShowErrorMessage('Title and content are required.');
+        setTimeout(() => setShowErrorMessage(null), 3000);
         return;
       }
     }
 
-    setIsPublishing(true);
-    try {
-      const body: any = {
-        // For polls, use the question as both title and content
-        title: postType === 'poll' ? pollQuestion.trim() : newPostTitle,
-        content: postType === 'poll' ? pollQuestion.trim() : newPostContent,
-        image_url: uploadedImageUrl || null,
-        is_public: postVisibility === 'public',
-        tier_required: postVisibility === 'public' ? 'free' : postVisibility,
-        post_type: postType
+    const body: any = {
+      title: postType === 'poll' ? pollQuestion.trim() : newPostTitle,
+      content: postType === 'poll' ? pollQuestion.trim() : newPostContent,
+      image_url: uploadedImageUrl || null,
+      is_public: postVisibility === 'public',
+      tier_required: postVisibility === 'public' ? 'free' : postVisibility,
+      post_type: postType
+    };
+
+    if (postType === 'poll') {
+      const validOptions = pollOptions.filter(opt => opt.trim());
+      body.poll_data = {
+        question: pollQuestion.trim(),
+        options: validOptions,
+        allows_multiple_answers: allowsMultipleAnswers,
+        expires_at: pollDuration ? new Date(Date.now() + pollDuration * 24 * 60 * 60 * 1000).toISOString() : null
       };
+    }
 
-      // Add poll data if it's a poll
-      if (postType === 'poll') {
-        const validOptions = pollOptions.filter(opt => opt.trim());
-        body.poll_data = {
-          question: pollQuestion.trim(),
-          options: validOptions,
-          allows_multiple_answers: allowsMultipleAnswers,
-          expires_at: pollDuration ? new Date(Date.now() + pollDuration * 24 * 60 * 60 * 1000).toISOString() : null
-        };
-      }
-
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
+    publishPost(body, {
+      onSuccess: () => {
         setNewPostTitle('');
         setNewPostContent('');
         setUploadedImageUrl('');
@@ -244,49 +186,18 @@ export default function EnhancedCreatorDashboard() {
         setPollDuration(null);
         setPostVisibility('public');
         
-        // Show success notification
         setShowSuccessMessage(true);
         setTimeout(() => setShowSuccessMessage(false), 3000);
-        
-        // Refresh data without reloading page
-        const fetchData = async () => {
-          try {
-            const [analyticsRes, dashboardRes] = await Promise.all([
-              fetch('/api/creator/analytics'),
-              fetch(`/api/creator/${user.id}/dashboard`)
-            ]);
-
-            if (analyticsRes.ok) {
-              const analyticsJson = await analyticsRes.json();
-              setAnalyticsData(analyticsJson);
-            }
-
-            if (dashboardRes.ok) {
-              const dashboardJson = await dashboardRes.json();
-              setDashboardData(dashboardJson);
-            }
-          } catch (error) {
-            console.error('Failed to refresh dashboard data:', error);
-          }
-        };
-        fetchData();
-      } else {
-        const errorData = await response.json();
-        setShowErrorMessage(errorData.error || 'Failed to publish.');
+      },
+      onError: (error: any) => {
+        setShowErrorMessage(error.message || 'Failed to publish.');
         setTimeout(() => setShowErrorMessage(null), 3000);
       }
-    } catch (error) {
-      console.error('Publish error:', error);
-      setShowErrorMessage('Failed to publish. Please try again.');
-      setTimeout(() => setShowErrorMessage(null), 3000);
-    } finally {
-      setIsPublishing(false);
-    }
-  };
+    });
+  }, [postType, newPostTitle, newPostContent, uploadedImageUrl, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, publishPost]);
 
-  const handlePostTypeChange = (type: 'post' | 'poll') => {
+  const handlePostTypeChange = useCallback((type: 'post' | 'poll') => {
     setPostType(type);
-    // Clear fields when switching types
     if (type === 'poll') {
       setNewPostTitle('');
       setNewPostContent('');
@@ -296,27 +207,36 @@ export default function EnhancedCreatorDashboard() {
       setAllowsMultipleAnswers(false);
       setPollDuration(null);
     }
-  };
+  }, []);
 
-  const addPollOption = () => {
+  const addPollOption = useCallback(() => {
     if (pollOptions.length < 10) {
       setPollOptions([...pollOptions, '']);
     }
-  };
+  }, [pollOptions]);
 
-  const removePollOption = (index: number) => {
+  const removePollOption = useCallback((index: number) => {
     if (pollOptions.length > 2) {
       setPollOptions(pollOptions.filter((_, i) => i !== index));
     }
-  };
+  }, [pollOptions]);
 
-  const updatePollOption = (index: number, value: string) => {
+  const updatePollOption = useCallback((index: number, value: string) => {
     const updated = [...pollOptions];
     updated[index] = value;
     setPollOptions(updated);
-  };
+  }, [pollOptions]);
 
-  if (loading || dataLoading) {
+  const stats = useMemo(() => analyticsData?.stats || {
+    totalEarnings: 0,
+    supporters: 0,
+    posts: 0,
+    likes: 0,
+    currentMonthEarnings: 0,
+    earningsGrowth: 0
+  }, [analyticsData]);
+
+  if (loading || analyticsLoading || dashboardLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
         <SidebarNav />
@@ -327,21 +247,11 @@ export default function EnhancedCreatorDashboard() {
     );
   }
 
-  const stats = analyticsData?.stats || {
-    totalEarnings: 0,
-    supporters: 0,
-    posts: 0,
-    likes: 0,
-    currentMonthEarnings: 0,
-    earningsGrowth: 0
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
       <SidebarNav />
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <Crown className="w-8 h-8 text-yellow-500" />
@@ -370,102 +280,92 @@ export default function EnhancedCreatorDashboard() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Overview & Analytics Tab */}
             <TabsContent value="overview" className="space-y-6">
-              {/* Onboarding Banner */}
               {showOnboardingBanner && user && (
                 <OnboardingBanner
                   creatorId={user.id}
-                  onDismiss={async () => {
+                  onDismiss={() => {
                     setShowOnboardingBanner(false);
                     setOnboardingCompleted(true);
-                    // Refresh data to reflect the change
-                    setDataLoading(true);
-                    try {
-                      const dashboardRes = await fetch(`/api/creator/${user?.id}/dashboard`);
-                      if (dashboardRes.ok) {
-                        const dashboardJson = await dashboardRes.json();
-                        setDashboardData(dashboardJson);
-                      }
-                    } catch (error) {
-                      console.error('Failed to refresh dashboard data:', error);
-                    } finally {
-                      setDataLoading(false);
-                    }
                   }}
                 />
               )}
 
-              {/* Key Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                  <Card className="p-6 h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <DollarSign className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                      <div className={cn(
-                        "flex items-center gap-1 text-sm font-semibold",
-                        stats.earningsGrowth >= 0 ? "text-green-600" : "text-red-600"
-                      )}>
-                        {stats.earningsGrowth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                        {Math.abs(stats.earningsGrowth)}%
+                <StatsCard>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <Card className="p-6 h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center justify-between mb-4">
+                        <DollarSign className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        <div className={cn(
+                          "flex items-center gap-1 text-sm font-semibold",
+                          stats.earningsGrowth >= 0 ? "text-green-600" : "text-red-600"
+                        )}>
+                          {stats.earningsGrowth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                          {Math.abs(stats.earningsGrowth)}%
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      NPR {stats.currentMonthEarnings.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">This Month</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                      Total: NPR {stats.totalEarnings.toLocaleString()}
-                    </p>
-                  </Card>
-                </motion.div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        NPR {stats.currentMonthEarnings.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">This Month</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                        Total: NPR {stats.totalEarnings.toLocaleString()}
+                      </p>
+                    </Card>
+                  </motion.div>
+                </StatsCard>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                  <Card className="p-6 h-full bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                      <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {stats.supporters}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Supporters</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
-                  </Card>
-                </motion.div>
+                <StatsCard>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <Card className="p-6 h-full bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center justify-between mb-4">
+                        <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                        <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        {stats.supporters}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Supporters</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
+                    </Card>
+                  </motion.div>
+                </StatsCard>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                  <Card className="p-6 h-full bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <FileText className="w-8 h-8 text-green-600 dark:text-green-400" />
-                      <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {stats.posts}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Posts</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
-                  </Card>
-                </motion.div>
+                <StatsCard>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    <Card className="p-6 h-full bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
+                      <div className="flex items-center justify-between mb-4">
+                        <FileText className="w-8 h-8 text-green-600 dark:text-green-400" />
+                        <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        {stats.posts}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Posts</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
+                    </Card>
+                  </motion.div>
+                </StatsCard>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                  <Card className="p-6 h-full bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <Heart className="w-8 h-8 text-red-600 dark:text-red-400" />
-                      <MessageCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {stats.likes}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Engagement</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
-                  </Card>
-                </motion.div>
+                <StatsCard>
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <Card className="p-6 h-full bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800">
+                      <div className="flex items-center justify-between mb-4">
+                        <Heart className="w-8 h-8 text-red-600 dark:text-red-400" />
+                        <MessageCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        {stats.likes}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Engagement</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
+                    </Card>
+                  </motion.div>
+                </StatsCard>
               </div>
 
-              {/* Charts Row 1 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Earnings Chart */}
                 <Card className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -495,7 +395,6 @@ export default function EnhancedCreatorDashboard() {
                   </ResponsiveContainer>
                 </Card>
 
-                {/* Supporter Flow Chart */}
                 <Card className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5 text-purple-600" />
@@ -526,9 +425,7 @@ export default function EnhancedCreatorDashboard() {
                 </Card>
               </div>
 
-              {/* Charts Row 2 */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Engagement Chart */}
                 <Card className="p-6 lg:col-span-2">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <Activity className="w-5 h-5 text-green-600" />
@@ -554,14 +451,13 @@ export default function EnhancedCreatorDashboard() {
                   </ResponsiveContainer>
                 </Card>
 
-                {/* Top Supporters */}
                 <Card className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <Target className="w-5 h-5 text-yellow-600" />
                     Top Supporters
                   </h3>
                   <div className="space-y-3">
-                    {analyticsData?.topSupporters.slice(0, 5).map((supporter, index) => (
+                    {analyticsData?.topSupporters.slice(0, 5).map((supporter: any, index: number) => (
                       <div key={supporter.id} className="flex items-center gap-3">
                         <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 w-6">
                           #{index + 1}
@@ -587,7 +483,6 @@ export default function EnhancedCreatorDashboard() {
               </div>
             </TabsContent>
 
-            {/* Success/Error Messages */}
             {showSuccessMessage && (
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
@@ -609,9 +504,7 @@ export default function EnhancedCreatorDashboard() {
               </motion.div>
             )}
 
-            {/* Posts Tab */}
             <TabsContent value="posts" className="space-y-6">
-              {/* Welcome Banner */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -651,7 +544,6 @@ export default function EnhancedCreatorDashboard() {
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
               </motion.div>
 
-              {/* Onboarding Message for Posts */}
               {!onboardingCompleted && (
                 <Card className="p-6 border-2 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/20">
                   <div className="flex items-start gap-4">
@@ -670,7 +562,6 @@ export default function EnhancedCreatorDashboard() {
                 </Card>
               )}
 
-              {/* Create Post Card */}
               <Card className={cn(
                 "p-6 border-2 transition-colors",
                 onboardingCompleted 
@@ -691,7 +582,6 @@ export default function EnhancedCreatorDashboard() {
                     </h3>
                   </div>
 
-                  {/* Post Type Toggle */}
                   <div className={cn(
                     "flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1",
                     !onboardingCompleted && "opacity-50 pointer-events-none"
@@ -731,7 +621,6 @@ export default function EnhancedCreatorDashboard() {
                   "space-y-4",
                   !onboardingCompleted && "opacity-50 pointer-events-none"
                 )}>
-                  {/* Visibility Selector - Moved to top */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Visibility
@@ -754,7 +643,6 @@ export default function EnhancedCreatorDashboard() {
                     </div>
                   </div>
 
-                  {/* Show title and content only for regular posts */}
                   {postType === 'post' && (
                     <>
                       <div>
@@ -786,7 +674,6 @@ export default function EnhancedCreatorDashboard() {
                     </>
                   )}
 
-                  {/* Poll Creation UI */}
                   {postType === 'poll' && (
                     <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
                       <div>
@@ -971,7 +858,6 @@ export default function EnhancedCreatorDashboard() {
                 </div>
               </Card>
 
-              {/* Recent Posts Section */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -990,7 +876,7 @@ export default function EnhancedCreatorDashboard() {
                     "space-y-6",
                     !onboardingCompleted && "opacity-60"
                   )}>
-                    {dashboardData.posts.map((post, index) => (
+                    {dashboardData.posts.map((post: any, index: number) => (
                       <motion.div
                         key={post.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -1025,14 +911,13 @@ export default function EnhancedCreatorDashboard() {
               </div>
             </TabsContent>
 
-            {/* Supporters Tab */}
             <TabsContent value="supporters" className="space-y-6">
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   All Supporters ({stats.supporters})
                 </h3>
                 <div className="space-y-3">
-                  {dashboardData?.supporters.map((supporter) => (
+                  {dashboardData?.supporters.map((supporter: any) => (
                     <div key={supporter.id} className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <Avatar className="w-12 h-12">
                         <AvatarImage src={supporter.avatar || undefined} />

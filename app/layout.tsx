@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/supabase-auth-context";
+import { QueryProvider } from "@/contexts/query-provider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppBackground } from "@/components/ui/app-background";
 import { PageLoadingBar } from "@/components/common/PageLoadingBar";
@@ -26,12 +27,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
       >
+          <QueryProvider>
           <AuthProvider>
             <PageLoadingBar />
             <AppBackground>
               {children}
             </AppBackground>
           </AuthProvider>
+          </QueryProvider>
         </ThemeProvider>
         </ErrorBoundary>
       </body>
