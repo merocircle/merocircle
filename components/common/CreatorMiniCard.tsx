@@ -26,8 +26,8 @@ export function CreatorMiniCard({
 
   return (
     <Link href={`/creator/${id}`} className="group">
-      <Card className={className || "p-3 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col gap-0"}>
-        {/* Creator Avatar - Square */}
+      <Card className={className || "p-3 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 h-full flex flex-col gap-0"}>
+        {/* Creator Avatar - Medium Square */}
         <div className="aspect-square w-full bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg mb-2 overflow-hidden">
           {avatarUrl ? (
             <img 
@@ -36,21 +36,21 @@ export function CreatorMiniCard({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+            <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
               {initials}
             </div>
           )}
         </div>
 
         {/* Creator Name */}
-        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 text-center mb-0 line-clamp-1 group-hover:text-red-500 transition-colors">
+        <h3 className="font-semibold text-xs text-gray-900 dark:text-gray-100 text-center mb-1 line-clamp-1 group-hover:text-red-500 transition-colors">
           {name}
         </h3>
 
         {/* Category Badge */}
         {category && (
-          <div className="flex justify-center mb-0.5">
-            <Badge variant="outline" className="text-xs px-1.5 py-0">
+          <div className="flex justify-center mb-1">
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
               {category}
             </Badge>
           </div>
@@ -58,26 +58,16 @@ export function CreatorMiniCard({
 
         {/* Bio */}
         {bio && (
-          <p className="text-xs text-gray-600 dark:text-gray-400 text-center mb-0 line-clamp-2 leading-relaxed">
+          <p className="text-[10px] text-gray-600 dark:text-gray-400 text-center mb-1.5 line-clamp-2 leading-tight">
             {bio}
           </p>
         )}
 
-        {/* Supporters Count with Visual Indicator */}
+        {/* Supporters Count */}
         <div className="mt-auto pt-1.5 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-center gap-1.5">
-            <div className="flex items-center gap-0.5">
-              {Array.from({ length: Math.min(supporterCount || 0, 5) }).map((_, i) => (
-                <Heart
-                  key={i}
-                  className="w-3 h-3 fill-red-500 text-red-500"
-                />
-              ))}
-              {supporterCount > 5 && (
-                <span className="text-xs text-gray-500">+{supporterCount - 5}</span>
-              )}
-            </div>
-            <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+          <div className="flex items-center justify-center gap-1">
+            <Heart className="w-2.5 h-2.5 fill-red-500 text-red-500" />
+            <span className="text-[10px] text-gray-600 dark:text-gray-400 font-medium">
               {supporterCount || 0} {supporterCount === 1 ? 'supporter' : 'supporters'}
             </span>
           </div>
