@@ -255,7 +255,8 @@ const CommunitySection = memo(function CommunitySection() {
                     ? new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime()
                     : Infinity;
                   const showAvatar = !prevMessage || !isSameUser || timeDiff > 300000;
-                  const showTimestamp = !prevMessage || timeDiff > 300000;
+                  // Always show timestamp for every message
+                  const showTimestamp = true;
                   const isNewGroup = showAvatar;
                   const isDifferentSender = !isSameUser && prevMessage;
 
@@ -292,22 +293,30 @@ const CommunitySection = memo(function CommunitySection() {
                                 <Crown className="w-3 h-3 text-yellow-500" />
                               </Badge>
                             )}
-                            {showTimestamp && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {new Date(message.created_at).toLocaleTimeString([], { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </span>
-                            )}
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {new Date(message.created_at).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
                           </div>
                         )}
-                        <p className={cn(
-                          'text-sm text-gray-900 dark:text-gray-100 break-words',
-                          !showAvatar && 'ml-0'
-                        )}>
-                          {message.content}
-                        </p>
+                        <div className="flex items-start gap-2">
+                          <p className={cn(
+                            'text-sm text-gray-900 dark:text-gray-100 break-words flex-1',
+                            !showAvatar && 'ml-0'
+                          )}>
+                            {message.content}
+                          </p>
+                          {!showAvatar && (
+                            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5">
+                              {new Date(message.created_at).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
