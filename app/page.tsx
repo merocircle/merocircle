@@ -189,6 +189,13 @@ export default function LandingPage() {
   // Parallax effect for background
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
+  // Redirect authenticated users immediately - check before rendering landing page
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.replace('/dashboard');
+    }
+  }, [loading, isAuthenticated, router]);
+
   useEffect(() => {
     if (isHeroInView) {
       controls.start("visible");
@@ -203,22 +210,17 @@ export default function LandingPage() {
     }
   }, [isHeroInView, controls]);
 
-  // Redirect authenticated users to dashboard
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (isAuthenticated) {
-        logger.debug('Redirecting to dashboard after timeout', 'LANDING_PAGE');
-        router.push('/dashboard');
-      }
-    }, 3000);
-
-    if (!loading && isAuthenticated) {
-      clearTimeout(timeoutId);
-      router.push('/dashboard');
-    }
-
-    return () => clearTimeout(timeoutId);
-  }, [loading, isAuthenticated, router]);
+  // Don't render landing page content if authenticated or still loading
+  if (loading || isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">

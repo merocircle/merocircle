@@ -54,8 +54,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Just refresh the session - that's it
-  await supabase.auth.getUser()
+  // Refresh the session
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Redirect authenticated users from landing page to dashboard
+  if (user && request.nextUrl.pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
 
   return response
 }
