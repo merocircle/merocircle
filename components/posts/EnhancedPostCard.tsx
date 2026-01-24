@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Share2, Bookmark, Calendar, Send, Loader2, Lock, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,8 +15,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from '@/lib/youtube';
-import { PollCard } from './PollCard';
+import { getBlurDataURL, imageSizes } from '@/lib/image-utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useLikePost, useAddComment } from '@/hooks/useQueries';
+
+// Lazy load PollCard component (only loads when needed for poll posts)
+const PollCard = dynamic(() => import('./PollCard').then(mod => ({ default: mod.PollCard })), {
+  loading: () => (
+    <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48 flex items-center justify-center">
+      <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+    </div>
+  ),
+  ssr: false, // Polls are interactive, no need for SSR
+});
 
 interface Post {
   id: string;
@@ -86,7 +98,11 @@ function PostImageModal({ imageUrl, title, children }: { imageUrl: string; title
               alt={title}
               fill
               className="object-contain"
+              sizes="100vw"
+              placeholder="blur"
+              blurDataURL={getBlurDataURL()}
               priority
+              quality={100}
             />
             <button
               onClick={() => setIsOpen(false)}
@@ -110,6 +126,10 @@ export function EnhancedPostCard({
   showActions = true,
   isSupporter = false
 }: EnhancedPostCardProps) {
+  // Optimistic mutations
+  const likeMutation = useLikePost();
+  const commentMutation = useAddComment();
+
   // Check if current user has liked the post from the likes array
   const initialIsLiked = currentUserId
     ? (post.likes?.some((like: { user_id: string }) => like.user_id === currentUserId) || false)
@@ -180,20 +200,16 @@ export function EnhancedPostCard({
       router.push('/auth');
       return;
     }
-    
-    const wasLiked = isLiked;
-    const previousCount = likesCount;
-    
-    setIsLiked(!wasLiked);
-    setLikesCount(prev => wasLiked ? Math.max(0, prev - 1) : prev + 1);
+
+    const action = isLiked ? 'unlike' : 'like';
+
+    // Optimistic UI update (local state)
+    setIsLiked(!isLiked);
+    setLikesCount(prev => isLiked ? Math.max(0, prev - 1) : prev + 1);
+
+    // Trigger mutation with optimistic cache updates
+    likeMutation.mutate({ postId: post.id, action });
     onLike?.(post.id);
-    
-    fetch(`/api/posts/${post.id}/like`, { method: wasLiked ? 'DELETE' : 'POST' })
-      .then(res => !res.ok && Promise.reject())
-      .catch(() => {
-        setIsLiked(wasLiked);
-        setLikesCount(previousCount);
-      });
   };
 
   const handleShare = async () => {
@@ -251,32 +267,30 @@ export function EnhancedPostCard({
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || isSubmittingComment) return;
+    if (!newComment.trim() || commentMutation.isPending) return;
     if (!currentUserId) {
       router.push('/auth');
       return;
     }
 
-    setIsSubmittingComment(true);
-    try {
-      const response = await fetch(`/api/posts/${post.id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newComment.trim() })
-      });
+    const commentContent = newComment.trim();
 
-      if (response.ok) {
-        const newCommentData = await response.json();
-        setComments(prev => [...prev, newCommentData]);
-        setCommentsCount(prev => prev + 1);
-        setNewComment('');
-        onComment?.(post.id);
+    // Trigger optimistic mutation
+    commentMutation.mutate(
+      { postId: post.id, content: commentContent },
+      {
+        onSuccess: (newCommentData) => {
+          // Update local comments list
+          setComments(prev => [...prev, newCommentData]);
+          setCommentsCount(prev => prev + 1);
+          setNewComment('');
+          onComment?.(post.id);
+        },
+        onError: (error) => {
+          console.error('Failed to post comment:', error);
+        },
       }
-    } catch (error) {
-      console.error('Failed to post comment:', error);
-    } finally {
-      setIsSubmittingComment(false);
-    }
+    );
   };
 
   return (
@@ -299,6 +313,9 @@ export function EnhancedPostCard({
                     alt={post.creator.display_name}
                     fill
                     className="object-cover rounded-full"
+                    sizes={imageSizes.avatar}
+                    placeholder="blur"
+                    blurDataURL={getBlurDataURL()}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-semibold">
@@ -424,6 +441,11 @@ export function EnhancedPostCard({
                       alt={post.title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes={imageSizes.post}
+                      placeholder="blur"
+                      blurDataURL={getBlurDataURL()}
+                      priority={false}
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                       <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -438,9 +460,10 @@ export function EnhancedPostCard({
         {/* Actions Footer */}
         {showActions && (
           <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
-            <button
+            <motion.button
               onClick={handleLike}
-              disabled={!currentUserId}
+              disabled={!currentUserId || likeMutation.isPending}
+              whileTap={{ scale: 0.9 }}
               className={cn(
                 'py-3 flex items-center justify-center gap-2 transition-colors',
                 isLiked
@@ -448,11 +471,17 @@ export function EnhancedPostCard({
                   : 'text-muted-foreground hover:bg-muted'
               )}
             >
-              <Heart className={cn('h-4 w-4 transition-all', isLiked && 'fill-current')} />
+              <motion.div
+                animate={isLiked ? { scale: [1, 1.3, 1] } : {}}
+                transition={{ duration: 0.3 }}
+              >
+                <Heart className={cn('h-4 w-4 transition-all', isLiked && 'fill-current')} />
+              </motion.div>
               {likesCount}
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={handleCommentClick}
+              whileTap={{ scale: 0.9 }}
               className={cn(
                 'py-3 flex items-center justify-center gap-2 transition-colors',
                 showComments
@@ -462,14 +491,15 @@ export function EnhancedPostCard({
             >
               <MessageCircle className={cn('h-4 w-4', showComments && 'fill-current')} />
               {commentsCount}
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={handleShare}
+              whileTap={{ scale: 0.9 }}
               className="py-3 flex items-center justify-center gap-2 text-muted-foreground hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
             >
               <Share2 className="h-4 w-4" />
               Share
-            </button>
+            </motion.button>
           </div>
         )}
 

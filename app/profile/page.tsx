@@ -40,7 +40,7 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, userProfile, creatorProfile, isAuthenticated, loading, isCreator } = useAuth()
+  const { user, userProfile, creatorProfile, isAuthenticated, loading, isCreator, refreshProfile } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [posts, setPosts] = useState<Array<any>>([])
   const [postsLoading, setPostsLoading] = useState(true)
@@ -121,8 +121,8 @@ export default function ProfilePage() {
       })
 
       if (response.ok) {
+        await refreshProfile()
         setIsEditing(false)
-        window.location.reload()
       } else {
         const errorData = await response.json()
         alert(errorData.error || 'Failed to update profile')
@@ -159,8 +159,8 @@ export default function ProfilePage() {
         })
 
         if (updateRes.ok) {
+          await refreshProfile()
           setCoverImageUrl(uploadResult.url)
-          window.location.reload()
         }
       }
     } catch (error) {
@@ -195,7 +195,7 @@ export default function ProfilePage() {
         })
 
         if (updateRes.ok) {
-          window.location.reload()
+          await refreshProfile()
         }
       }
     } catch (error) {

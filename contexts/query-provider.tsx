@@ -12,6 +12,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         gcTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 1,
+        networkMode: 'online', // Prevent duplicate requests when offline
+        structuralSharing: true, // Preserve object references to prevent unnecessary re-renders
+        refetchOnReconnect: true, // Refetch when network reconnects
       },
     },
   }));

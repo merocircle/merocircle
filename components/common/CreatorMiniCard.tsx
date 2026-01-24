@@ -1,7 +1,10 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart } from 'lucide-react';
+import { usePrefetchCreator } from '@/hooks/useQueries';
+import { getBlurDataURL, imageSizes } from '@/lib/image-utils';
 
 interface CreatorMiniCardProps {
   id: string;
@@ -23,17 +26,27 @@ export function CreatorMiniCard({
   className
 }: CreatorMiniCardProps) {
   const initials = name?.[0]?.toUpperCase() || '?';
+  const prefetchCreator = usePrefetchCreator();
 
   return (
-    <Link href={`/creator/${id}`} className="group">
+    <Link
+      href={`/creator/${id}`}
+      className="group"
+      onMouseEnter={() => prefetchCreator(id)}
+    >
       <Card className={className || "p-3 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 h-full flex flex-col gap-0"}>
         {/* Creator Avatar - Medium Square */}
-        <div className="aspect-square w-full bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg mb-2 overflow-hidden">
+        <div className="aspect-square w-full bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg mb-2 overflow-hidden relative">
           {avatarUrl ? (
-            <img 
-              src={avatarUrl} 
-              alt={name} 
-              className="w-full h-full object-cover"
+            <Image
+              src={avatarUrl}
+              alt={name}
+              fill
+              className="object-cover"
+              sizes={imageSizes.thumbnail}
+              placeholder="blur"
+              blurDataURL={getBlurDataURL()}
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
