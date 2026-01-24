@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { SidebarNav } from '@/components/sidebar-nav'
@@ -9,8 +10,16 @@ import { useAuth } from '@/contexts/supabase-auth-context'
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails'
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard'
 import { TierSelection } from '@/components/creator/TierSelection'
-import { PaymentGatewaySelector } from '@/components/payment/PaymentGatewaySelector'
 import { Button } from '@/components/ui/button'
+
+// Lazy load PaymentGatewaySelector (only loads when user initiates payment)
+const PaymentGatewaySelector = dynamic(
+  () => import('@/components/payment/PaymentGatewaySelector').then(mod => ({ default: mod.PaymentGatewaySelector })),
+  {
+    loading: () => null, // No loading UI needed - modal appears when loaded
+    ssr: false, // Payment components don't need SSR
+  }
+);
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'

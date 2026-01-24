@@ -41,7 +41,8 @@ export function useRealtimeChat({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const onMessageRef = useRef(onMessage);
   const isSubscribedRef = useRef(false);
-  
+  const userCacheRef = useRef<Map<string, any>>(new Map()); // Cache user data to prevent N+1 queries
+
   // Keep onMessage ref updated
   useEffect(() => {
     onMessageRef.current = onMessage;
@@ -93,6 +94,13 @@ export function useRealtimeChat({
         } : undefined
       }));
 
+      // Populate user cache from initial fetch to prevent N+1 queries later
+      formattedMessages.forEach((msg) => {
+        if (msg.user) {
+          userCacheRef.current.set(msg.user_id, msg.user);
+        }
+      });
+
       setMessages(formattedMessages);
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -132,16 +140,23 @@ export function useRealtimeChat({
         async (payload) => {
           console.log('[REALTIME] Received message:', payload.new.id);
           const payloadData = payload.new;
-          
-          // Fetch user data
-          let userData = null;
-          if (payloadData.user_id) {
+
+          // Check cache first to prevent N+1 queries
+          let userData = userCacheRef.current.get(payloadData.user_id);
+
+          // Only fetch from database if not in cache
+          if (!userData && payloadData.user_id) {
+            console.log('[REALTIME] User not in cache, fetching:', payloadData.user_id);
             const { data: user } = await supabase
               .from('users')
               .select('id, display_name, photo_url')
               .eq('id', payloadData.user_id)
               .single();
             userData = user;
+            // Add to cache for future messages
+            if (user) {
+              userCacheRef.current.set(payloadData.user_id, user);
+            }
           }
 
           const newMessage: ChatMessage = {
