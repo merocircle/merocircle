@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useInView, useScroll, useTransform, useAnimation } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Heart,
@@ -28,21 +28,23 @@ import {
   Calendar,
   Target,
   Award,
+  Search,
+  Plug,
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { useAuth } from "@/contexts/supabase-auth-context";
 import { logger } from "@/lib/logger";
-import { ColorfulHero } from "@/components/ui/colorful-hero";
-import { FloatingElements } from "@/components/ui/floating-elements";
 import Image from "next/image";
+import { RoundedSection } from "@/components/ui/rounded-section";
+import { AnimatedSection } from "@/components/ui/animated-section";
 
 // Animation variants
 const fadeInUp = {
-  hidden: { opacity: 0, y: 60 },
+  hidden: { opacity: 0, y: 40 },
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
   }
 };
 
@@ -51,72 +53,51 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
+      staggerChildren: 0.2,
       delayChildren: 0.1
     }
   }
 };
 
-const scaleIn = {
-  hidden: { scale: 0.8, opacity: 0 },
-  visible: { 
-    scale: 1, 
-    opacity: 1,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
-};
-
 // Hero stats data
 const heroStats = [
-  { value: "5K+", label: "Nepal Creators", icon: Users, color: "from-blue-500 to-cyan-500" },
-  { value: "₹2M+", label: "Creator Earnings", icon: TrendingUp, color: "from-green-500 to-emerald-500" },
-  { value: "50K+", label: "Active Supporters", icon: Heart, color: "from-pink-500 to-rose-500" },
-  { value: "99.9%", label: "Uptime", icon: Shield, color: "from-purple-500 to-violet-500" },
+  { value: "5K+", label: "Nepal Creators", icon: Users },
+  { value: "₹2M+", label: "Creator Earnings", icon: TrendingUp },
+  { value: "50K+", label: "Active Supporters", icon: Heart },
+  { value: "99.9%", label: "Uptime", icon: Shield },
 ];
 
-// Features data with colorful gradients
+// Features data
 const features = [
   {
     icon: Heart,
     title: "Local Payment Solutions",
     description: "Seamlessly receive payments through eSewa and Khalti - Nepal's most trusted payment gateways.",
-    gradient: "from-red-500 to-pink-500",
-    bgGradient: "from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20"
   },
   {
     icon: Users,
     title: "Build Your Community",
     description: "Connect with supporters, share exclusive content, and build lasting relationships with your audience.",
-    gradient: "from-blue-500 to-cyan-500",
-    bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20"
   },
   {
     icon: TrendingUp,
     title: "Analytics & Insights",
     description: "Track your growth with detailed analytics, revenue insights, and audience engagement metrics.",
-    gradient: "from-green-500 to-emerald-500",
-    bgGradient: "from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20"
   },
   {
     icon: Shield,
     title: "Secure & Reliable",
     description: "Your data and transactions are protected with bank-grade security and 99.9% uptime guarantee.",
-    gradient: "from-purple-500 to-violet-500",
-    bgGradient: "from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20"
   },
   {
     icon: Zap,
     title: "Quick Setup",
     description: "Get started in minutes. Set up your creator profile and start receiving support immediately.",
-    gradient: "from-yellow-500 to-orange-500",
-    bgGradient: "from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20"
   },
   {
     icon: Globe,
     title: "Made for Nepal",
     description: "Built specifically for Nepali creators with local language support and cultural understanding.",
-    gradient: "from-indigo-500 to-blue-500",
-    bgGradient: "from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20"
   }
 ];
 
@@ -128,7 +109,6 @@ const testimonials = [
     content: "MeroCircle transformed my art journey. Local payments made it so easy for my supporters!",
     avatar: "PS",
     rating: 5,
-    gradient: "from-pink-500 to-rose-500"
   },
   {
     name: "Raj Gurung",
@@ -136,7 +116,6 @@ const testimonials = [
     content: "The community features are amazing. I can connect with my audience like never before.",
     avatar: "RG",
     rating: 5,
-    gradient: "from-blue-500 to-cyan-500"
   },
   {
     name: "Maya Thapa",
@@ -144,42 +123,14 @@ const testimonials = [
     content: "Finally, a platform that understands Nepali creators. The analytics help me grow better.",
     avatar: "MT",
     rating: 5,
-    gradient: "from-purple-500 to-violet-500"
   }
 ];
-
-// Floating icon component
-function FloatingIcon({ icon: Icon, delay, className }: { icon: React.ComponentType<{ className?: string }>; delay: number; className?: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{
-        opacity: [0.4, 0.8, 0.4],
-        scale: [1, 1.2, 1],
-        rotate: [0, 180, 360],
-      }}
-      transition={{
-        duration: 8,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-      className={`absolute ${className}`}
-    >
-      <div className="w-16 h-16 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg flex items-center justify-center">
-        <Icon className="w-8 h-8 text-gray-700 dark:text-gray-300" />
-      </div>
-    </motion.div>
-  );
-}
 
 export default function LandingPage() {
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
-  const testimonialsRef = useRef(null);
   const isHeroInView = useInView(heroRef, { once: true });
   const isFeaturesInView = useInView(featuresRef, { once: true, margin: "-100px" });
-  const isTestimonialsInView = useInView(testimonialsRef, { once: true, margin: "-100px" });
   const controls = useAnimation();
   const [urlMessage, setUrlMessage] = useState<string | null>(null);
   const { isAuthenticated, loading } = useAuth();
@@ -223,21 +174,21 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-[#fafafa]">
       <Header />
       
       {/* URL Message Display */}
       {urlMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
-          <Card className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <Card className="p-4 bg-yellow-50 border-yellow-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                <p className="text-sm font-medium text-yellow-800">
                   {urlMessage === 'auth_required' && 'Please complete authentication'}
                   {urlMessage !== 'auth_required' && urlMessage}
                 </p>
                 {urlMessage === 'auth_required' && (
-                  <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+                  <p className="text-xs text-yellow-600 mt-1">
                     Check browser console for detailed logs
                   </p>
                 )}
@@ -253,224 +204,416 @@ export default function LandingPage() {
         </div>
       )}
       
-      {/* Colorful Hero Section */}
-      <ColorfulHero />
-
-      {/* Stats Section - Colorful */}
-      <section ref={heroRef} className="py-20 bg-gradient-to-b from-white via-blue-50/50 to-purple-50/50 dark:from-gray-950 dark:via-blue-950/20 dark:to-purple-950/20 relative overflow-hidden">
-        {/* Floating decorative elements */}
-        <FloatingIcon icon={Star} delay={0} className="top-10 left-10 hidden md:block" />
-        <FloatingIcon icon={Heart} delay={1} className="top-20 right-20 hidden md:block" />
-        <FloatingIcon icon={Sparkles} delay={2} className="bottom-20 left-20 hidden md:block" />
-        <FloatingIcon icon={Award} delay={1.5} className="bottom-10 right-10 hidden md:block" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="space-y-12"
-          >
-            {/* Hero Stats */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              {heroStats.map((stat, index) => (
-                <motion.div
-                  key={index}
-                  variants={scaleIn}
-                  className="text-center group cursor-pointer"
-                >
-                  <motion.div 
-                    className={`mb-4 mx-auto w-20 h-20 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg`}
-                    whileHover={{ rotate: 360 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <stat.icon className="w-10 h-10 text-white" />
-                  </motion.div>
-                  <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">{stat.label}</div>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/auth">
-                <Button size="lg" className="group px-8 py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-semibold rounded-full transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105">
-                  Start Creating Today
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 text-gray-900 dark:text-gray-100 font-semibold rounded-full transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-sm">
-                  <Coffee className="mr-2 w-5 h-5" />
-                  Explore Creators
-                </Button>
-              </Link>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Section - Colorful */}
-      <section ref={featuresRef} className="py-24 bg-white dark:bg-gray-900 relative overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 opacity-20">
-          <motion.div
-            style={{ 
-              y: backgroundY,
-              backgroundImage: `radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.1) 1px, transparent 0)`,
-              backgroundSize: '50px 50px'
-            }}
-            className="absolute inset-0"
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.div variants={fadeInUp}>
-              <Badge className="px-4 py-2 bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900/30 dark:to-blue-900/30 text-green-800 dark:text-green-200 text-sm font-medium rounded-full mb-4 border border-green-200 dark:border-green-800">
-                Why Choose MeroCircle?
-              </Badge>
-            </motion.div>
-            <motion.h2 variants={fadeInUp} className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Built for Nepal&apos;s
-              <span className="block bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent"> Creative Future</span>
-            </motion.h2>
-            <motion.p variants={fadeInUp} className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Every feature is designed with Nepali creators in mind, from local payment integration to community building tools.
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {features.map((feature, index) => (
+      {/* Hero Section - Overlay Layout (Desktop) / Stacked Layout (Mobile) */}
+      <section className="relative bg-[#fafafa] pt-24 pb-12 overflow-hidden">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8">
+          {/* Mobile Layout: Stacked (Text First, Then Illustration) */}
+          <div className="flex flex-col lg:hidden mb-8">
+            {/* Text Section - Top on Mobile */}
+            <div className="mb-8">
+              {/* Large Heading Text */}
               <motion.div 
-                key={index} 
-                variants={scaleIn}
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="mb-6"
               >
-                <Card className={`p-8 h-full hover:shadow-2xl transition-all duration-300 group cursor-pointer border-2 bg-gradient-to-br ${feature.bgGradient} border-transparent hover:border-opacity-50`}>
-                  <motion.div 
-                    className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}
-                    whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <feature.icon className="w-8 h-8 text-white" />
-                  </motion.div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </Card>
+                <h1 className="text-[32px] sm:text-[42px] font-black leading-[1.1] tracking-[-2px]" style={{ fontFamily: 'var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                  <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">Your Favorite</span>{" "}
+                  <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">Creator</span>
+                  <br />
+                  <span className="text-black/70">now more</span>{" "}
+                  <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">closer</span>
+                  <br />
+                  <span className="text-black/70">than</span>{" "}
+                  <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">ever</span>
+                </h1>
               </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Testimonials Section - Colorful */}
-      <section ref={testimonialsRef} className="py-24 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-purple-950/20 dark:via-pink-950/20 dark:to-blue-950/20 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300/20 rounded-full blur-3xl" />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.div variants={fadeInUp}>
-              <Badge className="px-4 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 text-yellow-800 dark:text-yellow-200 text-sm font-medium rounded-full mb-4 border border-yellow-200 dark:border-yellow-800">
-                Success Stories
-              </Badge>
-            </motion.div>
-            <motion.h2 variants={fadeInUp} className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Loved by Nepal&apos;s
-              <span className="block bg-gradient-to-r from-yellow-600 via-orange-600 to-pink-600 bg-clip-text text-transparent"> Top Creators</span>
-            </motion.h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
-            {testimonials.map((testimonial, index) => (
+              {/* Small Description Text */}
               <motion.div 
-                key={index} 
-                variants={scaleIn}
-                whileHover={{ y: -8 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <Card className="p-8 h-full hover:shadow-2xl transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center mb-6">
-                    <motion.div 
-                      className={`w-14 h-14 bg-gradient-to-br ${testimonial.gradient} rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-lg`}
-                      whileHover={{ rotate: 360 }}
-                      transition={{ duration: 0.6 }}
-                    >
-                      {testimonial.avatar}
-                    </motion.div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-gray-100">{testimonial.name}</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
+                <h2 className="text-[19px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-4">
+                  The creator who inspires you, 
+                  <br />
+                  <span className="text-[#ff4000]">deserves your support.</span>
+                </h2>
+                <p className="text-[16px] leading-[1.6] text-black/70">
+                  Every like, share, and moment of connection matters. Now you can directly support the creators who bring joy, knowledge, and inspiration to your life. <span className="text-black font-medium">Join their community. Be part of their journey.</span>
+                </p>
+              </motion.div>
+            </div>
+
+            {/* Illustration - Below Text on Mobile */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+              }}
+              transition={{
+                opacity: { duration: 0.8, delay: 0.6 },
+                y: { duration: 0.8, delay: 0.6 }
+              }}
+              className="relative w-full h-[400px] sm:h-[500px]"
+            >
+              <motion.div
+                animate={{ 
+                  y: [0, -15, 0],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1.5
+                }}
+                className="relative w-full h-full"
+              >
+                <Image
+                  src="/illustration (1).png"
+                  alt="Creator Illustration"
+                  fill
+                  className="object-contain object-center"
+                  priority
+                />
+              </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Desktop Layout: Overlay (Hidden on Mobile) */}
+          <div className="hidden lg:block relative h-[650px] mb-8">
+            {/* Large Illustration Covering Full Hero - Moving */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                y: [0, -20, 0],
+              }}
+              transition={{
+                opacity: { duration: 0.8, delay: 0.2 },
+                scale: { duration: 0.8, delay: 0.2 },
+                y: {
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }
+              }}
+              className="absolute inset-0 w-full h-full flex items-center justify-center"
+            >
+              <div className="relative w-full h-full max-w-[800px]">
+                <Image
+                  src="/illustration (1).png"
+                  alt="Creator Illustration"
+                  fill
+                  className="object-contain object-center"
+                  priority
+                />
+              </div>
+            </motion.div>
+
+            {/* Left Side: Large Heading Text */}
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="absolute left-0 top-0 bottom-0 flex items-center z-10 pl-4 lg:pl-12 max-w-[45%]"
+            >
+              <h1 className="text-[40px] lg:text-[56px] xl:text-[64px] font-black leading-[1.1] tracking-[-2px]" style={{ fontFamily: 'var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">Your</span>{" "}
+                <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">Favorite</span>
+                <br />
+                <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">Creator</span>{" "}
+                <span className="text-black/70">now</span>
+                <br />
+                <span className="text-black/70">more</span>{" "}
+                <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">closer</span>
+                <br />
+                <span className="text-black/70">than</span>{" "}
+                <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">ever</span>
+              </h1>
+            </motion.div>
+
+            {/* Right Side: Small Description Text */}
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="absolute right-0 top-0 bottom-0 flex flex-col justify-center z-10 pr-4 lg:pr-12 max-w-[380px]"
+            >
+              <h2 className="text-[20px] lg:text-[24px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-6">
+                The creator who inspires you, 
+                <br />
+                <span className="text-[#ff4000]">deserves your support.</span>
+              </h2>
+              <p className="text-[17px] lg:text-[18px] leading-[1.6] text-black/70">
+                Every like, share, and moment of connection matters. Now you can directly support the creators who bring joy, knowledge, and inspiration to your life. <span className="text-black font-medium">Join their community. Be part of their journey.</span>
+              </p>
+            </motion.div>
+          </div>
+
+          {/* iPad/Tablet Video Section - Below Hero */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="relative"
+          >
+            {/* CTA Button Above Tablet */}
+            <div className="flex justify-center mb-[-25px] relative z-10">
+              <Link href="/auth">
+                <Button className="bg-black hover:bg-black/90 text-white px-6 py-3 rounded-full font-medium text-[17px] shadow-2xl">
+                  Start Supporting Creators
+                </Button>
+              </Link>
+            </div>
+
+            {/* Tablet Container */}
+            <div className="backdrop-blur-[2.5px] bg-[rgba(204,204,204,0.2)] p-[26px] rounded-[60px]">
+              <div className="relative rounded-[29px] overflow-hidden shadow-[0px_0px_0px_6px_black,0px_50px_48px_0px_rgba(0,0,0,0.59)]">
+                {/* iPad Frame */}
+                <div className="aspect-[1084/783] bg-gradient-to-br from-gray-100 to-gray-200 relative rounded-[37px] overflow-hidden">
+                  {/* Screen Content Area */}
+                  <div className="absolute left-[47px] right-[47px] top-[44px] bottom-[44px] bg-white rounded-lg overflow-hidden">
+                    {/* Video Placeholder */}
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+                      <div className="text-center">
+                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                          <Play className="w-10 h-10 text-orange-500" />
+                        </div>
+                        <p className="text-gray-600 font-medium">See MeroCircle in Action</p>
+                        <p className="text-sm text-gray-500 mt-2">Video placeholder - Add your demo</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300 italic leading-relaxed">&quot;{testimonial.content}&quot;</p>
-                </Card>
-              </motion.div>
-            ))}
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* CTA Section - Colorful Gradient */}
-      <section className="py-24 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
-        {/* Animated gradient overlay */}
-        <motion.div
-          animate={{
-            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 opacity-90"
-          style={{
-            backgroundSize: "200% 200%",
-          }}
-        />
-        
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* Problem Section - Rounded White theme */}
+      <RoundedSection theme="white" id="solutions">
+        <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 items-start">
+            <div className="w-full lg:w-5/12 flex-shrink-0">
+              <Badge className="mb-5 sm:mb-7 bg-black text-white text-xs" variant="default">Why MeroCircle</Badge>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-5 sm:mb-7 tracking-tight leading-[0.92] text-black">
+                Support your <span className="text-[#ff4000]">favorite creator</span> directly.
+              </h2>
+              <p className="text-base sm:text-lg lg:text-xl text-black/60/60 max-w-md">
+                No middlemen. No complicated processes. Just you, your favorite creator, and a community built on genuine connection and support.
+              </p>
+            </div>
+            <div className="w-full lg:w-7/12 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0">
+              {[
+                { icon: Heart, title: "Direct Support", description: "Send support directly to creators you love with local payment methods." },
+                { icon: Users, title: "Build Community", description: "Join exclusive communities and connect with creators and fellow supporters." },
+                { icon: MessageCircle, title: "Stay Connected", description: "Get updates, exclusive content, and meaningful interactions with creators." },
+                { icon: TrendingUp, title: "Grow Together", description: "Watch your favorite creators thrive with your support and encouragement." }
+              ].map((card, index) => (
+                <Card key={index} className="bg-gray-50/50/50 border-none shadow-none rounded-2xl sm:rounded-3xl p-2 sm:p-3 group active:bg-[#ff4000] hover:bg-[#ff4000] hover:text-white transition-colors duration-500 min-w-0 touch-manipulation">
+                  <CardHeader className="p-6 sm:p-7">
+                    <card.icon className="h-9 w-9 sm:h-11 sm:w-11 mb-3 sm:mb-4 text-[#ff4000] group-hover:text-white group-active:text-white transition-colors flex-shrink-0" />
+                    <CardTitle className="text-base sm:text-lg font-bold leading-tight mb-2">{card.title}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm group-hover:text-white/80 group-active:text-white/80 leading-relaxed">{card.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
+
+      {/* Solution Section - White theme */}
+      <RoundedSection theme="white">
+        <AnimatedSection className="w-full max-w-5xl mx-auto text-center" delay={0.1}>
+          <Badge className="mb-4 sm:mb-6 bg-black text-white text-xs" variant="default">How It Works</Badge>
+          <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.9] px-2 text-black">
+            Creators. Supporters. <br />
+            <span className="text-[#ff4000]">Nothing in between.</span>
+          </h2>
+          <p className="text-base sm:text-lg lg:text-xl text-black/60 mb-12 sm:mb-14 lg:mb-16 max-w-2xl mx-auto px-4">
+            MeroCircle gives you a direct line of access to your favorite creators, with no ads or gatekeepers in the way. Through real-time connections, comments, and direct support, you can connect more deeply with creators here than anywhere else.
+          </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-7 lg:gap-8">
+            {[
+              { icon: Heart, title: "Support" },
+              { icon: Users, title: "Connect" },
+              { icon: Globe, title: "Discover" },
+              { icon: Shield, title: "Secure" },
+            ].map((item, index) => (
+              <motion.div key={index} className="flex flex-col items-center justify-center group min-w-0 touch-manipulation" whileHover={{ y: -10 }} whileTap={{ scale: 0.95 }}>
+                <div className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center mb-4 sm:mb-5 group-hover:bg-[#ff4000] group-active:bg-[#ff4000] transition-colors duration-500 flex-shrink-0">
+                  <item.icon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-black group-hover:text-white group-active:text-white transition-colors flex-shrink-0" />
+                </div>
+                <h3 className="text-xs sm:text-sm lg:text-base font-bold tracking-tight text-black">{item.title}</h3>
+              </motion.div>
+            ))}
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
+
+      {/* Ways to Support Section - Inspired by Buy Me a Coffee */}
+      <RoundedSection theme="white" id="ways-to-support">
+        <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
+          <div className="text-center mb-12 sm:mb-16">
+            <Badge className="mb-4 sm:mb-6 bg-black text-white text-xs" variant="default">Ways to Support</Badge>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.95] text-black">
+              Fund your <span className="text-[#ff4000]">favorite creator</span>
+              <br />
+              in ways that matter.
+            </h2>
+            <p className="text-base sm:text-lg lg:text-xl text-black/60 max-w-2xl mx-auto">
+              Support creators. Join memberships. Buy their products. It&apos;s easier than you think.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
+            {/* Memberships */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-white border-2 border-gray-200 rounded-2xl sm:rounded-3xl p-6 sm:p-8 hover:border-[#ff4000] transition-colors duration-300"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] rounded-full flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-black">Memberships</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed mb-4">
+                Start a membership for your biggest fans. Earn recurring income by accepting monthly or yearly subscriptions. Share exclusive content and build a loyal community.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-black/60">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>Recurring income</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-black/60 mt-2">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>Exclusive content</span>
+              </div>
+            </motion.div>
+
+            {/* Shop */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="bg-white border-2 border-gray-200 rounded-2xl sm:rounded-3xl p-6 sm:p-8 hover:border-[#ff4000] transition-colors duration-300"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-[#14b8a6] to-[#06b6d4] rounded-full flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-black">Buy from Creators</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed mb-4">
+                Purchase digital products directly from your favorite creators. Whether it&apos;s an ebook, art commission, exclusive content, or digital artwork, buy what creators have created just for you.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-black/60">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>One-tap checkout</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-black/60 mt-2">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>Direct from creators</span>
+              </div>
+            </motion.div>
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
+
+      {/* Trust & Ownership Section - Inspired by Buy Me a Coffee */}
+      <RoundedSection theme="grey">
+        <AnimatedSection className="w-full max-w-5xl mx-auto" delay={0.1}>
+          <div className="text-center mb-12 sm:mb-16">
+            <Badge className="mb-4 sm:mb-6 text-xs" variant="outline">Built for Creators</Badge>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.95]">
+              Designed for creators,
+              <br />
+              <span className="text-[#ff4000]">not for businesses.</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <Shield className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">100% Ownership</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                You have complete ownership of your supporters. We never email them, and you can export your supporter list anytime you like.
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <Zap className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">Instant Payments</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                Get paid instantly to your bank account. No more 30-day delays. With eSewa and Khalti, your money reaches you faster.
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <Globe className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">Made for Nepal</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                Built specifically for Nepali creators with local payment methods, language support, and understanding of the local creator economy.
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <MessageCircle className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">Human Support</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                You get to talk to a real human for help, or if you just like some advice to hit the ground running. We&apos;re here for you.
+              </p>
+            </div>
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
+
+      {/* Process Section - Grey theme */}
+      <RoundedSection theme="grey" id="process">
+        <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-20">
+            <div className="w-full lg:w-1/3 flex-shrink-0">
+              <Badge className="mb-4 sm:mb-6 text-xs" variant="outline">Get Started</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.95]">
+                Join the <br /> community <br /> today.
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Start supporting your favorite creators or build your own community. It&apos;s simple, secure, and built for Nepal.
+              </p>
+            </div>
+            <div className="w-full lg:w-2/3 space-y-4 sm:space-y-5 min-w-0">
+              {[
+                { step: "01", title: "Find Creators", desc: "Discover amazing creators from Nepal across different categories and interests." },
+                { step: "02", title: "Join Communities", desc: "Become part of exclusive communities and connect with like-minded supporters." },
+                { step: "03", title: "Show Support", desc: "Support creators directly using eSewa or Khalti - Nepal&apos;s trusted payment methods." },
+                { step: "04", title: "Stay Connected", desc: "Get updates, exclusive content, and meaningful interactions with your favorite creators." },
+                { step: "05", title: "Grow Together", desc: "Watch creators thrive and communities flourish with your support and engagement." }
+              ].map((item, index) => (
+                <div key={index} className="flex items-start sm:items-center gap-3 sm:gap-6 lg:gap-8 p-6 sm:p-7 lg:p-9 bg-white border border-gray-200 rounded-2xl sm:rounded-[2rem] group hover:border-[#ff4000] active:border-[#ff4000] transition-colors duration-500 min-w-0 touch-manipulation">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-300 group-hover:text-[#ff4000] group-active:text-[#ff4000] transition-colors flex-shrink-0">{item.step}</div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight mb-1 text-black">{item.title}</h3>
+                    <p className="text-xs sm:text-sm lg:text-base text-black/70 leading-relaxed">{item.desc}</p>
+                  </div>
+                  <ArrowRight className="ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0 flex-shrink-0 hidden sm:block h-5 w-5 lg:h-6 lg:w-6 text-black" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
+
+      {/* CTA Section - Clean */}
+      <section className="py-32 bg-[#fafafa]">
+        <div className="max-w-[1200px] mx-auto px-8 text-center">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -478,25 +621,19 @@ export default function LandingPage() {
             variants={staggerContainer}
             className="space-y-8"
           >
-            <motion.h2 variants={fadeInUp} className="text-4xl md:text-6xl font-bold text-white mb-6">
-              Ready to Start Your
-              <br />
-              Creative Journey?
+            <motion.h2 variants={fadeInUp} className="text-[48px] md:text-[64px] font-bold text-black leading-tight tracking-tight">
+              Ready to support your favorite creator?
             </motion.h2>
-            <motion.p variants={fadeInUp} className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
-              Join thousands of Nepali creators who are already building sustainable income streams and thriving communities.
+            <motion.p variants={fadeInUp} className="text-[16px] text-black/60/60">
+              Join thousands of supporters making a difference in Nepal&apos;s creator community.
             </motion.p>
-            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <motion.div variants={fadeInUp}>
               <Link href="/auth">
-                <Button size="lg" className="px-8 py-4 bg-white text-blue-600 hover:bg-gray-100 font-semibold rounded-full transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105">
-                  Get Started Free
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="outline" size="lg" className="px-8 py-4 border-2 border-white text-white hover:bg-white/10 font-semibold rounded-full transition-all duration-300 backdrop-blur-sm">
-                  <Play className="mr-2 w-5 h-5" />
-                  Explore Creators
+                <Button 
+                  size="lg" 
+                  className="px-8 py-4 bg-black hover:bg-black/90 text-white font-medium text-[17px] rounded-full shadow-2xl"
+                >
+                  Start Supporting Creators
                 </Button>
               </Link>
             </motion.div>
@@ -505,46 +642,46 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-t border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center mb-4">
-                <Heart className="w-8 h-8 text-red-500 mr-3" />
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">MeroCircle</h3>
+      <footer className="py-16 bg-white border-t-2 border-black/10/10">
+        <div className="max-w-[1200px] mx-auto px-8">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-12 mb-12">
+            <div>
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-[32px] font-bold text-black">MeroCircle</h3>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-                Empowering Nepal&apos;s creative economy with local payment solutions, community building tools, and creator-focused features.
+              <p className="text-[16px] text-black/60/60 mb-4 leading-relaxed max-w-md">
+                On Demand Creator Platform,
+                <br />
+                Delivered Overnight.
               </p>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Trusted by 5,000+ creators</span>
-              </div>
             </div>
             
             <div>
-              <h4 className="font-bold mb-4 text-gray-900 dark:text-gray-100">Platform</h4>
-              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-                <li><Link href="/auth" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Get Started</Link></li>
-                <li><Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Explore Creators</Link></li>
-                <li><Link href="/discover" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Discover</Link></li>
-                <li><Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Dashboard</Link></li>
+              <h4 className="font-bold mb-4 text-black text-[14px] uppercase tracking-wider">Company</h4>
+              <ul className="space-y-3 text-[14px]">
+                <li><Link href="/auth" className="text-black/60 hover:text-black transition-colors">About us</Link></li>
+                <li><Link href="/dashboard" className="text-black/60 hover:text-black transition-colors">Pricing</Link></li>
+                <li><Link href="/help" className="text-black/60 hover:text-black transition-colors">Security</Link></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-bold mb-4 text-gray-900 dark:text-gray-100">Support</h4>
-              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-                <li><Link href="/help" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Help Center</Link></li>
-                <li><Link href="/contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact Us</Link></li>
-                <li><Link href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms of Service</Link></li>
+              <h4 className="font-bold mb-4 text-black text-[14px] uppercase tracking-wider">Support</h4>
+              <ul className="space-y-3 text-[14px]">
+                <li><Link href="/help" className="text-black/60 hover:text-black transition-colors">Help Center</Link></li>
+                <li><Link href="/contact" className="text-black/60 hover:text-black transition-colors">Contact</Link></li>
+                <li><Link href="/terms" className="text-black/60 hover:text-black transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8 text-center text-gray-600 dark:text-gray-400">
-            <p>&copy; 2024 MeroCircle. Made with ❤️ for Nepal&apos;s creative community.</p>
+          <div className="border-t-2 border-black/10/10 pt-8">
+            <p className="text-[14px] text-black/50/50">
+              © 2024 MeroCircle. Made with ❤️ for Nepal&apos;s creative community.
+            </p>
           </div>
         </div>
       </footer>
