@@ -129,10 +129,8 @@ const testimonials = [
 export default function LandingPage() {
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
-  const testimonialsRef = useRef(null);
   const isHeroInView = useInView(heroRef, { once: true });
   const isFeaturesInView = useInView(featuresRef, { once: true, margin: "-100px" });
-  const isTestimonialsInView = useInView(testimonialsRef, { once: true, margin: "-100px" });
   const controls = useAnimation();
   const [urlMessage, setUrlMessage] = useState<string | null>(null);
   const { isAuthenticated, loading } = useAuth();
@@ -215,18 +213,15 @@ export default function LandingPage() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="mb-6"
               >
-                <h1 className="text-[12px] sm:text-[46px] font-bold leading-[1.1] tracking-[-2px] text-black">
-                  Your
+                <h1 className="text-[32px] sm:text-[42px] font-black leading-[1.1] tracking-[-2px]" style={{ fontFamily: 'var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                  <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">Your Favorite</span>{" "}
+                  <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">Creator</span>
                   <br />
-                  Creator&apos;s
+                  <span className="text-black/70">now more</span>{" "}
+                  <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">closer</span>
                   <br />
-                  Next
-                  <br />
-                  10 Years
-                  <br />
-                  of
-                  <br />
-                  Growth<span className="text-[#ff4000]">.</span>
+                  <span className="text-black/70">than</span>{" "}
+                  <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">ever</span>
                 </h1>
               </motion.div>
 
@@ -236,12 +231,13 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <h2 className="text-[15px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-4">
-                  Nepal&apos;s Creative Economy Is Ready for Tomorrow&apos;s Tools — 
-                  <span className="text-[#ff4000]"> Launch in a Week.</span>
+                <h2 className="text-[19px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-4">
+                  The creator who inspires you, 
+                  <br />
+                  <span className="text-[#ff4000]">deserves your support.</span>
                 </h2>
-                <p className="text-[14px] leading-[1.5] text-black/70">
-                  Ditch spreadsheets and complicated platforms. You explain your vision, MeroCircle provides the tools, and <span className="text-black font-medium">you launch your creator business in days</span>.
+                <p className="text-[16px] leading-[1.6] text-black/70">
+                  Every like, share, and moment of connection matters. Now you can directly support the creators who bring joy, knowledge, and inspiration to your life. <span className="text-black font-medium">Join their community. Be part of their journey.</span>
                 </p>
               </motion.div>
             </div>
@@ -304,7 +300,7 @@ export default function LandingPage() {
               }}
               className="absolute inset-0 w-full h-full flex items-center justify-center"
             >
-              <div className="relative w-full h-full max-w-[900px]">
+              <div className="relative w-full h-full max-w-[800px]">
                 <Image
                   src="/illustration (1).png"
                   alt="Creator Illustration"
@@ -320,20 +316,20 @@ export default function LandingPage() {
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="absolute left-0 top-0 bottom-0 flex items-center z-10 pl-4 lg:pl-12"
+              className="absolute left-0 top-0 bottom-0 flex items-center z-10 pl-4 lg:pl-12 max-w-[45%]"
             >
-              <h1 className="text-[64px] lg:text-[80px] xl:text-[96px] font-bold leading-[1.05] tracking-[-3px] text-black">
-                Your
+              <h1 className="text-[40px] lg:text-[56px] xl:text-[64px] font-black leading-[1.1] tracking-[-2px]" style={{ fontFamily: 'var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif' }}>
+                <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">Your</span>{" "}
+                <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">Favorite</span>
                 <br />
-                Creator&apos;s
+                <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">Creator</span>{" "}
+                <span className="text-black/70">now</span>
                 <br />
-                Next
+                <span className="text-black/70">more</span>{" "}
+                <span className="bg-gradient-to-r from-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent">closer</span>
                 <br />
-                10 Years
-                <br />
-                of
-                <br />
-                Growth<span className="text-[#ff4000]">.</span>
+                <span className="text-black/70">than</span>{" "}
+                <span className="bg-gradient-to-r from-[#ff4000] to-[#ff6b35] bg-clip-text text-transparent">ever</span>
               </h1>
             </motion.div>
 
@@ -344,12 +340,13 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="absolute right-0 top-0 bottom-0 flex flex-col justify-center z-10 pr-4 lg:pr-12 max-w-[380px]"
             >
-              <h2 className="text-[15px] lg:text-[16px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-6">
-                Nepal&apos;s Creative Economy Is Ready for Tomorrow&apos;s Tools — 
-                <span className="text-[#ff4000]"> Launch in a Week.</span>
+              <h2 className="text-[20px] lg:text-[24px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-6">
+                The creator who inspires you, 
+                <br />
+                <span className="text-[#ff4000]">deserves your support.</span>
               </h2>
-              <p className="text-[13px] lg:text-[14px] leading-[1.5] text-black/70">
-                Ditch spreadsheets and complicated platforms. You explain your vision, MeroCircle provides the tools, and <span className="text-black font-medium">you launch your creator business in days</span>.
+              <p className="text-[17px] lg:text-[18px] leading-[1.6] text-black/70">
+                Every like, share, and moment of connection matters. Now you can directly support the creators who bring joy, knowledge, and inspiration to your life. <span className="text-black font-medium">Join their community. Be part of their journey.</span>
               </p>
             </motion.div>
           </div>
@@ -365,7 +362,7 @@ export default function LandingPage() {
             <div className="flex justify-center mb-[-25px] relative z-10">
               <Link href="/auth">
                 <Button className="bg-black hover:bg-black/90 text-white px-6 py-3 rounded-full font-medium text-[17px] shadow-2xl">
-                  Start Your Creator Journey
+                  Start Supporting Creators
                 </Button>
               </Link>
             </div>
@@ -400,20 +397,20 @@ export default function LandingPage() {
         <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 items-start">
             <div className="w-full lg:w-5/12 flex-shrink-0">
-              <Badge className="mb-5 sm:mb-7 bg-black text-white text-xs" variant="default">The Problem</Badge>
+              <Badge className="mb-5 sm:mb-7 bg-black text-white text-xs" variant="default">Why MeroCircle</Badge>
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-5 sm:mb-7 tracking-tight leading-[0.92] text-black">
-                Creators are <span className="text-[#ff4000]">drowning</span> in manual work.
+                Support your <span className="text-[#ff4000]">favorite creator</span> directly.
               </h2>
               <p className="text-base sm:text-lg lg:text-xl text-black/60/60 max-w-md">
-                Hours lost every week to repetitive tasks that don&apos;t drive growth. We fix that.
+                No middlemen. No complicated processes. Just you, your favorite creator, and a community built on genuine connection and support.
               </p>
             </div>
             <div className="w-full lg:w-7/12 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0">
               {[
-                { icon: Clock, title: "Time Drain", description: "Hours lost every week to repetitive manual tasks." },
-                { icon: Globe, title: "Disconnected Tools", description: "Multiple systems with no automation." },
-                { icon: MessageCircle, title: "Slow Follow-ups", description: "Delayed supporter responses and inconsistent communications." },
-                { icon: TrendingUp, title: "Can't Scale", description: "Teams burning time on work that doesn't scale." }
+                { icon: Heart, title: "Direct Support", description: "Send support directly to creators you love with local payment methods." },
+                { icon: Users, title: "Build Community", description: "Join exclusive communities and connect with creators and fellow supporters." },
+                { icon: MessageCircle, title: "Stay Connected", description: "Get updates, exclusive content, and meaningful interactions with creators." },
+                { icon: TrendingUp, title: "Grow Together", description: "Watch your favorite creators thrive with your support and encouragement." }
               ].map((card, index) => (
                 <Card key={index} className="bg-gray-50/50/50 border-none shadow-none rounded-2xl sm:rounded-3xl p-2 sm:p-3 group active:bg-[#ff4000] hover:bg-[#ff4000] hover:text-white transition-colors duration-500 min-w-0 touch-manipulation">
                   <CardHeader className="p-6 sm:p-7">
@@ -428,32 +425,148 @@ export default function LandingPage() {
         </AnimatedSection>
       </RoundedSection>
 
-      {/* Solution Section - Black theme with overlap */}
-      <RoundedSection theme="black">
+      {/* Solution Section - White theme */}
+      <RoundedSection theme="white">
         <AnimatedSection className="w-full max-w-5xl mx-auto text-center" delay={0.1}>
-          <Badge className="mb-4 sm:mb-6 border-white/20 text-white/60 text-xs" variant="outline">The Solution</Badge>
-          <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.9] px-2">
-            Your On Demand <br />
-            <span className="text-[#ff4000]">Creator Platform,</span> <br />
-            Delivered Overnight<span className="text-[#ff4000]">.</span>
+          <Badge className="mb-4 sm:mb-6 bg-black text-white text-xs" variant="default">How It Works</Badge>
+          <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.9] px-2 text-black">
+            Creators. Supporters. <br />
+            <span className="text-[#ff4000]">Nothing in between.</span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-white/45 mb-12 sm:mb-14 lg:mb-16 max-w-2xl mx-auto px-4">
-            Not another rip-and-replace nightmare. MeroCircle works alongside your existing tools, fixing your biggest pain first—whether that&apos;s local payments, community chaos, or content monetization. Start small, prove value, expand when ready.
+          <p className="text-base sm:text-lg lg:text-xl text-black/60 mb-12 sm:mb-14 lg:mb-16 max-w-2xl mx-auto px-4">
+            MeroCircle gives you a direct line of access to your favorite creators, with no ads or gatekeepers in the way. Through real-time connections, comments, and direct support, you can connect more deeply with creators here than anywhere else.
           </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-7 lg:gap-8">
             {[
-              { icon: Search, title: "Analyze" },
-              { icon: Zap, title: "Build" },
-              { icon: Plug, title: "Integrate" },
-              { icon: Shield, title: "Support" },
+              { icon: Heart, title: "Support" },
+              { icon: Users, title: "Connect" },
+              { icon: Globe, title: "Discover" },
+              { icon: Shield, title: "Secure" },
             ].map((item, index) => (
               <motion.div key={index} className="flex flex-col items-center justify-center group min-w-0 touch-manipulation" whileHover={{ y: -10 }} whileTap={{ scale: 0.95 }}>
-                <div className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 sm:mb-5 group-hover:bg-[#ff4000] group-active:bg-[#ff4000] transition-colors duration-500 flex-shrink-0">
-                  <item.icon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-white flex-shrink-0" />
+                <div className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center mb-4 sm:mb-5 group-hover:bg-[#ff4000] group-active:bg-[#ff4000] transition-colors duration-500 flex-shrink-0">
+                  <item.icon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-black group-hover:text-white group-active:text-white transition-colors flex-shrink-0" />
                 </div>
-                <h3 className="text-xs sm:text-sm lg:text-base font-bold tracking-tight">{item.title}</h3>
+                <h3 className="text-xs sm:text-sm lg:text-base font-bold tracking-tight text-black">{item.title}</h3>
               </motion.div>
             ))}
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
+
+      {/* Ways to Support Section - Inspired by Buy Me a Coffee */}
+      <RoundedSection theme="white" id="ways-to-support">
+        <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
+          <div className="text-center mb-12 sm:mb-16">
+            <Badge className="mb-4 sm:mb-6 bg-black text-white text-xs" variant="default">Ways to Support</Badge>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.95] text-black">
+              Fund your <span className="text-[#ff4000]">favorite creator</span>
+              <br />
+              in ways that matter.
+            </h2>
+            <p className="text-base sm:text-lg lg:text-xl text-black/60 max-w-2xl mx-auto">
+              Support creators. Join memberships. Buy their products. It&apos;s easier than you think.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
+            {/* Memberships */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-white border-2 border-gray-200 rounded-2xl sm:rounded-3xl p-6 sm:p-8 hover:border-[#ff4000] transition-colors duration-300"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] rounded-full flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-black">Memberships</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed mb-4">
+                Start a membership for your biggest fans. Earn recurring income by accepting monthly or yearly subscriptions. Share exclusive content and build a loyal community.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-black/60">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>Recurring income</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-black/60 mt-2">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>Exclusive content</span>
+              </div>
+            </motion.div>
+
+            {/* Shop */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="bg-white border-2 border-gray-200 rounded-2xl sm:rounded-3xl p-6 sm:p-8 hover:border-[#ff4000] transition-colors duration-300"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-[#14b8a6] to-[#06b6d4] rounded-full flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-black">Buy from Creators</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed mb-4">
+                Purchase digital products directly from your favorite creators. Whether it&apos;s an ebook, art commission, exclusive content, or digital artwork, buy what creators have created just for you.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-black/60">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>One-tap checkout</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-black/60 mt-2">
+                <CheckCircle className="w-4 h-4 text-[#ff4000]" />
+                <span>Direct from creators</span>
+              </div>
+            </motion.div>
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
+
+      {/* Trust & Ownership Section - Inspired by Buy Me a Coffee */}
+      <RoundedSection theme="grey">
+        <AnimatedSection className="w-full max-w-5xl mx-auto" delay={0.1}>
+          <div className="text-center mb-12 sm:mb-16">
+            <Badge className="mb-4 sm:mb-6 text-xs" variant="outline">Built for Creators</Badge>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.95]">
+              Designed for creators,
+              <br />
+              <span className="text-[#ff4000]">not for businesses.</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <Shield className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">100% Ownership</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                You have complete ownership of your supporters. We never email them, and you can export your supporter list anytime you like.
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <Zap className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">Instant Payments</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                Get paid instantly to your bank account. No more 30-day delays. With eSewa and Khalti, your money reaches you faster.
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <Globe className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">Made for Nepal</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                Built specifically for Nepali creators with local payment methods, language support, and understanding of the local creator economy.
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <MessageCircle className="w-8 h-8 text-[#ff4000] mb-4" />
+              <h3 className="text-xl font-bold mb-3 text-black">Human Support</h3>
+              <p className="text-sm sm:text-base text-black/70 leading-relaxed">
+                You get to talk to a real human for help, or if you just like some advice to hit the ground running. We&apos;re here for you.
+              </p>
+            </div>
           </div>
         </AnimatedSection>
       </RoundedSection>
@@ -463,90 +576,35 @@ export default function LandingPage() {
         <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-20">
             <div className="w-full lg:w-1/3 flex-shrink-0">
-              <Badge className="mb-4 sm:mb-6 text-xs" variant="outline">Our Process</Badge>
+              <Badge className="mb-4 sm:mb-6 text-xs" variant="outline">Get Started</Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.95]">
-                How we <br /> get you <br /> there.
+                Join the <br /> community <br /> today.
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground">
-                A structured approach to ensure repeatable impact and growth for your creator business.
+                Start supporting your favorite creators or build your own community. It&apos;s simple, secure, and built for Nepal.
               </p>
             </div>
             <div className="w-full lg:w-2/3 space-y-4 sm:space-y-5 min-w-0">
               {[
-                { step: "01", title: "Discovery & Setup", desc: "Understand your creator needs & pain points." },
-                { step: "02", title: "Platform Configuration", desc: "Customize MeroCircle for your specific workflow." },
-                { step: "03", title: "Integration & Launch", desc: "Connect your tools and go live in days." },
-                { step: "04", title: "Training & Enablement", desc: "Empowering you to maximize the platform." },
-                { step: "05", title: "Support & Growth", desc: "Ongoing optimization and feature expansion." }
+                { step: "01", title: "Find Creators", desc: "Discover amazing creators from Nepal across different categories and interests." },
+                { step: "02", title: "Join Communities", desc: "Become part of exclusive communities and connect with like-minded supporters." },
+                { step: "03", title: "Show Support", desc: "Support creators directly using eSewa or Khalti - Nepal&apos;s trusted payment methods." },
+                { step: "04", title: "Stay Connected", desc: "Get updates, exclusive content, and meaningful interactions with your favorite creators." },
+                { step: "05", title: "Grow Together", desc: "Watch creators thrive and communities flourish with your support and engagement." }
               ].map((item, index) => (
-                <div key={index} className="flex items-start sm:items-center gap-3 sm:gap-6 lg:gap-8 p-6 sm:p-7 lg:p-9 bg-background border border-border/50 rounded-2xl sm:rounded-[2rem] group hover:border-[#ff4000] active:border-[#ff4000] transition-colors duration-500 min-w-0 touch-manipulation">
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-muted-foreground/20 group-hover:text-[#ff4000] group-active:text-[#ff4000] transition-colors flex-shrink-0">{item.step}</div>
+                <div key={index} className="flex items-start sm:items-center gap-3 sm:gap-6 lg:gap-8 p-6 sm:p-7 lg:p-9 bg-white border border-gray-200 rounded-2xl sm:rounded-[2rem] group hover:border-[#ff4000] active:border-[#ff4000] transition-colors duration-500 min-w-0 touch-manipulation">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-300 group-hover:text-[#ff4000] group-active:text-[#ff4000] transition-colors flex-shrink-0">{item.step}</div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight mb-1">{item.title}</h3>
-                    <p className="text-xs sm:text-sm lg:text-base text-muted-foreground leading-relaxed">{item.desc}</p>
+                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight mb-1 text-black">{item.title}</h3>
+                    <p className="text-xs sm:text-sm lg:text-base text-black/70 leading-relaxed">{item.desc}</p>
                   </div>
-                  <ArrowRight className="ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0 flex-shrink-0 hidden sm:block h-5 w-5 lg:h-6 lg:w-6" />
+                  <ArrowRight className="ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0 flex-shrink-0 hidden sm:block h-5 w-5 lg:h-6 lg:w-6 text-black" />
                 </div>
               ))}
             </div>
           </div>
         </AnimatedSection>
       </RoundedSection>
-
-      {/* Testimonials Section - Clean */}
-      <section ref={testimonialsRef} className="py-24 bg-white">
-        <div className="max-w-[1200px] mx-auto px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.div variants={fadeInUp} className="inline-block mb-6">
-              <Badge className="px-4 py-2 bg-white border-2 border-black text-black text-sm font-medium rounded-full">
-                Success Stories
-              </Badge>
-            </motion.div>
-            <motion.h2 variants={fadeInUp} className="text-[38px] md:text-[48px] font-bold text-black">
-              Loved by Nepal&apos;s Top Creators
-            </motion.h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
-            {testimonials.map((testimonial, index) => (
-              <motion.div 
-                key={index} 
-                variants={fadeInUp}
-              >
-                <Card className="p-8 h-full border-2 border-black/10/10 bg-white hover:border-orange-500 transition-colors">
-                  <div className="flex items-center mb-6">
-                    <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-bold text-sm mr-4">
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-black">{testimonial.name}</h4>
-                      <p className="text-sm text-black/60/60">{testimonial.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-orange-500 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-[14px] text-black/70/70 leading-relaxed">&quot;{testimonial.content}&quot;</p>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
       {/* CTA Section - Clean */}
       <section className="py-32 bg-[#fafafa]">
@@ -559,10 +617,10 @@ export default function LandingPage() {
             className="space-y-8"
           >
             <motion.h2 variants={fadeInUp} className="text-[48px] md:text-[64px] font-bold text-black leading-tight tracking-tight">
-              Ready to run the numbers on your creative career?
+              Ready to support your favorite creator?
             </motion.h2>
             <motion.p variants={fadeInUp} className="text-[16px] text-black/60/60">
-              Start building clarity now.
+              Join thousands of supporters making a difference in Nepal&apos;s creator community.
             </motion.p>
             <motion.div variants={fadeInUp}>
               <Link href="/auth">
@@ -570,7 +628,7 @@ export default function LandingPage() {
                   size="lg" 
                   className="px-8 py-4 bg-black hover:bg-black/90 text-white font-medium text-[17px] rounded-full shadow-2xl"
                 >
-                  Start Your Creator Journey
+                  Start Supporting Creators
                 </Button>
               </Link>
             </motion.div>
