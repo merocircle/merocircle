@@ -1465,3 +1465,32 @@ h1, h2, h3, h4, h5, h6 {
 .animate-float-slow {
   animation: float-slow 3s ease-in-out infinite;
 }
+
+/* Rounded Section Styles */
+:root {
+  --rounded-margin: 5rem;
+  --section-margin: 7rem;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --rounded-margin: 2.75rem;
+    --section-margin: 3.5rem;
+  }
+}
+
+.rounded-section {
+  clip-path: inset(0 0 0 0);
+}
+
+/* Section that comes before a rounded section needs extra padding */
+section:has(+ .rounded-section),
+.rounded-section:has(+ .rounded-section) {
+  padding-bottom: calc(var(--section-margin) + var(--rounded-margin));
+}
+
+/* Rounded sections get negative margin to overlap */
+.section + .rounded-section,
+.rounded-section + .rounded-section {
+  margin-top: calc(var(--rounded-margin) * -1);
+}

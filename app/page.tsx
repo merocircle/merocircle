@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useInView, useScroll, useTransform, useAnimation } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Heart,
@@ -28,11 +28,15 @@ import {
   Calendar,
   Target,
   Award,
+  Search,
+  Plug,
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { useAuth } from "@/contexts/supabase-auth-context";
 import { logger } from "@/lib/logger";
 import Image from "next/image";
+import { RoundedSection } from "@/components/ui/rounded-section";
+import { AnimatedSection } from "@/components/ui/animated-section";
 
 // Animation variants
 const fadeInUp = {
@@ -391,407 +395,128 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white dark:bg-gray-950">
-        <div className="max-w-[1200px] mx-auto px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid grid-cols-2 md:grid-cols-4 gap-12"
-          >
+      {/* Stats Banner - Subtle but professional */}
+      <section className="section relative py-16 sm:py-20 lg:py-24 bg-[#fafafa] dark:bg-gray-950 border-y border-black/5 dark:border-white/5 overflow-hidden">
+        <div className="container mx-auto px-4 md:px-6 relative z-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto">
             {heroStats.map((stat, index) => (
               <motion.div
                 key={index}
-                variants={fadeInUp}
-                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center min-w-0 py-2"
               >
-                <div className="text-[48px] md:text-[58px] font-bold text-black dark:text-white mb-2 leading-none tracking-tight">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black dark:text-white mb-1 sm:mb-2 tracking-tighter">
                   {stat.value}
                 </div>
-                <div className="text-[14px] text-gray-600 dark:text-gray-400">
+                <div className="text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.15em] sm:tracking-widest text-black/40 dark:text-white/40 font-medium leading-tight">
                   {stat.label}
                 </div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Meet MeroCircle Section */}
-      <section className="py-24 bg-white dark:bg-gray-950">
-        <div className="max-w-[1000px] mx-auto px-8 text-center">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="space-y-4"
-          >
-            <motion.h2 variants={fadeInUp} className="text-[48px] md:text-[58px] font-bold text-black dark:text-white leading-tight tracking-tight">
-              Meet MeroCircle
-            </motion.h2>
-            <motion.h3 variants={fadeInUp} className="text-[48px] md:text-[58px] font-bold text-black dark:text-white leading-tight tracking-tight">
-              Your On Demand
-            </motion.h3>
-            <motion.h3 variants={fadeInUp} className="text-[48px] md:text-[58px] font-bold text-black dark:text-white leading-tight tracking-tight">
-              Creator Platform,
-            </motion.h3>
-            <motion.h3 variants={fadeInUp} className="text-[48px] md:text-[58px] font-bold text-black dark:text-white leading-tight tracking-tight">
-              Delivered Overnight<span className="text-[#ff4000]">.</span>
-            </motion.h3>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Trust Section */}
-      <section className="py-20 bg-white dark:bg-gray-950">
-        <div className="max-w-[800px] mx-auto px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-            className="text-center"
-          >
-            <div className="border-2 border-black/10 dark:border-white/10 rounded-lg p-8 mb-8">
-              <p className="text-[16px] md:text-[18px] text-black/80 dark:text-white/80 leading-relaxed">
-                Not another rip-and-replace nightmare. MeroCircle works alongside your existing tools, fixing your biggest pain first—whether that&apos;s local payments, community chaos, or content monetization. Start small, prove value, expand when ready.
+      {/* Problem Section - Rounded White theme */}
+      <RoundedSection theme="white" id="solutions">
+        <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 items-start">
+            <div className="w-full lg:w-5/12 flex-shrink-0">
+              <Badge className="mb-5 sm:mb-7 bg-black text-white text-xs dark:bg-black dark:text-white" variant="default">The Problem</Badge>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-5 sm:mb-7 tracking-tight leading-[0.92] text-black dark:text-white">
+                Creators are <span className="text-[#ff4000]">drowning</span> in manual work.
+              </h2>
+              <p className="text-base sm:text-lg lg:text-xl text-black/60 dark:text-white/60 max-w-md">
+                Hours lost every week to repetitive tasks that don&apos;t drive growth. We fix that.
               </p>
             </div>
-            <h3 className="text-[38px] md:text-[48px] font-bold text-black dark:text-white mb-4 leading-tight tracking-tight">
-              One truth everyone actually trusts:
-            </h3>
-            <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed max-w-xl mx-auto">
-              Your social media stays running. Your content keeps flowing. MeroCircle connects them all. Or retires them. Your choice.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Tabbed Features Section */}
-      <section ref={featuresRef} className="py-20 bg-[#fafafa] dark:bg-gray-900">
-        <div className="max-w-[1100px] mx-auto px-8">
-          {/* Tabs */}
-          <div className="border-b-2 border-black/10 dark:border-white/10 mb-8">
-            <div className="flex gap-0">
-              <div className="px-7 py-3 border-b-2 border-black dark:border-white">
-                <span className="text-[15px] font-medium text-black dark:text-white">Community Building</span>
-              </div>
-              <div className="px-7 py-3 border-b-2 border-transparent opacity-50">
-                <span className="text-[15px] font-medium text-black dark:text-white">Payment Solutions</span>
-              </div>
-              <div className="px-7 py-3 border-b-2 border-transparent opacity-50">
-                <span className="text-[15px] font-medium text-black dark:text-white">Analytics & Growth</span>
-              </div>
-              <div className="px-7 py-3 border-b-2 border-transparent opacity-50">
-                <span className="text-[15px] font-medium text-black dark:text-white">Creator Tools</span>
-              </div>
+            <div className="w-full lg:w-7/12 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0">
+              {[
+                { icon: Clock, title: "Time Drain", description: "Hours lost every week to repetitive manual tasks." },
+                { icon: Globe, title: "Disconnected Tools", description: "Multiple systems with no automation." },
+                { icon: MessageCircle, title: "Slow Follow-ups", description: "Delayed supporter responses and inconsistent communications." },
+                { icon: TrendingUp, title: "Can't Scale", description: "Teams burning time on work that doesn't scale." }
+              ].map((card, index) => (
+                <Card key={index} className="bg-gray-50/50 dark:bg-gray-900/50 border-none shadow-none rounded-2xl sm:rounded-3xl p-2 sm:p-3 group active:bg-[#ff4000] hover:bg-[#ff4000] hover:text-white transition-colors duration-500 min-w-0 touch-manipulation">
+                  <CardHeader className="p-6 sm:p-7">
+                    <card.icon className="h-9 w-9 sm:h-11 sm:w-11 mb-3 sm:mb-4 text-[#ff4000] group-hover:text-white group-active:text-white transition-colors flex-shrink-0" />
+                    <CardTitle className="text-base sm:text-lg font-bold leading-tight mb-2">{card.title}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm group-hover:text-white/80 group-active:text-white/80 leading-relaxed">{card.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
             </div>
           </div>
+        </AnimatedSection>
+      </RoundedSection>
 
-          {/* Tab Content */}
-          <div className="border-2 border-black/10 dark:border-white/10 rounded-lg p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-12 items-center">
-              {/* Left: Text Content */}
-              <div className="space-y-8 border-r-2 border-black/10 dark:border-white/10 pr-8">
-                <div className="space-y-4">
-                  <h3 className="text-[38px] md:text-[48px] font-bold text-black dark:text-white leading-tight tracking-tight">
-                    No complex dashboards—just your community
-                  </h3>
-                  <p className="text-[16px] text-black/60 dark:text-white/60 leading-relaxed">
-                    Most creators get started in ~15 minutes.
-                  </p>
+      {/* Solution Section - Black theme with overlap */}
+      <RoundedSection theme="black">
+        <AnimatedSection className="w-full max-w-5xl mx-auto text-center" delay={0.1}>
+          <Badge className="mb-4 sm:mb-6 border-white/20 text-white/60 text-xs" variant="outline">The Solution</Badge>
+          <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.9] px-2">
+            Your On Demand <br />
+            <span className="text-[#ff4000]">Creator Platform,</span> <br />
+            Delivered Overnight<span className="text-[#ff4000]">.</span>
+          </h2>
+          <p className="text-base sm:text-lg lg:text-xl text-white/45 mb-12 sm:mb-14 lg:mb-16 max-w-2xl mx-auto px-4">
+            Not another rip-and-replace nightmare. MeroCircle works alongside your existing tools, fixing your biggest pain first—whether that&apos;s local payments, community chaos, or content monetization. Start small, prove value, expand when ready.
+          </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-7 lg:gap-8">
+            {[
+              { icon: Search, title: "Analyze" },
+              { icon: Zap, title: "Build" },
+              { icon: Plug, title: "Integrate" },
+              { icon: Shield, title: "Support" },
+            ].map((item, index) => (
+              <motion.div key={index} className="flex flex-col items-center justify-center group min-w-0 touch-manipulation" whileHover={{ y: -10 }} whileTap={{ scale: 0.95 }}>
+                <div className="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4 sm:mb-5 group-hover:bg-[#ff4000] group-active:bg-[#ff4000] transition-colors duration-500 flex-shrink-0">
+                  <item.icon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 text-white flex-shrink-0" />
                 </div>
+                <h3 className="text-xs sm:text-sm lg:text-base font-bold tracking-tight">{item.title}</h3>
+              </motion.div>
+            ))}
+          </div>
+        </AnimatedSection>
+      </RoundedSection>
 
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h4 className="text-[18px] font-semibold text-black dark:text-white">
-                      &quot;Just Show Me My Supporters&quot;
-                    </h4>
-                    <p className="text-[14px] text-black/60 dark:text-white/60 leading-relaxed">
-                      Clear supporter lists, direct messaging that works. Real-time notifications that make sense. No hunting through three apps or complicated creator portals.
-                    </p>
+      {/* Process Section - Grey theme */}
+      <RoundedSection theme="grey" id="process">
+        <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-20">
+            <div className="w-full lg:w-1/3 flex-shrink-0">
+              <Badge className="mb-4 sm:mb-6 text-xs" variant="outline">Our Process</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 tracking-tight leading-[0.95]">
+                How we <br /> get you <br /> there.
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                A structured approach to ensure repeatable impact and growth for your creator business.
+              </p>
+            </div>
+            <div className="w-full lg:w-2/3 space-y-4 sm:space-y-5 min-w-0">
+              {[
+                { step: "01", title: "Discovery & Setup", desc: "Understand your creator needs & pain points." },
+                { step: "02", title: "Platform Configuration", desc: "Customize MeroCircle for your specific workflow." },
+                { step: "03", title: "Integration & Launch", desc: "Connect your tools and go live in days." },
+                { step: "04", title: "Training & Enablement", desc: "Empowering you to maximize the platform." },
+                { step: "05", title: "Support & Growth", desc: "Ongoing optimization and feature expansion." }
+              ].map((item, index) => (
+                <div key={index} className="flex items-start sm:items-center gap-3 sm:gap-6 lg:gap-8 p-6 sm:p-7 lg:p-9 bg-background border border-border/50 rounded-2xl sm:rounded-[2rem] group hover:border-[#ff4000] active:border-[#ff4000] transition-colors duration-500 min-w-0 touch-manipulation">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-muted-foreground/20 group-hover:text-[#ff4000] group-active:text-[#ff4000] transition-colors flex-shrink-0">{item.step}</div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight mb-1">{item.title}</h3>
+                    <p className="text-xs sm:text-sm lg:text-base text-muted-foreground leading-relaxed">{item.desc}</p>
                   </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-[18px] font-semibold text-black dark:text-white">
-                      Your Content, Your Way
-                    </h4>
-                    <p className="text-[14px] text-black/60 dark:text-white/60 leading-relaxed">
-                      Share updates that actually reach your supporters. Post exclusive content without learning complex systems. Build relationships without drowning in features.
-                    </p>
-                  </div>
+                  <ArrowRight className="ml-auto opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0 flex-shrink-0 hidden sm:block h-5 w-5 lg:h-6 lg:w-6" />
                 </div>
-              </div>
-
-              {/* Right: iPad Mockup */}
-              <div className="relative">
-                <div className="aspect-[540/600] border-2 border-black/10 dark:border-white/10 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-4 overflow-hidden">
-                  <div className="w-full h-full bg-white dark:bg-gray-950 rounded-md flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <Users className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Community Dashboard Preview</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Feature Cards Section */}
-      <section className="py-20 bg-white dark:bg-gray-950">
-        <div className="max-w-[1200px] mx-auto px-8">
-          <div className="text-center mb-16">
-            <div className="inline-block mb-6">
-              <Badge className="px-4 py-2 bg-white dark:bg-gray-950 border-2 border-black dark:border-white text-black dark:text-white text-[16px] font-medium rounded-full">
-                Built for Nepali Creators
-              </Badge>
-            </div>
-            <h2 className="text-[38px] md:text-[48px] font-bold text-black dark:text-white mb-4 leading-tight tracking-tight">
-              Conventional Platforms, MES/ERP/etc
-              <br />
-              force you to ignore the 5% edge cases—or patch
-              <br />
-              with spreadsheets.
-            </h2>
-            <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed max-w-3xl mx-auto">
-              But Your Edge Cases ARE YOUR BUSINESS. MeroCircle makes them standard work.
-            </p>
-            <div className="mt-8">
-              <Link href="/auth">
-                <Button className="bg-black hover:bg-black/90 text-white px-8 py-4 rounded-full font-medium text-[17px]">
-                  Start Your Creator Journey
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* Feature Cards Grid */}
-          <div className="space-y-8">
-            {/* Card 1 */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="border-2 border-black/10 dark:border-white/10 rounded-lg overflow-hidden"
-            >
-              {/* Tab Header */}
-              <div className="bg-gray-50 dark:bg-gray-900 px-6 py-3 border-b-2 border-black/10 dark:border-white/10">
-                <span className="text-[14px] font-semibold text-black dark:text-white uppercase tracking-wide">Local Payments</span>
-              </div>
-              
-              {/* Card Content */}
-              <div className="p-8 space-y-6">
-                <div className="space-y-3">
-                  <h3 className="text-[24px] font-bold text-black dark:text-white">Today</h3>
-                  <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed">
-                    International payment processors charge high fees and don&apos;t support local currencies well. Supporters can&apos;t easily send support. You lose money on conversions.
-                  </p>
-                </div>
-                
-                <div className="border-t-2 border-black/10 dark:border-white/10 pt-6 space-y-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
-                      With MeroCircle
-                    </div>
-                  </div>
-                  <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed">
-                    Direct integration with eSewa and Khalti. Your supporters pay using methods they already trust. Zero conversion fees. Instant settlements in NPR.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 2 */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="border-2 border-black/10 dark:border-white/10 rounded-lg overflow-hidden"
-            >
-              <div className="bg-gray-50 dark:bg-gray-900 px-6 py-3 border-b-2 border-black/10 dark:border-white/10">
-                <span className="text-[14px] font-semibold text-black dark:text-white uppercase tracking-wide">Community</span>
-              </div>
-              
-              <div className="p-8 space-y-6">
-                <div className="space-y-3">
-                  <h3 className="text-[24px] font-bold text-black dark:text-white">Today</h3>
-                  <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed">
-                    Managing supporters across multiple platforms. Messages get lost. Updates don&apos;t reach everyone. Engagement metrics are scattered.
-                  </p>
-                </div>
-                
-                <div className="border-t-2 border-black/10 dark:border-white/10 pt-6 space-y-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
-                      With MeroCircle
-                    </div>
-                  </div>
-                  <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed">
-                    One dashboard for all your supporters. Direct messaging that works. Exclusive content delivery that reaches 100% of your community. Clean engagement data.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 3 */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="border-2 border-black/10 dark:border-white/10 rounded-lg overflow-hidden"
-            >
-              <div className="bg-gray-50 dark:bg-gray-900 px-6 py-3 border-b-2 border-black/10 dark:border-white/10">
-                <span className="text-[14px] font-semibold text-black dark:text-white uppercase tracking-wide">Analytics</span>
-              </div>
-              
-              <div className="p-8 space-y-6">
-                <div className="space-y-3">
-                  <h3 className="text-[24px] font-bold text-black dark:text-white">Today</h3>
-                  <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed">
-                    Revenue data in one app, engagement in another, supporter demographics somewhere else. You&apos;re tracking everything on spreadsheets.
-                  </p>
-                </div>
-                
-                <div className="border-t-2 border-black/10 dark:border-white/10 pt-6 space-y-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
-                      With MeroCircle
-                    </div>
-                  </div>
-                  <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed">
-                    Unified analytics dashboard. Track revenue, growth, and engagement in one place. Real insights based on your actual supporter behavior, not guesses.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Platform Features Section */}
-      <section className="py-24 bg-[#fafafa] dark:bg-gray-900">
-        <div className="max-w-[1200px] mx-auto px-8">
-          <div className="text-center mb-16">
-            <div className="inline-block mb-6">
-              <Badge className="px-5 py-2 bg-white dark:bg-gray-950 border border-black/20 dark:border-white/20 text-black dark:text-white text-[16px] font-medium rounded-full">
-                The Creator Platform That Grows With You
-              </Badge>
-            </div>
-            <h2 className="text-[38px] md:text-[48px] font-bold text-black dark:text-white mb-4 leading-tight tracking-tight">
-              Every MeroCircle
-              <br />
-              Instance Includes
-            </h2>
-          </div>
-
-          {/* Feature 1 - Right Aligned */}
-          <div className="mb-20">
-            <div className="grid grid-cols-1 lg:grid-cols-[536px_1fr] gap-8">
-              <div className="border-2 border-black/10 dark:border-white/10 rounded-lg p-10 space-y-8">
-                <div className="space-y-4">
-                  <div className="text-[16px] text-orange-500 font-medium">
-                    Production-Grade Creator Tools
-                  </div>
-                  <h3 className="text-[38px] font-bold text-black dark:text-white leading-tight tracking-tight">
-                    Custom Features That Build Themselves
-                  </h3>
-                </div>
-                
-                <div className="space-y-4 border-t-2 border-black/5 dark:border-white/5 pt-8">
-                  <h4 className="text-[18px] font-semibold text-black dark:text-white">
-                    Describe it today, use it tomorrow
-                  </h4>
-                  <p className="text-[16px] text-black/60 dark:text-white/60 leading-relaxed">
-                    Not templates or generic builders. MeroCircle generates actual features from your needs—custom payment flows, unique community features, personalized analytics. Every tool is real functionality, built exactly for your creative business.
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-2 border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
-                <div className="aspect-[568/447] flex items-center justify-center p-8">
-                  <div className="text-center">
-                    <Zap className="w-20 h-20 text-orange-500 mx-auto mb-4" />
-                    <p className="text-black/60 dark:text-white/60">Feature Dashboard</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature 2 - Left Aligned */}
-          <div className="mb-20">
-            <div className="grid grid-cols-1 lg:grid-cols-[576px_1fr] gap-8">
-              <div className="border-2 border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
-                <div className="aspect-[576/453] flex items-center justify-center p-8">
-                  <div className="text-center">
-                    <Users className="w-20 h-20 text-orange-500 mx-auto mb-4" />
-                    <p className="text-black/60 dark:text-white/60">Community Interface</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-2 border-black/10 dark:border-white/10 rounded-lg p-10 space-y-8">
-                <div className="space-y-4">
-                  <div className="text-[16px] text-orange-500 font-medium">
-                    Minimal Work Screens
-                  </div>
-                  <h3 className="text-[38px] font-bold text-black dark:text-white leading-tight tracking-tight">
-                    An Interface Everyone Can Use
-                  </h3>
-                </div>
-                
-                <div className="space-y-4 border-t-2 border-black/5 dark:border-white/5 pt-8">
-                  <h4 className="text-[18px] font-semibold text-black dark:text-white">
-                    Creators typically ramp in about 15 minutes
-                  </h4>
-                  <p className="text-[16px] text-black/60 dark:text-white/60 leading-relaxed">
-                    Because MeroCircle is built for creators&apos; actual needs, each screen shows only what matters. The best interface is almost no interface—create content, engage supporters, track growth. The platform quietly handles everything else.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature 3 - Right Aligned */}
-          <div>
-            <div className="grid grid-cols-1 lg:grid-cols-[536px_1fr] gap-8">
-              <div className="border-2 border-black/10 dark:border-white/10 rounded-lg p-10 space-y-8">
-                <div className="space-y-4">
-                  <div className="text-[16px] text-orange-500 font-medium">
-                    Deep Creator Intelligence
-                  </div>
-                  <h3 className="text-[38px] font-bold text-black dark:text-white leading-tight tracking-tight">
-                    Your Creative Business&apos;s Brain
-                  </h3>
-                </div>
-                
-                <div className="space-y-4 border-t-2 border-black/5 dark:border-white/5 pt-8">
-                  <h4 className="text-[18px] font-semibold text-black dark:text-white">
-                    Ask anything about your creator business and get researched answers
-                  </h4>
-                  <p className="text-[16px] text-black/60 dark:text-white/60 leading-relaxed">
-                    &quot;Why did engagement drop this week?&quot; triggers analysis across all your data. &quot;What content performs best?&quot; pulls from actual metrics, not guesses. Every insight becomes searchable knowledge.
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-2 border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
-                <div className="aspect-[568/447] flex items-center justify-center p-8">
-                  <div className="text-center">
-                    <TrendingUp className="w-20 h-20 text-orange-500 mx-auto mb-4" />
-                    <p className="text-black/60 dark:text-white/60">Analytics Dashboard</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </AnimatedSection>
+      </RoundedSection>
 
       {/* Testimonials Section - Clean */}
       <section ref={testimonialsRef} className="py-24 bg-white dark:bg-gray-950">
@@ -845,93 +570,6 @@ export default function LandingPage() {
               </motion.div>
             ))}
           </motion.div>
-        </div>
-      </section>
-
-      {/* Why MeroCircle Section */}
-      <section className="py-24 bg-white dark:bg-gray-950">
-        <div className="max-w-[1200px] mx-auto px-8">
-          <div className="text-center mb-16">
-            <div className="inline-block mb-6">
-              <Badge className="px-4 py-2 bg-white dark:bg-gray-950 border border-black/20 dark:border-white/20 text-black dark:text-white text-[16px] font-medium rounded-full">
-                MeroCircle Platform
-              </Badge>
-            </div>
-            <h2 className="text-[38px] md:text-[48px] font-bold text-black dark:text-white mb-6 leading-tight tracking-tight">
-              Why MeroCircle Is Safer —
-              <br />
-              and Beats the Alternatives
-            </h2>
-            <div className="max-w-4xl mx-auto border-2 border-black/10 dark:border-white/10 rounded-lg p-8">
-              <p className="text-[16px] text-black/70 dark:text-white/70 leading-relaxed">
-                Traditional platforms ask you to wait months for features. MeroCircle ships working tools fast, then iterates daily based on your feedback. Smaller, iterative bets. Faster feedback. Faster Time to Value. Lower risk.
-              </p>
-            </div>
-          </div>
-
-          {/* Comparison Grid */}
-          <div className="border-2 border-black/10 dark:border-white/10 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-4 bg-gray-50 dark:bg-gray-900 border-b-2 border-black/10 dark:border-white/10">
-              <div className="p-6"></div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <h3 className="text-[20px] font-bold text-black dark:text-white text-center">MeroCircle</h3>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <h3 className="text-[20px] font-bold text-black dark:text-white text-center">Other Platforms</h3>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <h3 className="text-[20px] font-bold text-black dark:text-white text-center">DIY Setup</h3>
-              </div>
-            </div>
-
-            {/* Row 1 */}
-            <div className="grid grid-cols-4 border-b-2 border-black/10 dark:border-white/10">
-              <div className="p-6">
-                <p className="text-[16px] font-semibold text-black dark:text-white">Time to first value</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">Day 3: First working setup</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">5–9 months (setup → config → launch)</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">3–6 months</p>
-              </div>
-            </div>
-
-            {/* Row 2 */}
-            <div className="grid grid-cols-4 border-b-2 border-black/10 dark:border-white/10">
-              <div className="p-6">
-                <p className="text-[16px] font-semibold text-black dark:text-white">Creator adoption</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">Built with creators, tested daily</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">Assumed; training later</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">Heavy setup effort</p>
-              </div>
-            </div>
-
-            {/* Row 3 */}
-            <div className="grid grid-cols-4">
-              <div className="p-6">
-                <p className="text-[16px] font-semibold text-black dark:text-white">Local payments</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">eSewa & Khalti built-in</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">Not possible</p>
-              </div>
-              <div className="p-6 border-l-2 border-black/10 dark:border-white/10">
-                <p className="text-[14px] text-black/70 dark:text-white/70">Manual integration</p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
