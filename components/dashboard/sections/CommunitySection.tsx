@@ -4,6 +4,8 @@ import { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCommunityChannels, useSendMessage } from '@/hooks/useQueries';
 import { useRealtimeChat } from '@/hooks/useRealtimeChat';
+import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
+import { useChannelUnreadCounts } from '@/hooks/useChannelUnreadCounts';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +42,24 @@ const CommunitySection = memo(function CommunitySection() {
   });
 
   const { mutate: sendMessage, isPending } = useSendMessage(selectedChannel);
+  const { markAsRead } = useUnreadChatCount();
+  const { channelUnreadCounts, markChannelAsRead } = useChannelUnreadCounts();
+
+  // Mark messages as read when component mounts (user opens chat view)
+  useEffect(() => {
+    markAsRead();
+  }, [markAsRead]);
+
+  // Mark selected channel as read when it changes or when messages are loaded
+  useEffect(() => {
+    if (selectedChannel && messages.length > 0) {
+      // Small delay to ensure user has seen the messages
+      const timer = setTimeout(() => {
+        markChannelAsRead(selectedChannel);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedChannel, messages.length, markChannelAsRead]);
 
   useEffect(() => {
     if (channelsData?.channels?.length > 0 && !selectedChannel) {
@@ -148,7 +168,14 @@ const CommunitySection = memo(function CommunitySection() {
                       <span className="flex-1 text-left truncate">
                         {channel.display_name || channel.name}
                       </span>
-                      <SettingsIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex items-center gap-1">
+                        {channelUnreadCounts[channel.id] > 0 && (
+                          <span className="px-1.5 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-full min-w-[1.25rem] text-center">
+                            {channelUnreadCounts[channel.id] > 99 ? '99+' : channelUnreadCounts[channel.id]}
+                          </span>
+                        )}
+                        <SettingsIcon className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </button>
                   ))}
                 </div>
