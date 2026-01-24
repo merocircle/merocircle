@@ -152,32 +152,112 @@ export function useMarkNotificationRead() {
       const res = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: notificationIds }),
+        body: JSON.stringify({ notificationIds }),
       });
       if (!res.ok) throw new Error('Failed to mark as read');
       return res.json();
     },
     onMutate: async (ids) => {
+      // Cancel all notification queries (with and without type)
       await queryClient.cancelQueries({ queryKey: ['notifications', user?.id] });
-      const previous = queryClient.getQueryData(['notifications', user?.id]);
       
-      queryClient.setQueryData(['notifications', user?.id], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          notifications: old.notifications.map((n: any) => 
-            ids.includes(n.id) ? { ...n, read: true } : n
-          ),
-          unreadCount: Math.max(0, old.unreadCount - ids.length),
-        };
+      // Get all notification queries to update
+      const allQueries = queryClient.getQueryCache().findAll({ 
+        queryKey: ['notifications', user?.id] 
       });
       
-      return { previous };
+      const previousData: any[] = [];
+      
+      // Optimistically update all notification queries
+      allQueries.forEach((query) => {
+        const previous = queryClient.getQueryData(query.queryKey);
+        previousData.push({ queryKey: query.queryKey, data: previous });
+        
+        queryClient.setQueryData(query.queryKey, (old: any) => {
+          if (!old) return old;
+          const updatedNotifications = old.notifications.map((n: any) => 
+            ids.includes(n.id) ? { ...n, read: true } : n
+          );
+          const updatedUnreadCount = Math.max(0, old.unreadCount - ids.length);
+          
+          return {
+            ...old,
+            notifications: updatedNotifications,
+            unreadCount: updatedUnreadCount,
+          };
+        });
+      });
+      
+      return { previous: previousData };
     },
     onError: (err, ids, context) => {
+      // Restore previous data for all queries
       if (context?.previous) {
-        queryClient.setQueryData(['notifications', user?.id], context.previous);
+        context.previous.forEach(({ queryKey, data }) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
+    },
+    onSuccess: () => {
+      // Invalidate all notification queries to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      });
+      if (!res.ok) throw new Error('Failed to mark all as read');
+      return res.json();
+    },
+    onMutate: async () => {
+      // Cancel all notification queries (with and without type)
+      await queryClient.cancelQueries({ queryKey: ['notifications', user?.id] });
+      
+      // Get all notification queries to update
+      const allQueries = queryClient.getQueryCache().findAll({ 
+        queryKey: ['notifications', user?.id] 
+      });
+      
+      const previousData: any[] = [];
+      
+      // Optimistically update all notification queries - mark all as read
+      allQueries.forEach((query) => {
+        const previous = queryClient.getQueryData(query.queryKey);
+        previousData.push({ queryKey: query.queryKey, data: previous });
+        
+        queryClient.setQueryData(query.queryKey, (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            notifications: old.notifications.map((n: any) => ({ ...n, read: true })),
+            unreadCount: 0,
+          };
+        });
+      });
+      
+      return { previous: previousData };
+    },
+    onError: (err, _, context) => {
+      // Restore previous data for all queries
+      if (context?.previous) {
+        context.previous.forEach(({ queryKey, data }) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSuccess: () => {
+      // Invalidate all notification queries to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
     },
   });
 }

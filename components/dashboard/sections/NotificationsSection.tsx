@@ -2,7 +2,7 @@
 
 import { useState, useMemo, memo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useNotificationsData, useMarkNotificationRead } from '@/hooks/useQueries';
+import { useNotificationsData, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useQueries';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -44,6 +44,7 @@ const NotificationsSection = memo(function NotificationsSection() {
   const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
   const { data, isLoading } = useNotificationsData(selectedType);
   const { mutate: markAsRead } = useMarkNotificationRead();
+  const { mutate: markAllAsRead } = useMarkAllNotificationsRead();
 
   const notifications = useMemo(() => data?.notifications || [], [data]);
   const unreadCount = useMemo(() => data?.unreadCount || 0, [data]);
@@ -59,11 +60,8 @@ const NotificationsSection = memo(function NotificationsSection() {
   }, [markAsRead, router]);
 
   const handleMarkAllRead = useCallback(() => {
-    const unreadIds = notifications.filter((n: any) => !n.read).map((n: any) => n.id);
-    if (unreadIds.length > 0) {
-      markAsRead(unreadIds);
-    }
-  }, [notifications, markAsRead]);
+    markAllAsRead();
+  }, [markAllAsRead]);
 
   const showSkeleton = isLoading && !data;
 

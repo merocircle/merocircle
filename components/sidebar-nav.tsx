@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useDashboardView } from '@/contexts/dashboard-context';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationsData } from '@/hooks/useQueries';
 import {
   Home,
   MessageCircle,
@@ -96,8 +96,10 @@ export function SidebarNav() {
     // Not on dashboard page, context not available
   }
   
-  // Get real-time unread count for notifications badge
-  const { unreadCount } = useNotifications();
+  // Get real-time unread count for notifications badge using React Query
+  // This ensures it stays in sync with the notifications section
+  const { data: notificationsData } = useNotificationsData();
+  const unreadCount = notificationsData?.unreadCount || 0;
 
   const navItems: NavItem[] = [
     { label: 'Home', view: 'home', icon: Home },
