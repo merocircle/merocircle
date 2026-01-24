@@ -51,47 +51,47 @@
 }
 
 :root {
-  --card: #f5f5f4;
-  --ring: #6366f1;
-  --input: #d6d3d1;
-  --muted: #e7e5e4;
-  --accent: #f3e5f5;
-  --border: #d6d3d1;
-  --radius: 1.25rem;
-  --chart-1: #6366f1;
-  --chart-2: #4f46e5;
-  --chart-3: #4338ca;
-  --chart-4: #3730a3;
-  --chart-5: #312e81;
-  --popover: #f5f5f4;
-  --primary: #6366f1;
-  --sidebar: #d6d3d1;
-  --font-mono: Roboto Mono, monospace;
-  --font-sans: Plus Jakarta Sans, sans-serif;
-  --secondary: #d6d3d1;
-  --background: #e7e5e4;
-  --font-serif: Lora, serif;
-  --foreground: #1e293b;
+  --card: #ffffff;
+  --ring: #f97316;
+  --input: #e5e7eb;
+  --muted: #f9fafb;
+  --accent: #fff7ed;
+  --border: #e5e7eb;
+  --radius: 0.5rem;
+  --chart-1: #f97316;
+  --chart-2: #ea580c;
+  --chart-3: #c2410c;
+  --chart-4: #9a3412;
+  --chart-5: #7c2d12;
+  --popover: #ffffff;
+  --primary: #f97316;
+  --sidebar: #f9fafb;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --secondary: #f9fafb;
+  --background: #ffffff;
+  --font-serif: 'Merriweather', serif;
+  --foreground: #0f172a;
   --destructive: #ef4444;
   --shadow-blur: 10px;
-  --shadow-color: hsl(240 4% 60%);
-  --sidebar-ring: #6366f1;
-  --shadow-spread: 4px;
-  --shadow-opacity: 0.18;
-  --sidebar-accent: #f3e5f5;
-  --sidebar-border: #d6d3d1;
-  --card-foreground: #1e293b;
-  --shadow-offset-x: 2px;
-  --shadow-offset-y: 2px;
-  --sidebar-primary: #6366f1;
-  --muted-foreground: #6b7280;
-  --accent-foreground: #374151;
-  --popover-foreground: #1e293b;
+  --shadow-color: hsl(0 0% 0% / 0.1);
+  --sidebar-ring: #f97316;
+  --shadow-spread: 2px;
+  --shadow-opacity: 0.1;
+  --sidebar-accent: #fff7ed;
+  --sidebar-border: #e5e7eb;
+  --card-foreground: #0f172a;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 4px;
+  --sidebar-primary: #f97316;
+  --muted-foreground: #64748b;
+  --accent-foreground: #1e293b;
+  --popover-foreground: #0f172a;
   --primary-foreground: #ffffff;
-  --sidebar-foreground: #1e293b;
-  --secondary-foreground: #4b5563;
+  --sidebar-foreground: #0f172a;
+  --secondary-foreground: #475569;
   --destructive-foreground: #ffffff;
-  --sidebar-accent-foreground: #374151;
+  --sidebar-accent-foreground: #1e293b;
   --sidebar-primary-foreground: #ffffff;
   
   /* Bauhaus card variables */
@@ -112,40 +112,40 @@
 }
 
 .dark {
-  --card: #2c2825;
-  --ring: #818cf8;
-  --input: #3a3633;
-  --muted: #2c2825;
-  --accent: #484441;
-  --border: #3a3633;
-  --radius: 1.25rem;
-  --chart-1: #818cf8;
-  --chart-2: #6366f1;
-  --chart-3: #4f46e5;
-  --chart-4: #4338ca;
-  --chart-5: #3730a3;
-  --popover: #2c2825;
-  --primary: #818cf8;
-  --sidebar: #3a3633;
-  --secondary: #3a3633;
-  --background: #1e1b18;
-  --foreground: #e2e8f0;
+  --card: #0f172a;
+  --ring: #fb923c;
+  --input: #1e293b;
+  --muted: #1e293b;
+  --accent: #422006;
+  --border: #1e293b;
+  --radius: 0.5rem;
+  --chart-1: #fb923c;
+  --chart-2: #f97316;
+  --chart-3: #ea580c;
+  --chart-4: #c2410c;
+  --chart-5: #9a3412;
+  --popover: #0f172a;
+  --primary: #f97316;
+  --sidebar: #1e293b;
+  --secondary: #1e293b;
+  --background: #020617;
+  --foreground: #f1f5f9;
   --destructive: #ef4444;
-  --shadow-color: hsl(0 0% 0%);
-  --sidebar-ring: #818cf8;
-  --sidebar-accent: #484441;
-  --sidebar-border: #3a3633;
-  --card-foreground: #e2e8f0;
-  --sidebar-primary: #818cf8;
-  --muted-foreground: #9ca3af;
-  --accent-foreground: #d1d5db;
-  --popover-foreground: #e2e8f0;
-  --primary-foreground: #1e1b18;
-  --sidebar-foreground: #e2e8f0;
-  --secondary-foreground: #d1d5db;
-  --destructive-foreground: #1e1b18;
-  --sidebar-accent-foreground: #d1d5db;
-  --sidebar-primary-foreground: #1e1b18;
+  --shadow-color: hsl(0 0% 0% / 0.5);
+  --sidebar-ring: #fb923c;
+  --sidebar-accent: #422006;
+  --sidebar-border: #1e293b;
+  --card-foreground: #f1f5f9;
+  --sidebar-primary: #f97316;
+  --muted-foreground: #94a3b8;
+  --accent-foreground: #e2e8f0;
+  --popover-foreground: #f1f5f9;
+  --primary-foreground: #ffffff;
+  --sidebar-foreground: #f1f5f9;
+  --secondary-foreground: #cbd5e1;
+  --destructive-foreground: #ffffff;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-primary-foreground: #ffffff;
   
   /* Bauhaus card variables - dark mode */
   --bauhaus-card-bg: #151419;
@@ -1359,4 +1359,109 @@ a:not([disabled]),
     border-radius: 50%;
     transform: rotate(180deg);
   }
+}
+
+/* Clean Minimalist Design - Figma Inspired */
+.heading-hero {
+  font-size: clamp(3rem, 8vw, 7rem);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.heading-section {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.text-body-large {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Orange Accent System */
+.accent-orange {
+  color: #f97316;
+}
+
+.bg-accent-orange {
+  background-color: #f97316;
+}
+
+.border-accent-orange {
+  border-color: #f97316;
+}
+
+.hover-accent-orange:hover {
+  color: #ea580c;
+}
+
+.hover-bg-accent-orange:hover {
+  background-color: #ea580c;
+}
+
+/* Clean Card Design */
+.card-clean {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.card-clean:hover {
+  border-color: #f97316;
+}
+
+.dark .card-clean {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.dark .card-clean:hover {
+  border-color: #f97316;
+}
+
+/* Minimal Button */
+.btn-minimal {
+  background: #f97316;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-minimal:hover {
+  background: #ea580c;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Clean Typography */
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Image Floating Animation */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 3s ease-in-out infinite;
 }
