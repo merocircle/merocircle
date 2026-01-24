@@ -171,21 +171,21 @@ export default function LandingPage() {
   }, [loading, isAuthenticated, router]);
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-gray-950">
+    <div className="min-h-screen bg-[#fafafa]">
       <Header />
       
       {/* URL Message Display */}
       {urlMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
-          <Card className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <Card className="p-4 bg-yellow-50 border-yellow-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                <p className="text-sm font-medium text-yellow-800">
                   {urlMessage === 'auth_required' && 'Please complete authentication'}
                   {urlMessage !== 'auth_required' && urlMessage}
                 </p>
                 {urlMessage === 'auth_required' && (
-                  <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+                  <p className="text-xs text-yellow-600 mt-1">
                     Check browser console for detailed logs
                   </p>
                 )}
@@ -202,7 +202,7 @@ export default function LandingPage() {
       )}
       
       {/* Hero Section - Overlay Layout (Desktop) / Stacked Layout (Mobile) */}
-      <section className="relative bg-[#fafafa] dark:bg-gray-950 pt-24 pb-12 overflow-hidden">
+      <section className="relative bg-[#fafafa] pt-24 pb-12 overflow-hidden">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8">
           {/* Mobile Layout: Stacked (Text First, Then Illustration) */}
           <div className="flex flex-col lg:hidden mb-8">
@@ -215,7 +215,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="mb-6"
               >
-                <h1 className="text-[42px] sm:text-[56px] font-bold leading-[1.1] tracking-[-2px] text-black dark:text-white">
+                <h1 className="text-[12px] sm:text-[46px] font-bold leading-[1.1] tracking-[-2px] text-black">
                   Your
                   <br />
                   Creator&apos;s
@@ -236,12 +236,12 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <h2 className="text-[15px] font-semibold leading-[1.5] tracking-[-0.3px] text-black dark:text-white mb-4">
+                <h2 className="text-[15px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-4">
                   Nepal&apos;s Creative Economy Is Ready for Tomorrow&apos;s Tools — 
                   <span className="text-[#ff4000]"> Launch in a Week.</span>
                 </h2>
-                <p className="text-[14px] leading-[1.5] text-black/70 dark:text-white/70">
-                  Ditch spreadsheets and complicated platforms. You explain your vision, MeroCircle provides the tools, and <span className="text-black dark:text-white font-medium">you launch your creator business in days</span>.
+                <p className="text-[14px] leading-[1.5] text-black/70">
+                  Ditch spreadsheets and complicated platforms. You explain your vision, MeroCircle provides the tools, and <span className="text-black font-medium">you launch your creator business in days</span>.
                 </p>
               </motion.div>
             </div>
@@ -322,7 +322,7 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="absolute left-0 top-0 bottom-0 flex items-center z-10 pl-4 lg:pl-12"
             >
-              <h1 className="text-[64px] lg:text-[80px] xl:text-[96px] font-bold leading-[1.05] tracking-[-3px] text-black dark:text-white">
+              <h1 className="text-[64px] lg:text-[80px] xl:text-[96px] font-bold leading-[1.05] tracking-[-3px] text-black">
                 Your
                 <br />
                 Creator&apos;s
@@ -344,12 +344,12 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="absolute right-0 top-0 bottom-0 flex flex-col justify-center z-10 pr-4 lg:pr-12 max-w-[380px]"
             >
-              <h2 className="text-[15px] lg:text-[16px] font-semibold leading-[1.5] tracking-[-0.3px] text-black dark:text-white mb-6">
+              <h2 className="text-[15px] lg:text-[16px] font-semibold leading-[1.5] tracking-[-0.3px] text-black mb-6">
                 Nepal&apos;s Creative Economy Is Ready for Tomorrow&apos;s Tools — 
                 <span className="text-[#ff4000]"> Launch in a Week.</span>
               </h2>
-              <p className="text-[13px] lg:text-[14px] leading-[1.5] text-black/70 dark:text-white/70">
-                Ditch spreadsheets and complicated platforms. You explain your vision, MeroCircle provides the tools, and <span className="text-black dark:text-white font-medium">you launch your creator business in days</span>.
+              <p className="text-[13px] lg:text-[14px] leading-[1.5] text-black/70">
+                Ditch spreadsheets and complicated platforms. You explain your vision, MeroCircle provides the tools, and <span className="text-black font-medium">you launch your creator business in days</span>.
               </p>
             </motion.div>
           </div>
@@ -371,20 +371,20 @@ export default function LandingPage() {
             </div>
 
             {/* Tablet Container */}
-            <div className="backdrop-blur-[2.5px] bg-[rgba(204,204,204,0.2)] dark:bg-[rgba(50,50,50,0.3)] p-[26px] rounded-[60px]">
+            <div className="backdrop-blur-[2.5px] bg-[rgba(204,204,204,0.2)] p-[26px] rounded-[60px]">
               <div className="relative rounded-[29px] overflow-hidden shadow-[0px_0px_0px_6px_black,0px_50px_48px_0px_rgba(0,0,0,0.59)]">
                 {/* iPad Frame */}
-                <div className="aspect-[1084/783] bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 relative rounded-[37px] overflow-hidden">
+                <div className="aspect-[1084/783] bg-gradient-to-br from-gray-100 to-gray-200 relative rounded-[37px] overflow-hidden">
                   {/* Screen Content Area */}
-                  <div className="absolute left-[47px] right-[47px] top-[44px] bottom-[44px] bg-white dark:bg-gray-950 rounded-lg overflow-hidden">
+                  <div className="absolute left-[47px] right-[47px] top-[44px] bottom-[44px] bg-white rounded-lg overflow-hidden">
                     {/* Video Placeholder */}
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
                       <div className="text-center">
-                        <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
                           <Play className="w-10 h-10 text-orange-500" />
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 font-medium">See MeroCircle in Action</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">Video placeholder - Add your demo</p>
+                        <p className="text-gray-600 font-medium">See MeroCircle in Action</p>
+                        <p className="text-sm text-gray-500 mt-2">Video placeholder - Add your demo</p>
                       </div>
                     </div>
                   </div>
@@ -395,41 +395,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Banner - Subtle but professional */}
-      <section className="section relative py-16 sm:py-20 lg:py-24 bg-[#fafafa] dark:bg-gray-950 border-y border-black/5 dark:border-white/5 overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto">
-            {heroStats.map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="text-center min-w-0 py-2"
-              >
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black dark:text-white mb-1 sm:mb-2 tracking-tighter">
-                  {stat.value}
-                </div>
-                <div className="text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.15em] sm:tracking-widest text-black/40 dark:text-white/40 font-medium leading-tight">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Problem Section - Rounded White theme */}
       <RoundedSection theme="white" id="solutions">
         <AnimatedSection className="w-full max-w-6xl mx-auto" delay={0.1}>
           <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 items-start">
             <div className="w-full lg:w-5/12 flex-shrink-0">
-              <Badge className="mb-5 sm:mb-7 bg-black text-white text-xs dark:bg-black dark:text-white" variant="default">The Problem</Badge>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-5 sm:mb-7 tracking-tight leading-[0.92] text-black dark:text-white">
+              <Badge className="mb-5 sm:mb-7 bg-black text-white text-xs" variant="default">The Problem</Badge>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-5 sm:mb-7 tracking-tight leading-[0.92] text-black">
                 Creators are <span className="text-[#ff4000]">drowning</span> in manual work.
               </h2>
-              <p className="text-base sm:text-lg lg:text-xl text-black/60 dark:text-white/60 max-w-md">
+              <p className="text-base sm:text-lg lg:text-xl text-black/60/60 max-w-md">
                 Hours lost every week to repetitive tasks that don&apos;t drive growth. We fix that.
               </p>
             </div>
@@ -440,7 +415,7 @@ export default function LandingPage() {
                 { icon: MessageCircle, title: "Slow Follow-ups", description: "Delayed supporter responses and inconsistent communications." },
                 { icon: TrendingUp, title: "Can't Scale", description: "Teams burning time on work that doesn't scale." }
               ].map((card, index) => (
-                <Card key={index} className="bg-gray-50/50 dark:bg-gray-900/50 border-none shadow-none rounded-2xl sm:rounded-3xl p-2 sm:p-3 group active:bg-[#ff4000] hover:bg-[#ff4000] hover:text-white transition-colors duration-500 min-w-0 touch-manipulation">
+                <Card key={index} className="bg-gray-50/50/50 border-none shadow-none rounded-2xl sm:rounded-3xl p-2 sm:p-3 group active:bg-[#ff4000] hover:bg-[#ff4000] hover:text-white transition-colors duration-500 min-w-0 touch-manipulation">
                   <CardHeader className="p-6 sm:p-7">
                     <card.icon className="h-9 w-9 sm:h-11 sm:w-11 mb-3 sm:mb-4 text-[#ff4000] group-hover:text-white group-active:text-white transition-colors flex-shrink-0" />
                     <CardTitle className="text-base sm:text-lg font-bold leading-tight mb-2">{card.title}</CardTitle>
@@ -519,7 +494,7 @@ export default function LandingPage() {
       </RoundedSection>
 
       {/* Testimonials Section - Clean */}
-      <section ref={testimonialsRef} className="py-24 bg-white dark:bg-gray-950">
+      <section ref={testimonialsRef} className="py-24 bg-white">
         <div className="max-w-[1200px] mx-auto px-8">
           <motion.div
             initial="hidden"
@@ -529,11 +504,11 @@ export default function LandingPage() {
             className="text-center mb-16"
           >
             <motion.div variants={fadeInUp} className="inline-block mb-6">
-              <Badge className="px-4 py-2 bg-white dark:bg-gray-950 border-2 border-black dark:border-white text-black dark:text-white text-sm font-medium rounded-full">
+              <Badge className="px-4 py-2 bg-white border-2 border-black text-black text-sm font-medium rounded-full">
                 Success Stories
               </Badge>
             </motion.div>
-            <motion.h2 variants={fadeInUp} className="text-[38px] md:text-[48px] font-bold text-black dark:text-white">
+            <motion.h2 variants={fadeInUp} className="text-[38px] md:text-[48px] font-bold text-black">
               Loved by Nepal&apos;s Top Creators
             </motion.h2>
           </motion.div>
@@ -550,14 +525,14 @@ export default function LandingPage() {
                 key={index} 
                 variants={fadeInUp}
               >
-                <Card className="p-8 h-full border-2 border-black/10 dark:border-white/10 bg-white dark:bg-gray-950 hover:border-orange-500 transition-colors">
+                <Card className="p-8 h-full border-2 border-black/10/10 bg-white hover:border-orange-500 transition-colors">
                   <div className="flex items-center mb-6">
-                    <div className="w-12 h-12 bg-black dark:bg-white rounded-full flex items-center justify-center text-white dark:text-black font-bold text-sm mr-4">
+                    <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-bold text-sm mr-4">
                       {testimonial.avatar}
                     </div>
                     <div>
-                      <h4 className="font-bold text-black dark:text-white">{testimonial.name}</h4>
-                      <p className="text-sm text-black/60 dark:text-white/60">{testimonial.role}</p>
+                      <h4 className="font-bold text-black">{testimonial.name}</h4>
+                      <p className="text-sm text-black/60/60">{testimonial.role}</p>
                     </div>
                   </div>
                   <div className="flex mb-4">
@@ -565,7 +540,7 @@ export default function LandingPage() {
                       <Star key={i} className="w-4 h-4 text-orange-500 fill-current" />
                     ))}
                   </div>
-                  <p className="text-[14px] text-black/70 dark:text-white/70 leading-relaxed">&quot;{testimonial.content}&quot;</p>
+                  <p className="text-[14px] text-black/70/70 leading-relaxed">&quot;{testimonial.content}&quot;</p>
                 </Card>
               </motion.div>
             ))}
@@ -574,7 +549,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section - Clean */}
-      <section className="py-32 bg-[#fafafa] dark:bg-gray-900">
+      <section className="py-32 bg-[#fafafa]">
         <div className="max-w-[1200px] mx-auto px-8 text-center">
           <motion.div
             initial="hidden"
@@ -583,10 +558,10 @@ export default function LandingPage() {
             variants={staggerContainer}
             className="space-y-8"
           >
-            <motion.h2 variants={fadeInUp} className="text-[48px] md:text-[64px] font-bold text-black dark:text-white leading-tight tracking-tight">
+            <motion.h2 variants={fadeInUp} className="text-[48px] md:text-[64px] font-bold text-black leading-tight tracking-tight">
               Ready to run the numbers on your creative career?
             </motion.h2>
-            <motion.p variants={fadeInUp} className="text-[16px] text-black/60 dark:text-white/60">
+            <motion.p variants={fadeInUp} className="text-[16px] text-black/60/60">
               Start building clarity now.
             </motion.p>
             <motion.div variants={fadeInUp}>
@@ -604,7 +579,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 bg-white dark:bg-gray-950 border-t-2 border-black/10 dark:border-white/10">
+      <footer className="py-16 bg-white border-t-2 border-black/10/10">
         <div className="max-w-[1200px] mx-auto px-8">
           <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-12 mb-12">
             <div>
@@ -612,9 +587,9 @@ export default function LandingPage() {
                 <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mr-3">
                   <Heart className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-[32px] font-bold text-black dark:text-white">MeroCircle</h3>
+                <h3 className="text-[32px] font-bold text-black">MeroCircle</h3>
               </div>
-              <p className="text-[16px] text-black/60 dark:text-white/60 mb-4 leading-relaxed max-w-md">
+              <p className="text-[16px] text-black/60/60 mb-4 leading-relaxed max-w-md">
                 On Demand Creator Platform,
                 <br />
                 Delivered Overnight.
@@ -622,26 +597,26 @@ export default function LandingPage() {
             </div>
             
             <div>
-              <h4 className="font-bold mb-4 text-black dark:text-white text-[14px] uppercase tracking-wider">Company</h4>
+              <h4 className="font-bold mb-4 text-black text-[14px] uppercase tracking-wider">Company</h4>
               <ul className="space-y-3 text-[14px]">
-                <li><Link href="/auth" className="text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">About us</Link></li>
-                <li><Link href="/dashboard" className="text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/help" className="text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Security</Link></li>
+                <li><Link href="/auth" className="text-black/60 hover:text-black transition-colors">About us</Link></li>
+                <li><Link href="/dashboard" className="text-black/60 hover:text-black transition-colors">Pricing</Link></li>
+                <li><Link href="/help" className="text-black/60 hover:text-black transition-colors">Security</Link></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-bold mb-4 text-black dark:text-white text-[14px] uppercase tracking-wider">Support</h4>
+              <h4 className="font-bold mb-4 text-black text-[14px] uppercase tracking-wider">Support</h4>
               <ul className="space-y-3 text-[14px]">
-                <li><Link href="/help" className="text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link href="/contact" className="text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Contact</Link></li>
-                <li><Link href="/terms" className="text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Terms</Link></li>
+                <li><Link href="/help" className="text-black/60 hover:text-black transition-colors">Help Center</Link></li>
+                <li><Link href="/contact" className="text-black/60 hover:text-black transition-colors">Contact</Link></li>
+                <li><Link href="/terms" className="text-black/60 hover:text-black transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t-2 border-black/10 dark:border-white/10 pt-8">
-            <p className="text-[14px] text-black/50 dark:text-white/50">
+          <div className="border-t-2 border-black/10/10 pt-8">
+            <p className="text-[14px] text-black/50/50">
               © 2024 MeroCircle. Made with ❤️ for Nepal&apos;s creative community.
             </p>
           </div>

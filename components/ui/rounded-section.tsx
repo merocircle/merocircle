@@ -31,9 +31,9 @@ export function RoundedSection({
   const opacity = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
 
   const themeClasses = {
-    black: "bg-gray-950 text-white dark:bg-gray-950 dark:text-white",
-    grey: "bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100",
-    white: "bg-white text-gray-900 dark:bg-white dark:text-gray-900",
+    black: "bg-gray-950 text-white",
+    grey: "bg-gray-100 text-gray-900",
+    white: "bg-white text-gray-900",
   };
 
   return (

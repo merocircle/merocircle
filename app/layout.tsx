@@ -23,8 +23,8 @@ export default function RootLayout({
         <ErrorBoundary>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
       >
           <QueryProvider>
