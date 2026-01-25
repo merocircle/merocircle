@@ -57,6 +57,7 @@ interface DashboardLayoutProps {
   }>;
   // Callbacks
   onCreateClick?: () => void;
+  onSettingsClick?: () => void;
   // Layout options
   hideRightPanel?: boolean;
   hideContextSidebar?: boolean;
@@ -83,6 +84,7 @@ export function DashboardLayout({
   trendingCreators = [],
   stories = [],
   onCreateClick,
+  onSettingsClick,
   hideRightPanel = false,
   hideContextSidebar = false,
   fullWidth = false,
@@ -119,6 +121,7 @@ export function DashboardLayout({
         showTabs={showMobileTabs && contextView === 'feed'}
         activeTab={mobileTab}
         onTabChange={handleMobileTabChange}
+        onSettingsClick={onSettingsClick}
         hideHeader={shouldHideMobileHeader}
       />
 

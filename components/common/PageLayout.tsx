@@ -90,6 +90,10 @@ function PageLayoutInner({
     console.log('Create post clicked');
   }, []);
 
+  const handleSettingsClick = useCallback(() => {
+    setActiveView('settings');
+  }, [setActiveView]);
+
   const mapViewToContext = (view: string) => {
     switch (view) {
       case 'home': return 'feed';
@@ -140,6 +144,7 @@ function PageLayoutInner({
       selectedCategory={selectedCategory}
       onCategoryChange={setSelectedCategory}
       onCreateClick={handleCreateClick}
+      onSettingsClick={handleSettingsClick}
       hideRightPanel={shouldHideRightPanel}
       hideContextSidebar={shouldHideContextSidebar}
       fullWidth={shouldBeFullWidth}

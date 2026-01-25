@@ -7,7 +7,8 @@ import {
   Search,
   PlusCircle,
   MessageCircle,
-  User
+  User,
+  Settings
 } from 'lucide-react';
 import { BottomNavIcon } from './NavIcon';
 import { cn } from '@/lib/utils';
@@ -101,6 +102,7 @@ interface MobileHeaderProps {
   showTabs?: boolean;
   activeTab?: 'for-you' | 'following';
   onTabChange?: (tab: 'for-you' | 'following') => void;
+  onSettingsClick?: () => void;
   hideHeader?: boolean;
   className?: string;
 }
@@ -110,6 +112,7 @@ export function MobileHeader({
   showTabs = false,
   activeTab = 'for-you',
   onTabChange,
+  onSettingsClick,
   hideHeader = false,
   className
 }: MobileHeaderProps) {
@@ -129,6 +132,17 @@ export function MobileHeader({
     >
       <div className="flex items-center justify-between h-14 px-4">
         <h1 className="text-xl font-bold text-foreground">{title}</h1>
+
+        {/* Settings Button - Top Right */}
+        <motion.button
+          onClick={onSettingsClick}
+          className="p-2 rounded-full hover:bg-muted/80 transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Settings"
+        >
+          <Settings className="w-5 h-5 text-muted-foreground" />
+        </motion.button>
       </div>
 
       {showTabs && (
