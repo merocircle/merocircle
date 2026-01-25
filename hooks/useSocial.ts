@@ -154,22 +154,24 @@ export const useCreatorProfile = (creatorId: string | null) => {
     try {
       setLoading(true)
       setError(null)
-      
+
+      // Use the correct API endpoints
       const [creatorResponse, postsResponse] = await Promise.all([
-        fetch(`/api/social/creator/${id}`),
-        fetch(`/api/social/creator/${id}/posts`)
+        fetch(`/api/creator/${id}`),
+        fetch(`/api/creator/${id}/posts`)
       ])
-      
+
       if (!creatorResponse.ok || !postsResponse.ok) {
         throw new Error('Failed to fetch creator profile')
       }
-      
+
       const [creatorData, postsData] = await Promise.all([
         creatorResponse.json(),
         postsResponse.json()
       ])
-      
-      setCreator(creatorData.creator)
+
+      // Map the response to match expected format
+      setCreator(creatorData.creatorDetails || creatorData.creator)
       setPosts(postsData.posts || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load profile')

@@ -33,69 +33,56 @@ export function useCreatorDashboard() {
   const fetchCreatorStats = useCallback(async () => {
     if (!user) return;
 
-      try {
-        setLoading(true);
-        
-        // Fetch earnings data
-        const earningsResponse = await fetch('/api/earnings?period=30d');
-        
-        if (earningsResponse.status === 401) {
-          setError('Your session has expired. Please log in again.');
-          setLoading(false);
-          return;
-        }
-        
-        if (!earningsResponse.ok) {
-          const errorData = await earningsResponse.json();
-          setError(errorData.error || 'Failed to fetch earnings data');
-          setLoading(false);
-          return;
-        }
-        
-        const earningsData = await earningsResponse.json();
-        
-        // Fetch profile data
-        const profileResponse = await fetch(`/api/profiles/${user.id}`);
-        
-        if (profileResponse.status === 401) {
-          setError('Your session has expired. Please log in again.');
-          setLoading(false);
-          return;
-        }
-        
-        if (!profileResponse.ok) {
-          const errorData = await profileResponse.json();
-          setError(errorData.error || 'Failed to fetch profile data');
-          setLoading(false);
-          return;
-        }
-        
-        const profileData = await profileResponse.json();
-        
-        if (earningsResponse.ok && profileResponse.ok) {
-          setStats({
-            monthlyEarnings: earningsData.currentPeriod?.totalEarnings || 0,
-            totalEarnings: earningsData.totalEarnings || 0,
-            supporters: profileData.stats?.followersCount || 0,
-            posts: profileData.stats?.postsCount || 0,
-            goals: {
-              monthly: 50000, // This could be fetched from user preferences
-              current: earningsData.currentPeriod?.totalEarnings || 0
-            },
-            growth: {
-              earnings: earningsData.growth?.earnings || 0,
-              supporters: earningsData.growth?.supporters || 0,
-              engagement: 15.7 // This could be calculated from post engagement
-            }
-          });
-        } else {
-          setError('Failed to fetch dashboard data');
-        }
-      } catch (err) {
-        setError('Error loading dashboard data');
-      } finally {
+    try {
+      setLoading(true);
+
+      // Fetch earnings and dashboard data in parallel
+      const [earningsResponse, dashboardResponse] = await Promise.all([
+        fetch('/api/earnings?period=30d'),
+        fetch(`/api/creator/${user.id}/dashboard`)
+      ]);
+
+      if (earningsResponse.status === 401 || dashboardResponse.status === 401) {
+        setError('Your session has expired. Please log in again.');
         setLoading(false);
+        return;
       }
+
+      if (!earningsResponse.ok) {
+        const errorData = await earningsResponse.json();
+        setError(errorData.error || 'Failed to fetch earnings data');
+        setLoading(false);
+        return;
+      }
+
+      const earningsData = await earningsResponse.json();
+
+      // Dashboard endpoint might return 404 for non-creators, handle gracefully
+      let dashboardData = { stats: { supporters: 0, posts: 0 } };
+      if (dashboardResponse.ok) {
+        dashboardData = await dashboardResponse.json();
+      }
+
+      setStats({
+        monthlyEarnings: earningsData.currentPeriod?.totalEarnings || 0,
+        totalEarnings: earningsData.totalEarnings || 0,
+        supporters: dashboardData.stats?.supporters || 0,
+        posts: dashboardData.stats?.posts || 0,
+        goals: {
+          monthly: 50000, // This could be fetched from user preferences
+          current: earningsData.currentPeriod?.totalEarnings || 0
+        },
+        growth: {
+          earnings: earningsData.growth?.earnings || 0,
+          supporters: earningsData.growth?.supporters || 0,
+          engagement: 15.7 // This could be calculated from post engagement
+        }
+      });
+    } catch (err) {
+      setError('Error loading dashboard data');
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -114,47 +101,56 @@ export function useSupporterDashboard() {
   const fetchSupporterStats = useCallback(async () => {
     if (!user) return;
 
-      try {
-        setLoading(true);
-        
-        // Fetch supporter profile data
-        const profileResponse = await fetch(`/api/profiles/${user.id}`);
-        
-        if (profileResponse.status === 401) {
-          setError('Your session has expired. Please log in again.');
-          setLoading(false);
-          return;
-        }
-        
-        if (!profileResponse.ok) {
-          const errorData = await profileResponse.json();
-          setError(errorData.error || 'Failed to fetch supporter data');
-          setLoading(false);
-          return;
-        }
-        
-        const profileData = await profileResponse.json();
-        
-        // Calculate stats from profile data
-        const supporterTransactions = profileData.supporterTransactions || [];
-        const totalSupported = supporterTransactions.reduce((sum: number, t: any) => sum + t.amount, 0);
-        const thisMonthStart = new Date();
-        thisMonthStart.setDate(1);
-        const thisMonth = supporterTransactions
-          .filter((t: any) => new Date(t.created_at) >= thisMonthStart)
-          .reduce((sum: number, t: any) => sum + t.amount, 0);
-        
-        setStats({
-          totalSupported,
-          creatorsSupported: profileData.stats?.followingCount || 0,
-          thisMonth,
-          favoriteCreators: profileData.stats?.followingCount || 0
-        });
-      } catch (err) {
-        setError('Error loading supporter data');
-      } finally {
+    try {
+      setLoading(true);
+
+      // Use the supporter-specific endpoints
+      const [creatorsResponse, historyResponse] = await Promise.all([
+        fetch('/api/supporter/creators'),
+        fetch('/api/supporter/history?limit=100')
+      ]);
+
+      if (creatorsResponse.status === 401 || historyResponse.status === 401) {
+        setError('Your session has expired. Please log in again.');
         setLoading(false);
+        return;
       }
+
+      // Handle creators response
+      let creatorsData = { creators: [] };
+      if (creatorsResponse.ok) {
+        creatorsData = await creatorsResponse.json();
+      }
+
+      // Handle history response
+      let historyData = { transactions: [] };
+      if (historyResponse.ok) {
+        historyData = await historyResponse.json();
+      }
+
+      // Calculate stats from transaction history
+      const transactions = historyData.transactions || [];
+      const totalSupported = transactions.reduce((sum: number, t: { amount?: number }) => sum + (t.amount || 0), 0);
+      const thisMonthStart = new Date();
+      thisMonthStart.setDate(1);
+      thisMonthStart.setHours(0, 0, 0, 0);
+      const thisMonth = transactions
+        .filter((t: { created_at?: string }) => new Date(t.created_at || '') >= thisMonthStart)
+        .reduce((sum: number, t: { amount?: number }) => sum + (t.amount || 0), 0);
+
+      const creatorsCount = creatorsData.creators?.length || 0;
+
+      setStats({
+        totalSupported,
+        creatorsSupported: creatorsCount,
+        thisMonth,
+        favoriteCreators: creatorsCount
+      });
+    } catch (err) {
+      setError('Error loading supporter data');
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {

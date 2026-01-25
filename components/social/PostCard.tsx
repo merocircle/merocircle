@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { Post, usePostLike } from '@/hooks/useSocial'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Heart, MessageCircle, Share, MoreHorizontal } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useDashboardViewSafe } from '@/contexts/dashboard-context'
 
 interface PostCardProps {
   post: Post
@@ -18,6 +18,14 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(post.is_liked)
   const [likeCount, setLikeCount] = useState(post.like_count)
   const { toggleLike, loading } = usePostLike()
+  const { openCreatorProfile } = useDashboardViewSafe()
+
+  const handleCreatorClick = useCallback(() => {
+    const creatorId = post.creator.user_id || post.creator_id
+    if (creatorId) {
+      openCreatorProfile(creatorId)
+    }
+  }, [openCreatorProfile, post.creator.user_id, post.creator_id])
 
   const handleLikeToggle = async () => {
     try {
@@ -39,8 +47,8 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Link href={`/creator/${post.creator.user_id || post.creator_id}`}>
-              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
+            <div onClick={handleCreatorClick} className="cursor-pointer">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 hover:ring-2 hover:ring-blue-500 transition-all">
                 {post.creator.avatar_url ? (
                   <Image
                     src={post.creator.avatar_url}
@@ -54,14 +62,15 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
                   </div>
                 )}
               </div>
-            </Link>
-            
+            </div>
+
             <div>
-              <Link href={`/creator/${post.creator.user_id || post.creator_id}`}>
-                <h4 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
-                  {post.creator.display_name}
-                </h4>
-              </Link>
+              <h4
+                onClick={handleCreatorClick}
+                className="font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+              >
+                {post.creator.display_name}
+              </h4>
               <p className="text-sm text-gray-500">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </p>
@@ -137,11 +146,13 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           </div>
 
           {/* Support Button */}
-          <Link href={`/creator/${post.creator.user_id || post.creator_id}`}>
-            <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-              View Profile
-            </Button>
-          </Link>
+          <Button
+            size="sm"
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            onClick={handleCreatorClick}
+          >
+            View Profile
+          </Button>
         </div>
       </CardContent>
     </Card>

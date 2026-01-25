@@ -5,23 +5,20 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { SidebarNav } from '@/components/sidebar-nav'
+import { PageLayout } from '@/components/common/PageLayout'
 import { useAuth } from '@/contexts/supabase-auth-context'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import { 
+import {
   Settings,
   Heart,
   Users,
   FileText,
-  Calendar,
   Crown,
   Share2,
   Camera,
@@ -29,14 +26,16 @@ import {
   CheckCircle,
   DollarSign,
   MessageCircle,
-  Eye,
   Edit,
   Save,
-  ExternalLink
+  ExternalLink,
+  Grid3X3,
+  List,
+  Calendar,
+  ChevronRight
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { cn } from '@/lib/utils';
-import { StatsCard } from '@/components/dashboard/StatsCard';
+import { cn } from '@/lib/utils'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -54,6 +53,7 @@ export default function ProfilePage() {
     bio: '',
     category: ''
   })
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -207,14 +207,7 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-        <SidebarNav />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-        </main>
-      </div>
-    )
+    return <PageLayout loading />
   }
 
   if (!isAuthenticated || !userProfile) {
@@ -231,12 +224,15 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-      <SidebarNav />
-      
-      <main className="flex-1 overflow-y-auto">
+    <PageLayout hideRightPanel hideContextSidebar fullWidth>
+      <div className="-mx-4 md:mx-0">
         {/* Hero Banner */}
-        <div className="relative h-48 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative h-56 md:h-64 bg-gradient-to-r from-primary/80 via-pink-600 to-red-500 overflow-hidden"
+        >
           {coverImageUrl && (
             <Image
               src={coverImageUrl}
@@ -245,7 +241,16 @@ export default function ProfilePage() {
               className="object-cover"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+
+          {/* Animated gradient overlay */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          />
+
           <input
             type="file"
             accept="image/*"
@@ -258,7 +263,7 @@ export default function ProfilePage() {
             <Button
               variant="secondary"
               size="sm"
-              className="absolute top-4 right-4 z-10 cursor-pointer"
+              className="absolute top-4 right-4 z-10 cursor-pointer bg-background/80 backdrop-blur-sm hover:bg-background"
               disabled={isUploadingCover}
               asChild
             >
@@ -268,17 +273,26 @@ export default function ProfilePage() {
               </span>
             </Button>
           </label>
-        </div>
+        </motion.div>
 
         {/* Profile Section */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative -mt-16 mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="relative -mt-20 mb-8"
+          >
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
               {/* Profile Avatar */}
-              <div className="relative">
-                <Avatar className="w-32 h-32 border-4 border-white dark:border-gray-900 shadow-xl">
+              <motion.div
+                className="relative"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Avatar className="w-32 h-32 md:w-36 md:h-36 border-4 border-background shadow-2xl ring-4 ring-background">
                   <AvatarImage src={userProfile.photo_url} alt={userProfile.display_name} />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-4xl">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-4xl font-bold">
                     {userProfile.display_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -294,60 +308,89 @@ export default function ProfilePage() {
                   <Button
                     size="icon"
                     variant="secondary"
-                    className="absolute bottom-0 right-0 rounded-full h-10 w-10 cursor-pointer"
+                    className="absolute bottom-1 right-1 rounded-full h-10 w-10 cursor-pointer bg-background shadow-lg hover:bg-muted"
                     disabled={isUploadingAvatar}
                     asChild
                   >
                     <span>
-                      <Camera className="w-4 h-4" />
+                      {isUploadingAvatar ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                      ) : (
+                        <Camera className="w-4 h-4" />
+                      )}
                     </span>
                   </Button>
                 </label>
                 {creatorProfile?.is_verified && (
-                  <CheckCircle className="absolute -top-1 -right-1 w-8 h-8 text-blue-500 bg-white rounded-full" />
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, delay: 0.4 }}
+                  >
+                    <CheckCircle className="absolute -top-1 -right-1 w-8 h-8 text-blue-500 bg-background rounded-full" />
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
 
               {/* Profile Info */}
               <div className="flex-1 pb-2">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    <motion.div
+                      className="flex items-center gap-3 mb-2"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                         {userProfile.display_name || user.email?.split('@')[0]}
                       </h1>
                       {isCreator && (
-                        <Badge variant="default" className="bg-red-500">
+                        <Badge className="bg-gradient-to-r from-primary to-pink-500 text-primary-foreground border-0">
                           <Crown className="w-3 h-3 mr-1" />
                           Creator
                         </Badge>
                       )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    </motion.div>
+
+                    <motion.div
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
                       <Mail className="w-4 h-4" />
                       {userProfile.email}
-                    </div>
+                    </motion.div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
+                  <motion.div
+                    className="flex items-center gap-2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
                     <Button
                       variant={isEditing ? "default" : "outline"}
                       onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
                       disabled={isSaving}
+                      className={cn(
+                        "transition-all",
+                        isEditing && "bg-gradient-to-r from-primary to-pink-500 hover:opacity-90"
+                      )}
                     >
                       {isEditing ? (
                         <>
                           {isSaving ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
                               Saving...
                             </>
                           ) : (
                             <>
                               <Save className="w-4 h-4 mr-2" />
-                              Save Changes
+                              Save
                             </>
                           )}
                         </>
@@ -358,29 +401,38 @@ export default function ProfilePage() {
                         </>
                       )}
                     </Button>
-                    
-                    <Button variant="outline" size="icon">
+
+                    <Button variant="outline" size="icon" className="hover:scale-105 transition-transform">
                       <Share2 className="w-4 h-4" />
                     </Button>
-                    
+
                     <Link href="/settings">
-                      <Button variant="outline" size="icon">
+                      <Button variant="outline" size="icon" className="hover:scale-105 transition-transform">
                         <Settings className="w-4 h-4" />
                       </Button>
                     </Link>
-                  </div>
+                  </motion.div>
                 </div>
 
                 {creatorProfile?.bio && !isEditing && (
-                  <p className="mt-4 text-gray-700 dark:text-gray-300 max-w-3xl">
+                  <motion.p
+                    className="mt-4 text-muted-foreground max-w-3xl"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
                     {creatorProfile.bio}
-                  </p>
+                  </motion.p>
                 )}
 
                 {isEditing && (
-                  <div className="mt-4 space-y-4">
+                  <motion.div
+                    className="mt-4 space-y-4 bg-card p-4 rounded-xl border"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
                     <div>
-                      <Label>Display Name</Label>
+                      <Label className="text-foreground">Display Name</Label>
                       <Input
                         value={editData.display_name}
                         onChange={(e) => setEditData({ ...editData, display_name: e.target.value })}
@@ -390,7 +442,7 @@ export default function ProfilePage() {
                     {isCreator && (
                       <>
                         <div>
-                          <Label>Bio</Label>
+                          <Label className="text-foreground">Bio</Label>
                           <Textarea
                             value={editData.bio}
                             onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
@@ -399,11 +451,11 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div>
-                          <Label>Category</Label>
+                          <Label className="text-foreground">Category</Label>
                           <select
                             value={editData.category}
                             onChange={(e) => setEditData({ ...editData, category: e.target.value })}
-                            className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
+                            className="w-full mt-2 px-3 py-2 border border-border rounded-md bg-background text-foreground"
                           >
                             <option value="">Select a category</option>
                             <option value="Art">Art</option>
@@ -420,274 +472,448 @@ export default function ProfilePage() {
                             <option value="Crafts">Crafts</option>
                           </select>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsEditing(false)}
+                          className="text-muted-foreground"
+                        >
+                          Cancel
+                        </Button>
                       </>
                     )}
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Stats Grid */}
           {isCreator && creatorProfile && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <StatsCard
-                label="Supporters"
-                value={creatorProfile.supporters_count || 0}
-                icon={Heart}
-                iconColor="text-red-500"
-                useBauhaus={true}
-                accentColor="#ef4444"
-              />
-              <StatsCard
-                label="Posts"
-                value={posts.length}
-                icon={FileText}
-                iconColor="text-purple-600"
-                useBauhaus={true}
-                accentColor="#8b5cf6"
-              />
-              <StatsCard
-                label="Total Earnings"
-                value={creatorProfile.total_earnings || 0}
-                icon={DollarSign}
-                iconColor="text-green-600"
-                prefix="NPR"
-                useBauhaus={true}
-                accentColor="#10b981"
-              />
-              <StatsCard
-                label="Likes"
-                value={creatorProfile.likes_count || 0}
-                icon={Heart}
-                iconColor="text-pink-600"
-                useBauhaus={true}
-                accentColor="#ec4899"
-              />
-            </div>
+            <motion.div
+              className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-red-500/10">
+                    <Users className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <motion.p
+                      className="text-2xl font-bold text-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      {creatorProfile.supporters_count || 0}
+                    </motion.p>
+                    <p className="text-xs text-muted-foreground">Supporters</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-purple-500/10">
+                    <FileText className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <motion.p
+                      className="text-2xl font-bold text-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.6 }}
+                    >
+                      {posts.length}
+                    </motion.p>
+                    <p className="text-xs text-muted-foreground">Posts</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-green-500/10">
+                    <DollarSign className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <motion.p
+                      className="text-2xl font-bold text-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.7 }}
+                    >
+                      Rs. {creatorProfile.total_earnings || 0}
+                    </motion.p>
+                    <p className="text-xs text-muted-foreground">Earnings</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-pink-500/10">
+                    <Heart className="w-5 h-5 text-pink-500" />
+                  </div>
+                  <div>
+                    <motion.p
+                      className="text-2xl font-bold text-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.8 }}
+                    >
+                      {creatorProfile.likes_count || 0}
+                    </motion.p>
+                    <p className="text-xs text-muted-foreground">Likes</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
           )}
 
-          {/* Main Content */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-            <div className="border-b border-gray-200 dark:border-gray-800">
-              <TabsList className="h-auto p-0 bg-transparent">
-                <TabsTrigger 
-                  value="overview" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:bg-transparent px-6 py-3 text-base font-medium"
-                >
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="posts"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:bg-transparent px-6 py-3 text-base font-medium"
-                >
-                  My Posts
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="activity"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:bg-transparent px-6 py-3 text-base font-medium"
-                >
-                  Activity
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="mt-6 space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">About</h3>
-                  {creatorProfile?.bio ? (
-                    <p className="text-gray-700 dark:text-gray-300">{creatorProfile.bio}</p>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400">No bio added yet.</p>
+          {/* Tab Navigation */}
+          <motion.div
+            className="border-b border-border mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="flex items-center gap-1">
+              {['overview', 'posts', 'activity'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={cn(
+                    'relative px-4 md:px-6 py-3 text-sm font-medium transition-colors',
+                    activeTab === tab
+                      ? 'text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
                   )}
-                  
-                  <Separator className="my-4" />
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Category</span>
-                      <Badge variant="outline">{creatorProfile?.category || 'Not set'}</Badge>
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === 'posts' && ` (${posts.length})`}
+                  {activeTab === tab && (
+                    <motion.div
+                      layoutId="profile-tab-indicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Tab Content */}
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="pb-8"
+          >
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="overflow-hidden">
+                  <CardHeader className="bg-muted/30">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="w-5 h-5 text-primary" />
+                      About
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    {creatorProfile?.bio ? (
+                      <p className="text-muted-foreground">{creatorProfile.bio}</p>
+                    ) : (
+                      <p className="text-muted-foreground italic">No bio added yet.</p>
+                    )}
+
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Category</span>
+                        <Badge variant="outline">{creatorProfile?.category || 'Not set'}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between py-2 border-b border-border/50">
+                        <span className="text-sm text-muted-foreground">Joined</span>
+                        <span className="text-sm text-foreground flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          {formatDate(userProfile.created_at)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-sm text-muted-foreground">Role</span>
+                        <Badge variant={isCreator ? 'default' : 'outline'}>
+                          {isCreator ? 'Creator' : 'Supporter'}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Joined</span>
-                      <span className="text-sm">{formatDate(userProfile.created_at)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Role</span>
-                      <Badge variant={isCreator ? 'default' : 'outline'}>
-                        {isCreator ? 'Creator' : 'Supporter'}
-                      </Badge>
-                    </div>
-                  </div>
+                  </CardContent>
                 </Card>
 
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
+                <Card className="overflow-hidden">
+                  <CardHeader className="bg-muted/30">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <ChevronRight className="w-5 h-5 text-primary" />
+                      Quick Actions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-3">
                     {isCreator ? (
                       <>
-                        <Link href="/dashboard/creator">
-                          <Button variant="outline" className="w-full justify-start">
-                            <Crown className="w-4 h-4 mr-2" />
-                            Creator Dashboard
+                        <Link href="/dashboard/creator" className="block">
+                          <Button variant="outline" className="w-full justify-between group hover:border-primary/50">
+                            <span className="flex items-center">
+                              <Crown className="w-4 h-4 mr-2 text-primary" />
+                              Creator Dashboard
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                           </Button>
                         </Link>
-                        <Link href={`/creator/${user?.id}`}>
-                          <Button variant="outline" className="w-full justify-start">
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            View Public Profile
+                        <Link href={`/creator/${user?.id}`} className="block">
+                          <Button variant="outline" className="w-full justify-between group hover:border-primary/50">
+                            <span className="flex items-center">
+                              <ExternalLink className="w-4 h-4 mr-2 text-primary" />
+                              View Public Profile
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                           </Button>
                         </Link>
-                        <Link href="/dashboard/creator">
-                          <Button variant="outline" className="w-full justify-start">
-                            <FileText className="w-4 h-4 mr-2" />
-                            Create Post
+                        <Link href="/dashboard/creator" className="block">
+                          <Button variant="outline" className="w-full justify-between group hover:border-primary/50">
+                            <span className="flex items-center">
+                              <FileText className="w-4 h-4 mr-2 text-primary" />
+                              Create Post
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                           </Button>
                         </Link>
                       </>
                     ) : (
-                      <Link href="/signup/creator">
-                        <Button className="w-full bg-gradient-to-r from-red-500 to-pink-600">
+                      <Link href="/signup/creator" className="block">
+                        <Button className="w-full bg-gradient-to-r from-primary to-pink-500 hover:opacity-90">
                           <Crown className="w-4 h-4 mr-2" />
                           Become a Creator
                         </Button>
                       </Link>
                     )}
-                    <Link href="/settings">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Settings
+                    <Link href="/settings" className="block">
+                      <Button variant="outline" className="w-full justify-between group hover:border-primary/50">
+                        <span className="flex items-center">
+                          <Settings className="w-4 h-4 mr-2 text-muted-foreground" />
+                          Settings
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </Link>
-                  </div>
+                  </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            )}
 
             {/* Posts Tab */}
-            <TabsContent value="posts" className="mt-6 space-y-6">
-              {postsLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+            {activeTab === 'posts' && (
+              <div className="space-y-4">
+                {/* View Toggle */}
+                <div className="flex items-center justify-end gap-2 mb-4">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="icon"
+                    onClick={() => setViewMode('grid')}
+                    className="h-8 w-8"
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="icon"
+                    onClick={() => setViewMode('list')}
+                    className="h-8 w-8"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
                 </div>
-              ) : posts.length > 0 ? (
-                posts.map((post) => (
-                  <Card key={post.id} className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                          {post.image_url ? <Camera className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                            {post.title || 'Untitled Post'}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {new Date(post.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant={post.is_public ? "default" : "secondary"}>
-                        {post.is_public ? "Public" : "Supporters Only"}
-                      </Badge>
+
+                {postsLoading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+                  </div>
+                ) : posts.length > 0 ? (
+                  viewMode === 'grid' ? (
+                    <div className="grid grid-cols-3 gap-1 md:gap-2">
+                      {posts.map((post) => (
+                        <motion.div
+                          key={post.id}
+                          whileHover={{ scale: 1.02 }}
+                          className="aspect-square relative overflow-hidden rounded-lg bg-muted cursor-pointer group"
+                        >
+                          {post.image_url ? (
+                            <Image
+                              src={post.image_url}
+                              alt={post.title || 'Post'}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                              <FileText className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white">
+                            <span className="flex items-center gap-1 text-sm">
+                              <Heart className="w-4 h-4" />
+                              {post.likes_count || 0}
+                            </span>
+                            <span className="flex items-center gap-1 text-sm">
+                              <MessageCircle className="w-4 h-4" />
+                              {post.comments_count || 0}
+                            </span>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                    
-                    {post.content && (
-                      <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{post.content}</p>
-                    )}
-                    
-                    {post.image_url && (
-                      <div className="mb-4 rounded-lg overflow-hidden bg-gray-100">
-                        <Image
-                          src={post.image_url}
-                          alt="Post image"
-                          width={600}
-                          height={400}
-                          className="w-full h-auto object-cover"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center space-x-2">
-                        <Heart className="w-4 h-4" />
-                        <span>{post.likes_count || 0} likes</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{post.comments_count || 0} comments</span>
-                      </div>
-                    </div>
-                  </Card>
-                ))
-              ) : (
-                <Card className="p-12 text-center">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    No Posts Yet
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {isCreator 
-                      ? 'Start creating content to share with your supporters!'
-                      : 'Become a creator to start posting content!'
-                    }
-                  </p>
-                  {isCreator ? (
-                    <Link href="/dashboard/creator">
-                      <Button>
-                        <FileText className="w-4 h-4 mr-2" />
-                        Create Post
-                      </Button>
-                    </Link>
                   ) : (
-                    <Link href="/signup/creator">
-                      <Button>
-                        <Crown className="w-4 h-4 mr-2" />
-                        Become Creator
-                      </Button>
-                    </Link>
-                  )}
-                </Card>
-              )}
-            </TabsContent>
+                    <div className="space-y-4">
+                      {posts.map((post) => (
+                        <Card key={post.id} className="overflow-hidden hover:border-primary/30 transition-colors">
+                          <CardContent className="p-4 md:p-6">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center">
+                                  {post.image_url ? <Camera className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />}
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-foreground">
+                                    {post.title || 'Untitled Post'}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(post.created_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant={post.is_public ? "default" : "secondary"} className="text-xs">
+                                {post.is_public ? "Public" : "Supporters Only"}
+                              </Badge>
+                            </div>
+
+                            {post.content && (
+                              <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
+                            )}
+
+                            {post.image_url && (
+                              <div className="mb-4 rounded-xl overflow-hidden bg-muted">
+                                <Image
+                                  src={post.image_url}
+                                  alt="Post image"
+                                  width={600}
+                                  height={400}
+                                  className="w-full h-auto object-cover"
+                                />
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-2">
+                                <Heart className="w-4 h-4" />
+                                {post.likes_count || 0} likes
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <MessageCircle className="w-4 h-4" />
+                                {post.comments_count || 0} comments
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <Card className="p-12 text-center">
+                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      No Posts Yet
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      {isCreator
+                        ? 'Start creating content to share with your supporters!'
+                        : 'Become a creator to start posting content!'
+                      }
+                    </p>
+                    {isCreator ? (
+                      <Link href="/dashboard/creator">
+                        <Button className="bg-gradient-to-r from-primary to-pink-500 hover:opacity-90">
+                          <FileText className="w-4 h-4 mr-2" />
+                          Create Post
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href="/signup/creator">
+                        <Button className="bg-gradient-to-r from-primary to-pink-500 hover:opacity-90">
+                          <Crown className="w-4 h-4 mr-2" />
+                          Become Creator
+                        </Button>
+                      </Link>
+                    )}
+                  </Card>
+                )}
+              </div>
+            )}
 
             {/* Activity Tab */}
-            <TabsContent value="activity" className="mt-6 space-y-6">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                <div className="space-y-3">
-                  {posts.slice(0, 5).map((post) => (
-                    <div key={post.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-gray-500" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                          Posted: {post.title || 'Untitled Post'}
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {new Date(post.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {post.likes_count || 0} likes
-                      </div>
+            {activeTab === 'activity' && (
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-muted/30">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {posts.length > 0 ? (
+                    <div className="divide-y divide-border">
+                      {posts.slice(0, 10).map((post, index) => (
+                        <motion.div
+                          key={post.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                        >
+                          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">
+                              {post.title || 'Untitled Post'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Posted on {new Date(post.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Heart className="w-4 h-4" />
+                              {post.likes_count || 0}
+                            </span>
+                            <ChevronRight className="w-4 h-4" />
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                  ))}
-                  
-                  {posts.length === 0 && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-8">
-                      No activity yet
-                    </p>
+                  ) : (
+                    <div className="p-12 text-center">
+                      <p className="text-muted-foreground">No activity yet</p>
+                    </div>
                   )}
-                </div>
+                </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+            )}
+          </motion.div>
         </div>
-      </main>
-    </div>
+      </div>
+    </PageLayout>
   )
 }

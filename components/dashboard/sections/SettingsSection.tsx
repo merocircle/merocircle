@@ -11,11 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Camera, Save, Crown } from 'lucide-react';
+import { User, Camera, Save, Crown, LogOut } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 const SettingsSection = memo(function SettingsSection() {
-  const { user, userProfile, creatorProfile, isCreator } = useAuth();
+  const { user, userProfile, creatorProfile, isCreator, signOut } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
@@ -242,6 +242,24 @@ const SettingsSection = memo(function SettingsSection() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Sign Out Section */}
+        <Card className="p-6 mt-6 border-destructive/20">
+          <h2 className="text-lg font-semibold mb-2 text-destructive">Sign Out</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Sign out of your account on this device.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              await signOut();
+              router.push('/');
+            }}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </Card>
       </div>
     </div>
   );

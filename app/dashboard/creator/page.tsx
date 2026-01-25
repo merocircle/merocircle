@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
   Area,
@@ -18,13 +18,13 @@ import {
   Legend
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import { SidebarNav } from '@/components/sidebar-nav';
+import { PageLayout } from '@/components/common/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import {
   Crown,
   DollarSign,
@@ -43,7 +43,9 @@ import {
   Plus,
   X,
   BarChart2,
-  Loader2
+  Loader2,
+  Sparkles,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
@@ -51,6 +53,27 @@ import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
 import { cn } from '@/lib/utils';
 import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } }
+};
+
+// Tab configuration
+const tabs = [
+  { id: 'overview', label: 'Overview', icon: BarChart3 },
+  { id: 'posts', label: 'Posts', icon: FileText },
+  { id: 'supporters', label: 'Supporters', icon: Users }
+];
 
 const StatsCard = memo(({ children }: { children: React.ReactNode }) => children);
 
@@ -237,50 +260,70 @@ export default function EnhancedCreatorDashboard() {
   }, [analyticsData]);
 
   if (loading || analyticsLoading || dashboardLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-        <SidebarNav />
-        <main className="flex-1 flex items-center justify-center">
-          <LoadingSpinner />
-        </main>
-      </div>
-    );
+    return <PageLayout loading />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
-      <SidebarNav />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <Crown className="w-8 h-8 text-yellow-500" />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Creator Dashboard
-              </h1>
+    <PageLayout hideRightPanel fullWidth>
+      <div className="py-6 px-4 md:px-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center gap-4 mb-3">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg shadow-orange-500/25">
+              <Crown className="w-7 h-7 text-white" />
             </div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Welcome back, {userProfile?.display_name}! Here's your performance overview.
-            </p>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                Creator Studio
+              </h1>
+              <p className="text-muted-foreground text-sm md:text-base">
+                Welcome back, {userProfile?.display_name}!
+              </p>
+            </div>
           </div>
+        </motion.div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1">
-              <TabsTrigger value="overview" className="gap-2">
-                <BarChart3 className="w-4 h-4" />
-                Overview & Analytics
-              </TabsTrigger>
-              <TabsTrigger value="posts" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Posts
-              </TabsTrigger>
-              <TabsTrigger value="supporters" className="gap-2">
-                <Users className="w-4 h-4" />
-                Supporters
-              </TabsTrigger>
-            </TabsList>
+        {/* Modern Tab Navigation */}
+        <div className="mb-8">
+          <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl w-fit">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all',
+                    isActive
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
 
-            <TabsContent value="overview" className="space-y-6">
+        <AnimatePresence mode="wait">
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
               {showOnboardingBanner && user && (
                 <OnboardingBanner
                   creatorId={user.id}
@@ -291,250 +334,308 @@ export default function EnhancedCreatorDashboard() {
                 />
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard>
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <Card className="p-6 h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-                      <div className="flex items-center justify-between mb-4">
-                        <DollarSign className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                        <div className={cn(
-                          "flex items-center gap-1 text-sm font-semibold",
-                          stats.earningsGrowth >= 0 ? "text-green-600" : "text-red-600"
-                        )}>
-                          {stats.earningsGrowth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                          {Math.abs(stats.earningsGrowth)}%
-                        </div>
+              {/* Stats Grid */}
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+              >
+                {/* Earnings Card */}
+                <motion.div variants={itemVariants}>
+                  <Card className="p-5 h-full bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 hover:border-blue-500/40 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2 rounded-xl bg-blue-500/20">
+                        <DollarSign className="w-5 h-5 text-blue-500" />
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        NPR {stats.currentMonthEarnings.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">This Month</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                        Total: NPR {stats.totalEarnings.toLocaleString()}
-                      </p>
-                    </Card>
-                  </motion.div>
-                </StatsCard>
+                      <Badge
+                        variant={stats.earningsGrowth >= 0 ? 'default' : 'destructive'}
+                        className={cn(
+                          'text-xs',
+                          stats.earningsGrowth >= 0
+                            ? 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
+                            : 'bg-red-500/20 text-red-600 hover:bg-red-500/30'
+                        )}
+                      >
+                        {stats.earningsGrowth >= 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                        {Math.abs(stats.earningsGrowth)}%
+                      </Badge>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">
+                      NPR {stats.currentMonthEarnings.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-muted-foreground">This Month</p>
+                    <p className="text-xs text-muted-foreground/70 mt-2">
+                      Total: NPR {stats.totalEarnings.toLocaleString()}
+                    </p>
+                  </Card>
+                </motion.div>
 
-                <StatsCard>
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <Card className="p-6 h-full bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
-                      <div className="flex items-center justify-between mb-4">
-                        <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                        <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                {/* Supporters Card */}
+                <motion.div variants={itemVariants}>
+                  <Card className="p-5 h-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20 hover:border-purple-500/40 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2 rounded-xl bg-purple-500/20">
+                        <Users className="w-5 h-5 text-purple-500" />
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {stats.supporters}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Supporters</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
-                    </Card>
-                  </motion.div>
-                </StatsCard>
+                      <Activity className="w-4 h-4 text-purple-500" />
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.supporters}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Total Supporters</p>
+                  </Card>
+                </motion.div>
 
-                <StatsCard>
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <Card className="p-6 h-full bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-                      <div className="flex items-center justify-between mb-4">
-                        <FileText className="w-8 h-8 text-green-600 dark:text-green-400" />
-                        <Eye className="w-5 h-5 text-green-600 dark:text-green-400" />
+                {/* Posts Card */}
+                <motion.div variants={itemVariants}>
+                  <Card className="p-5 h-full bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 hover:border-green-500/40 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2 rounded-xl bg-green-500/20">
+                        <FileText className="w-5 h-5 text-green-500" />
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {stats.posts}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Posts</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
-                    </Card>
-                  </motion.div>
-                </StatsCard>
+                      <Eye className="w-4 h-4 text-green-500" />
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.posts}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Total Posts</p>
+                  </Card>
+                </motion.div>
 
-                <StatsCard>
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <Card className="p-6 h-full bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800">
-                      <div className="flex items-center justify-between mb-4">
-                        <Heart className="w-8 h-8 text-red-600 dark:text-red-400" />
-                        <MessageCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                {/* Engagement Card */}
+                <motion.div variants={itemVariants}>
+                  <Card className="p-5 h-full bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/20 hover:border-red-500/40 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2 rounded-xl bg-red-500/20">
+                        <Heart className="w-5 h-5 text-red-500" />
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                        {stats.likes}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Engagement</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2 opacity-0">Placeholder</p>
-                    </Card>
-                  </motion.div>
-                </StatsCard>
-              </div>
+                      <MessageCircle className="w-4 h-4 text-red-500" />
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">
+                      {stats.likes}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Total Engagement</p>
+                  </Card>
+                </motion.div>
+              </motion.div>
 
+              {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                <Card className="p-6 border-border/50">
+                  <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-blue-500/20">
+                      <TrendingUp className="w-4 h-4 text-blue-500" />
+                    </div>
                     Monthly Earnings
                   </h3>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={280}>
                     <AreaChart data={analyticsData?.charts.earnings || []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
-                      <XAxis dataKey="month" stroke="#6B7280" fontSize={12} />
-                      <YAxis stroke="#6B7280" fontSize={12} />
+                      <defs>
+                        <linearGradient id="earningsGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} />
+                      <XAxis dataKey="month" className="text-muted-foreground" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis className="text-muted-foreground" fontSize={11} tickLine={false} axisLine={false} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#1F2937',
-                          border: 'none',
-                          borderRadius: '8px',
-                          color: '#F3F4F6'
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                         }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
                       />
                       <Area
                         type="monotone"
                         dataKey="earnings"
                         stroke="#3B82F6"
-                        fill="#3B82F6"
-                        fillOpacity={0.2}
+                        strokeWidth={2}
+                        fill="url(#earningsGradient)"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Card>
 
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-purple-600" />
+                <Card className="p-6 border-border/50">
+                  <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-purple-500/20">
+                      <Users className="w-4 h-4 text-purple-500" />
+                    </div>
                     Supporter Flow (Last 30 Days)
                   </h3>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={280}>
                     <LineChart data={analyticsData?.charts.supporterFlow || []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
-                      <XAxis dataKey="date" stroke="#6B7280" fontSize={12} />
-                      <YAxis stroke="#6B7280" fontSize={12} />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} />
+                      <XAxis dataKey="date" className="text-muted-foreground" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis className="text-muted-foreground" fontSize={11} tickLine={false} axisLine={false} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#1F2937',
-                          border: 'none',
-                          borderRadius: '8px',
-                          color: '#F3F4F6'
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                         }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
                       />
                       <Line
                         type="monotone"
                         dataKey="supporters"
                         stroke="#A855F7"
                         strokeWidth={2}
-                        dot={{ fill: '#A855F7', r: 4 }}
+                        dot={{ fill: '#A855F7', r: 3, strokeWidth: 0 }}
+                        activeDot={{ r: 5, strokeWidth: 0 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 </Card>
               </div>
 
+              {/* Engagement & Top Supporters */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="p-6 lg:col-span-2">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-green-600" />
+                <Card className="p-6 lg:col-span-2 border-border/50">
+                  <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-green-500/20">
+                      <Activity className="w-4 h-4 text-green-500" />
+                    </div>
                     Engagement Metrics (Last 30 Days)
                   </h3>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={analyticsData?.charts.engagement || []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
-                      <XAxis dataKey="date" stroke="#6B7280" fontSize={12} />
-                      <YAxis stroke="#6B7280" fontSize={12} />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} />
+                      <XAxis dataKey="date" className="text-muted-foreground" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis className="text-muted-foreground" fontSize={11} tickLine={false} axisLine={false} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#1F2937',
-                          border: 'none',
-                          borderRadius: '8px',
-                          color: '#F3F4F6'
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                         }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
                       />
-                      <Legend />
-                      <Bar dataKey="likes" fill="#10B981" radius={[8, 8, 0, 0]} />
-                      <Bar dataKey="comments" fill="#3B82F6" radius={[8, 8, 0, 0]} />
+                      <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                      <Bar dataKey="likes" fill="#10B981" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="comments" fill="#3B82F6" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </Card>
 
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <Target className="w-5 h-5 text-yellow-600" />
+                <Card className="p-6 border-border/50">
+                  <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-yellow-500/20">
+                      <Target className="w-4 h-4 text-yellow-500" />
+                    </div>
                     Top Supporters
                   </h3>
                   <div className="space-y-3">
                     {analyticsData?.topSupporters.slice(0, 5).map((supporter: any, index: number) => (
-                      <div key={supporter.id} className="flex items-center gap-3">
-                        <div className="text-sm font-semibold text-gray-500 dark:text-gray-400 w-6">
-                          #{index + 1}
+                      <motion.div
+                        key={supporter.id}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <div className={cn(
+                          'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
+                          index === 0 && 'bg-yellow-500/20 text-yellow-600',
+                          index === 1 && 'bg-gray-300/30 text-gray-500',
+                          index === 2 && 'bg-amber-600/20 text-amber-600',
+                          index > 2 && 'bg-muted text-muted-foreground'
+                        )}>
+                          {index + 1}
                         </div>
-                        <Avatar className="w-8 h-8">
+                        <Avatar className="w-9 h-9">
                           <AvatarImage src={supporter.photo_url || undefined} />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs">
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-xs">
                             {supporter.name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          <p className="text-sm font-medium text-foreground truncate">
                             {supporter.name}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-muted-foreground">
                             NPR {supporter.total_amount.toLocaleString()}
                           </p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </Card>
               </div>
-            </TabsContent>
+            </motion.div>
+          )}
 
-            {showSuccessMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg"
-              >
-                {postType === 'poll' ? 'Poll published successfully!' : 'Post published successfully!'}
-              </motion.div>
-            )}
-            {showErrorMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg"
-              >
-                {showErrorMessage}
-              </motion.div>
-            )}
+          {/* Posts Tab */}
+          {activeTab === 'posts' && (
+            <motion.div
+              key="posts"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {/* Toast Messages */}
+              <AnimatePresence>
+                {showSuccessMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="fixed top-4 right-4 z-50 flex items-center gap-3 bg-green-500 text-white px-5 py-3 rounded-2xl shadow-lg shadow-green-500/25"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    {postType === 'poll' ? 'Poll published successfully!' : 'Post published successfully!'}
+                  </motion.div>
+                )}
+                {showErrorMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="fixed top-4 right-4 z-50 flex items-center gap-3 bg-red-500 text-white px-5 py-3 rounded-2xl shadow-lg shadow-red-500/25"
+                  >
+                    <X className="w-5 h-5" />
+                    {showErrorMessage}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-            <TabsContent value="posts" className="space-y-6">
+              {/* Hero Banner */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 p-8"
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 p-6 md:p-8"
               >
                 <div className="relative z-10">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                      <FileText className="w-8 h-8 text-white" />
+                    <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+                      <Sparkles className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-2xl font-bold text-white mb-2">
+                      <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
                         Share Your Story
                       </h2>
-                      <p className="text-white/90 text-sm mb-4 max-w-2xl">
+                      <p className="text-white/85 text-sm mb-4 max-w-xl">
                         Connect with your supporters by sharing updates, behind-the-scenes content, or exclusive previews.
-                        Pro tip: Paste YouTube links to embed videos directly!
                       </p>
-                      <div className="flex items-center gap-4 text-white/80 text-xs">
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
+                      <div className="flex flex-wrap items-center gap-3 text-white/70 text-xs">
+                        <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
+                          <Heart className="w-3.5 h-3.5" />
                           {stats.likes} Likes
                         </span>
-                        <span className="flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" />
-                          Engage with fans
+                        <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          Engage
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          Build your audience
+                        <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full">
+                          <Eye className="w-3.5 h-3.5" />
+                          Build audience
                         </span>
                       </div>
                     </div>
@@ -544,85 +645,89 @@ export default function EnhancedCreatorDashboard() {
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
               </motion.div>
 
+              {/* Onboarding Warning */}
               {!onboardingCompleted && (
-                <Card className="p-6 border-2 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/20">
+                <Card className="p-5 border-2 border-yellow-500/30 bg-yellow-500/10">
                   <div className="flex items-start gap-4">
-                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                      <X className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                    <div className="p-2.5 bg-yellow-500/20 rounded-xl">
+                      <X className="w-5 h-5 text-yellow-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      <h3 className="text-base font-semibold text-foreground mb-1">
                         Complete Onboarding to Create Posts
                       </h3>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                        Please complete your onboarding by booking a call or clicking "Already Done" in the banner above to unlock post creation and editing features.
+                      <p className="text-sm text-muted-foreground">
+                        Please complete your onboarding by booking a call or clicking "Already Done" in the Overview tab to unlock post creation.
                       </p>
                     </div>
                   </div>
                 </Card>
               )}
 
+              {/* Post Creation Card */}
               <Card className={cn(
-                "p-6 border-2 transition-colors",
-                onboardingCompleted 
-                  ? "border-dashed border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600"
-                  : "border-gray-300 dark:border-gray-700 opacity-60"
+                "p-6 transition-all border-border/50",
+                onboardingCompleted
+                  ? "hover:border-primary/30"
+                  : "opacity-60"
               )}>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <div className="p-2.5 rounded-xl bg-primary/10">
                       {postType === 'post' ? (
-                        <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <FileText className="w-5 h-5 text-primary" />
                       ) : (
-                        <BarChart2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <BarChart2 className="w-5 h-5 text-primary" />
                       )}
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      Create New {postType === 'post' ? 'Post' : 'Poll'}
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Create {postType === 'post' ? 'Post' : 'Poll'}
                     </h3>
                   </div>
 
+                  {/* Post Type Toggle */}
                   <div className={cn(
-                    "flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1",
+                    "flex gap-1 p-1 bg-muted/50 rounded-xl",
                     !onboardingCompleted && "opacity-50 pointer-events-none"
                   )}>
                     <button
                       onClick={() => handlePostTypeChange('post')}
                       disabled={!onboardingCompleted}
                       className={cn(
-                        "px-4 py-2 rounded-md text-sm font-medium transition-all",
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
                         postType === 'post'
-                          ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
                         !onboardingCompleted && "cursor-not-allowed"
                       )}
                     >
-                      <FileText className="w-4 h-4 inline mr-1" />
+                      <FileText className="w-4 h-4" />
                       Post
                     </button>
                     <button
                       onClick={() => handlePostTypeChange('poll')}
                       disabled={!onboardingCompleted}
                       className={cn(
-                        "px-4 py-2 rounded-md text-sm font-medium transition-all",
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
                         postType === 'poll'
-                          ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
                         !onboardingCompleted && "cursor-not-allowed"
                       )}
                     >
-                      <BarChart2 className="w-4 h-4 inline mr-1" />
+                      <BarChart2 className="w-4 h-4" />
                       Poll
                     </button>
                   </div>
                 </div>
 
                 <div className={cn(
-                  "space-y-4",
+                  "space-y-5",
                   !onboardingCompleted && "opacity-50 pointer-events-none"
                 )}>
+                  {/* Visibility Selector */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Visibility
                     </label>
                     <div className="relative">
@@ -630,19 +735,20 @@ export default function EnhancedCreatorDashboard() {
                         value={postVisibility}
                         onChange={(e) => setPostVisibility(e.target.value)}
                         disabled={!onboardingCompleted}
-                        className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium hover:border-purple-400 dark:hover:border-purple-500 transition-colors appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-2.5 border border-border rounded-xl bg-background text-sm font-medium hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="public">🌍 Public</option>
                         <option value="supporters">👥 Supporters Only</option>
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </div>
                   </div>
 
+                  {/* Post Form */}
                   {postType === 'post' && (
                     <>
                       <div>
@@ -651,33 +757,30 @@ export default function EnhancedCreatorDashboard() {
                           value={newPostTitle}
                           onChange={(e) => setNewPostTitle(e.target.value)}
                           disabled={!onboardingCompleted}
-                          className="text-lg font-semibold border-2 focus:border-purple-400 dark:focus:border-purple-500"
+                          className="text-base font-medium border-border rounded-xl focus-visible:ring-primary/20 focus-visible:border-primary"
                         />
                       </div>
 
                       <div>
                         <Textarea
-                          placeholder={`Share your story, updates, or thoughts... ✨
+                          placeholder="Share your story, updates, or thoughts...
 
-💡 Tips:
-• Paste YouTube links to embed videos automatically
-• Share behind-the-scenes content
-• Ask questions to engage your supporters
-• Add images for visual appeal`}
+💡 Paste YouTube links to embed videos automatically"
                           value={newPostContent}
                           onChange={(e) => setNewPostContent(e.target.value)}
                           disabled={!onboardingCompleted}
-                          rows={8}
-                          className="resize-none border-2 focus:border-purple-400 dark:focus:border-purple-500"
+                          rows={6}
+                          className="resize-none border-border rounded-xl focus-visible:ring-primary/20 focus-visible:border-primary"
                         />
                       </div>
                     </>
                   )}
 
+                  {/* Poll Form */}
                   {postType === 'poll' && (
-                    <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                    <div className="space-y-4 p-5 bg-blue-500/5 rounded-2xl border border-blue-500/20">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Poll Question *
                         </label>
                         <Input
@@ -685,12 +788,12 @@ export default function EnhancedCreatorDashboard() {
                           value={pollQuestion}
                           onChange={(e) => setPollQuestion(e.target.value)}
                           disabled={!onboardingCompleted}
-                          className="text-lg font-semibold border-2 focus:border-blue-400 dark:focus:border-blue-500"
+                          className="text-base font-medium border-border rounded-xl focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-foreground mb-2">
                           Options * (2-10)
                         </label>
                         <div className="space-y-2">
@@ -701,15 +804,15 @@ export default function EnhancedCreatorDashboard() {
                                 value={option}
                                 onChange={(e) => updatePollOption(index, e.target.value)}
                                 disabled={!onboardingCompleted}
-                                className="flex-1 border-2 focus:border-blue-400 dark:focus:border-blue-500"
+                                className="flex-1 border-border rounded-xl focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
                               />
                               {pollOptions.length > 2 && (
                                 <Button
                                   type="button"
                                   variant="ghost"
-                                  size="sm"
+                                  size="icon"
                                   onClick={() => removePollOption(index)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-xl"
                                 >
                                   <X className="w-4 h-4" />
                                 </Button>
@@ -724,7 +827,7 @@ export default function EnhancedCreatorDashboard() {
                             size="sm"
                             onClick={addPollOption}
                             disabled={!onboardingCompleted}
-                            className="mt-2 w-full border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-600"
+                            className="mt-3 w-full border-dashed border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-xl"
                           >
                             <Plus className="w-4 h-4 mr-2" />
                             Add Option
@@ -732,7 +835,7 @@ export default function EnhancedCreatorDashboard() {
                         )}
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex flex-col sm:flex-row gap-4 pt-2">
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -742,13 +845,13 @@ export default function EnhancedCreatorDashboard() {
                             disabled={!onboardingCompleted}
                             className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                           />
-                          <label htmlFor="multiple-answers" className="text-sm text-gray-700 dark:text-gray-300">
+                          <label htmlFor="multiple-answers" className="text-sm text-muted-foreground">
                             Allow multiple answers
                           </label>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <label htmlFor="poll-duration" className="text-sm text-gray-700 dark:text-gray-300">
+                          <label htmlFor="poll-duration" className="text-sm text-muted-foreground">
                             Duration:
                           </label>
                           <select
@@ -756,7 +859,7 @@ export default function EnhancedCreatorDashboard() {
                             value={pollDuration || ''}
                             onChange={(e) => setPollDuration(e.target.value ? parseInt(e.target.value) : null)}
                             disabled={!onboardingCompleted}
-                            className="px-3 py-1 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                            className="px-3 py-1.5 border border-border rounded-lg bg-background text-sm focus:ring-2 focus:ring-blue-500/20"
                           >
                             <option value="">No expiration</option>
                             <option value="1">1 day</option>
@@ -770,32 +873,38 @@ export default function EnhancedCreatorDashboard() {
                     </div>
                   )}
 
+                  {/* Image Preview */}
                   {uploadedImageUrl && postType === 'post' && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="relative rounded-xl overflow-hidden"
+                      className="relative rounded-2xl overflow-hidden"
                     >
                       <img
                         src={uploadedImageUrl}
                         alt="Upload preview"
-                        className="w-full h-64 object-cover"
+                        className="w-full h-56 object-cover"
                       />
                       <Button
-                        variant="destructive"
+                        variant="secondary"
                         size="sm"
                         onClick={() => setUploadedImageUrl('')}
-                        className="absolute top-3 right-3 shadow-lg"
+                        className="absolute top-3 right-3 shadow-lg bg-background/80 backdrop-blur-sm hover:bg-background rounded-xl"
                       >
+                        <X className="w-4 h-4 mr-1" />
                         Remove
                       </Button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                        <p className="text-white text-sm font-medium">Preview ready to post</p>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <p className="text-white text-sm font-medium flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4" />
+                          Image ready
+                        </p>
                       </div>
                     </motion.div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  {/* Actions Row */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-5 border-t border-border/50">
                     <div className="flex items-center gap-2">
                       {postType === 'post' && (
                         <>
@@ -810,17 +919,26 @@ export default function EnhancedCreatorDashboard() {
                           <label htmlFor="image-upload" className="flex-1 sm:flex-none">
                             <Button
                               variant="outline"
-                              size="sm"
+                              size="default"
                               disabled={isUploadingImage || !onboardingCompleted}
-                              className="w-full sm:w-auto border-2 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                              className="w-full sm:w-auto rounded-xl hover:border-primary/50 hover:bg-primary/5"
                               asChild
                             >
                               <span className={cn(
                                 "cursor-pointer",
                                 !onboardingCompleted && "cursor-not-allowed"
                               )}>
-                                <Upload className="w-4 h-4 mr-2" />
-                                {isUploadingImage ? 'Uploading...' : 'Add Image'}
+                                {isUploadingImage ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ImageIcon className="w-4 h-4 mr-2" />
+                                    Add Image
+                                  </>
+                                )}
                               </span>
                             </Button>
                           </label>
@@ -838,7 +956,7 @@ export default function EnhancedCreatorDashboard() {
                       }
                       size="lg"
                       className={cn(
-                        "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all",
+                        "bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-semibold shadow-lg shadow-violet-500/25 hover:shadow-xl transition-all rounded-xl",
                         !onboardingCompleted && "opacity-50 cursor-not-allowed"
                       )}
                     >
@@ -858,31 +976,36 @@ export default function EnhancedCreatorDashboard() {
                 </div>
               </Card>
 
-              <div className="space-y-6">
+              {/* Recent Posts Section */}
+              <div className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-purple-600" />
-                      Your Recent Posts
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {dashboardData?.posts.length || 0} posts published
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-primary/10">
+                      <Activity className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        Your Recent Posts
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {dashboardData?.posts.length || 0} posts published
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 {dashboardData?.posts && dashboardData.posts.length > 0 ? (
-                  <div className={cn(
-                    "space-y-6",
-                    !onboardingCompleted && "opacity-60"
-                  )}>
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className={cn(
+                      "space-y-4",
+                      !onboardingCompleted && "opacity-60"
+                    )}
+                  >
                     {dashboardData.posts.map((post: any, index: number) => (
-                      <motion.div
-                        key={post.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
+                      <motion.div key={post.id} variants={itemVariants}>
                         <EnhancedPostCard
                           post={post}
                           currentUserId={user?.id}
@@ -890,60 +1013,86 @@ export default function EnhancedCreatorDashboard() {
                         />
                       </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 ) : (
-                  <Card className="p-12 text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
+                  <Card className="p-10 text-center border-dashed border-2 border-border/50">
                     <div className="flex flex-col items-center gap-4">
-                      <div className="p-4 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                        <FileText className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+                      <div className="p-4 bg-primary/10 rounded-2xl">
+                        <FileText className="w-10 h-10 text-primary" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        <h3 className="text-base font-semibold text-foreground mb-1">
                           No posts yet
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-                          Start sharing your journey! Create your first post to connect with your supporters and build your community.
+                        <p className="text-sm text-muted-foreground max-w-sm">
+                          Start sharing your journey! Create your first post to connect with your supporters.
                         </p>
                       </div>
                     </div>
                   </Card>
                 )}
               </div>
-            </TabsContent>
+            </motion.div>
+          )}
 
-            <TabsContent value="supporters" className="space-y-6">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  All Supporters ({stats.supporters})
-                </h3>
+          {/* Supporters Tab */}
+          {activeTab === 'supporters' && (
+            <motion.div
+              key="supporters"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <Card className="p-6 border-border/50">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-2 rounded-xl bg-purple-500/10">
+                    <Users className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      All Supporters
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {stats.supporters} total supporters
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-3">
-                  {dashboardData?.supporters.map((supporter: any) => (
-                    <div key={supporter.id} className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  {dashboardData?.supporters.map((supporter: any, index: number) => (
+                    <motion.div
+                      key={supporter.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl hover:bg-muted/50 transition-colors"
+                    >
                       <Avatar className="w-12 h-12">
                         <AvatarImage src={supporter.avatar || undefined} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground">
                           {supporter.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-gray-100">{supporter.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">{supporter.name}</p>
+                        <p className="text-sm text-muted-foreground">
                           Supported: NPR {supporter.amount.toLocaleString()}
                         </p>
                       </div>
                       {supporter.joined && (
-                        <p className="text-xs text-gray-400">
+                        <Badge variant="secondary" className="text-xs">
                           {new Date(supporter.joined).toLocaleDateString()}
-                        </p>
+                        </Badge>
                       )}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-    </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </PageLayout>
   );
 }

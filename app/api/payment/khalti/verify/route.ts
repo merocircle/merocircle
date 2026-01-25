@@ -102,15 +102,68 @@ export async function GET(request: NextRequest) {
           .eq('id', transaction.id);
 
         if (updateError) {
-          logger.error('Failed to update transaction', 'KHALTI_VERIFY', { 
-            error: updateError.message 
+          logger.error('Failed to update transaction', 'KHALTI_VERIFY', {
+            error: updateError.message
           });
         } else {
-          logger.info('Khalti payment verified successfully', 'KHALTI_VERIFY', { 
-            pidx, 
+          logger.info('Khalti payment verified successfully', 'KHALTI_VERIFY', {
+            pidx,
             transactionId: transaction.id,
             khaltiTransactionId: lookupData.transaction_id,
           });
+
+          // Create/update supporter record
+          const tierLevel = (transaction.esewa_data as any)?.tier_level || 1;
+          const transactionAmount = Number(transaction.amount);
+
+          const { data: existingSupporter } = await supabase
+            .from('supporters')
+            .select('id')
+            .eq('supporter_id', transaction.supporter_id)
+            .eq('creator_id', transaction.creator_id)
+            .single();
+
+          if (!existingSupporter) {
+            await supabase
+              .from('supporters')
+              .insert({
+                supporter_id: transaction.supporter_id,
+                creator_id: transaction.creator_id,
+                tier: 'basic',
+                tier_level: tierLevel,
+                amount: transactionAmount,
+                is_active: true,
+              });
+          } else {
+            await supabase
+              .from('supporters')
+              .update({
+                is_active: true,
+                tier_level: tierLevel,
+                amount: transactionAmount,
+              })
+              .eq('id', existingSupporter.id);
+          }
+
+          // Update supporters_count in creator_profiles (count active supporters)
+          const { data: countResult } = await supabase
+            .from('supporters')
+            .select('supporter_id')
+            .eq('creator_id', transaction.creator_id)
+            .eq('is_active', true);
+
+          if (countResult) {
+            const uniqueSupporters = new Set(countResult.map(r => r.supporter_id)).size;
+            await supabase
+              .from('creator_profiles')
+              .update({ supporters_count: uniqueSupporters })
+              .eq('user_id', transaction.creator_id);
+
+            logger.info('Updated supporter count', 'KHALTI_VERIFY', {
+              creatorId: transaction.creator_id,
+              supportersCount: uniqueSupporters
+            });
+          }
         }
 
         // Redirect to success page

@@ -182,6 +182,11 @@ export async function GET(
         is_verified: m.is_verified
       })),
       posts: formattedPosts
+    }, {
+      headers: {
+        // Private cache since response varies by user (supporter status)
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=120'
+      }
     });
   } catch {
     return NextResponse.json(

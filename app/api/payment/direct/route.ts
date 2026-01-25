@@ -153,6 +153,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Update supporters_count in creator_profiles
+    const { data: countResult } = await supabase
+      .from('supporters')
+      .select('supporter_id')
+      .eq('creator_id', creatorId)
+      .eq('is_active', true);
+
+    if (countResult) {
+      const uniqueSupporters = new Set(countResult.map(r => r.supporter_id)).size;
+      await supabase
+        .from('creator_profiles')
+        .update({ supporters_count: uniqueSupporters })
+        .eq('user_id', creatorId);
+
+      logger.info('Updated supporter count', 'DIRECT_PAYMENT', {
+        creatorId,
+        supportersCount: uniqueSupporters
+      });
+    }
+
     logger.info('Direct payment completed successfully', 'DIRECT_PAYMENT', {
       transactionId: transaction.id,
       creatorId,

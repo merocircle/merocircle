@@ -134,50 +134,31 @@ export const useCreatorDetails = (creatorId: string | null) => {
   }
 }
 
+/**
+ * useSubscription - Placeholder for recurring subscription management
+ * NOTE: Currently, support is handled via one-time payments through payment gateways
+ * (eSewa, Khalti, direct). Recurring subscriptions are not yet implemented.
+ * Use the payment flow in CreatorProfileSection instead.
+ */
 export const useSubscription = () => {
   const [loading, setLoading] = useState(false)
 
-  const subscribe = async (creatorId: string, tierId: string) => {
+  const subscribe = async (_creatorId: string, _tierId: string) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/creator/${creatorId}/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tierId, action: 'subscribe' })
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to subscribe')
-      }
-      
-      return await response.json()
-    } catch (error) {
-      console.error('Subscribe error:', error)
-      throw error
+      // Recurring subscriptions not yet implemented
+      // Support is handled via payment gateways (eSewa, Khalti, direct)
+      throw new Error('Recurring subscriptions coming soon. Please use the support tier buttons to make a one-time payment.')
     } finally {
       setLoading(false)
     }
   }
 
-  const unsubscribe = async (creatorId: string, tierId: string) => {
+  const unsubscribe = async (_creatorId: string, _tierId: string) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/creator/${creatorId}/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tierId, action: 'unsubscribe' })
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to unsubscribe')
-      }
-      
-      return await response.json()
-    } catch (error) {
-      console.error('Unsubscribe error:', error)
-      throw error
+      // Recurring subscriptions not yet implemented
+      throw new Error('Subscription management coming soon.')
     } finally {
       setLoading(false)
     }

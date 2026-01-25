@@ -16,7 +16,6 @@ function calculatePostScore(post: any): number {
   const engagementScore = likesCount + (commentsCount * 2); // Comments weighted 2x
 
   // Balanced formula: combine time decay with engagement
-  // Recent posts with decent engagement rank higher than old posts with high engagement
   return (engagementScore * timeFactor) + (timeFactor * 10);
 }
 
@@ -31,8 +30,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    // Get trending creators for "Creators for you" section
-    // Allow unauthenticated access - show public creator data
+    // Get trending creators
     let trendingCreatorsQuery = supabase
       .from('creator_profiles')
       .select(`
@@ -42,13 +40,11 @@ export async function GET(request: NextRequest) {
         is_verified,
         supporters_count,
         posts_count,
-        total_earnings,
         users!inner(id, display_name, photo_url)
       `)
       .order('supporters_count', { ascending: false })
       .limit(12);
 
-    // Exclude current user's creator profile if they are authenticated and a creator
     if (user) {
       const { data: userProfile } = await supabase
         .from('users')
@@ -61,13 +57,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { data: trendingCreators } = await trendingCreatorsQuery;
+    const { data: trendingCreators, error: creatorsError } = await trendingCreatorsQuery;
+
+    if (creatorsError) {
+      console.error('Error fetching creators:', creatorsError);
+    }
 
     const formattedCreators = (trendingCreators || []).map((cp: any) => ({
       user_id: cp.user_id,
-      display_name: cp.users.display_name,
+      display_name: cp.users?.display_name || 'Creator',
       bio: cp.bio,
-      avatar_url: cp.users.photo_url,
+      avatar_url: cp.users?.photo_url,
       category: cp.category,
       is_verified: cp.is_verified,
       supporter_count: cp.supporters_count || 0,
@@ -86,13 +86,11 @@ export async function GET(request: NextRequest) {
         .select('creator_id')
         .eq('supporter_id', user.id)
         .eq('is_active', true);
-      
+
       supportedCreatorIds = (supporterData || []).map((s: any) => s.creator_id);
     }
 
-    // Get posts with optimized query using denormalized counts
-    // For authenticated users: show public posts + supporter-only posts from creators they support
-    // For unauthenticated users: show only public posts
+    // Build posts query - simplified without nested joins
     let allPostsQuery = supabase
       .from('posts')
       .select(`
@@ -100,7 +98,6 @@ export async function GET(request: NextRequest) {
         title,
         content,
         image_url,
-        media_url,
         is_public,
         tier_required,
         post_type,
@@ -109,14 +106,7 @@ export async function GET(request: NextRequest) {
         creator_id,
         likes_count,
         comments_count,
-        users!posts_creator_id_fkey(id, display_name, photo_url),
-        creator_profiles!posts_creator_id_fkey(category, is_verified),
-        polls(
-          id,
-          question,
-          allows_multiple_answers,
-          expires_at
-        )
+        polls(id, question, allows_multiple_answers, expires_at)
       `)
       .order('created_at', { ascending: false });
 
@@ -125,24 +115,67 @@ export async function GET(request: NextRequest) {
       allPostsQuery = allPostsQuery.neq('creator_id', user.id);
     }
 
-    // Apply visibility filter at database level for better performance
+    // Apply visibility filter
     if (user && supportedCreatorIds.length > 0) {
-      // Authenticated user with supporters: show public posts OR supporter-only posts from supported creators
       allPostsQuery = allPostsQuery.or(
-        `is_public.eq.true,and(creator_id.in.(${supportedCreatorIds.join(',')}),or(is_public.eq.false,tier_required.neq.free))`
+        `is_public.eq.true,creator_id.in.(${supportedCreatorIds.join(',')})`
       );
     } else {
-      // Unauthenticated or no supporters: show only public posts
       allPostsQuery = allPostsQuery.eq('is_public', true);
     }
 
-    // Apply pagination - fetch only what we need
-    const { data: allPosts } = await allPostsQuery.range(offset, offset + limit - 1);
+    // Apply pagination
+    const { data: allPosts, error: postsError } = await allPostsQuery.range(offset, offset + limit - 1);
 
-    // Format posts using denormalized counts (no need to fetch profiles separately since joined in query)
-    const formattedPosts = (allPosts || []).map((p: any) => {
-      // Determine if user is a supporter of this creator
-      const isSupporterOnly = !p.is_public || (p.tier_required && p.tier_required !== 'free');
+    if (postsError) {
+      console.error('Error fetching posts:', postsError);
+      return NextResponse.json({
+        error: 'Failed to fetch posts',
+        details: postsError.message
+      }, { status: 500 });
+    }
+
+    console.log(`Fetched ${allPosts?.length || 0} posts`);
+
+    // If no posts, return early
+    if (!allPosts || allPosts.length === 0) {
+      return NextResponse.json({
+        creators: formattedCreators,
+        posts: []
+      });
+    }
+
+    // Get unique creator IDs from posts
+    const creatorIds = [...new Set(allPosts.map((p: any) => p.creator_id))];
+
+    // Fetch user info for all creators in one query
+    const { data: creators, error: usersError } = await supabase
+      .from('users')
+      .select('id, display_name, photo_url')
+      .in('id', creatorIds);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+    }
+
+    // Fetch creator profiles for all creators
+    const { data: creatorProfiles, error: profilesError } = await supabase
+      .from('creator_profiles')
+      .select('user_id, category, is_verified')
+      .in('user_id', creatorIds);
+
+    if (profilesError) {
+      console.error('Error fetching creator profiles:', profilesError);
+    }
+
+    // Create lookup maps
+    const creatorsMap = new Map((creators || []).map((c: any) => [c.id, c]));
+    const profilesMap = new Map((creatorProfiles || []).map((cp: any) => [cp.user_id, cp]));
+
+    // Format posts
+    const formattedPosts = allPosts.map((p: any) => {
+      const creator = creatorsMap.get(p.creator_id);
+      const profile = profilesMap.get(p.creator_id);
       const isSupporter = user ? supportedCreatorIds.includes(p.creator_id) : false;
 
       return {
@@ -150,7 +183,6 @@ export async function GET(request: NextRequest) {
         title: p.title,
         content: p.content,
         image_url: p.image_url,
-        media_url: p.media_url || null,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
         post_type: p.post_type || 'post',
@@ -158,14 +190,14 @@ export async function GET(request: NextRequest) {
         updated_at: p.updated_at,
         creator_id: p.creator_id,
         creator: {
-          id: p.users?.id || p.creator_id,
-          display_name: p.users?.display_name || 'Creator',
-          photo_url: p.users?.photo_url || null,
+          id: creator?.id || p.creator_id,
+          display_name: creator?.display_name || 'Creator',
+          photo_url: creator?.photo_url || null,
           role: 'creator'
         },
         creator_profile: {
-          category: p.creator_profiles?.category || null,
-          is_verified: p.creator_profiles?.is_verified || false
+          category: profile?.category || null,
+          is_verified: profile?.is_verified || false
         },
         poll: p.polls || null,
         likes_count: p.likes_count || 0,
@@ -189,6 +221,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Unified feed API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

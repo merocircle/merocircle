@@ -1,23 +1,21 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Calendar, Send, Loader2, Lock, Eye, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Send, Loader2, Lock, MoreHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Avatar } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from '@/lib/youtube';
 import { getBlurDataURL, imageSizes } from '@/lib/image-utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLikePost, useAddComment } from '@/hooks/useQueries';
+import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 
 // Lazy load PollCard component (only loads when needed for poll posts)
 const PollCard = dynamic(() => import('./PollCard').then(mod => ({ default: mod.PollCard })), {
@@ -79,6 +77,78 @@ interface Comment {
     display_name: string;
     photo_url?: string;
   };
+}
+
+// Double-tap heart animation component
+function DoubleTapHeart({ show }: { show: boolean }) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{
+              scale: [0, 1.5, 1.2],
+              opacity: [0, 1, 0]
+            }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <Heart
+              className="w-24 h-24 text-white fill-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
+            />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// Heart particles burst effect
+function HeartParticles({ show }: { show: boolean }) {
+  const particles = Array.from({ length: 6 }, (_, i) => ({
+    id: i,
+    angle: (i * 60) * (Math.PI / 180),
+  }));
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <>
+          {particles.map((particle) => (
+            <motion.div
+              key={particle.id}
+              className="absolute pointer-events-none"
+              style={{ left: '50%', top: '50%' }}
+              initial={{
+                scale: 0,
+                opacity: 0,
+                x: 0,
+                y: 0
+              }}
+              animate={{
+                scale: [0, 1, 0.5],
+                opacity: [0, 1, 0],
+                x: Math.cos(particle.angle) * 30,
+                y: Math.sin(particle.angle) * 30 - 20,
+              }}
+              transition={{
+                duration: 0.5,
+                delay: particle.id * 0.04,
+                ease: "easeOut"
+              }}
+            >
+              <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+            </motion.div>
+          ))}
+        </>
+      )}
+    </AnimatePresence>
+  );
 }
 
 // Post Image Modal Component
@@ -144,6 +214,9 @@ export function EnhancedPostCard({
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
+  const [showHeartParticles, setShowHeartParticles] = useState(false);
+  const lastTapRef = useRef<number>(0);
 
   // Detect YouTube video in content
   const youtubeVideoId = useMemo(() => {
@@ -188,20 +261,33 @@ export function EnhancedPostCard({
     return true;
   }, [post.is_public, post.tier_required, isSupporter, currentUserId, post.creator.id]);
 
-  // Determine profile link - if viewing own post, go to own profile
-  const creatorProfileLink = currentUserId === post.creator.id
-    ? '/profile'
-    : `/creator/${post.creator.id}`;
-
   const router = useRouter();
+  const { openCreatorProfile, setActiveView } = useDashboardViewSafe();
 
-  const handleLike = () => {
+  // Handle creator profile navigation (SPA-style)
+  const handleCreatorClick = useCallback(() => {
+    if (currentUserId === post.creator.id) {
+      // Own post - go to own profile
+      setActiveView('profile');
+    } else {
+      // Other creator - open their profile
+      openCreatorProfile(post.creator.id);
+    }
+  }, [currentUserId, post.creator.id, setActiveView, openCreatorProfile]);
+
+  const handleLike = useCallback(() => {
     if (!currentUserId) {
       router.push('/auth');
       return;
     }
 
     const action = isLiked ? 'unlike' : 'like';
+
+    // Show particle effect on like
+    if (!isLiked) {
+      setShowHeartParticles(true);
+      setTimeout(() => setShowHeartParticles(false), 500);
+    }
 
     // Optimistic UI update (local state)
     setIsLiked(!isLiked);
@@ -210,7 +296,29 @@ export function EnhancedPostCard({
     // Trigger mutation with optimistic cache updates
     likeMutation.mutate({ postId: post.id, action });
     onLike?.(post.id);
-  };
+  }, [currentUserId, isLiked, router, post.id, likeMutation, onLike]);
+
+  // Double-tap handler for liking on images
+  const handleDoubleTap = useCallback(() => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected - like the post
+      if (!isLiked && currentUserId) {
+        setShowDoubleTapHeart(true);
+        setTimeout(() => setShowDoubleTapHeart(false), 800);
+        // Trigger like
+        setShowHeartParticles(true);
+        setTimeout(() => setShowHeartParticles(false), 500);
+        setIsLiked(true);
+        setLikesCount(prev => prev + 1);
+        likeMutation.mutate({ postId: post.id, action: 'like' });
+        onLike?.(post.id);
+      }
+    }
+    lastTapRef.current = now;
+  }, [isLiked, currentUserId, post.id, likeMutation, onLike]);
 
   const handleShare = async () => {
     const url = `${window.location.origin}/posts/${post.id}`;
@@ -297,131 +405,118 @@ export function EnhancedPostCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
       transition={{ duration: 0.3 }}
-      className="w-full max-w-2xl mx-auto"
+      className="w-full"
     >
-      <Card className="overflow-hidden border-0 shadow-xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        {/* Header - Instagram style */}
+        <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href={creatorProfileLink}>
-              <Avatar className="h-11 w-11 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-                {post.creator.photo_url ? (
-                  <Image
-                    src={post.creator.photo_url}
-                    alt={post.creator.display_name}
-                    fill
-                    className="object-cover rounded-full"
-                    sizes={imageSizes.avatar}
-                    placeholder="blur"
-                    blurDataURL={getBlurDataURL()}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-semibold">
-                    {post.creator.display_name.charAt(0).toUpperCase()}
-                  </div>
-                )}
+            <div onClick={handleCreatorClick} className="cursor-pointer">
+              <Avatar className="h-10 w-10 ring-2 ring-background hover:ring-primary/50 transition-all">
+                <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
+                  {post.creator.display_name.charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
-            </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <Link href={creatorProfileLink}>
-                  <p className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">
-                    {post.creator.display_name}
-                  </p>
-                </Link>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span
+                  onClick={handleCreatorClick}
+                  className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+                >
+                  {post.creator.display_name}
+                </span>
                 {post.creator_profile?.is_verified && (
-                  <Badge variant="outline" className="h-4 px-1 text-xs">
+                  <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-blue-500/10 text-blue-500 border-0">
                     ✓
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                {post.tier_required !== 'free' && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                {post.creator_profile?.category && (
                   <>
                     <span>·</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {post.tier_required}
-                    </Badge>
+                    <span>{post.creator_profile.category}</span>
                   </>
                 )}
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setIsBookmarked(!isBookmarked)}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
-          >
-            <Bookmark className={cn(
-              'h-5 w-5 transition-all',
-              isBookmarked ? 'fill-current text-yellow-500' : 'text-muted-foreground'
-            )} />
-          </button>
+          <div className="flex items-center gap-1">
+            {post.tier_required !== 'free' && (
+              <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                {post.tier_required}
+              </Badge>
+            )}
+            <button className="p-2 rounded-full hover:bg-muted transition-colors">
+              <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="px-5 pb-4 relative">
+        {/* Content Text - Before Media (Instagram style) */}
+        {!shouldBlur && post.content && (
+          <div className="px-4 pb-3">
+            <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+              {post.content}
+            </p>
+          </div>
+        )}
+
+        {/* Media Section */}
+        <div className="relative">
           {shouldBlur ? (
-            /* For non-supporters: Show title only, no actual content/image URLs are sent from API */
-            <>
-              <Link href={`/posts/${post.id}`}>
-                <h3 className="text-lg font-bold text-foreground mb-2 hover:text-primary transition-colors cursor-pointer line-clamp-2">
-                  {post.title}
-                </h3>
-              </Link>
-              <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                This post is available for supporters only.
-              </p>
-              
-              {/* Placeholder for locked content - no actual image URL in DOM */}
-              <div className="relative w-full h-96 md:h-[500px] rounded-xl overflow-hidden mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                {/* Lock message overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center p-6 max-w-sm z-10">
-                    <div className="mb-4 flex justify-center">
-                      <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                        <Lock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                      </div>
+            /* Locked content - Instagram style */
+            <div
+              className="relative w-full aspect-[4/5] bg-gradient-to-br from-muted to-muted/50 overflow-hidden"
+              onClick={handleDoubleTap}
+            >
+              {/* Decorative blur pattern */}
+              <div className="absolute inset-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5" />
+                <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl" />
+              </div>
+              {/* Lock overlay */}
+              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px]">
+                <div className="text-center p-6 max-w-xs">
+                  <motion.div
+                    className="mb-4 flex justify-center"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <div className="p-4 bg-background/80 backdrop-blur-sm rounded-2xl shadow-lg border border-border">
+                      <Lock className="w-8 h-8 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                      Support this creator to view this content
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      This post is available for supporters only. Support {post.creator.display_name} to unlock exclusive content.
-                    </p>
-                  </div>
-                </div>
-                {/* Decorative blur pattern - not an actual image */}
-                <div className="absolute inset-0 opacity-20">
-                  <div className="w-full h-full bg-gradient-to-br from-purple-200 via-pink-200 to-red-200 dark:from-purple-900 dark:via-pink-900 dark:to-red-900 blur-3xl" />
+                  </motion.div>
+                  <h3 className="text-base font-semibold text-foreground mb-2">
+                    Supporter-only content
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Support {post.creator.display_name} to unlock
+                  </p>
+                  <Button size="sm" className="w-full" onClick={handleCreatorClick}>
+                    Become a Supporter
+                  </Button>
                 </div>
               </div>
-            </>
+            </div>
           ) : (
-            /* For supporters/creators: Show actual content */
+            /* Unlocked content - Instagram style */
             <>
-              <Link href={`/posts/${post.id}`}>
-                <h3 className="text-lg font-bold text-foreground mb-2 hover:text-primary transition-colors cursor-pointer line-clamp-2">
-                  {post.title}
-                </h3>
-              </Link>
-              <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 mb-4">
-                {post.content}
-              </p>
-
               {/* Poll */}
               {post.post_type === 'poll' && pollData && pollData.id && (
-                <div className="mb-4">
+                <div className="px-4 pb-4">
                   <PollCard pollId={pollData.id} currentUserId={currentUserId} />
                 </div>
               )}
 
-              {/* YouTube Video Embed (only for regular posts) */}
+              {/* YouTube Video Embed */}
               {post.post_type !== 'poll' && youtubeVideoId && (
-                <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 bg-black">
+                <div className="relative w-full aspect-video bg-black">
                   <iframe
                     src={getYouTubeEmbedUrl(youtubeVideoId)}
                     title="YouTube video player"
@@ -432,74 +527,108 @@ export function EnhancedPostCard({
                 </div>
               )}
 
-              {/* Post Image (only for regular posts) */}
+              {/* Post Image - Instagram 4:5 ratio with double-tap */}
               {post.post_type !== 'poll' && post.image_url && (
-                <PostImageModal imageUrl={post.image_url} title={post.title}>
-                  <div className="relative w-full h-96 md:h-[500px] rounded-xl overflow-hidden mb-4 cursor-pointer group">
-                    <Image
-                      src={post.image_url}
-                      alt={post.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes={imageSizes.post}
-                      placeholder="blur"
-                      blurDataURL={getBlurDataURL()}
-                      priority={false}
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                      <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                </PostImageModal>
+                <div
+                  className="relative w-full aspect-[4/5] bg-muted cursor-pointer select-none"
+                  onClick={handleDoubleTap}
+                >
+                  <Image
+                    src={post.image_url}
+                    alt={post.title}
+                    fill
+                    className="object-cover"
+                    sizes={imageSizes.post}
+                    placeholder="blur"
+                    blurDataURL={getBlurDataURL()}
+                    priority={false}
+                    loading="lazy"
+                    draggable={false}
+                  />
+                  {/* Double-tap heart overlay */}
+                  <DoubleTapHeart show={showDoubleTapHeart} />
+                </div>
               )}
             </>
           )}
         </div>
 
-        {/* Actions Footer */}
+        {/* Actions Row - Instagram style */}
         {showActions && (
-          <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
-            <motion.button
-              onClick={handleLike}
-              disabled={!currentUserId || likeMutation.isPending}
-              whileTap={{ scale: 0.9 }}
-              className={cn(
-                'py-3 flex items-center justify-center gap-2 transition-colors',
-                isLiked
-                  ? 'text-rose-600 font-semibold hover:bg-rose-50 dark:hover:bg-rose-900/20'
-                  : 'text-muted-foreground hover:bg-muted'
-              )}
-            >
-              <motion.div
-                animate={isLiked ? { scale: [1, 1.3, 1] } : {}}
-                transition={{ duration: 0.3 }}
+          <div className="px-4 py-3">
+            {/* Action buttons */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-4">
+                {/* Like button with particles */}
+                <div className="relative">
+                  <motion.button
+                    onClick={handleLike}
+                    disabled={!currentUserId || likeMutation.isPending}
+                    whileTap={{ scale: 0.8 }}
+                    className="p-1"
+                  >
+                    <motion.div
+                      animate={isLiked ? {
+                        scale: [1, 1.3, 0.9, 1.1, 1],
+                      } : {}}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                    >
+                      <Heart
+                        className={cn(
+                          'w-6 h-6 transition-colors',
+                          isLiked ? 'text-rose-500 fill-rose-500' : 'text-foreground'
+                        )}
+                      />
+                    </motion.div>
+                  </motion.button>
+                  <HeartParticles show={showHeartParticles} />
+                </div>
+                {/* Comment button */}
+                <motion.button
+                  onClick={handleCommentClick}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-1"
+                >
+                  <MessageCircle className="w-6 h-6 text-foreground" />
+                </motion.button>
+                {/* Share button */}
+                <motion.button
+                  onClick={handleShare}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-1"
+                >
+                  <Share2 className="w-6 h-6 text-foreground" />
+                </motion.button>
+              </div>
+              {/* Bookmark button */}
+              <motion.button
+                onClick={() => setIsBookmarked(!isBookmarked)}
+                whileTap={{ scale: 0.9 }}
+                className="p-1"
               >
-                <Heart className={cn('h-4 w-4 transition-all', isLiked && 'fill-current')} />
-              </motion.div>
-              {likesCount}
-            </motion.button>
-            <motion.button
-              onClick={handleCommentClick}
-              whileTap={{ scale: 0.9 }}
-              className={cn(
-                'py-3 flex items-center justify-center gap-2 transition-colors',
-                showComments
-                  ? 'text-blue-600 font-semibold hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                  : 'text-muted-foreground hover:bg-blue-50 dark:hover:bg-blue-900/20'
-              )}
-            >
-              <MessageCircle className={cn('h-4 w-4', showComments && 'fill-current')} />
-              {commentsCount}
-            </motion.button>
-            <motion.button
-              onClick={handleShare}
-              whileTap={{ scale: 0.9 }}
-              className="py-3 flex items-center justify-center gap-2 text-muted-foreground hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </motion.button>
+                <Bookmark
+                  className={cn(
+                    'w-6 h-6 transition-colors',
+                    isBookmarked ? 'text-foreground fill-foreground' : 'text-foreground'
+                  )}
+                />
+              </motion.button>
+            </div>
+
+            {/* Likes count */}
+            <p className="text-sm font-semibold text-foreground">
+              {likesCount.toLocaleString()} {likesCount === 1 ? 'like' : 'likes'}
+            </p>
+
+            {/* View comments link */}
+            {commentsCount > 0 && !showComments && (
+              <button
+                onClick={handleCommentClick}
+                className="text-sm text-muted-foreground hover:text-foreground mt-1"
+              >
+                View all {commentsCount} comments
+              </button>
+            )}
           </div>
         )}
 
@@ -513,110 +642,88 @@ export function EnhancedPostCard({
               transition={{ duration: 0.3 }}
               className="overflow-hidden border-t border-border"
             >
-              <div className="p-4 space-y-4">
-                {/* Add Comment Form */}
-                {currentUserId ? (
-                  <form onSubmit={handleSubmitComment} className="flex gap-3">
-                    <Avatar className="h-8 w-8 flex-shrink-0">
-                      <div className="w-full h-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-xs font-semibold">
-                        {currentUserId.charAt(0).toUpperCase()}
-                      </div>
-                    </Avatar>
-                    <div className="flex-1 space-y-2">
-                      <Textarea
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Write a comment..."
-                        className="min-h-[80px] resize-none"
-                        rows={3}
-                      />
-                      <div className="flex justify-end">
-                        <Button
-                          type="submit"
-                          size="sm"
-                          disabled={!newComment.trim() || isSubmittingComment}
-                          className="gap-2"
-                        >
-                          {isSubmittingComment ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Posting...
-                            </>
-                          ) : (
-                            <>
-                              <Send className="h-4 w-4" />
-                              Comment
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="p-4 bg-muted rounded-lg text-center">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Please log in to comment
-                    </p>
-                    <Link href="/login">
-                      <Button size="sm" variant="outline">
-                        Log In
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-
-                {/* Comments List */}
+              <div className="px-4 py-3 space-y-3 max-h-96 overflow-y-auto">
+                {/* Comments List First */}
                 {loadingComments ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
                 ) : comments.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {comments.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          {comment.user.photo_url ? (
-                            <Image
-                              src={comment.user.photo_url}
-                              alt={comment.user.display_name}
-                              fill
-                              className="object-cover rounded-full"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white text-xs font-semibold">
-                              {comment.user.display_name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                      <div key={comment.id} className="flex gap-2">
+                        <Avatar className="h-7 w-7 flex-shrink-0">
+                          <AvatarImage src={comment.user.photo_url} />
+                          <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-primary/60 text-white">
+                            {comment.user.display_name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm">
+                            <span className="font-semibold text-foreground">
                               {comment.user.display_name}
-                            </p>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-foreground leading-relaxed">
-                            {comment.content}
+                            </span>{' '}
+                            <span className="text-foreground">{comment.content}</span>
                           </p>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <MessageCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      No comments yet. Be the first to comment!
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No comments yet. Be the first!
+                  </p>
+                )}
+              </div>
+
+              {/* Add Comment Input - Instagram style inline */}
+              <div className="px-4 py-3 border-t border-border">
+                {currentUserId ? (
+                  <form onSubmit={handleSubmitComment} className="flex items-center gap-3">
+                    <Avatar className="h-7 w-7 flex-shrink-0">
+                      <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-primary/60 text-white">
+                        {currentUserId.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newComment.trim() || commentMutation.isPending}
+                      className={cn(
+                        "text-sm font-semibold transition-colors",
+                        newComment.trim()
+                          ? "text-primary hover:text-primary/80"
+                          : "text-primary/50 cursor-not-allowed"
+                      )}
+                    >
+                      {commentMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Post'
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <Link href="/auth" className="block text-center">
+                    <span className="text-sm text-muted-foreground hover:text-foreground">
+                      Log in to comment
+                    </span>
+                  </Link>
                 )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </Card>
+      </div>
     </motion.div>
   );
 }

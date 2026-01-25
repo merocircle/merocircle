@@ -2,16 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/supabase-auth-context';
 
 export function useUnifiedDashboard() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   return useQuery({
-    queryKey: ['dashboard', 'unified', user?.id],
+    queryKey: ['dashboard', 'unified', user?.id ?? 'public'],
     queryFn: async () => {
       const res = await fetch('/api/dashboard/unified-feed');
       if (!res.ok) throw new Error('Failed to fetch feed');
       return res.json();
     },
-    enabled: !!(isAuthenticated && user),
+    // Enable as soon as auth state is determined (loading finished)
+    // This allows public posts to be shown even when not logged in
+    enabled: !authLoading,
     staleTime: 2 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
     refetchIntervalInBackground: true, // Refresh even when tab not focused
@@ -403,55 +405,6 @@ export function useAddComment() {
     onSettled: (data, error, { postId }) => {
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'unified', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-    },
-  });
-}
-
-// Optimistic subscribe/unsubscribe mutation
-export function useToggleSupport() {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ creatorId, action }: { creatorId: string; action: 'subscribe' | 'unsubscribe' }) => {
-      const endpoint = action === 'subscribe' ? '/api/supporter/subscribe' : '/api/supporter/unsubscribe';
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ creatorId }),
-      });
-      if (!res.ok) throw new Error(`Failed to ${action}`);
-      return res.json();
-    },
-    onMutate: async ({ creatorId, action }) => {
-      await queryClient.cancelQueries({ queryKey: ['creator', creatorId] });
-      await queryClient.cancelQueries({ queryKey: ['dashboard', 'unified', user?.id] });
-
-      const previousCreator = queryClient.getQueryData(['creator', creatorId]);
-      const previousDashboard = queryClient.getQueryData(['dashboard', 'unified', user?.id]);
-
-      queryClient.setQueryData(['creator', creatorId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          is_supporter: action === 'subscribe',
-          supporters_count: Math.max(0, (old.supporters_count || 0) + (action === 'subscribe' ? 1 : -1)),
-        };
-      });
-
-      return { previousCreator, previousDashboard };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousCreator) {
-        queryClient.setQueryData(['creator', variables.creatorId], context.previousCreator);
-      }
-      if (context?.previousDashboard) {
-        queryClient.setQueryData(['dashboard', 'unified', user?.id], context.previousDashboard);
-      }
-    },
-    onSettled: (data, error, { creatorId }) => {
-      queryClient.invalidateQueries({ queryKey: ['creator', creatorId] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'unified', user?.id] });
     },
   });
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/header';
+import { PageLayout } from '@/components/common/PageLayout';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,14 +22,7 @@ export default function CreateChannelPage() {
   const [creating, setCreating] = useState(false);
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <Header />
-        <div className="flex items-center justify-center h-screen">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
+    return <PageLayout loading />;
   }
 
   if (!isCreator) {
@@ -68,9 +61,8 @@ export default function CreateChannelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Header />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <PageLayout hideRightPanel>
+      <div className="py-4">
         <Button
           variant="ghost"
           onClick={() => router.back()}
@@ -81,7 +73,7 @@ export default function CreateChannelPage() {
         </Button>
 
         <Card className="p-6">
-          <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-bold mb-6 text-foreground">
             Create Channel
           </h1>
 
@@ -121,7 +113,7 @@ export default function CreateChannelPage() {
                     onChange={(e) => setCategory(e.target.value as 'welcome')}
                     className="w-4 h-4"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground">
                     Welcome (Auto-join when followed)
                   </span>
                 </label>
@@ -134,7 +126,7 @@ export default function CreateChannelPage() {
                     onChange={(e) => setCategory(e.target.value as 'supporter')}
                     className="w-4 h-4"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground">
                     Supporter (Auto-join when paid)
                   </span>
                 </label>
@@ -147,7 +139,7 @@ export default function CreateChannelPage() {
                     onChange={(e) => setCategory(e.target.value as 'custom')}
                     className="w-4 h-4"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground">
                     Custom (Manual invite)
                   </span>
                 </label>
@@ -167,7 +159,7 @@ export default function CreateChannelPage() {
                     className="w-4 h-4"
                   />
                   <Hash className="w-4 h-4" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Text</span>
+                  <span className="text-sm text-foreground">Text</span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -179,7 +171,7 @@ export default function CreateChannelPage() {
                     className="w-4 h-4"
                   />
                   <Volume2 className="w-4 h-4" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Voice</span>
+                  <span className="text-sm text-foreground">Voice</span>
                 </label>
               </div>
             </div>
@@ -203,6 +195,6 @@ export default function CreateChannelPage() {
           </div>
         </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 }

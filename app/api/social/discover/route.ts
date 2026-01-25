@@ -96,6 +96,11 @@ export async function GET(request: NextRequest) {
       trending_creators,
       recent_posts,
       suggested_creators
+    }, {
+      headers: {
+        // Public data can be cached longer
+        'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+      }
     })
 
   } catch (error) {

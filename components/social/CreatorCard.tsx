@@ -1,20 +1,26 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useCallback } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { Creator } from '@/hooks/useSocial'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Users, FileText, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { spacing, layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils'
+import { useDashboardViewSafe } from '@/contexts/dashboard-context'
 
 interface CreatorCardProps {
   creator: Creator
 }
 
 function CreatorCard({ creator }: CreatorCardProps) {
+  const { openCreatorProfile } = useDashboardViewSafe();
+
+  const handleCreatorClick = useCallback(() => {
+    openCreatorProfile(creator.user_id);
+  }, [openCreatorProfile, creator.user_id]);
+
   // Ensure required fields exist
   if (!creator || !creator.user_id || !creator.display_name) {
     return null
@@ -24,8 +30,8 @@ function CreatorCard({ creator }: CreatorCardProps) {
     <Card className={cn('hover:shadow-lg transition-shadow duration-200')}>
       <CardContent className={spacing.card}>
         <div className={cn(layout.flexStart, 'space-x-4')}>
-          <Link href={`/creator/${creator.user_id}`}>
-            <div className={cn('relative', responsive.avatar, effects.rounded.full, 'overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all')}>
+          <div onClick={handleCreatorClick} className="cursor-pointer">
+            <div className={cn('relative', responsive.avatar, effects.rounded.full, 'overflow-hidden bg-gray-200 flex-shrink-0 hover:ring-2 hover:ring-blue-500 transition-all')}>
               {creator.avatar_url ? (
                 <Image
                   src={creator.avatar_url}
@@ -39,14 +45,15 @@ function CreatorCard({ creator }: CreatorCardProps) {
                 </div>
               )}
             </div>
-          </Link>
+          </div>
 
           <div className="flex-1 min-w-0">
-            <Link href={`/creator/${creator.user_id}`}>
-              <h3 className={cn('font-semibold text-lg hover:text-blue-600 transition-colors cursor-pointer', colors.text.primary)}>
-                {creator.display_name}
-              </h3>
-            </Link>
+            <h3
+              onClick={handleCreatorClick}
+              className={cn('font-semibold text-lg hover:text-blue-600 transition-colors cursor-pointer', colors.text.primary)}
+            >
+              {creator.display_name}
+            </h3>
             {creator.bio && (
               <p className={cn(typography.small, colors.text.secondary, 'mb-3 line-clamp-2')}>
                 {creator.bio}
@@ -64,18 +71,17 @@ function CreatorCard({ creator }: CreatorCardProps) {
               </div>
             </div>
 
-            <Link href={`/creator/${creator.user_id}`}>
-              <Button
-                variant="default"
-                size="sm"
-                className={cn('w-full sm:w-auto transition-all')}
-              >
-                <div className={cn(layout.flexRow, 'space-x-2')}>
-                  <span>View Profile</span>
-                  <ArrowRight className={responsive.icon} />
-                </div>
-              </Button>
-            </Link>
+            <Button
+              variant="default"
+              size="sm"
+              className={cn('w-full sm:w-auto transition-all')}
+              onClick={handleCreatorClick}
+            >
+              <div className={cn(layout.flexRow, 'space-x-2')}>
+                <span>View Profile</span>
+                <ArrowRight className={responsive.icon} />
+              </div>
+            </Button>
           </div>
         </div>
       </CardContent>

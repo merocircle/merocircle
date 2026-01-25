@@ -99,6 +99,11 @@ export async function GET(request: NextRequest) {
       notifications: formattedNotifications,
       unreadCount: unreadCount || 0,
       total: formattedNotifications.length,
+    }, {
+      headers: {
+        // Short cache for notifications, with immediate revalidation
+        'Cache-Control': 'private, max-age=10, stale-while-revalidate=30'
+      }
     });
   } catch (error) {
     logger.error('Error in notifications API', 'NOTIFICATIONS_API', {

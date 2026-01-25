@@ -1,8 +1,11 @@
-import Link from 'next/link';
+'use client';
+
+import { useCallback } from 'react';
 import Image from 'next/image';
 import { Camera, Play, FileText, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
+import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 
 interface ActivityItemProps {
   id: string;
@@ -34,7 +37,15 @@ export function ActivityItem({
   imageUrl,
   postId
 }: ActivityItemProps) {
-  const formattedTime = typeof time === 'string' 
+  const { openCreatorProfile } = useDashboardViewSafe();
+
+  const handleCreatorClick = useCallback(() => {
+    if (creatorId) {
+      openCreatorProfile(creatorId);
+    }
+  }, [openCreatorProfile, creatorId]);
+
+  const formattedTime = typeof time === 'string'
     ? new Date(time).toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -53,11 +64,12 @@ export function ActivityItem({
       <div className="flex-1 min-w-0">
         <div className={cn(layout.flexRow, 'space-x-2 mb-2 flex-wrap')}>
           {creatorId ? (
-            <Link href={`/creator/${creatorId}`}>
-              <span className={cn('font-medium', colors.text.primary, 'hover:text-blue-600 cursor-pointer transition-colors')}>
-                {creator}
-              </span>
-            </Link>
+            <span
+              onClick={handleCreatorClick}
+              className={cn('font-medium', colors.text.primary, 'hover:text-blue-600 cursor-pointer transition-colors')}
+            >
+              {creator}
+            </span>
           ) : (
             <span className={cn('font-medium', colors.text.primary)}>
               {creator}
@@ -80,15 +92,15 @@ export function ActivityItem({
         {type && type !== 'support' && (
           <div className={cn('aspect-video bg-gray-200 dark:bg-gray-800', effects.rounded.lg, 'mb-4 overflow-hidden relative')}>
             {type === 'image' && imageUrl ? (
-              <Link href={postId ? `/posts/${postId}` : creatorId ? `/creator/${creatorId}` : '#'}>
+              <div onClick={handleCreatorClick} className="cursor-pointer w-full h-full">
                 <Image
                   src={imageUrl}
                   alt={title}
                   fill
-                  className="object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+                  className="object-cover hover:scale-105 transition-transform duration-300"
                   unoptimized
                 />
-              </Link>
+              </div>
             ) : (
               <div className={cn('w-full h-full', layout.flexCenter)}>
                 {type === 'image' && <Camera className={cn(responsive.iconLarge, 'text-gray-400')} />}
