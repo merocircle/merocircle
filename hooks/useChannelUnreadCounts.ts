@@ -83,7 +83,12 @@ export function useChannelUnreadCounts() {
 
     // Clean up previous subscription
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      const oldChannel = channelRef.current;
+      oldChannel.unsubscribe().then(() => {
+        supabase.removeChannel(oldChannel);
+      }).catch(() => {
+        supabase.removeChannel(oldChannel);
+      });
       channelRef.current = null;
     }
 
@@ -129,7 +134,12 @@ export function useChannelUnreadCounts() {
 
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        const channelToClean = channelRef.current;
+        channelToClean.unsubscribe().then(() => {
+          supabase.removeChannel(channelToClean);
+        }).catch(() => {
+          supabase.removeChannel(channelToClean);
+        });
         channelRef.current = null;
       }
     };

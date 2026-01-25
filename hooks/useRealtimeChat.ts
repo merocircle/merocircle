@@ -41,7 +41,9 @@ export function useRealtimeChat({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const onMessageRef = useRef(onMessage);
   const isSubscribedRef = useRef(false);
-  const userCacheRef = useRef<Map<string, any>>(new Map()); // Cache user data to prevent N+1 queries
+  const userCacheRef = useRef<Map<string, any>>(new Map());
+  const currentChannelIdRef = useRef<string | null>(null);
+  const isSubscribingRef = useRef(false);
 
   // Keep onMessage ref updated
   useEffect(() => {
@@ -112,112 +114,185 @@ export function useRealtimeChat({
 
   // Subscribe to real-time updates
   useEffect(() => {
-    if (!channelId || !enabled) {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+    let isMounted = true;
+    let currentChannel: RealtimeChannel | null = null;
+
+    const setupSubscription = async () => {
+      if (!channelId || !enabled) {
+        return;
       }
-      return;
-    }
 
-    // Clean up previous subscription
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+      // Prevent duplicate subscription to same channel
+      if (currentChannelIdRef.current === channelId && channelRef.current && isSubscribedRef.current) {
+        console.log('[REALTIME] Already subscribed to channel:', channelId);
+        return;
+      }
 
-    // Create realtime subscription
-    const channel = supabase
-      .channel(`channel_messages:${channelId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'channel_messages',
-          filter: `channel_id=eq.${channelId}`
-        },
-        async (payload) => {
-          console.log('[REALTIME] Received message:', payload.new.id);
-          const payloadData = payload.new;
+      // Prevent concurrent subscription attempts
+      if (isSubscribingRef.current) {
+        console.log('[REALTIME] Subscription already in progress, skipping');
+        return;
+      }
 
-          // Check cache first to prevent N+1 queries
-          let userData = userCacheRef.current.get(payloadData.user_id);
-
-          // Only fetch from database if not in cache
-          if (!userData && payloadData.user_id) {
-            console.log('[REALTIME] User not in cache, fetching:', payloadData.user_id);
-            const { data: user } = await supabase
-              .from('users')
-              .select('id, display_name, photo_url')
-              .eq('id', payloadData.user_id)
-              .single();
-            userData = user;
-            // Add to cache for future messages
-            if (user) {
-              userCacheRef.current.set(payloadData.user_id, user);
-            }
-          }
-
-          const newMessage: ChatMessage = {
-            id: payloadData.id,
-            content: payloadData.content,
-            user_id: payloadData.user_id,
-            created_at: payloadData.created_at || new Date().toISOString(),
-            user: userData ? {
-              id: userData.id,
-              display_name: userData.display_name,
-              photo_url: userData.photo_url
-            } : undefined
-          };
-
-          setMessages((prev) => {
-            if (prev.some((msg) => msg.id === newMessage.id)) {
-              console.log('[REALTIME] Duplicate message ignored:', newMessage.id);
-              return prev;
-            }
-            console.log('[REALTIME] Adding message to state:', newMessage.id);
-            return [...prev, newMessage];
-          });
-
-          if (onMessageRef.current) {
-            onMessageRef.current(newMessage);
-          }
+      // Clean up previous subscription if channel changed
+      if (channelRef.current && currentChannelIdRef.current !== channelId) {
+        const oldChannel = channelRef.current;
+        try {
+          await oldChannel.unsubscribe();
+        } catch (err) {
+          console.error('[REALTIME] Error unsubscribing old channel:', err);
         }
-      )
-      .subscribe((status, err) => {
-        console.log('[REALTIME] Subscription status:', status, 'for channel:', channelId);
-        if (err) {
-          console.error('[REALTIME] Subscription error:', err);
-          setError(`Realtime error: ${err.message}`);
-          isSubscribedRef.current = false;
-        }
-        if (status === 'SUBSCRIBED') {
-          console.log('[REALTIME] Successfully subscribed to channel:', channelId);
-          isSubscribedRef.current = true;
-          setError(null);
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('[REALTIME] Channel error for:', channelId);
-          setError('Failed to subscribe to realtime updates');
-          isSubscribedRef.current = false;
-        } else if (status === 'TIMED_OUT') {
-          console.error('[REALTIME] Subscription timed out for:', channelId);
-          setError('Realtime subscription timed out');
-          isSubscribedRef.current = false;
-        } else if (status === 'CLOSED') {
-          console.log('[REALTIME] Channel closed for:', channelId);
-          isSubscribedRef.current = false;
-        }
-      });
-
-    channelRef.current = channel;
-
-    return () => {
-      if (channelRef.current) {
-        console.log('[REALTIME] Cleaning up subscription for channel:', channelId);
-        supabase.removeChannel(channelRef.current);
+        supabase.removeChannel(oldChannel);
         channelRef.current = null;
         isSubscribedRef.current = false;
+        currentChannelIdRef.current = null;
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+
+      if (!isMounted) return;
+
+      // Double-check after cleanup
+      if (currentChannelIdRef.current === channelId && channelRef.current && isSubscribedRef.current) {
+        console.log('[REALTIME] Already subscribed after cleanup, skipping');
+        return;
+      }
+
+      if (isSubscribingRef.current) {
+        return;
+      }
+
+      isSubscribingRef.current = true;
+      const channelName = `channel_messages:${channelId}`;
+
+      // Create realtime subscription
+      currentChannel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'channel_messages',
+            filter: `channel_id=eq.${channelId}`
+          },
+          async (payload) => {
+            if (!isMounted) return;
+            console.log('[REALTIME] Received message:', payload.new.id);
+            const payloadData = payload.new;
+
+            // Check cache first to prevent N+1 queries
+            let userData = userCacheRef.current.get(payloadData.user_id);
+
+            // Only fetch from database if not in cache
+            if (!userData && payloadData.user_id) {
+              console.log('[REALTIME] User not in cache, fetching:', payloadData.user_id);
+              const { data: user } = await supabase
+                .from('users')
+                .select('id, display_name, photo_url')
+                .eq('id', payloadData.user_id)
+                .single();
+              userData = user;
+              // Add to cache for future messages
+              if (user) {
+                userCacheRef.current.set(payloadData.user_id, user);
+              }
+            }
+
+            const newMessage: ChatMessage = {
+              id: payloadData.id,
+              content: payloadData.content,
+              user_id: payloadData.user_id,
+              created_at: payloadData.created_at || new Date().toISOString(),
+              user: userData ? {
+                id: userData.id,
+                display_name: userData.display_name,
+                photo_url: userData.photo_url
+              } : undefined
+            };
+
+            setMessages((prev) => {
+              if (prev.some((msg) => msg.id === newMessage.id)) {
+                console.log('[REALTIME] Duplicate message ignored:', newMessage.id);
+                return prev;
+              }
+              console.log('[REALTIME] Adding message to state:', newMessage.id);
+              return [...prev, newMessage];
+            });
+
+            if (onMessageRef.current) {
+              onMessageRef.current(newMessage);
+            }
+          }
+        )
+        .subscribe((status, err) => {
+          if (!isMounted) return;
+          isSubscribingRef.current = false;
+          console.log('[REALTIME] Subscription status:', status, 'for channel:', channelId);
+          if (err) {
+            console.error('[REALTIME] Subscription error:', err);
+            setError(`Realtime error: ${err.message}`);
+            isSubscribedRef.current = false;
+            currentChannelIdRef.current = null;
+          }
+          if (status === 'SUBSCRIBED') {
+            console.log('[REALTIME] Successfully subscribed to channel:', channelId);
+            isSubscribedRef.current = true;
+            currentChannelIdRef.current = channelId;
+            channelRef.current = currentChannel;
+            setError(null);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('[REALTIME] Channel error for:', channelId);
+            setError('Failed to subscribe to realtime updates');
+            isSubscribedRef.current = false;
+            currentChannelIdRef.current = null;
+          } else if (status === 'TIMED_OUT') {
+            console.error('[REALTIME] Subscription timed out for:', channelId);
+            setError('Realtime subscription timed out');
+            isSubscribedRef.current = false;
+            currentChannelIdRef.current = null;
+          } else if (status === 'CLOSED') {
+            console.log('[REALTIME] Channel closed for:', channelId);
+            isSubscribedRef.current = false;
+            if (currentChannelIdRef.current === channelId) {
+              currentChannelIdRef.current = null;
+            }
+          }
+        });
+    };
+
+    if (!channelId || !enabled) {
+      if (channelRef.current) {
+        const channelToClean = channelRef.current;
+        channelToClean.unsubscribe().then(() => {
+          supabase.removeChannel(channelToClean);
+        }).catch(() => {
+          supabase.removeChannel(channelToClean);
+        });
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+        currentChannelIdRef.current = null;
+        isSubscribingRef.current = false;
+      }
+    } else {
+      setupSubscription();
+    }
+
+    return () => {
+      isMounted = false;
+      if (channelRef.current) {
+        const channelToClean = channelRef.current;
+        const channelIdToClean = currentChannelIdRef.current;
+        console.log('[REALTIME] Cleaning up subscription for channel:', channelIdToClean || channelId);
+        channelToClean.unsubscribe().then(() => {
+          supabase.removeChannel(channelToClean);
+        }).catch((err) => {
+          console.error('[REALTIME] Error during cleanup:', err);
+          supabase.removeChannel(channelToClean);
+        });
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+        currentChannelIdRef.current = null;
+        isSubscribingRef.current = false;
       }
     };
   }, [channelId, enabled]);

@@ -36,9 +36,9 @@ const CommunitySection = memo(function CommunitySection() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['supporter']));
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages } = useRealtimeChat({
+  const { messages, error: chatError } = useRealtimeChat({
     channelId: selectedChannel,
-    enabled: !!selectedChannel
+    enabled: !!selectedChannel && !!user
   });
 
   const { mutate: sendMessage, isPending } = useSendMessage(selectedChannel);
