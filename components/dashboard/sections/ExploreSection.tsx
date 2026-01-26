@@ -57,7 +57,7 @@ const ExploreSection = memo(function ExploreSection() {
   const { feed, loading: feedLoading, error: feedError } = useDiscoveryFeed();
 
   // Search functionality
-  const { results: searchResults, loading: searchLoading, searchCreators, clearResults } = useCreatorSearch();
+  const { results: searchResults, loading: searchLoading, error: searchError, searchCreators, clearResults } = useCreatorSearch();
 
   // Debounce search
   useEffect(() => {
@@ -80,8 +80,8 @@ const ExploreSection = memo(function ExploreSection() {
     openCreatorProfile(creatorId);
   }, [openCreatorProfile]);
 
-  const isSearching = searchQuery.length >= 2;
-  const showSearchResults = isSearching && (searchResults.length > 0 || searchLoading);
+  const isSearching = debouncedQuery.length >= 2;
+  const showSearchResults = isSearching;
 
   // Filter creators by category (client-side for now)
   const filterByCategory = (creators: Creator[]) => {
@@ -128,6 +128,11 @@ const ExploreSection = memo(function ExploreSection() {
           {searchLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : searchError ? (
+            <div className="text-center text-destructive py-8">
+              <p className="font-medium">Search Error</p>
+              <p className="text-sm text-muted-foreground mt-1">{searchError}</p>
             </div>
           ) : searchResults.length > 0 ? (
             <div className="space-y-2">

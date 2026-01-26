@@ -77,7 +77,7 @@ export const useCreatorSearch = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const searchCreators = async (query: string) => {
+  const searchCreators = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setResults([])
       return
@@ -90,24 +90,25 @@ export const useCreatorSearch = () => {
       const response = await fetch(`/api/social/search?q=${encodeURIComponent(query)}&limit=20`)
       
       if (!response.ok) {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({ error: 'Search failed' }))
         throw new Error(errorData.error || 'Search failed')
       }
       
       const data = await response.json()
       setResults(data.data || [])
     } catch (err) {
+      console.error('Search error:', err)
       setError(err instanceof Error ? err.message : 'Search failed')
       setResults([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const clearResults = () => {
+  const clearResults = useCallback(() => {
     setResults([])
     setError(null)
-  }
+  }, [])
 
   return { results, loading, error, searchCreators, clearResults }
 }

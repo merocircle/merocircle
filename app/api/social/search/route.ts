@@ -66,9 +66,10 @@ export async function GET(request: NextRequest) {
       query: query.trim()
     })
 
-  } catch {
+  } catch (error) {
+    console.error('Search API error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
   }
