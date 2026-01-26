@@ -19,7 +19,9 @@ import {
   Crown,
   User,
   Plus,
-  X
+  X,
+  Calculator,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { supabase } from '@/lib/supabase';
@@ -56,7 +58,16 @@ export default function CreatorSignupPage() {
     tier2: '500',
     tier3: '1000'
   });
-  const [tier3ExtraPerks, setTier3ExtraPerks] = useState('');
+  const [tierExtraPerks, setTierExtraPerks] = useState<Record<number, string[]>>({
+    1: [],
+    2: [],
+    3: []
+  });
+  const [estimatedSupporters, setEstimatedSupporters] = useState({
+    tier1: '50',
+    tier2: '20',
+    tier3: '10'
+  });
   const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const { user, userProfile, signInWithGoogle, createCreatorProfile } = useAuth();
@@ -94,6 +105,38 @@ export default function CreatorSignupPage() {
       delete newErrors[platformId];
       setSocialLinkErrors(newErrors);
     }
+  };
+
+  // Handle extra perks management
+  const addExtraPerk = (tierLevel: number) => {
+    setTierExtraPerks({
+      ...tierExtraPerks,
+      [tierLevel]: [...tierExtraPerks[tierLevel], '']
+    });
+  };
+
+  const removeExtraPerk = (tierLevel: number, index: number) => {
+    setTierExtraPerks({
+      ...tierExtraPerks,
+      [tierLevel]: tierExtraPerks[tierLevel].filter((_, i) => i !== index)
+    });
+  };
+
+  const updateExtraPerk = (tierLevel: number, index: number, value: string) => {
+    const updated = [...tierExtraPerks[tierLevel]];
+    updated[index] = value;
+    setTierExtraPerks({
+      ...tierExtraPerks,
+      [tierLevel]: updated
+    });
+  };
+
+  // Calculate estimated monthly income
+  const calculateMonthlyIncome = () => {
+    const tier1Income = parseFloat(tierPrices.tier1) * parseFloat(estimatedSupporters.tier1 || '0');
+    const tier2Income = parseFloat(tierPrices.tier2) * parseFloat(estimatedSupporters.tier2 || '0');
+    const tier3Income = parseFloat(tierPrices.tier3) * parseFloat(estimatedSupporters.tier3 || '0');
+    return tier1Income + tier2Income + tier3Income;
   };
   
   // Handle OAuth return - callback page will create profile, we just check if user is back
@@ -205,26 +248,28 @@ export default function CreatorSignupPage() {
           price: parseFloat(tierPrices.tier1),
           tier_name: 'One Star Supporter',
           description: 'Access to supporter posts',
-          benefits: ['Access to exclusive posts', 'Support the creator']
+          benefits: ['Access to exclusive posts', 'Support the creator'],
+          extra_perks: tierExtraPerks[1].filter(p => p.trim() !== '')
         },
         { 
           tier_level: 2, 
           price: parseFloat(tierPrices.tier2),
           tier_name: 'Two Star Supporter',
           description: 'Posts + Community chat access',
-          benefits: ['Access to exclusive posts', 'Join community chat', 'Direct interaction with creator']
+          benefits: ['Access to exclusive posts', 'Join community chat'],
+          extra_perks: tierExtraPerks[2].filter(p => p.trim() !== '')
         },
         { 
           tier_level: 3, 
           price: parseFloat(tierPrices.tier3),
           tier_name: 'Three Star Supporter',
           description: 'Posts + Chat + Special perks',
-          benefits: ['Access to exclusive posts', 'Join community chat', 'Special perks from creator', 'Priority support'],
-          tier3_extra_perks: tier3ExtraPerks.trim() || null
+          benefits: ['Access to exclusive posts', 'Join community chat'],
+          extra_perks: tierExtraPerks[3].filter(p => p.trim() !== '')
         }
       ];
 
-      // Update each tier with the user's custom prices
+      // Update each tier with the user's custom prices and extra perks
       const updatePromises = tierData.map(tier => 
         supabase
           .from('subscription_tiers')
@@ -233,7 +278,7 @@ export default function CreatorSignupPage() {
             tier_name: tier.tier_name,
             description: tier.description,
             benefits: tier.benefits,
-            ...(tier.tier_level === 3 && tier.tier3_extra_perks ? { tier3_extra_perks: tier.tier3_extra_perks } : {})
+            extra_perks: tier.extra_perks
           })
           .eq('creator_id', user.id)
           .eq('tier_level', tier.tier_level)
@@ -255,7 +300,7 @@ export default function CreatorSignupPage() {
               tier_name: tier.tier_name,
               description: tier.description,
               benefits: tier.benefits,
-              ...(tier.tier_level === 3 && tier.tier3_extra_perks ? { tier3_extra_perks: tier.tier3_extra_perks } : {})
+              extra_perks: tier.extra_perks
             })),
             { onConflict: 'creator_id,tier_level' }
           );
@@ -306,7 +351,7 @@ export default function CreatorSignupPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="w-full max-w-2xl"
+          className={step === 'tier-pricing' ? 'w-full max-w-6xl' : 'w-full max-w-2xl'}
         >
           {step === 'signup' && (
             <motion.div
@@ -581,113 +626,311 @@ export default function CreatorSignupPage() {
                 </p>
               </div>
 
-              <Card className="p-8">
-                <div className="space-y-6">
-                  {/* Tier 1 */}
-                  <div className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
-                        <Check className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">One Star Supporter</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+                {/* Left Column: Tier Setup */}
+                <Card className="p-8">
+                  <div className="space-y-6">
+                    {/* Tier 1 */}
+                    <div className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
+                          <Check className="w-6 h-6 text-white" />
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Access to exclusive posts</p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">One Star Supporter</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Access to exclusive posts</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="tier1" className="text-sm font-medium">Base Price (NPR)</Label>
+                          <input
+                            id="tier1"
+                            type="number"
+                            min="10"
+                            value={tierPrices.tier1}
+                            onChange={(e) => setTierPrices({ ...tierPrices, tier1: e.target.value })}
+                            className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Extra Perks (Optional)</Label>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            Add custom perks for this tier
+                          </p>
+                          <div className="space-y-2">
+                            {tierExtraPerks[1].map((perk, index) => (
+                              <div key={index} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={perk}
+                                  onChange={(e) => updateExtraPerk(1, index, e.target.value)}
+                                  placeholder="e.g., Monthly newsletter, Early access..."
+                                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeExtraPerk(1, index)}
+                                  className="h-10 w-10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addExtraPerk(1)}
+                              className="w-full"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Perk
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Tier 2 */}
+                    <div className="p-6 border-2 border-yellow-300 dark:border-yellow-600 rounded-xl bg-yellow-50/50 dark:bg-yellow-900/10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                          <Check className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Two Star Supporter</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Community chat access</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="tier2" className="text-sm font-medium">Base Price (NPR)</Label>
+                          <input
+                            id="tier2"
+                            type="number"
+                            min={parseInt(tierPrices.tier1) + 1}
+                            value={tierPrices.tier2}
+                            onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
+                            className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Extra Perks (Recommended)</Label>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            Add custom perks for this tier
+                          </p>
+                          <div className="space-y-2">
+                            {tierExtraPerks[2].map((perk, index) => (
+                              <div key={index} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={perk}
+                                  onChange={(e) => updateExtraPerk(2, index, e.target.value)}
+                                  placeholder="e.g., Direct messaging, Priority support..."
+                                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeExtraPerk(2, index)}
+                                  className="h-10 w-10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addExtraPerk(2)}
+                              className="w-full"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Perk
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tier 3 */}
+                    <div className="p-6 border-2 border-purple-300 dark:border-purple-600 rounded-xl bg-purple-50/50 dark:bg-purple-900/10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                          <Crown className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Three Star Supporter</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Chat + Special perks</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="tier3" className="text-sm font-medium">Base Price (NPR)</Label>
+                          <input
+                            id="tier3"
+                            type="number"
+                            min={parseInt(tierPrices.tier2) + 1}
+                            value={tierPrices.tier3}
+                            onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
+                            className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Extra Perks (Recommended)</Label>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            Add custom perks for this tier
+                          </p>
+                          <div className="space-y-2">
+                            {tierExtraPerks[3].map((perk, index) => (
+                              <div key={index} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={perk}
+                                  onChange={(e) => updateExtraPerk(3, index, e.target.value)}
+                                  placeholder="e.g., Monthly 1-on-1 call, Exclusive merchandise..."
+                                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeExtraPerk(3, index)}
+                                  className="h-10 w-10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addExtraPerk(3)}
+                              className="w-full"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Perk
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Right Column: Income Calculator */}
+                <Card className="p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                      <Calculator className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <Label htmlFor="tier1" className="text-sm font-medium">Base Price (NPR)</Label>
-                      <input
-                        id="tier1"
-                        type="number"
-                        min="10"
-                        value={tierPrices.tier1}
-                        onChange={(e) => setTierPrices({ ...tierPrices, tier1: e.target.value })}
-                        className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
-                      />
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Income Calculator</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Estimate your monthly earnings</p>
                     </div>
                   </div>
 
-                  {/* Tier 2 */}
-                  <div className="p-6 border-2 border-yellow-300 dark:border-yellow-600 rounded-xl bg-yellow-50/50 dark:bg-yellow-900/10">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-                        <Check className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Two Star Supporter</h3>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Community chat access</p>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="tier2" className="text-sm font-medium">Base Price (NPR)</Label>
-                      <input
-                        id="tier2"
-                        type="number"
-                        min={parseInt(tierPrices.tier1) + 1}
-                        value={tierPrices.tier2}
-                        onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
-                        className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tier 3 */}
-                  <div className="p-6 border-2 border-purple-300 dark:border-purple-600 rounded-xl bg-purple-50/50 dark:bg-purple-900/10">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                        <Crown className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                          <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Three Star Supporter</h3>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Chat + Special perks</p>
-                      </div>
-                    </div>
+                  <div className="space-y-6">
+                    {/* Estimated Supporters Input */}
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="tier3" className="text-sm font-medium">Base Price (NPR)</Label>
+                        <Label htmlFor="estTier1" className="text-sm font-medium">Estimated 1★ Supporters</Label>
                         <input
-                          id="tier3"
+                          id="estTier1"
                           type="number"
-                          min={parseInt(tierPrices.tier2) + 1}
-                          value={tierPrices.tier3}
-                          onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
-                          className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                          min="0"
+                          value={estimatedSupporters.tier1}
+                          onChange={(e) => setEstimatedSupporters({ ...estimatedSupporters, tier1: e.target.value })}
+                          className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="tier3ExtraPerks" className="text-sm font-medium">
-                          Extra Perks (Optional)
-                        </Label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                          Describe any special perks or benefits that tier 3 supporters will receive
-                        </p>
-                        <textarea
-                          id="tier3ExtraPerks"
-                          value={tier3ExtraPerks}
-                          onChange={(e) => setTier3ExtraPerks(e.target.value)}
-                          placeholder="e.g., Monthly 1-on-1 call, Exclusive merchandise, Early access to content..."
-                          rows={3}
-                          className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none resize-none"
+                        <Label htmlFor="estTier2" className="text-sm font-medium">Estimated 2★ Supporters</Label>
+                        <input
+                          id="estTier2"
+                          type="number"
+                          min="0"
+                          value={estimatedSupporters.tier2}
+                          onChange={(e) => setEstimatedSupporters({ ...estimatedSupporters, tier2: e.target.value })}
+                          className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="estTier3" className="text-sm font-medium">Estimated 3★ Supporters</Label>
+                        <input
+                          id="estTier3"
+                          type="number"
+                          min="0"
+                          value={estimatedSupporters.tier3}
+                          onChange={(e) => setEstimatedSupporters({ ...estimatedSupporters, tier3: e.target.value })}
+                          className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:outline-none"
                         />
                       </div>
                     </div>
+
+                    {/* Income Breakdown */}
+                    <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">Estimated Monthly Income</h4>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">1★ Tier Income:</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            NPR {((parseFloat(tierPrices.tier1) || 0) * (parseFloat(estimatedSupporters.tier1) || 0)).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">2★ Tier Income:</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            NPR {((parseFloat(tierPrices.tier2) || 0) * (parseFloat(estimatedSupporters.tier2) || 0)).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">3★ Tier Income:</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            NPR {((parseFloat(tierPrices.tier3) || 0) * (parseFloat(estimatedSupporters.tier3) || 0)).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="border-t border-green-200 dark:border-green-800 pt-3 mt-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">Total Monthly:</span>
+                            <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                              NPR {calculateMonthlyIncome().toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </Card>
+              </div>
+
+              <Card className="p-6 mt-6">
+                <div className="space-y-4">
 
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                     <p className="text-sm text-blue-900 dark:text-blue-100">
-                      💡 <strong>Tip:</strong> You can change these prices anytime from your creator dashboard.
+                      💡 <strong>Tip:</strong> You can change these prices and perks anytime from your creator dashboard.
                     </p>
                   </div>
 

@@ -151,15 +151,20 @@ export async function GET(
         social_links: creatorProfile.social_links || {},
         cover_image_url: creatorProfile.cover_image_url || null
       },
-      tiers: (tiers || []).map((tier: any) => ({
-        id: tier.id,
-        tier_level: tier.tier_level,
-        tier_name: tier.tier_name,
-        price: Number(tier.price),
-        description: tier.description,
-        benefits: tier.benefits || [],
-        tier3_extra_perks: tier.tier3_extra_perks || null
-      })),
+      tiers: (tiers || []).map((tier: any) => {
+        const extraPerks = Array.isArray(tier.extra_perks) ? tier.extra_perks : [];
+        const legacyExtra = tier.tier3_extra_perks ? [String(tier.tier3_extra_perks)] : [];
+
+        return {
+          id: tier.id,
+          tier_level: tier.tier_level,
+          tier_name: tier.tier_name,
+          price: Number(tier.price),
+          description: tier.description,
+          benefits: tier.benefits || [],
+          extra_perks: [...extraPerks, ...legacyExtra].filter((perk: string) => perk.trim() !== '')
+        };
+      }),
       paymentMethods: (paymentMethods || []).map((m: {
         id: string;
         payment_type: string;

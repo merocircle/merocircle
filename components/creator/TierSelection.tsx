@@ -17,7 +17,7 @@ interface Tier {
   price: number;
   description: string;
   benefits: string[];
-  tier3_extra_perks?: string | null;
+  extra_perks?: string[];
 }
 
 interface TierSelectionProps {
@@ -174,11 +174,6 @@ export function TierSelection({
                       </div>
                     </div>
 
-                    {/* Description */}
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-5 font-medium">
-                      {tier.description}
-                    </p>
-
                     {/* Benefits */}
                     <div className="space-y-2.5 mb-5">
                       {tier.benefits.map((benefit, index) => (
@@ -198,8 +193,8 @@ export function TierSelection({
                         </motion.div>
                       ))}
                       
-                      {/* Tier 3 Extra Perks */}
-                      {tier.tier_level === 3 && tier.tier3_extra_perks && (
+                      {/* Extra Perks */}
+                      {tier.extra_perks && tier.extra_perks.length > 0 && (
                         <motion.div
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -212,11 +207,23 @@ export function TierSelection({
                             </div>
                             <div className="flex-1">
                               <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">
-                                Special Perks:
+                                Extra Perks:
                               </p>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                {tier.tier3_extra_perks}
-                              </p>
+                              {tier.tier_level > 1 && (
+                                <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mb-2">
+                                  Includes all perks from lower tiers plus.
+                                </p>
+                              )}
+                              <div className="space-y-1.5">
+                                {tier.extra_perks.map((perk, perkIndex) => (
+                                  <div key={`${tier.id}-perk-${perkIndex}`} className="flex items-start gap-2">
+                                    <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-500/70" />
+                                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                      {perk}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </motion.div>
