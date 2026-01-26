@@ -1045,6 +1045,45 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
         .dark .str-chat__message-text {
           color: inherit !important;
         }
+
+        /* System messages (join/leave) styling */
+        .str-chat__message--system {
+          text-align: center;
+          padding: 8px 16px;
+          margin: 8px 0;
+        }
+
+        .str-chat__message--system .str-chat__message-text {
+          font-size: 0.75rem;
+          color: var(--muted-foreground) !important;
+          background: transparent !important;
+          padding: 0;
+        }
+
+        .str-chat__message--system .str-chat__message-text p {
+          color: var(--muted-foreground) !important;
+        }
+
+        .str-chat__message--system .str-chat__avatar,
+        .str-chat__message--system .str-chat__message-data,
+        .str-chat__message--system .str-chat__message-inner > div:not(.str-chat__message-text) {
+          display: none !important;
+        }
+
+        /* Custom system message styling */
+        .str-chat__system-message {
+          text-align: center;
+          padding: 12px 16px;
+        }
+
+        .str-chat__system-message__text {
+          font-size: 0.8rem;
+          color: var(--muted-foreground);
+          background: var(--muted);
+          padding: 6px 12px;
+          border-radius: 9999px;
+          display: inline-block;
+        }
       `}</style>
     </div>
   );

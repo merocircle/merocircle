@@ -70,6 +70,13 @@ export async function POST(request: Request) {
         // Add the supporter as a member
         await streamChannel.addMembers([supporterId]);
 
+        // Send system message that user has joined
+        await streamChannel.sendMessage({
+          text: `${supporterUser.display_name} has joined the channel`,
+          user_id: supporterId,
+          type: 'system',
+        });
+
         addedToChannels.push({
           id: channel.id,
           name: channel.name,

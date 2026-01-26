@@ -136,6 +136,13 @@ export async function POST(request: NextRequest) {
             await streamChannel.query({});
             await streamChannel.addMembers([supporterId]);
             addedToChannels.push(channel.name);
+
+            // Send system message that user has joined
+            await streamChannel.sendMessage({
+              text: `${supporterUser.display_name} has joined the channel`,
+              user_id: supporterId,
+              type: 'system',
+            });
           } catch (err) {
             logger.warn('Failed to add supporter to channel', 'DIRECT_PAYMENT', {
               channelId: channel.id,
