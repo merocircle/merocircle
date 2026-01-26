@@ -40,6 +40,7 @@ import {
   ArrowUpRight,
   MessageCircle,
   Eye,
+  Share2,
   Plus,
   X,
   BarChart2,
@@ -51,8 +52,9 @@ import { useAuth } from '@/contexts/supabase-auth-context';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
-import { cn } from '@/lib/utils';
+import { cn, slugifyDisplayName } from '@/lib/utils';
 import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
+import { ShareButton } from '@/components/atoms/buttons/ShareButton';
 
 // Animation variants
 const containerVariants = {
@@ -101,6 +103,29 @@ export default function EnhancedCreatorDashboard() {
   const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
   const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
+
+  const shareUrl = useMemo(() => {
+    if (typeof window === 'undefined' || !userProfile?.display_name) {
+      return '';
+    }
+    return `${window.location.origin}/${slugifyDisplayName(userProfile.display_name)}`;
+  }, [userProfile?.display_name]);
+
+  const handleShareProfile = useCallback(async () => {
+    if (!shareUrl) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Support ${userProfile?.display_name || 'this creator'}`,
+          url: shareUrl
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+      }
+    } catch {
+      // Ignore share errors
+    }
+  }, [shareUrl, userProfile?.display_name]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -288,7 +313,7 @@ export default function EnhancedCreatorDashboard() {
         </motion.div>
 
         {/* Modern Tab Navigation */}
-        <div className="mb-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl w-fit">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -312,6 +337,17 @@ export default function EnhancedCreatorDashboard() {
               );
             })}
           </div>
+
+          {shareUrl && (
+            <Button
+              variant="outline"
+              className="gap-2 rounded-xl"
+              onClick={handleShareProfile}
+            >
+              <Share2 className="w-4 h-4" />
+              Share your profile
+            </Button>
+          )}
         </div>
 
         <AnimatePresence mode="wait">
@@ -332,6 +368,27 @@ export default function EnhancedCreatorDashboard() {
                     setOnboardingCompleted(true);
                   }}
                 />
+              )}
+
+              {shareUrl && (
+                <Card className="p-5 border-border/50">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">
+                        Share your creator page
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {shareUrl}
+                      </p>
+                    </div>
+                    <ShareButton
+                      url={shareUrl}
+                      title={`Support ${userProfile?.display_name || 'this creator'}`}
+                      size="lg"
+                      className="self-start sm:self-center"
+                    />
+                  </div>
+                </Card>
               )}
 
               {/* Stats Grid */}

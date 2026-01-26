@@ -37,6 +37,7 @@ import {
   ArrowUpRight,
   MessageCircle,
   Eye,
+  Share2,
   Plus,
   X,
   BarChart2,
@@ -47,7 +48,7 @@ import {
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
-import { cn } from '@/lib/utils';
+import { cn, slugifyDisplayName } from '@/lib/utils';
 import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
 
 // Animation variants
@@ -93,6 +94,32 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
   const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
+
+  const sharePath = useMemo(() => {
+    if (!userProfile?.display_name) {
+      return '';
+    }
+    return `/${slugifyDisplayName(userProfile.display_name)}`;
+  }, [userProfile?.display_name]);
+
+  const handleShareProfile = useCallback(async () => {
+    if (!sharePath) return;
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}${sharePath}`
+      : sharePath;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Support ${userProfile?.display_name || 'this creator'}`,
+          url
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {
+      // Ignore share errors
+    }
+  }, [sharePath, userProfile?.display_name]);
 
   useEffect(() => {
     if (dashboardData) {
@@ -262,7 +289,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       </motion.div>
 
       {/* Modern Tab Navigation */}
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl w-fit">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -286,6 +313,17 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             );
           })}
         </div>
+
+        {sharePath && (
+          <Button
+            variant="outline"
+            className="gap-2 rounded-xl"
+            onClick={handleShareProfile}
+          >
+            <Share2 className="w-4 h-4" />
+            Share your profile
+          </Button>
+        )}
       </div>
 
       <AnimatePresence mode="wait">

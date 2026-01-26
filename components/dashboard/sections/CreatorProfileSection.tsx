@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -8,20 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   ArrowLeft,
   ShoppingBag,
   FileText,
   Info,
   Calendar,
-  Loader2
+  Loader2,
+  Chrome
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
-import { useDashboardView } from '@/contexts/dashboard-context';
+import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TierSelection } from '@/components/creator/TierSelection';
 import { fadeInUp, staggerContainer } from '@/components/animations/variants';
+import { slugifyDisplayName } from '@/lib/utils';
 
 import {
   CreatorHero,
@@ -42,8 +45,8 @@ interface CreatorProfileSectionProps {
 
 export default function CreatorProfileSection({ creatorId }: CreatorProfileSectionProps) {
   const router = useRouter();
-  const { user } = useAuth();
-  const { closeCreatorProfile, setActiveView } = useDashboardView();
+  const { user, signInWithGoogle } = useAuth();
+  const { closeCreatorProfile, setActiveView, isWithinProvider } = useDashboardViewSafe();
 
   const {
     creatorDetails,
@@ -62,6 +65,9 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
   const [activeTab, setActiveTab] = useState('home');
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showGatewaySelector, setShowGatewaySelector] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [pendingPayment, setPendingPayment] = useState<{
     tierLevel: number;
     amount: number;
@@ -69,20 +75,54 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
   } | null>(null);
 
   // If viewing own profile, switch to profile view
-  if (user && user.id === creatorId) {
+  if (user && user.id === creatorId && isWithinProvider) {
     setActiveView('profile');
     return null;
   }
 
   const handlePayment = useCallback(async (tierLevel: number, amount: number, message?: string) => {
     if (!user) {
-      router.push('/auth');
+      if (typeof window !== 'undefined') {
+        const redirectPath = isWithinProvider
+          ? `${window.location.pathname}${window.location.search}`
+          : `/dashboard?creator=${creatorId}`;
+        localStorage.setItem(
+          'pendingSupport',
+          JSON.stringify({ creatorId, tierLevel, amount, message })
+        );
+        localStorage.setItem(
+          'postLoginRedirect',
+          redirectPath
+        );
+      }
+      setShowAuthModal(true);
       return;
     }
 
     setPendingPayment({ tierLevel, amount, message });
     setShowGatewaySelector(true);
-  }, [user, router]);
+  }, [user, creatorId, isWithinProvider]);
+
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return;
+    const raw = localStorage.getItem('pendingSupport');
+    if (!raw) return;
+    try {
+      const pending = JSON.parse(raw);
+      if (pending.creatorId === creatorId) {
+        setPendingPayment({
+          tierLevel: pending.tierLevel,
+          amount: pending.amount,
+          message: pending.message
+        });
+        setShowGatewaySelector(true);
+      }
+    } catch {
+      // Ignore invalid data
+    } finally {
+      localStorage.removeItem('pendingSupport');
+    }
+  }, [user, creatorId]);
 
   const handleGatewaySelection = useCallback(async (gateway: 'esewa' | 'khalti' | 'direct') => {
     if (!pendingPayment || !user) return;
@@ -191,6 +231,66 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
       alert('Subscription failed. Please try again.');
     }
   }, [user, router, hasActiveSubscription, creatorDetails, creatorId, subscribe, unsubscribe, refreshCreatorDetails]);
+
+  const handleAuthContinue = useCallback(async () => {
+    try {
+      setAuthLoading(true);
+      setAuthError(null);
+      const { error } = await signInWithGoogle();
+      if (error) {
+        setAuthError(error.message || 'Failed to sign in with Google');
+      }
+    } catch (error: unknown) {
+      setAuthError(error instanceof Error ? error.message : 'Failed to sign in');
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [signInWithGoogle]);
+
+  const handleAuthModalChange = useCallback((open: boolean) => {
+    setShowAuthModal(open);
+    if (!open) {
+      setAuthError(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('pendingSupport');
+        localStorage.removeItem('postLoginRedirect');
+      }
+    }
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    if (!creatorDetails?.display_name || typeof window === 'undefined') return;
+    const slug = slugifyDisplayName(creatorDetails.display_name);
+    const url = `${window.location.origin}/${slug}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Support ${creatorDetails.display_name}`,
+          url
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {
+      // Ignore share errors
+    }
+  }, [creatorDetails?.display_name]);
+
+  const handleBack = useCallback(() => {
+    if (isWithinProvider) {
+      closeCreatorProfile();
+      return;
+    }
+    if (user) {
+      router.push('/dashboard');
+      return;
+    }
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/');
+  }, [closeCreatorProfile, isWithinProvider, router, user]);
 
   // Transform posts for EnhancedPostCard
   const transformPost = useCallback((post: Record<string, unknown>) => {
@@ -404,7 +504,7 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
             <p className="text-muted-foreground mb-6">
               This creator doesn&apos;t exist or has been removed
             </p>
-            <Button onClick={closeCreatorProfile}>Go Back</Button>
+            <Button onClick={handleBack}>Go Back</Button>
           </Card>
         </motion.div>
       </div>
@@ -423,7 +523,7 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
         <Button
           variant="ghost"
           size="sm"
-          onClick={closeCreatorProfile}
+          onClick={handleBack}
           className="gap-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -442,6 +542,7 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
         supporterCount={creatorDetails.supporter_count || 0}
         postsCount={creatorDetails.posts_count || 0}
         isSupporter={isSupporter}
+        onShare={handleShare}
       />
 
       {/* Content Area */}
@@ -489,6 +590,42 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
           supporterMessage={pendingPayment.message}
         />
       )}
+
+      {/* Auth Modal for Support Action */}
+      <Dialog open={showAuthModal} onOpenChange={handleAuthModalChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Sign in to Support</DialogTitle>
+            <DialogDescription className="text-sm">
+              Continue with Google to support this creator and unlock exclusive content.
+            </DialogDescription>
+          </DialogHeader>
+
+          {authError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+              {authError}
+            </div>
+          )}
+
+          <Button
+            onClick={handleAuthContinue}
+            disabled={authLoading}
+            className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+          >
+            {authLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                Redirecting...
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <Chrome className="w-5 h-5 mr-2" />
+                Continue with Google
+              </div>
+            )}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

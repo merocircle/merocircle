@@ -3,9 +3,9 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { slugifyDisplayName } from '@/lib/utils';
 
-// This page now redirects to the dashboard with the creator loaded
-// The actual creator profile is rendered in the unified dashboard as a view
+// Legacy route: redirect to the public creator page by username slug
 
 export default function CreatorProfilePage() {
   const params = useParams();
@@ -14,8 +14,24 @@ export default function CreatorProfilePage() {
 
   useEffect(() => {
     if (creatorId) {
-      // Redirect to dashboard with creator param
-      router.replace(`/dashboard?creator=${creatorId}`);
+      const redirectToPublicPage = async () => {
+        try {
+          const response = await fetch(`/api/creator/${creatorId}`);
+          if (!response.ok) throw new Error('Creator not found');
+          const data = await response.json();
+          const displayName = data.creatorDetails?.display_name || '';
+          const slug = slugifyDisplayName(displayName);
+          if (slug) {
+            router.replace(`/${slug}`);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+        router.replace('/dashboard');
+      };
+
+      redirectToPublicPage();
     }
   }, [creatorId, router]);
 

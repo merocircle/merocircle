@@ -19,4 +19,12 @@ export function formatDate(date: Date): string {
     day: 'numeric',
   }).format(date);
 }
+
+export function slugifyDisplayName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
  

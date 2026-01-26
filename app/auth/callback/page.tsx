@@ -25,20 +25,31 @@ export default function AuthCallbackPage() {
         let attempts = 0;
         const maxAttempts = 10;
         
+        const storedRedirect = localStorage.getItem('postLoginRedirect');
+        const redirectPath = storedRedirect && storedRedirect.startsWith('/') ? storedRedirect : null;
+        if (storedRedirect) {
+          localStorage.removeItem('postLoginRedirect');
+        }
+
         while (attempts < maxAttempts) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
-            router.replace('/dashboard');
+            router.replace(redirectPath || '/dashboard');
             return;
           }
           await new Promise(resolve => setTimeout(resolve, 500));
           attempts++;
         }
         
-        router.replace('/dashboard');
+        router.replace(redirectPath || '/dashboard');
       } catch (error) {
         console.error('Callback error:', error);
-        router.replace('/dashboard');
+        const storedRedirect = localStorage.getItem('postLoginRedirect');
+        const redirectPath = storedRedirect && storedRedirect.startsWith('/') ? storedRedirect : null;
+        if (storedRedirect) {
+          localStorage.removeItem('postLoginRedirect');
+        }
+        router.replace(redirectPath || '/dashboard');
       }
     };
 
