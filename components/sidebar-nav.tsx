@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useDashboardView } from '@/contexts/dashboard-context';
 import { useNotificationsData } from '@/hooks/useQueries';
-import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
+import { useStreamUnreadCount } from '@/hooks/useStreamUnreadCount';
 import {
   Home,
   MessageCircle,
@@ -102,8 +102,8 @@ export function SidebarNav() {
   const { data: notificationsData } = useNotificationsData();
   const notificationsUnreadCount = notificationsData?.unreadCount || 0;
 
-  // Get unread chat count
-  const { unreadCount: chatUnreadCount } = useUnreadChatCount();
+  // Get unread chat count from Stream Chat
+  const { unreadCount: chatUnreadCount } = useStreamUnreadCount();
 
   const navItems: NavItem[] = [
     { label: 'Home', view: 'home', icon: Home },

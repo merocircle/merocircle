@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUnifiedDashboard } from '@/hooks/useQueries';
 import { useDiscoveryFeed } from '@/hooks/useSocial';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { EmptyStateCard } from '@/components/common/EmptyStateCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
@@ -49,6 +50,9 @@ const FeedSection = memo(function FeedSection() {
   const { data: feedData, isLoading } = useUnifiedDashboard();
   const { feed: discoveryFeed, loading: creatorsLoading } = useDiscoveryFeed();
   const { openCreatorProfile } = useDashboardViewSafe();
+
+  // Enable real-time updates for posts, likes, and comments
+  useRealtimeFeed();
 
   const showSkeleton = isLoading && !feedData;
 

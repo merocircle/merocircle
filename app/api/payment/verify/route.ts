@@ -130,51 +130,30 @@ export async function GET(request: NextRequest) {
           .eq('id', existingSupporter.id);
       }
 
-      // Auto-join supporter channel if tier 2 or 3 (chat access)
-      if (tierLevel >= 2) {
-        const { data: supporterChannel } = await supabase
-          .from('channels')
-          .select('id')
-          .eq('creator_id', transaction.creator_id)
-          .eq('category', 'supporter')
-          .eq('requires_support', true)
-          .single();
-
-        if (supporterChannel && transaction.supporter_id) {
-          // Check if already a member
-          const { data: existingMember } = await supabase
-            .from('channel_members')
-            .select('id')
-            .eq('channel_id', supporterChannel.id)
-            .eq('user_id', transaction.supporter_id)
-            .single();
-
-          if (!existingMember) {
-            await supabase
-              .from('channel_members')
-              .insert({
-                channel_id: supporterChannel.id,
-                user_id: transaction.supporter_id,
-              });
-          }
-        }
-      } else if (tierLevel === 1) {
-        // Remove from chat if downgrading to tier 1
-        const { data: supporterChannel } = await supabase
-          .from('channels')
-          .select('id')
-          .eq('creator_id', transaction.creator_id)
-          .eq('category', 'supporter')
-          .eq('requires_support', true)
-          .single();
-
-        if (supporterChannel && transaction.supporter_id) {
-          await supabase
-            .from('channel_members')
-            .delete()
-            .eq('channel_id', supporterChannel.id)
-            .eq('user_id', transaction.supporter_id);
-        }
+      // Channel membership is now handled by database trigger
+      // Just sync the supporter to Stream Chat
+      try {
+        // Use internal API call to sync supporter to Stream channels
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        await fetch(`${baseUrl}/api/stream/sync-supporter`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            supporterId: transaction.supporter_id,
+            creatorId: transaction.creator_id,
+            tierLevel,
+          }),
+        });
+        logger.info('Supporter synced to Stream channels', 'PAYMENT_VERIFY', {
+          supporterId: transaction.supporter_id,
+          creatorId: transaction.creator_id,
+          tierLevel,
+        });
+      } catch (streamError) {
+        logger.warn('Failed to sync supporter to Stream', 'PAYMENT_VERIFY', {
+          error: streamError instanceof Error ? streamError.message : 'Unknown',
+        });
+        // Don't fail the payment if Stream sync fails
       }
     }
 

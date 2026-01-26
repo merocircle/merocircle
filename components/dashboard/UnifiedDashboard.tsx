@@ -1,15 +1,14 @@
 'use client';
 
-import { Suspense, useMemo, memo, useTransition } from 'react';
+import { Suspense, useMemo, memo } from 'react';
 import dynamic from 'next/dynamic';
 import { useDashboardView } from '@/contexts/dashboard-context';
-import { useNotificationsData, useCommunityChannels } from '@/hooks/useQueries';
 import { useAuth } from '@/contexts/supabase-auth-context';
 
 // Eager-loaded sections (small, frequently used)
 import FeedSection from './sections/FeedSection';
 import ExploreSection from './sections/ExploreSection';
-import CommunitySection from './sections/CommunitySection';
+import StreamCommunitySection from './sections/StreamCommunitySection';
 import NotificationsSection from './sections/NotificationsSection';
 import SettingsSection from './sections/SettingsSection';
 import { FeedSkeleton, ChatSkeleton, NotificationsSkeleton, SettingsSkeleton } from './sections/LoadingSkeleton';
@@ -34,10 +33,6 @@ const CreatorProfileSection = dynamic(() => import('./sections/CreatorProfileSec
 const UnifiedDashboard = memo(function UnifiedDashboard() {
   const { activeView, viewingCreatorId } = useDashboardView();
   const { isCreator } = useAuth();
-  const [isPending, startTransition] = useTransition();
-
-  const { data: notificationsData } = useNotificationsData();
-  const { data: channelsData } = useCommunityChannels();
 
   const { component: renderView, skeleton } = useMemo(() => {
     switch (activeView) {
@@ -46,7 +41,7 @@ const UnifiedDashboard = memo(function UnifiedDashboard() {
       case 'explore':
         return { component: <ExploreSection />, skeleton: <FeedSkeleton /> };
       case 'chat':
-        return { component: <CommunitySection />, skeleton: <ChatSkeleton /> };
+        return { component: <StreamCommunitySection />, skeleton: <ChatSkeleton /> };
       case 'notifications':
         return { component: <NotificationsSection />, skeleton: <NotificationsSkeleton /> };
       case 'settings':

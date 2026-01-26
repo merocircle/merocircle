@@ -16,6 +16,7 @@ import { getBlurDataURL, imageSizes } from '@/lib/image-utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLikePost, useAddComment } from '@/hooks/useQueries';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
+import ThreadedComments from './ThreadedComments';
 
 // Lazy load PollCard component (only loads when needed for poll posts)
 const PollCard = dynamic(() => import('./PollCard').then(mod => ({ default: mod.PollCard })), {
@@ -72,6 +73,7 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
+  parent_comment_id: string | null;
   user: {
     id: string;
     display_name: string;
@@ -389,13 +391,31 @@ export function EnhancedPostCard({
       {
         onSuccess: (newCommentData) => {
           // Update local comments list
-          setComments(prev => [...prev, newCommentData]);
+          setComments(prev => [...prev, { ...newCommentData, parent_comment_id: null }]);
           setCommentsCount(prev => prev + 1);
           setNewComment('');
           onComment?.(post.id);
         },
-        onError: (error) => {
-          console.error('Failed to post comment:', error);
+      }
+    );
+  };
+
+  // Handle adding a comment with optional parent (for replies)
+  const handleAddComment = async (content: string, parentCommentId?: string) => {
+    if (!currentUserId) {
+      router.push('/auth');
+      return;
+    }
+
+    commentMutation.mutate(
+      { postId: post.id, content, parentCommentId },
+      {
+        onSuccess: (newCommentData) => {
+          setComments(prev => [...prev, { ...newCommentData, parent_comment_id: parentCommentId || null }]);
+          if (!parentCommentId) {
+            setCommentsCount(prev => prev + 1);
+          }
+          onComment?.(post.id);
         },
       }
     );
@@ -642,40 +662,20 @@ export function EnhancedPostCard({
               transition={{ duration: 0.3 }}
               className="overflow-hidden border-t border-border"
             >
-              <div className="px-4 py-3 space-y-3 max-h-96 overflow-y-auto">
-                {/* Comments List First */}
+              <div className="px-4 py-3 max-h-96 overflow-y-auto">
+                {/* Threaded Comments */}
                 {loadingComments ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
-                ) : comments.length > 0 ? (
-                  <div className="space-y-3">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="flex gap-2">
-                        <Avatar className="h-7 w-7 flex-shrink-0">
-                          <AvatarImage src={comment.user.photo_url} />
-                          <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-primary/60 text-white">
-                            {comment.user.display_name.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm">
-                            <span className="font-semibold text-foreground">
-                              {comment.user.display_name}
-                            </span>{' '}
-                            <span className="text-foreground">{comment.content}</span>
-                          </p>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No comments yet. Be the first!
-                  </p>
+                  <ThreadedComments
+                    postId={post.id}
+                    comments={comments}
+                    currentUserId={currentUserId}
+                    onAddComment={handleAddComment}
+                    isSubmitting={commentMutation.isPending}
+                  />
                 )}
               </div>
 

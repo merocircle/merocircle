@@ -48,6 +48,18 @@ BEGIN
   -- Delete creator payment methods
   DELETE FROM public.creator_payment_methods WHERE creator_id = user_uuid;
   
+  -- Delete post likes (for posts created by this user)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'post_likes') THEN
+    DELETE FROM public.post_likes 
+    WHERE post_id IN (SELECT id FROM public.posts WHERE creator_id = user_uuid);
+  END IF;
+  
+  -- Delete post comments (for posts created by this user)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'post_comments') THEN
+    DELETE FROM public.post_comments 
+    WHERE post_id IN (SELECT id FROM public.posts WHERE creator_id = user_uuid);
+  END IF;
+  
   -- Delete posts
   DELETE FROM public.posts WHERE creator_id = user_uuid;
   
@@ -89,11 +101,42 @@ FROM public.posts
 WHERE creator_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d'
 UNION ALL
 SELECT 
+  'public.post_likes' as table_name, 
+  COUNT(*) as remaining_records 
+FROM public.post_likes 
+WHERE post_id IN (SELECT id FROM public.posts WHERE creator_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d')
+UNION ALL
+SELECT 
+  'public.post_comments' as table_name, 
+  COUNT(*) as remaining_records 
+FROM public.post_comments 
+WHERE post_id IN (SELECT id FROM public.posts WHERE creator_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d')
+UNION ALL
+SELECT 
   'public.supporters' as table_name, 
   COUNT(*) as remaining_records 
 FROM public.supporters 
 WHERE supporter_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d' 
    OR creator_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d'
+UNION ALL
+SELECT 
+  'public.supporter_transactions' as table_name, 
+  COUNT(*) as remaining_records 
+FROM public.supporter_transactions 
+WHERE supporter_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d' 
+   OR creator_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d'
+UNION ALL
+SELECT 
+  'public.subscription_tiers' as table_name, 
+  COUNT(*) as remaining_records 
+FROM public.subscription_tiers 
+WHERE creator_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d'
+UNION ALL
+SELECT 
+  'public.creator_payment_methods' as table_name, 
+  COUNT(*) as remaining_records 
+FROM public.creator_payment_methods 
+WHERE creator_id = 'f73735c9-b345-46b7-b8c5-04214d8bdc6d'
 UNION ALL
 SELECT 
   'public.channel_messages' as table_name, 

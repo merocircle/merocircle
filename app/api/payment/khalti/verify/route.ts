@@ -164,6 +164,29 @@ export async function GET(request: NextRequest) {
               supportersCount: uniqueSupporters
             });
           }
+
+          // Sync supporter to Stream Chat channels
+          try {
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            await fetch(`${baseUrl}/api/stream/sync-supporter`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                supporterId: transaction.supporter_id,
+                creatorId: transaction.creator_id,
+                tierLevel,
+              }),
+            });
+            logger.info('Supporter synced to Stream channels', 'KHALTI_VERIFY', {
+              supporterId: transaction.supporter_id,
+              creatorId: transaction.creator_id,
+              tierLevel,
+            });
+          } catch (streamError) {
+            logger.warn('Failed to sync supporter to Stream', 'KHALTI_VERIFY', {
+              error: streamError instanceof Error ? streamError.message : 'Unknown',
+            });
+          }
         }
 
         // Redirect to success page

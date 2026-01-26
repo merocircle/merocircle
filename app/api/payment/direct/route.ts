@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { validateAmount, validateUUID, sanitizeString } from '@/lib/validation';
 import { logger } from '@/lib/logger';
+import { serverStreamClient, upsertStreamUser } from '@/lib/stream-server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -106,51 +107,54 @@ export async function POST(request: NextRequest) {
         .eq('id', existingSupporter.id);
     }
 
-    // Auto-join supporter channel if tier 2 or 3 (chat access)
-    if (tierLevel >= 2) {
-      const { data: supporterChannel } = await supabase
-        .from('channels')
-        .select('id')
-        .eq('creator_id', creatorId)
-        .eq('category', 'supporter')
-        .eq('requires_support', true)
+    // Sync supporter to Stream Chat channels directly
+    try {
+      // Get supporter's user info
+      const { data: supporterUser } = await supabase
+        .from('users')
+        .select('id, display_name, photo_url')
+        .eq('id', supporterId)
         .single();
 
-      if (supporterChannel) {
-        // Check if already a member
-        const { data: existingMember } = await supabase
-          .from('channel_members')
-          .select('id')
-          .eq('channel_id', supporterChannel.id)
-          .eq('user_id', supporterId)
-          .single();
+      if (supporterUser) {
+        // Ensure supporter exists in Stream
+        await upsertStreamUser(supporterUser.id, supporterUser.display_name, supporterUser.photo_url);
 
-        if (!existingMember) {
-          await supabase
-            .from('channel_members')
-            .insert({
-              channel_id: supporterChannel.id,
-              user_id: supporterId,
+        // Get all channels the supporter should have access to
+        const { data: channels } = await supabase
+          .from('channels')
+          .select('id, name, stream_channel_id')
+          .eq('creator_id', creatorId)
+          .lte('min_tier_required', tierLevel);
+
+        const addedToChannels = [];
+        for (const channel of channels || []) {
+          if (!channel.stream_channel_id) continue;
+
+          try {
+            const streamChannel = serverStreamClient.channel('messaging', channel.stream_channel_id);
+            await streamChannel.query({});
+            await streamChannel.addMembers([supporterId]);
+            addedToChannels.push(channel.name);
+          } catch (err) {
+            logger.warn('Failed to add supporter to channel', 'DIRECT_PAYMENT', {
+              channelId: channel.id,
+              error: err instanceof Error ? err.message : 'Unknown'
             });
+          }
         }
-      }
-    } else if (tierLevel === 1) {
-      // Remove from chat if tier 1
-      const { data: supporterChannel } = await supabase
-        .from('channels')
-        .select('id')
-        .eq('creator_id', creatorId)
-        .eq('category', 'supporter')
-        .eq('requires_support', true)
-        .single();
 
-      if (supporterChannel) {
-        await supabase
-          .from('channel_members')
-          .delete()
-          .eq('channel_id', supporterChannel.id)
-          .eq('user_id', supporterId);
+        logger.info('Supporter synced to Stream channels', 'DIRECT_PAYMENT', {
+          supporterId,
+          creatorId,
+          tierLevel,
+          addedToChannels: addedToChannels.length
+        });
       }
+    } catch (streamError) {
+      logger.warn('Failed to sync supporter to Stream', 'DIRECT_PAYMENT', {
+        error: streamError instanceof Error ? streamError.message : 'Unknown',
+      });
     }
 
     // Update supporters_count in creator_profiles

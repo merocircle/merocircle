@@ -153,51 +153,6 @@ export function usePublishPost() {
   });
 }
 
-export function useSendMessage(channelId: string | null) {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (content: string) => {
-      if (!channelId) throw new Error('No channel selected');
-      const res = await fetch(`/api/community/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      });
-      if (!res.ok) throw new Error('Failed to send message');
-      return res.json();
-    },
-    onMutate: async (content) => {
-      await queryClient.cancelQueries({ queryKey: ['messages', channelId] });
-      const previous = queryClient.getQueryData(['messages', channelId]);
-      
-      queryClient.setQueryData(['messages', channelId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          messages: [...(old.messages || []), {
-            id: `temp-${Date.now()}`,
-            content,
-            created_at: new Date().toISOString(),
-            user_id: 'current',
-            pending: true,
-          }]
-        };
-      });
-      
-      return { previous };
-    },
-    onError: (err, content, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(['messages', channelId], context.previous);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
-    },
-  });
-}
-
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -364,36 +319,39 @@ export function useLikePost() {
   });
 }
 
-// Optimistic comment mutation
+// Optimistic comment mutation with threading support
 export function useAddComment() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+    mutationFn: async ({ postId, content, parentCommentId }: { postId: string; content: string; parentCommentId?: string }) => {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, parent_comment_id: parentCommentId }),
       });
       if (!res.ok) throw new Error('Failed to add comment');
       return res.json();
     },
-    onMutate: async ({ postId }) => {
+    onMutate: async ({ postId, parentCommentId }) => {
       await queryClient.cancelQueries({ queryKey: ['dashboard', 'unified', user?.id] });
       const previous = queryClient.getQueryData(['dashboard', 'unified', user?.id]);
 
-      queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
-        if (!old?.posts) return old;
-        return {
-          ...old,
-          posts: old.posts.map((post: any) =>
-            post.id === postId
-              ? { ...post, comments_count: (post.comments_count || 0) + 1 }
-              : post
-          ),
-        };
-      });
+      // Only increment count for top-level comments
+      if (!parentCommentId) {
+        queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
+          if (!old?.posts) return old;
+          return {
+            ...old,
+            posts: old.posts.map((post: any) =>
+              post.id === postId
+                ? { ...post, comments_count: (post.comments_count || 0) + 1 }
+                : post
+            ),
+          };
+        });
+      }
 
       return { previous };
     },

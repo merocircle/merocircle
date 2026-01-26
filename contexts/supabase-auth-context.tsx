@@ -314,6 +314,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('[createCreatorProfile] Creator profile created successfully');
+
+      // Step 5: Wait for database trigger to create default channels
+      // The trigger creates channels asynchronously, so we need a small delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 6: Sync channels to Stream Chat
+      console.log('[createCreatorProfile] Syncing channels to Stream Chat');
+      try {
+        const syncResponse = await fetch('/api/stream/sync-channels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ creatorId: user.id }),
+        });
+
+        if (syncResponse.ok) {
+          const syncResult = await syncResponse.json();
+          console.log('[createCreatorProfile] Stream channels synced:', syncResult);
+        } else {
+          console.warn('[createCreatorProfile] Failed to sync Stream channels, but creator profile created');
+        }
+      } catch (syncError) {
+        console.warn('[createCreatorProfile] Stream sync error:', syncError);
+        // Don't fail the whole operation if Stream sync fails
+      }
+
       await loadProfile(user.id);
       return { error: null };
     } catch (error: any) {
