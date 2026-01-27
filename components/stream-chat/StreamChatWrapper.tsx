@@ -1084,6 +1084,18 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
           border-radius: 9999px;
           display: inline-block;
         }
+
+        /* Hide avatar in reply/quoted message preview */
+        .str-chat__quoted-message-preview .str-chat__avatar,
+        .str-chat__thread-header .str-chat__avatar,
+        .str-chat__parent-message-li .str-chat__avatar {
+          display: none !important;
+        }
+
+        /* Adjust spacing after hiding avatar */
+        .str-chat__quoted-message-preview .str-chat__message-inner {
+          margin-left: 0 !important;
+        }
       `}</style>
     </div>
   );
