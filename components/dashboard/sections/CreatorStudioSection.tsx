@@ -1,20 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +27,6 @@ import {
   TrendingUp,
   TrendingDown,
   FileText,
-  Upload,
   Target,
   Activity,
   BarChart3,
@@ -43,9 +39,12 @@ import {
   BarChart2,
   Loader2,
   Sparkles,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Globe,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
 import { cn, slugifyDisplayName } from '@/lib/utils';
@@ -74,14 +73,16 @@ const tabs = [
 
 const CreatorStudioSection = memo(function CreatorStudioSection() {
   const { user, userProfile } = useAuth();
+  const { highlightedPostId, setHighlightedPostId } = useDashboardViewSafe();
   const [activeTab, setActiveTab] = useState('overview');
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState<string | null>(null);
+  const highlightedPostRef = useRef<HTMLDivElement>(null);
 
   const [newPostContent, setNewPostContent] = useState('');
-  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [postVisibility, setPostVisibility] = useState('public');
   const [postType, setPostType] = useState<'post' | 'poll'>('post');
@@ -94,6 +95,31 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
   const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
+
+  // Handle highlighted post - switch to posts tab and scroll to the post
+  useEffect(() => {
+    if (highlightedPostId && !dashboardLoading) {
+      // Switch to posts tab immediately
+      setActiveTab('posts');
+
+      // Scroll to the highlighted post after tab switch animation completes
+      const scrollTimer = setTimeout(() => {
+        if (highlightedPostRef.current) {
+          highlightedPostRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+
+      // Clear the highlighted post after 5 seconds
+      const clearTimer = setTimeout(() => {
+        setHighlightedPostId(null);
+      }, 5000);
+
+      return () => {
+        clearTimeout(scrollTimer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [highlightedPostId, dashboardLoading, setHighlightedPostId]);
 
   const sharePath = useMemo(() => {
     if (!userProfile?.display_name) {
@@ -122,43 +148,56 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   }, [sharePath, userProfile?.display_name]);
 
   useEffect(() => {
-    if (dashboardData) {
+    if (dashboardData && !onboardingCompleted) {
       const isCompleted = dashboardData.onboardingCompleted || false;
       setOnboardingCompleted(isCompleted);
       setShowOnboardingBanner(!isCompleted);
     }
-  }, [dashboardData]);
+  }, [dashboardData, onboardingCompleted]);
 
   const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Check max images limit (10 images max)
+    if (uploadedImages.length + files.length > 10) {
+      setShowErrorMessage('Maximum 10 images allowed per post.');
+      setTimeout(() => setShowErrorMessage(null), 3000);
+      return;
+    }
 
     setIsUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'posts');
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'posts');
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          return result.url;
+        } else {
+          throw new Error(result.error || 'File upload failed.');
+        }
       });
 
-      const result = await response.json();
-      if (result.success) {
-        setUploadedImageUrl(result.url);
-      } else {
-        setShowErrorMessage(result.error || 'File upload failed.');
-        setTimeout(() => setShowErrorMessage(null), 3000);
-      }
+      const newUrls = await Promise.all(uploadPromises);
+      setUploadedImages(prev => [...prev, ...newUrls]);
     } catch (error) {
       console.error('Upload error:', error);
       setShowErrorMessage('File upload failed.');
       setTimeout(() => setShowErrorMessage(null), 3000);
     } finally {
       setIsUploadingImage(false);
+      // Reset file input
+      event.target.value = '';
     }
-  }, []);
+  }, [uploadedImages.length]);
 
   const handlePublishPost = useCallback(() => {
     if (postType === 'poll') {
@@ -184,7 +223,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     const body: any = {
       title: postType === 'poll' ? pollQuestion.trim() : newPostContent.trim().slice(0, 100),
       content: postType === 'poll' ? pollQuestion.trim() : newPostContent.trim(),
-      image_url: uploadedImageUrl || null,
+      image_urls: uploadedImages.length > 0 ? uploadedImages : [],
       is_public: postVisibility === 'public',
       tier_required: postVisibility === 'public' ? 'free' : postVisibility,
       post_type: postType
@@ -203,7 +242,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     publishPost(body, {
       onSuccess: () => {
         setNewPostContent('');
-        setUploadedImageUrl('');
+        setUploadedImages([]);
         setPollQuestion('');
         setPollOptions(['', '']);
         setAllowsMultipleAnswers(false);
@@ -218,7 +257,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         setTimeout(() => setShowErrorMessage(null), 3000);
       }
     });
-  }, [postType, newPostContent, uploadedImageUrl, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, publishPost]);
+  }, [postType, newPostContent, uploadedImages, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, publishPost]);
 
   const handlePostTypeChange = useCallback((type: 'post' | 'poll') => {
     setPostType(type);
@@ -595,6 +634,39 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               </div>
 
               <div className={cn("space-y-4", !onboardingCompleted && "opacity-50 pointer-events-none")}>
+                {/* Visibility Selector */}
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                  <span className="text-sm font-medium text-muted-foreground">Visibility:</span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPostVisibility('public')}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                        postVisibility === 'public'
+                          ? "bg-green-500/20 text-green-600 border border-green-500/30"
+                          : "bg-background text-muted-foreground hover:text-foreground border border-border"
+                      )}
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      Public
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPostVisibility('supporters')}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                        postVisibility === 'supporters'
+                          ? "bg-purple-500/20 text-purple-600 border border-purple-500/30"
+                          : "bg-background text-muted-foreground hover:text-foreground border border-border"
+                      )}
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      Supporters Only
+                    </button>
+                  </div>
+                </div>
+
                 {postType === 'post' && (
                   <Textarea
                     placeholder="Write a caption..."
@@ -637,15 +709,52 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                   </div>
                 )}
 
+                {/* Image Preview */}
+                {postType === 'post' && uploadedImages.length > 0 && (
+                  <div className="p-3 rounded-xl border border-border bg-muted/30">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ImageIcon className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium text-foreground">
+                        {uploadedImages.length} {uploadedImages.length === 1 ? 'image' : 'images'} added
+                      </span>
+                      {uploadedImages.length < 10 && (
+                        <span className="text-xs text-muted-foreground">
+                          (max 10)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {uploadedImages.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
+                            <img
+                              src={url}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== index))}
+                            className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-4 border-t border-border/50">
                   {postType === 'post' && (
                     <div>
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="image-upload" />
+                      <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" id="image-upload" />
                       <label htmlFor="image-upload">
-                        <Button variant="outline" size="sm" className="rounded-xl" asChild>
+                        <Button variant="outline" size="sm" className="rounded-xl" asChild disabled={uploadedImages.length >= 10}>
                           <span>
                             {isUploadingImage ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-                            {isUploadingImage ? 'Uploading...' : 'Add Image'}
+                            {isUploadingImage ? 'Uploading...' : uploadedImages.length > 0 ? 'Add More' : 'Add Images'}
                           </span>
                         </Button>
                       </label>
@@ -668,9 +777,33 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               <h3 className="text-lg font-semibold text-foreground">Recent Posts</h3>
               {dashboardData?.posts?.length > 0 ? (
                 <div className="space-y-4">
-                  {dashboardData.posts.map((post: any) => (
-                    <EnhancedPostCard key={post.id} post={post} currentUserId={user?.id} showActions={onboardingCompleted} />
-                  ))}
+                  {dashboardData.posts.map((post: any) => {
+                    const isHighlighted = highlightedPostId === post.id;
+                    return (
+                      <motion.div
+                        key={post.id}
+                        ref={isHighlighted ? highlightedPostRef : undefined}
+                        animate={isHighlighted ? {
+                          boxShadow: [
+                            '0 0 0 0 rgba(239, 68, 68, 0)',
+                            '0 0 0 8px rgba(239, 68, 68, 0.3)',
+                            '0 0 0 0 rgba(239, 68, 68, 0)'
+                          ]
+                        } : {}}
+                        transition={isHighlighted ? {
+                          duration: 1.5,
+                          repeat: 2,
+                          ease: 'easeInOut'
+                        } : {}}
+                        className={cn(
+                          'transition-all duration-500 rounded-xl',
+                          isHighlighted && 'ring-2 ring-red-500 ring-offset-4 ring-offset-background bg-red-50/10'
+                        )}
+                      >
+                        <EnhancedPostCard post={post} currentUserId={user?.id} showActions={onboardingCompleted} />
+                      </motion.div>
+                    );
+                  })}
                 </div>
               ) : (
                 <Card className="p-10 text-center border-dashed border-2">

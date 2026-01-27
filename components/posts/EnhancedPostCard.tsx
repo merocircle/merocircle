@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Send, Loader2, Lock, MoreHorizontal, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Send, Loader2, Lock, MoreHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,7 @@ interface Post {
   title: string;
   content: string;
   image_url?: string;
+  image_urls?: string[];
   media_url?: string;
   is_public?: boolean;
   tier_required: string;
@@ -218,7 +220,19 @@ export function EnhancedPostCard({
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
   const [showHeartParticles, setShowHeartParticles] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const lastTapRef = useRef<number>(0);
+
+  // Get all images (support both image_url and image_urls)
+  const allImages = useMemo(() => {
+    if (post.image_urls && post.image_urls.length > 0) {
+      return post.image_urls;
+    }
+    if (post.image_url) {
+      return [post.image_url];
+    }
+    return [];
+  }, [post.image_urls, post.image_url]);
 
   // Detect YouTube video in content
   const youtubeVideoId = useMemo(() => {
@@ -547,15 +561,15 @@ export function EnhancedPostCard({
                 </div>
               )}
 
-              {/* Post Image - Instagram 4:5 ratio with double-tap */}
-              {post.post_type !== 'poll' && post.image_url && (
+              {/* Post Images - Instagram style carousel with double-tap */}
+              {post.post_type !== 'poll' && allImages.length > 0 && (
                 <div
                   className="relative w-full aspect-[4/5] bg-muted cursor-pointer select-none"
                   onClick={handleDoubleTap}
                 >
                   <Image
-                    src={post.image_url}
-                    alt={post.title}
+                    src={allImages[currentImageIndex]}
+                    alt={`${post.title} - Image ${currentImageIndex + 1}`}
                     fill
                     className="object-cover"
                     sizes={imageSizes.post}
@@ -565,6 +579,62 @@ export function EnhancedPostCard({
                     loading="lazy"
                     draggable={false}
                   />
+
+                  {/* Carousel Navigation - Only show if multiple images */}
+                  {allImages.length > 1 && (
+                    <>
+                      {/* Left Arrow */}
+                      {currentImageIndex > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentImageIndex(prev => prev - 1);
+                          }}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-10"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                      )}
+
+                      {/* Right Arrow */}
+                      {currentImageIndex < allImages.length - 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentImageIndex(prev => prev + 1);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-10"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      )}
+
+                      {/* Image Counter */}
+                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-medium z-10">
+                        {currentImageIndex + 1}/{allImages.length}
+                      </div>
+
+                      {/* Dot Indicators */}
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                        {allImages.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentImageIndex(index);
+                            }}
+                            className={cn(
+                              "w-1.5 h-1.5 rounded-full transition-all",
+                              index === currentImageIndex
+                                ? "bg-white w-2.5"
+                                : "bg-white/50 hover:bg-white/70"
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+
                   {/* Double-tap heart overlay */}
                   <DoubleTapHeart show={showDoubleTapHeart} />
                 </div>

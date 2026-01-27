@@ -121,6 +121,7 @@ export async function GET(
         title: string;
         content: string;
         image_url: string | null;
+        image_urls?: string[];
         media_url: string | null;
         is_public: boolean;
         tier_required: string | null;
@@ -137,6 +138,7 @@ export async function GET(
         title: p.title,
         content: p.content,
         image_url: p.image_url,
+        image_urls: p.image_urls || [],
         media_url: p.media_url,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',

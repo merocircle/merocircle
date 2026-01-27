@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TierSelection } from '@/components/creator/TierSelection';
 import { fadeInUp, staggerContainer } from '@/components/animations/variants';
 import { slugifyDisplayName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 import {
   CreatorHero,
@@ -41,12 +42,18 @@ const PaymentGatewaySelector = dynamic(
 
 interface CreatorProfileSectionProps {
   creatorId: string;
+  initialHighlightedPostId?: string | null;
 }
 
-export default function CreatorProfileSection({ creatorId }: CreatorProfileSectionProps) {
+export default function CreatorProfileSection({ creatorId, initialHighlightedPostId }: CreatorProfileSectionProps) {
   const router = useRouter();
   const { user, signInWithGoogle } = useAuth();
-  const { closeCreatorProfile, setActiveView, isWithinProvider } = useDashboardViewSafe();
+  const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
+  const highlightedPostRef = useRef<HTMLDivElement>(null);
+
+  // Use either the context highlighted post (for dashboard) or the prop (for public page)
+  const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
+  const highlightedPostId = isWithinProvider ? contextHighlightedPostId : localHighlightedPostId;
 
   const {
     creatorDetails,
@@ -75,10 +82,12 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
   } | null>(null);
 
   // If viewing own profile, switch to profile view
-  if (user && user.id === creatorId && isWithinProvider) {
-    setActiveView('profile');
-    return null;
-  }
+  const isOwnProfile = user && user.id === creatorId && isWithinProvider;
+  useEffect(() => {
+    if (isOwnProfile) {
+      setActiveView('profile');
+    }
+  }, [isOwnProfile, setActiveView]);
 
   const handlePayment = useCallback(async (tierLevel: number, amount: number, message?: string) => {
     if (!user) {
@@ -123,6 +132,33 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
       localStorage.removeItem('pendingSupport');
     }
   }, [user, creatorId]);
+
+  // Handle highlighted post - switch to posts tab and scroll to the post
+  useEffect(() => {
+    if (highlightedPostId && !loading) {
+      // Switch to posts tab
+      setActiveTab('posts');
+
+      // Scroll to the highlighted post after a short delay for rendering
+      const scrollTimer = setTimeout(() => {
+        if (highlightedPostRef.current) {
+          highlightedPostRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+
+      // Clear the highlighted post after 5 seconds (for public page)
+      const clearTimer = setTimeout(() => {
+        if (!isWithinProvider) {
+          setLocalHighlightedPostId(null);
+        }
+      }, 5000);
+
+      return () => {
+        clearTimeout(scrollTimer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [highlightedPostId, loading, isWithinProvider]);
 
   const handleGatewaySelection = useCallback(async (gateway: 'esewa' | 'khalti' | 'direct') => {
     if (!pendingPayment || !user) return;
@@ -383,16 +419,28 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
           className="space-y-6"
         >
           {recentPosts.length > 0 ? (
-            (recentPosts as Array<Record<string, unknown>>).map((post) => (
-              <motion.div key={String(post.id)} variants={fadeInUp}>
-                <EnhancedPostCard
-                  post={transformPost(post)}
-                  currentUserId={user?.id}
-                  showActions={true}
-                  isSupporter={isSupporter}
-                />
-              </motion.div>
-            ))
+            (recentPosts as Array<Record<string, unknown>>).map((post) => {
+              const postId = String(post.id);
+              const isHighlighted = highlightedPostId === postId;
+              return (
+                <motion.div
+                  key={postId}
+                  variants={fadeInUp}
+                  ref={isHighlighted ? highlightedPostRef : undefined}
+                  className={cn(
+                    'transition-all duration-500',
+                    isHighlighted && 'ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl'
+                  )}
+                >
+                  <EnhancedPostCard
+                    post={transformPost(post)}
+                    currentUserId={user?.id}
+                    showActions={true}
+                    isSupporter={isSupporter}
+                  />
+                </motion.div>
+              );
+            })
           ) : (
             <motion.div variants={fadeInUp}>
               <Card className="p-12 text-center border-border">
@@ -480,10 +528,19 @@ export default function CreatorProfileSection({ creatorId }: CreatorProfileSecti
         </motion.div>
       )
     }
-  ], [subscriptionTiers, creatorDetails, handlePayment, paymentLoading, recentPosts, transformPost, user?.id, isSupporter]);
+  ], [subscriptionTiers, creatorDetails, handlePayment, paymentLoading, recentPosts, transformPost, user?.id, isSupporter, highlightedPostId]);
 
   // Loading state
   if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If viewing own profile, show loading while redirecting
+  if (isOwnProfile) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />

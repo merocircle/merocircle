@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,9 @@ import CreatorProfileSection from '@/components/dashboard/sections/CreatorProfil
 export default function PublicCreatorPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const username = params.username as string;
+  const postId = searchParams.get('post');
   const [creatorId, setCreatorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,5 +73,5 @@ export default function PublicCreatorPage() {
     );
   }
 
-  return <CreatorProfileSection creatorId={creatorId} />;
+  return <CreatorProfileSection creatorId={creatorId} initialHighlightedPostId={postId} />;
 }

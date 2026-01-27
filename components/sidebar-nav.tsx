@@ -330,12 +330,12 @@ export function SidebarNav() {
                 </Link>
                 {isCreator && (
                   <Link
-                    href="/dashboard/creator"
+                    href="/dashboard"
                     onClick={() => setIsOpen(false)}
                     className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
                     <Crown className="w-5 h-5" />
-                    <span>Creator Dashboard</span>
+                    <span>Creator Studio</span>
                   </Link>
                 )}
               </div>

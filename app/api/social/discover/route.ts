@@ -66,11 +66,12 @@ export async function GET(request: NextRequest) {
       created_at: cp.created_at,
     }))
 
-    const recent_posts = (recentPosts || []).map((post: { id: string; creator_id: string; content: string; image_url: string | null; created_at: string; users: { id: string; display_name: string; photo_url: string | null } }) => ({
+    const recent_posts = (recentPosts || []).map((post: { id: string; creator_id: string; content: string; image_url: string | null; image_urls?: string[]; created_at: string; users: { id: string; display_name: string; photo_url: string | null } }) => ({
       id: post.id,
       creator_id: post.creator_id,
       content: post.content,
       image_url: post.image_url,
+      image_urls: post.image_urls || [],
       like_count: 0,
       is_liked: false,
       created_at: post.created_at,

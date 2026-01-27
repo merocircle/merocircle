@@ -89,9 +89,23 @@ export function NotificationItem({
 
     // Handle SPA navigation for internal links
     if (link) {
-      const creatorMatch = link.match(/^\/creator\/([^/]+)/);
+      // Match /dashboard?view={view}&post={postId} format
+      const dashboardMatch = link.match(/^\/dashboard\?view=([^&]+)/);
+      if (dashboardMatch) {
+        const view = dashboardMatch[1] as 'creator-studio' | 'home' | 'notifications' | 'settings';
+        // Extract post ID from query string if present
+        const postMatch = link.match(/[?&]post=([^&]+)/);
+        const postId = postMatch ? postMatch[1] : undefined;
+        setActiveView(view, postId);
+        return;
+      }
+      // Match /creator/{id}?post={postId} format (legacy)
+      const creatorMatch = link.match(/^\/creator\/([^/?]+)/);
       if (creatorMatch) {
-        openCreatorProfile(creatorMatch[1]);
+        const creatorId = creatorMatch[1];
+        const postMatch = link.match(/[?&]post=([^&]+)/);
+        const postId = postMatch ? postMatch[1] : undefined;
+        openCreatorProfile(creatorId, postId);
         return;
       }
       if (link === '/profile') {

@@ -16,10 +16,12 @@ export type DashboardView =
 
 interface DashboardContextType {
   activeView: DashboardView;
-  setActiveView: (view: DashboardView) => void;
+  setActiveView: (view: DashboardView, postId?: string) => void;
   // Creator profile viewing (renders in main content area)
   viewingCreatorId: string | null;
-  openCreatorProfile: (creatorId: string) => void;
+  highlightedPostId: string | null;
+  setHighlightedPostId: (postId: string | null) => void;
+  openCreatorProfile: (creatorId: string, postId?: string) => void;
   closeCreatorProfile: () => void;
 }
 
@@ -31,6 +33,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const [activeView, setActiveViewState] = useState<DashboardView>('home');
   const [viewingCreatorId, setViewingCreatorId] = useState<string | null>(null);
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
   const previousViewRef = useRef<DashboardView>('home');
   const initializedRef = useRef(false);
 
@@ -41,6 +44,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     const view = searchParams.get('view') as DashboardView;
     const creator = searchParams.get('creator');
+    const postId = searchParams.get('post');
 
     if (creator) {
       // If there's a creator param, open their profile view
@@ -50,27 +54,35 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       router.replace('/dashboard', { scroll: false });
     } else if (view) {
       setActiveViewState(view);
+      // If there's a post param, set the highlighted post
+      if (postId) {
+        setHighlightedPostId(postId);
+      }
       router.replace('/dashboard', { scroll: false });
     }
   }, [searchParams, router]);
 
-  const setActiveView = useCallback((view: DashboardView) => {
+  const setActiveView = useCallback((view: DashboardView, postId?: string) => {
     // If switching away from creator-profile, clear the creator
     if (view !== 'creator-profile') {
       setViewingCreatorId(null);
     }
+    // Set highlighted post if provided
+    setHighlightedPostId(postId || null);
     setActiveViewState(view);
   }, []);
 
-  const openCreatorProfile = useCallback((creatorId: string) => {
+  const openCreatorProfile = useCallback((creatorId: string, postId?: string) => {
     // Save current view to go back to
     previousViewRef.current = activeView !== 'creator-profile' ? activeView : previousViewRef.current;
     setViewingCreatorId(creatorId);
+    setHighlightedPostId(postId || null);
     setActiveViewState('creator-profile');
   }, [activeView]);
 
   const closeCreatorProfile = useCallback(() => {
     setViewingCreatorId(null);
+    setHighlightedPostId(null);
     // Go back to previous view
     setActiveViewState(previousViewRef.current);
   }, []);
@@ -80,6 +92,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       activeView,
       setActiveView,
       viewingCreatorId,
+      highlightedPostId,
+      setHighlightedPostId,
       openCreatorProfile,
       closeCreatorProfile
     }}>
@@ -103,9 +117,11 @@ export function useDashboardViewSafe() {
     // Return default values for pages outside DashboardProvider
     return {
       activeView: 'home' as DashboardView,
-      setActiveView: (() => {}) as (view: DashboardView) => void,
+      setActiveView: (() => {}) as (view: DashboardView, postId?: string) => void,
       viewingCreatorId: null as string | null,
-      openCreatorProfile: (() => {}) as (creatorId: string) => void,
+      highlightedPostId: null as string | null,
+      setHighlightedPostId: (() => {}) as (postId: string | null) => void,
+      openCreatorProfile: (() => {}) as (creatorId: string, postId?: string) => void,
       closeCreatorProfile: (() => {}) as () => void,
       isWithinProvider: false
     };

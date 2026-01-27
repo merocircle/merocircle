@@ -5,16 +5,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { 
-  Heart, 
-  Menu, 
-  X, 
-  User, 
-  Settings, 
-  LogOut, 
+import {
+  Heart,
+  Menu,
+  X,
+  User,
+  Settings,
+  LogOut,
   ChevronDown,
   Crown,
-  BarChart3,
   MessageCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
@@ -54,11 +53,6 @@ export function Header() {
       icon: Settings,
       label: 'Settings',
       href: '/settings'
-    },
-    {
-      icon: BarChart3,
-      label: 'Creator Dashboard',
-      href: '/dashboard/creator'
     },
     {
       icon: Heart,

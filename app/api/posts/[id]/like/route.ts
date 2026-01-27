@@ -51,6 +51,39 @@ export async function POST(
       throw likeError;
     }
 
+    // Update likes_count on the post by counting total likes
+    const { count: likesCount } = await supabase
+      .from('post_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+
+    await supabase
+      .from('posts')
+      .update({ likes_count: likesCount || 0 })
+      .eq('id', postId);
+
+    // Create notification for post creator (if not liking own post)
+    if (post.creator_id !== user.id) {
+      // Get liker's display name
+      const { data: likerData } = await supabase
+        .from('users')
+        .select('display_name')
+        .eq('id', user.id)
+        .single();
+
+      const likerName = likerData?.display_name || 'Someone';
+
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: post.creator_id,
+          type: 'like',
+          actor_id: user.id,
+          post_id: postId,
+          metadata: { action: `${likerName} liked your post` }
+        });
+    }
+
     // Log activity asynchronously (don't await)
     supabase
       .from('user_activities')
@@ -106,6 +139,17 @@ export async function DELETE(
     if (unlikeError) {
       throw unlikeError;
     }
+
+    // Update likes_count on the post by counting total likes
+    const { count: likesCount } = await supabase
+      .from('post_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+
+    await supabase
+      .from('posts')
+      .update({ likes_count: likesCount || 0 })
+      .eq('id', postId);
 
     return NextResponse.json({
       success: true,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { slugifyDisplayName } from '@/lib/utils';
 
@@ -10,7 +10,9 @@ import { slugifyDisplayName } from '@/lib/utils';
 export default function CreatorProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const creatorId = params.id as string;
+  const postId = searchParams.get('post');
 
   useEffect(() => {
     if (creatorId) {
@@ -22,7 +24,9 @@ export default function CreatorProfilePage() {
           const displayName = data.creatorDetails?.display_name || '';
           const slug = slugifyDisplayName(displayName);
           if (slug) {
-            router.replace(`/${slug}`);
+            // Preserve the post query parameter if present
+            const redirectUrl = postId ? `/${slug}?post=${postId}` : `/${slug}`;
+            router.replace(redirectUrl);
             return;
           }
         } catch {
@@ -33,7 +37,7 @@ export default function CreatorProfilePage() {
 
       redirectToPublicPage();
     }
-  }, [creatorId, router]);
+  }, [creatorId, router, postId]);
 
   // Show loading while redirecting
   return (

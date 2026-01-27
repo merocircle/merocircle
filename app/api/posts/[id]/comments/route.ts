@@ -109,10 +109,12 @@ export async function POST(
       );
     }
 
+    // Get parent comment info if this is a reply
+    let parentCommentUserId: string | null = null;
     if (parent_comment_id) {
       const { data: parentComment } = await supabase
         .from('post_comments')
-        .select('id')
+        .select('id, user_id')
         .eq('id', parent_comment_id)
         .eq('post_id', postId)
         .single();
@@ -123,6 +125,7 @@ export async function POST(
           { status: 404 }
         );
       }
+      parentCommentUserId = parentComment.user_id;
     }
 
     const { data: comment, error } = await supabase
@@ -153,6 +156,68 @@ export async function POST(
         { error: 'Failed to create comment' },
         { status: 500 }
       );
+    }
+
+    // Get the post creator to send notification
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('creator_id')
+      .eq('id', postId)
+      .single();
+
+    // Get commenter's display name for notification message
+    const { data: commenterData } = await supabase
+      .from('users')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+
+    const commenterName = commenterData?.display_name || 'Someone';
+
+    // Create notifications
+    const notificationsToCreate: Array<{
+      user_id: string;
+      type: string;
+      actor_id: string;
+      post_id: string;
+      comment_id: string;
+      metadata: { action: string };
+    }> = [];
+
+    // If this is a reply to a comment, notify the original commenter
+    if (parentCommentUserId && parentCommentUserId !== user.id) {
+      notificationsToCreate.push({
+        user_id: parentCommentUserId,
+        type: 'comment',
+        actor_id: user.id,
+        post_id: postId,
+        comment_id: comment.id,
+        metadata: { action: `${commenterName} replied to your comment` }
+      });
+    }
+
+    // Notify the post creator (if they're not the commenter and not already notified as parent commenter)
+    if (postData?.creator_id && postData.creator_id !== user.id && postData.creator_id !== parentCommentUserId) {
+      notificationsToCreate.push({
+        user_id: postData.creator_id,
+        type: 'comment',
+        actor_id: user.id,
+        post_id: postId,
+        comment_id: comment.id,
+        metadata: { action: `${commenterName} commented on your post` }
+      });
+    }
+
+    // Insert notifications
+    if (notificationsToCreate.length > 0) {
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert(notificationsToCreate);
+
+      if (notifError) {
+        logger.error('Error creating comment notifications', 'COMMENTS_API', { error: notifError.message });
+        // Don't fail the request, just log the error
+      }
     }
 
     return NextResponse.json(comment, { status: 201 });

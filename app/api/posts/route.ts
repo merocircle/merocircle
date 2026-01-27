@@ -148,11 +148,20 @@ export async function POST(request: NextRequest) {
       title,
       content,
       image_url,
+      image_urls,
       is_public = true,
       tier_required = 'free',
       post_type = 'post',
       poll_data
     } = body;
+
+    // Handle image_urls - support both single image_url and multiple image_urls
+    let finalImageUrls: string[] = [];
+    if (image_urls && Array.isArray(image_urls) && image_urls.length > 0) {
+      finalImageUrls = image_urls.filter((url: string) => url && url.trim());
+    } else if (image_url) {
+      finalImageUrls = [image_url];
+    }
 
     const validation = validatePostContent(title, content);
     if (!validation.valid) {
@@ -180,7 +189,8 @@ export async function POST(request: NextRequest) {
         creator_id: user.id,
         title: sanitizeString(title),
         content: sanitizeString(content),
-        image_url: image_url || null,
+        image_url: finalImageUrls.length > 0 ? finalImageUrls[0] : null, // Keep first image in image_url for backward compatibility
+        image_urls: finalImageUrls.length > 0 ? finalImageUrls : [],
         is_public: is_public ?? true,
         tier_required: tier_required || 'free',
         post_type: post_type || 'post'

@@ -156,8 +156,8 @@ export default function CreatorSignupPage() {
             // Creator profile doesn't exist, show setup form
             setStep('creator-details');
           } else {
-            // Creator profile exists, redirect to creator dashboard
-            router.push('/dashboard/creator');
+            // Creator profile exists, redirect to Creator Studio
+            router.push('/dashboard?view=creator-studio');
           }
         };
 
@@ -315,9 +315,9 @@ export default function CreatorSignupPage() {
 
       setStep('complete');
 
-      // Redirect to creator dashboard
+      // Redirect to Creator Studio
       setTimeout(() => {
-        router.push('/dashboard/creator');
+        router.push('/dashboard?view=creator-studio');
       }, 2000);
     } catch (error: unknown) {
       console.error('Creator setup error:', error);

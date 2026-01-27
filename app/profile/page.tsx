@@ -664,7 +664,7 @@ export default function ProfilePage() {
                   <CardContent className="p-6 space-y-3">
                     {isCreator ? (
                       <>
-                        <Link href="/dashboard/creator" className="block">
+                        <Link href="/dashboard" className="block">
                           <Button variant="outline" className="w-full justify-between group hover:border-primary/50">
                             <span className="flex items-center">
                               <Crown className="w-4 h-4 mr-2 text-primary" />
@@ -682,7 +682,7 @@ export default function ProfilePage() {
                             <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                           </Button>
                         </Link>
-                        <Link href="/dashboard/creator" className="block">
+                        <Link href="/dashboard" className="block">
                           <Button variant="outline" className="w-full justify-between group hover:border-primary/50">
                             <span className="flex items-center">
                               <FileText className="w-4 h-4 mr-2 text-primary" />
@@ -843,7 +843,7 @@ export default function ProfilePage() {
                       }
                     </p>
                     {isCreator ? (
-                      <Link href="/dashboard/creator">
+                      <Link href="/dashboard">
                         <Button className="bg-gradient-to-r from-primary to-pink-500 hover:opacity-90">
                           <FileText className="w-4 h-4 mr-2" />
                           Create Post

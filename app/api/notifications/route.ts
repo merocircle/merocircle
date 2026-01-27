@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
         post:posts!notifications_post_id_fkey(
           id,
           title,
-          image_url
+          image_url,
+          creator_id
         ),
         comment:post_comments!notifications_comment_id_fkey(
           id,
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
         id: notification.post.id,
         title: notification.post.title,
         image_url: notification.post.image_url,
+        creator_id: notification.post.creator_id,
       } : null,
       comment: notification.comment ? {
         id: notification.comment.id,

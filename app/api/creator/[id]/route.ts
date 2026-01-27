@@ -81,6 +81,7 @@ export async function GET(
       title: string;
       content: string;
       image_url: string | null;
+      image_urls?: string[];
       media_url: string | null;
       is_public: boolean;
       tier_required: string | null;
@@ -105,6 +106,7 @@ export async function GET(
         content: shouldHideContent ? null : post.content,
         // Don't send image_url to non-supporters - they can't access it even via inspect
         image_url: shouldHideContent ? null : post.image_url,
+        image_urls: shouldHideContent ? [] : (post.image_urls || []),
         media_url: shouldHideContent ? null : (post.media_url || null),
         is_public: post.is_public,
         tier_required: post.tier_required || 'free',
