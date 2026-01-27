@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Chat,
   Channel,
@@ -18,7 +18,7 @@ import { CustomChannelHeader } from './CustomChannelHeader';
 import {
   Loader2, MessageSquare, AlertCircle, Plus, Hash,
   ChevronDown, ChevronRight, Users, Star,
-  X, Check, Search, Mail, Calendar, ArrowLeft, MessageCircle
+  X, Check, Search, Mail, Calendar, ArrowLeft, MessageCircle, Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -376,6 +376,7 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
   // Handle starting a DM
   const handleStartDM = useCallback(async (userId: string) => {
     if (!chatClient || !user) return;
+    if (userId === user.id) return; // Can't DM yourself
 
     try {
       const channel = chatClient.channel('messaging', {
@@ -393,6 +394,37 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
       console.error('Failed to create DM:', err);
     }
   }, [chatClient, user, fetchDMChannels]);
+
+  // Custom message actions component for creators
+  const CustomMessageActionsList = useMemo(() => {
+    if (!isCreator) return undefined; // No custom actions for supporters
+
+    return (props: any) => {
+      const { message, messageListRect } = props;
+      const senderId = message?.user?.id;
+      
+      // Don't show for own messages
+      if (!senderId || senderId === user?.id) {
+        return null;
+      }
+
+      return (
+        <div className="str-chat__message-actions-list">
+          <button
+            className="str-chat__message-actions-list-item"
+            onClick={() => {
+              handleStartDM(senderId);
+              // Close the action menu
+              if (props.setOpen) props.setOpen(false);
+            }}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Send DM
+          </button>
+        </div>
+      );
+    };
+  }, [isCreator, user?.id, handleStartDM]);
 
   // Show loading state while connecting
   if (isConnecting) {
@@ -671,7 +703,10 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0">
             {activeChannel ? (
-              <Channel channel={activeChannel}>
+              <Channel 
+                channel={activeChannel}
+                CustomMessageActionsList={CustomMessageActionsList}
+              >
                 <Window>
                   <CustomChannelHeader />
                   <MessageList />
@@ -877,7 +912,10 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
           {/* Mobile: Chat View */}
           {mobileView === 'chat' && activeChannel && (
             <div className="h-full flex flex-col">
-              <Channel channel={activeChannel}>
+              <Channel 
+                channel={activeChannel}
+                CustomMessageActionsList={CustomMessageActionsList}
+              >
                 <Window>
                   {/* Custom mobile header with back button */}
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card">
@@ -1095,6 +1133,39 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
         /* Adjust spacing after hiding avatar */
         .str-chat__quoted-message-preview .str-chat__message-inner {
           margin-left: 0 !important;
+        }
+
+        /* Custom Send DM action styling */
+        .str-chat__message-actions-list-item {
+          display: flex;
+          align-items: center;
+          padding: 8px 12px;
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          color: var(--foreground);
+          font-size: 14px;
+          transition: all 0.2s;
+          width: 100%;
+          text-align: left;
+        }
+
+        .str-chat__message-actions-list-item:hover {
+          background: var(--muted);
+          color: var(--primary);
+        }
+
+        .str-chat__message-actions-list-item svg {
+          flex-shrink: 0;
+        }
+
+        .dark .str-chat__message-actions-list-item {
+          color: var(--foreground);
+        }
+
+        .dark .str-chat__message-actions-list-item:hover {
+          background: var(--muted);
+          color: var(--primary);
         }
       `}</style>
     </div>
