@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   Search,
@@ -29,17 +29,18 @@ export function BottomNav({
   onCreateClick,
   className
 }: BottomNavProps) {
-  const router = useRouter();
   const pathname = usePathname();
-  const isOnDashboard = pathname === '/dashboard';
 
-  const handleNavClick = (view: DashboardView) => {
-    if (isOnDashboard) {
-      onViewChange?.(view);
-    } else {
-      router.push(`/dashboard?view=${view}`);
-    }
+  // Map pathname to active view
+  const getActiveViewFromPath = (): DashboardView => {
+    if (pathname === '/home') return 'home';
+    if (pathname === '/explore') return 'explore';
+    if (pathname === '/chat') return 'chat';
+    if (pathname === '/profile') return 'profile';
+    return 'home';
   };
+
+  const currentActiveView = getActiveViewFromPath();
 
   return (
     <motion.nav
@@ -56,16 +57,16 @@ export function BottomNav({
       <BottomNavIcon
         icon={Home}
         label="Home"
-        isActive={isOnDashboard && activeView === 'home'}
-        onClick={() => handleNavClick('home')}
+        isActive={currentActiveView === 'home'}
+        href="/home"
       />
 
       {/* Explore */}
       <BottomNavIcon
         icon={Search}
         label="Explore"
-        isActive={isOnDashboard && activeView === 'explore'}
-        onClick={() => handleNavClick('explore')}
+        isActive={currentActiveView === 'explore'}
+        href="/explore"
       />
 
       {/* Create (Center) */}
@@ -80,17 +81,17 @@ export function BottomNav({
       <BottomNavIcon
         icon={MessageCircle}
         label="Chat"
-        isActive={isOnDashboard && activeView === 'chat'}
+        isActive={currentActiveView === 'chat'}
         badge={unreadMessages}
-        onClick={() => handleNavClick('chat')}
+        href="/chat"
       />
 
-      {/* Profile - now uses view */}
+      {/* Profile */}
       <BottomNavIcon
         icon={User}
         label="Me"
-        isActive={isOnDashboard && activeView === 'profile'}
-        onClick={() => handleNavClick('profile')}
+        isActive={currentActiveView === 'profile'}
+        href="/profile"
       />
     </motion.nav>
   );

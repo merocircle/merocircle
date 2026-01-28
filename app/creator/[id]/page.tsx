@@ -32,7 +32,7 @@ export default function CreatorProfilePage() {
         } catch {
           // fall through
         }
-        router.replace('/dashboard');
+        router.replace('/home');
       };
 
       redirectToPublicPage();

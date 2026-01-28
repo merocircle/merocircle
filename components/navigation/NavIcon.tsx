@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +11,7 @@ interface NavIconProps {
   isActive?: boolean;
   badge?: number;
   onClick?: () => void;
+  href?: string;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
@@ -21,6 +23,7 @@ export function NavIcon({
   isActive = false,
   badge,
   onClick,
+  href,
   size = 'md',
   showLabel = false,
   className
@@ -37,21 +40,8 @@ export function NavIcon({
     lg: 26
   };
 
-  return (
-    <motion.button
-      onClick={onClick}
-      className={cn(
-        'relative flex flex-col items-center justify-center gap-1 rounded-xl transition-colors',
-        sizeClasses[size],
-        isActive
-          ? 'text-primary'
-          : 'text-muted-foreground hover:text-foreground',
-        className
-      )}
-      whileHover={{ y: -2, scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-    >
+  const content = (
+    <>
       {/* Active indicator pill (left side for ActivityBar) */}
       {isActive && (
         <motion.div
@@ -114,6 +104,42 @@ export function NavIcon({
           {label}
         </span>
       )}
+    </>
+  );
+
+  const baseClasses = cn(
+    'relative flex flex-col items-center justify-center gap-1 rounded-xl transition-colors',
+    sizeClasses[size],
+    isActive
+      ? 'text-primary'
+      : 'text-muted-foreground hover:text-foreground',
+    className
+  );
+
+  if (href) {
+    return (
+      <Link href={href} prefetch={true}>
+        <motion.div
+          className={baseClasses}
+          whileHover={{ y: -2, scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+        >
+          {content}
+        </motion.div>
+      </Link>
+    );
+  }
+
+  return (
+    <motion.button
+      onClick={onClick}
+      className={baseClasses}
+      whileHover={{ y: -2, scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+    >
+      {content}
     </motion.button>
   );
 }
@@ -129,13 +155,13 @@ export function BottomNavIcon({
   isActive = false,
   badge,
   onClick,
+  href,
   isCenter = false,
   className
 }: BottomNavIconProps) {
   if (isCenter) {
-    return (
-      <motion.button
-        onClick={onClick}
+    const centerButton = (
+      <motion.div
         className={cn(
           'relative flex items-center justify-center w-14 h-14 -mt-6 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30',
           className
@@ -145,21 +171,25 @@ export function BottomNavIcon({
         transition={{ type: 'spring', stiffness: 400, damping: 17 }}
       >
         <Icon size={28} strokeWidth={2} />
+      </motion.div>
+    );
+
+    if (href) {
+      return (
+        <Link href={href} prefetch={true} className="block">
+          {centerButton}
+        </Link>
+      );
+    }
+    return (
+      <motion.button onClick={onClick} className="block">
+        {centerButton}
       </motion.button>
     );
   }
 
-  return (
-    <motion.button
-      onClick={onClick}
-      className={cn(
-        'relative flex flex-col items-center justify-center gap-0.5 py-2 flex-1',
-        isActive ? 'text-primary' : 'text-muted-foreground',
-        className
-      )}
-      whileTap={{ scale: 0.9 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-    >
+  const bottomNavContent = (
+    <>
       <motion.div
         className="relative"
         animate={{ scale: isActive ? 1.1 : 1 }}
@@ -201,6 +231,37 @@ export function BottomNavIcon({
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
       )}
+    </>
+  );
+
+  const bottomNavClasses = cn(
+    'relative flex flex-col items-center justify-center gap-0.5 py-2 flex-1',
+    isActive ? 'text-primary' : 'text-muted-foreground',
+    className
+  );
+
+  if (href) {
+    return (
+      <Link href={href} prefetch={true}>
+        <motion.div
+          className={bottomNavClasses}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+        >
+          {bottomNavContent}
+        </motion.div>
+      </Link>
+    );
+  }
+
+  return (
+    <motion.button
+      onClick={onClick}
+      className={bottomNavClasses}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+    >
+      {bottomNavContent}
     </motion.button>
   );
 }

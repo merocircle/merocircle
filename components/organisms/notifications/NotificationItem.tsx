@@ -3,13 +3,13 @@
 import * as React from "react";
 import { useCallback } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, DollarSign, UserPlus, Bell, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/atoms/avatars/UserAvatar";
 import { fadeInUp, notificationSlide } from "@/components/animations/variants";
 import { formatDistanceToNow } from "date-fns";
 import { LucideIcon } from "lucide-react";
-import { useDashboardViewSafe } from "@/contexts/dashboard-context";
 
 type NotificationType = "like" | "comment" | "payment" | "follow" | "mention" | "announcement";
 
@@ -80,46 +80,47 @@ export function NotificationItem({
   const config = notificationConfig[type];
   const Icon = config.icon;
   const formattedTime = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
-  const { openCreatorProfile, setActiveView } = useDashboardViewSafe();
+  const router = useRouter();
 
   const handleClick = useCallback(() => {
     if (!isRead && onMarkAsRead) {
       onMarkAsRead();
     }
 
-    // Handle SPA navigation for internal links
+    // Handle navigation for internal links
     if (link) {
-      // Match /dashboard?view={view}&post={postId} format
+      // Match /dashboard?view={view}&post={postId} format (legacy support)
       const dashboardMatch = link.match(/^\/dashboard\?view=([^&]+)/);
       if (dashboardMatch) {
-        const view = dashboardMatch[1] as 'creator-studio' | 'home' | 'notifications' | 'settings';
-        // Extract post ID from query string if present
+        const view = dashboardMatch[1];
         const postMatch = link.match(/[?&]post=([^&]+)/);
         const postId = postMatch ? postMatch[1] : undefined;
-        setActiveView(view, postId);
+        
+        // Map view to route
+        const routeMap: Record<string, string> = {
+          'home': '/home',
+          'explore': '/explore',
+          'chat': '/chat',
+          'notifications': '/notifications',
+          'settings': '/settings',
+          'profile': '/profile',
+          'creator-studio': '/creator-studio',
+        };
+        
+        const route = routeMap[view] || '/home';
+        router.push(postId ? `${route}?post=${postId}` : route);
         return;
       }
-      // Match /creator/{id}?post={postId} format (legacy)
-      const creatorMatch = link.match(/^\/creator\/([^/?]+)/);
-      if (creatorMatch) {
-        const creatorId = creatorMatch[1];
-        const postMatch = link.match(/[?&]post=([^&]+)/);
-        const postId = postMatch ? postMatch[1] : undefined;
-        openCreatorProfile(creatorId, postId);
-        return;
-      }
-      if (link === '/profile') {
-        setActiveView('profile');
-        return;
-      }
-      if (link === '/settings') {
-        setActiveView('settings');
+      
+      // Direct route navigation (new format)
+      if (link.startsWith('/')) {
+        router.push(link);
         return;
       }
     }
 
     onClick?.();
-  }, [isRead, onMarkAsRead, link, openCreatorProfile, setActiveView, onClick]);
+  }, [isRead, onMarkAsRead, link, router, onClick]);
 
   const content = (
     <motion.div

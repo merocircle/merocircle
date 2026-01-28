@@ -278,18 +278,11 @@ export function EnhancedPostCard({
   }, [post.is_public, post.tier_required, isSupporter, currentUserId, post.creator.id]);
 
   const router = useRouter();
-  const { openCreatorProfile, setActiveView } = useDashboardViewSafe();
 
-  // Handle creator profile navigation (SPA-style)
-  const handleCreatorClick = useCallback(() => {
-    if (currentUserId === post.creator.id) {
-      // Own post - go to own profile
-      setActiveView('profile');
-    } else {
-      // Other creator - open their profile
-      openCreatorProfile(post.creator.id);
-    }
-  }, [currentUserId, post.creator.id, setActiveView, openCreatorProfile]);
+  // Determine creator profile link
+  const creatorProfileLink = currentUserId === post.creator.id 
+    ? '/profile' 
+    : `/creator/${post.creator.id}`;
 
   const handleLike = useCallback(() => {
     if (!currentUserId) {
@@ -446,22 +439,22 @@ export function EnhancedPostCard({
         {/* Header - Instagram style */}
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <div onClick={handleCreatorClick} className="cursor-pointer">
+            <Link href={creatorProfileLink} className="cursor-pointer">
               <Avatar className="h-10 w-10 ring-2 ring-background hover:ring-primary/50 transition-all">
                 <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
                   {post.creator.display_name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-            </div>
+            </Link>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span
-                  onClick={handleCreatorClick}
+                <Link
+                  href={creatorProfileLink}
                   className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   {post.creator.display_name}
-                </span>
+                </Link>
                 {post.creator_profile?.is_verified && (
                   <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-blue-500/10 text-blue-500 border-0">
                     ✓
@@ -532,8 +525,10 @@ export function EnhancedPostCard({
                   <p className="text-sm text-muted-foreground mb-4">
                     Support {post.creator.display_name} to unlock
                   </p>
-                  <Button size="sm" className="w-full" onClick={handleCreatorClick}>
-                    Become a Supporter
+                  <Button size="sm" className="w-full" asChild>
+                    <Link href={creatorProfileLink}>
+                      Become a Supporter
+                    </Link>
                   </Button>
                 </div>
               </div>

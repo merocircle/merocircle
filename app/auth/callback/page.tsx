@@ -34,14 +34,14 @@ export default function AuthCallbackPage() {
         while (attempts < maxAttempts) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
-            router.replace(redirectPath || '/dashboard');
+            router.replace(redirectPath || '/home');
             return;
           }
           await new Promise(resolve => setTimeout(resolve, 500));
           attempts++;
         }
         
-        router.replace(redirectPath || '/dashboard');
+        router.replace(redirectPath || '/home');
       } catch (error) {
         console.error('Callback error:', error);
         const storedRedirect = localStorage.getItem('postLoginRedirect');
@@ -49,7 +49,7 @@ export default function AuthCallbackPage() {
         if (storedRedirect) {
           localStorage.removeItem('postLoginRedirect');
         }
-        router.replace(redirectPath || '/dashboard');
+        router.replace(redirectPath || '/home');
       }
     };
 

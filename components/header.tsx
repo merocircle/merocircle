@@ -56,8 +56,8 @@ export function Header() {
     },
     {
       icon: Heart,
-      label: 'Dashboard',
-      href: '/dashboard'
+      label: 'Home',
+      href: '/home'
     },
     {
       icon: LogOut,
@@ -83,16 +83,16 @@ export function Header() {
           {isAuthenticated && (
             <>
               <Link 
-                href="/dashboard" 
+                href="/home" 
                 className={cn('text-sm font-medium transition-all hover:text-primary relative group', colors.text.secondary)}
               >
-                Dashboard
+                Home
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
               </Link>
               <Link 
-                href="/community" 
+                href="/chat" 
                 className={cn('p-2 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-800', colors.text.secondary)}
-                title="Community"
+                title="Chat"
               >
                 <MessageCircle className="w-5 h-5" />
               </Link>
@@ -217,19 +217,19 @@ export function Header() {
               {isAuthenticated && (
                 <>
                   <Link 
-                    href="/dashboard" 
+                    href="/home" 
                     className="block text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
                     onClick={closeMobileMenu}
                   >
-                    Dashboard
+                    Home
                   </Link>
                   <Link 
-                    href="/community" 
+                    href="/chat" 
                     className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
                     onClick={closeMobileMenu}
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>Community</span>
+                    <span>Chat</span>
                   </Link>
                 </>
               )}

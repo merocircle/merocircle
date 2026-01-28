@@ -57,10 +57,10 @@ export async function middleware(request: NextRequest) {
   // Refresh the session
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Redirect authenticated users from landing page to dashboard
+  // Redirect authenticated users from landing page to home
   if (user && request.nextUrl.pathname === '/') {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/home'
     return NextResponse.redirect(url)
   }
 

@@ -134,7 +134,7 @@ export default function EnhancedCreatorDashboard() {
     }
 
     if (!isCreator && userProfile?.role !== 'creator') {
-      router.push('/dashboard');
+      router.push('/home');
       return;
     }
   }, [isAuthenticated, user, isCreator, userProfile, router]);

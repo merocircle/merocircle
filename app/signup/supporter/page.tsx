@@ -27,10 +27,10 @@ export default function SupporterSignupPage() {
   // Handle OAuth return - callback page will create profile, we just check if user is back
   useEffect(() => {
     if (user && userProfile) {
-      // User is authenticated and has profile - redirect to dashboard
+      // User is authenticated and has profile - redirect to home
       setStep('complete');
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/home');
       }, 2000);
     } else if (user) {
       // User is authenticated but profile is still loading
@@ -38,7 +38,7 @@ export default function SupporterSignupPage() {
       const timeout = setTimeout(() => {
         if (userProfile) {
           setStep('complete');
-          setTimeout(() => router.push('/dashboard'), 2000);
+          setTimeout(() => router.push('/home'), 2000);
         }
       }, 3000);
       

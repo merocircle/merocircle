@@ -157,7 +157,7 @@ export default function CreatorSignupPage() {
             setStep('creator-details');
           } else {
             // Creator profile exists, redirect to Creator Studio
-            router.push('/dashboard?view=creator-studio');
+            router.push('/creator-studio');
           }
         };
 
@@ -317,7 +317,7 @@ export default function CreatorSignupPage() {
 
       // Redirect to Creator Studio
       setTimeout(() => {
-        router.push('/dashboard?view=creator-studio');
+        router.push('/creator-studio');
       }, 2000);
     } catch (error: unknown) {
       console.error('Creator setup error:', error);

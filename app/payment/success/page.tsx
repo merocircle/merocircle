@@ -38,8 +38,8 @@ function PaymentSuccessContent() {
           // Redirect back to the creator page where payment was initiated
           router.push(`/creator/${creator_id}`);
         } else if (isAuthenticated) {
-          // Fallback to dashboard if no creator_id
-          router.push('/dashboard');
+          // Fallback to home if no creator_id
+          router.push('/home');
         } else {
           // If not authenticated, redirect to home page
           router.push('/');
@@ -147,7 +147,7 @@ function PaymentSuccessContent() {
                   if (creator_id) {
                     router.push(`/creator/${creator_id}`);
                   } else if (isAuthenticated) {
-                    router.push('/dashboard');
+                    router.push('/home');
                   } else {
                     router.push('/');
                   }

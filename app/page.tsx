@@ -143,7 +143,7 @@ export default function LandingPage() {
   // Redirect authenticated users immediately - check before rendering landing page
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.replace('/dashboard');
+      router.replace('/home');
     }
   }, [loading, isAuthenticated, router]);
 
@@ -663,7 +663,7 @@ export default function LandingPage() {
               <h4 className="font-bold mb-4 text-black text-[14px] uppercase tracking-wider">Company</h4>
               <ul className="space-y-3 text-[14px]">
                 <li><Link href="/auth" className="text-black/60 hover:text-black transition-colors">About us</Link></li>
-                <li><Link href="/dashboard" className="text-black/60 hover:text-black transition-colors">Pricing</Link></li>
+                <li><Link href="/home" className="text-black/60 hover:text-black transition-colors">Pricing</Link></li>
                 <li><Link href="/help" className="text-black/60 hover:text-black transition-colors">Security</Link></li>
               </ul>
             </div>

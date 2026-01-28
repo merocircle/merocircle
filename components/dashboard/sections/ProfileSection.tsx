@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/supabase-auth-context';
-import { useDashboardView } from '@/contexts/dashboard-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,9 +38,7 @@ const creatorTabs = [
 ];
 
 export default function ProfileSection() {
-  const router = useRouter();
   const { user, userProfile, creatorProfile, isAuthenticated, loading, isCreator, refreshProfile } = useAuth();
-  const { setActiveView } = useDashboardView();
   const [activeTab, setActiveTab] = useState('overview');
   const [posts, setPosts] = useState<Array<any>>([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -255,8 +252,10 @@ export default function ProfileSection() {
                   <Edit className="w-4 h-4 mr-1" />
                   Edit Profile
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setActiveView('settings')} className="rounded-xl">
-                  <Settings className="w-4 h-4" />
+                <Button variant="outline" size="sm" asChild className="rounded-xl">
+                  <Link href="/settings">
+                    <Settings className="w-4 h-4" />
+                  </Link>
                 </Button>
               </>
             )}
@@ -280,12 +279,11 @@ export default function ProfileSection() {
               <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 Share your passion, build your community, and earn from your content. Start your creator journey today!
               </p>
-              <Button
-                onClick={() => router.push('/signup/creator')}
-                className="bg-gradient-to-r from-primary to-pink-500 text-white rounded-xl px-8"
-              >
-                <Crown className="w-4 h-4 mr-2" />
-                Get Started
+              <Button asChild className="bg-gradient-to-r from-primary to-pink-500 text-white rounded-xl px-8">
+                <Link href="/signup/creator">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Get Started
+                </Link>
               </Button>
             </div>
           </Card>

@@ -84,18 +84,19 @@ export function SidebarNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [recentlyVisited, setRecentlyVisited] = useState<RecentlyVisited[]>([]);
   
-  // Get dashboard view context (only available on dashboard page)
-  const isDashboardPage = pathname === '/dashboard';
-  let activeView = 'home';
-  let setActiveView: ((view: any) => void) | undefined;
+  // Map pathname to active view
+  const getActiveView = () => {
+    if (pathname === '/home') return 'home';
+    if (pathname === '/explore') return 'explore';
+    if (pathname === '/chat') return 'chat';
+    if (pathname === '/notifications') return 'notifications';
+    if (pathname === '/settings') return 'settings';
+    if (pathname === '/profile') return 'profile';
+    if (pathname === '/creator-studio') return 'creator-studio';
+    return 'home';
+  };
   
-  try {
-    const dashboardContext = useDashboardView();
-    activeView = dashboardContext.activeView;
-    setActiveView = dashboardContext.setActiveView;
-  } catch {
-    // Not on dashboard page, context not available
-  }
+  const activeView = getActiveView();
   
   // Get real-time unread count for notifications badge using React Query
   // This ensures it stays in sync with the notifications section
@@ -248,23 +249,25 @@ export function SidebarNav() {
           <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = isDashboardPage && activeView === item.view;
+              const isActive = activeView === item.view;
               
-              const handleClick = (e: React.MouseEvent) => {
-                e.preventDefault();
-                setIsOpen(false);
-                
-                if (isDashboardPage && setActiveView) {
-                  setActiveView(item.view);
-                } else {
-                  router.push(`/dashboard?view=${item.view}`);
+              // Map view to route
+              const getRoute = (view: string) => {
+                switch (view) {
+                  case 'home': return '/home';
+                  case 'chat': return '/chat';
+                  case 'notifications': return '/notifications';
+                  case 'settings': return '/settings';
+                  default: return '/home';
                 }
               };
               
               return (
-                <button
+                <Link
                   key={item.view}
-                  onClick={handleClick}
+                  href={getRoute(item.view)}
+                  prefetch={true}
+                  onClick={() => setIsOpen(false)}
                   className={cn(
                     'w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     isActive
@@ -279,7 +282,7 @@ export function SidebarNav() {
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
                   )}
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -330,7 +333,7 @@ export function SidebarNav() {
                 </Link>
                 {isCreator && (
                   <Link
-                    href="/dashboard"
+                    href="/creator-studio"
                     onClick={() => setIsOpen(false)}
                     className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >

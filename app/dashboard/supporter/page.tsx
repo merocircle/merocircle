@@ -11,7 +11,7 @@ export default function SupporterDashboard() {
   const router = useRouter();
 
   React.useEffect(() => {
-    router.replace('/dashboard');
+    router.replace('/home');
   }, [router]);
 
   return (

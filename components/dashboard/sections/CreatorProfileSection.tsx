@@ -81,20 +81,21 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     message?: string;
   } | null>(null);
 
-  // If viewing own profile, switch to profile view
+  // If viewing own profile, redirect to profile page
+  const router = useRouter();
   const isOwnProfile = user && user.id === creatorId && isWithinProvider;
   useEffect(() => {
     if (isOwnProfile) {
-      setActiveView('profile');
+      router.push('/profile');
     }
-  }, [isOwnProfile, setActiveView]);
+  }, [isOwnProfile, router]);
 
   const handlePayment = useCallback(async (tierLevel: number, amount: number, message?: string) => {
     if (!user) {
       if (typeof window !== 'undefined') {
         const redirectPath = isWithinProvider
           ? `${window.location.pathname}${window.location.search}`
-          : `/dashboard?creator=${creatorId}`;
+          : `/creator/${creatorId}`;
         localStorage.setItem(
           'pendingSupport',
           JSON.stringify({ creatorId, tierLevel, amount, message })
@@ -318,7 +319,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       return;
     }
     if (user) {
-      router.push('/dashboard');
+      router.push('/home');
       return;
     }
     if (typeof window !== 'undefined' && window.history.length > 1) {

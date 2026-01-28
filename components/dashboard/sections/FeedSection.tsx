@@ -1,12 +1,12 @@
 'use client';
 
 import { memo } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUnifiedDashboard } from '@/hooks/useQueries';
 import { useDiscoveryFeed } from '@/hooks/useSocial';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
-import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { EmptyStateCard } from '@/components/common/EmptyStateCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -49,7 +49,6 @@ const FeedSection = memo(function FeedSection() {
   const { user } = useAuth();
   const { data: feedData, isLoading } = useUnifiedDashboard();
   const { feed: discoveryFeed, loading: creatorsLoading } = useDiscoveryFeed();
-  const { openCreatorProfile } = useDashboardViewSafe();
 
   // Enable real-time updates for posts, likes, and comments
   useRealtimeFeed();
@@ -123,31 +122,32 @@ const FeedSection = memo(function FeedSection() {
                   ))
                 ) : (
                   suggestedCreators.map((creator, index) => (
-                    <motion.button
+                    <motion.div
                       key={creator.user_id}
                       className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                      onClick={() => openCreatorProfile(creator.user_id)}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.05 }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {/* Gradient ring like Instagram stories */}
-                      <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600">
-                        <div className="p-0.5 bg-background rounded-full">
-                          <Avatar className="w-14 h-14 border-0">
-                            <AvatarImage src={creator.avatar_url || undefined} />
-                            <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-sm font-medium">
-                              {creator.display_name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                      <Link href={`/creator/${creator.user_id}`} className="flex flex-col items-center gap-1.5">
+                        {/* Gradient ring like Instagram stories */}
+                        <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600">
+                          <div className="p-0.5 bg-background rounded-full">
+                            <Avatar className="w-14 h-14 border-0">
+                              <AvatarImage src={creator.avatar_url || undefined} />
+                              <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-sm font-medium">
+                                {creator.display_name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-[11px] text-muted-foreground truncate max-w-16 text-center">
-                        {creator.display_name.split(' ')[0]}
-                      </span>
-                    </motion.button>
+                        <span className="text-[11px] text-muted-foreground truncate max-w-16 text-center">
+                          {creator.display_name.split(' ')[0]}
+                        </span>
+                      </Link>
+                    </motion.div>
                   ))
                 )}
               </div>

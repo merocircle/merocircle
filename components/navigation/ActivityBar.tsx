@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   Search,
@@ -20,7 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/supabase-auth-context';
-import { useDashboardViewSafe, type DashboardView } from '@/contexts/dashboard-context';
+import { type DashboardView } from '@/contexts/dashboard-context';
 
 interface ActivityBarProps {
   user?: {
@@ -59,16 +60,41 @@ export function ActivityBar({
   onCreatorClick,
   className
 }: ActivityBarProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const { isCreator } = useAuth();
-  const { openCreatorProfile } = useDashboardViewSafe();
   const { theme, setTheme } = useTheme();
-  const isOnDashboard = pathname === '/dashboard';
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  // Map view to route
+  const getRoute = (view: DashboardView | undefined): string => {
+    switch (view) {
+      case 'home': return '/home';
+      case 'explore': return '/explore';
+      case 'chat': return '/chat';
+      case 'notifications': return '/notifications';
+      case 'settings': return '/settings';
+      case 'profile': return '/profile';
+      case 'creator-studio': return '/creator-studio';
+      default: return '/home';
+    }
+  };
+
+  // Get active view from pathname
+  const getActiveViewFromPath = (): DashboardView => {
+    if (pathname === '/home') return 'home';
+    if (pathname === '/explore') return 'explore';
+    if (pathname === '/chat') return 'chat';
+    if (pathname === '/notifications') return 'notifications';
+    if (pathname === '/settings') return 'settings';
+    if (pathname === '/profile') return 'profile';
+    if (pathname === '/creator-studio') return 'creator-studio';
+    return 'home';
+  };
+
+  const currentActiveView = getActiveViewFromPath();
 
   // Main navigation items
   const navItems: NavItem[] = [
@@ -84,29 +110,12 @@ export function ActivityBar({
     : null;
 
   const isActive = (item: NavItem) => {
-    if (!isOnDashboard) return false;
-    return item.view === activeView;
-  };
-
-  const handleNavClick = (item: NavItem) => {
-    if (item.view) {
-      if (isOnDashboard) {
-        // Switch view within dashboard (single-page)
-        onViewChange?.(item.view);
-      } else {
-        // Navigate to dashboard with the view
-        router.push(`/dashboard?view=${item.view}`);
-      }
-    }
+    return item.view === currentActiveView;
   };
 
   const handleCreatorClick = (creatorId: string) => {
     if (onCreatorClick) {
       onCreatorClick(creatorId);
-    } else if (isOnDashboard) {
-      openCreatorProfile(creatorId);
-    } else {
-      router.push(`/dashboard?creator=${creatorId}`);
     }
   };
 
@@ -124,25 +133,26 @@ export function ActivityBar({
         {/* Logo */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <motion.button
-              onClick={() => router.push('/dashboard')}
-              className="mb-6 flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <Link href="/home" prefetch={true}>
               <motion.div
-                animate={{
-                  scale: [1, 1.05, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut'
-                }}
+                className="mb-6 flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary cursor-pointer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Heart size={24} fill="currentColor" />
+                <motion.div
+                  animate={{
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut'
+                  }}
+                >
+                  <Heart size={24} fill="currentColor" />
+                </motion.div>
               </motion.div>
-            </motion.button>
+            </Link>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>MeroCircle</p>
@@ -160,7 +170,7 @@ export function ActivityBar({
                     label={item.label}
                     isActive={isActive(item)}
                     badge={item.badge}
-                    onClick={() => handleNavClick(item)}
+                    href={item.view ? getRoute(item.view) : undefined}
                   />
                 </div>
               </TooltipTrigger>
@@ -179,7 +189,7 @@ export function ActivityBar({
                     icon={creatorNavItem.icon}
                     label={creatorNavItem.label}
                     isActive={isActive(creatorNavItem)}
-                    onClick={() => handleNavClick(creatorNavItem)}
+                    href={creatorNavItem.view ? getRoute(creatorNavItem.view) : undefined}
                   />
                 </div>
               </TooltipTrigger>
@@ -199,21 +209,40 @@ export function ActivityBar({
             {favoriteCreators.slice(0, 5).map((creator) => (
               <Tooltip key={creator.id}>
                 <TooltipTrigger asChild>
-                  <motion.button
-                    onClick={() => handleCreatorClick(creator.id)}
-                    className="relative"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Avatar className="w-9 h-9 ring-2 ring-background">
-                      <AvatarImage src={creator.photo_url || undefined} alt={creator.display_name} />
-                      <AvatarFallback className="text-xs">
-                        {creator.display_name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {/* Online indicator */}
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full" />
-                  </motion.button>
+                  {onCreatorClick ? (
+                    <motion.button
+                      onClick={() => handleCreatorClick(creator.id)}
+                      className="relative"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Avatar className="w-9 h-9 ring-2 ring-background">
+                        <AvatarImage src={creator.photo_url || undefined} alt={creator.display_name} />
+                        <AvatarFallback className="text-xs">
+                          {creator.display_name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Online indicator */}
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full" />
+                    </motion.button>
+                  ) : (
+                    <Link href={`/creator/${creator.id}`} prefetch={true}>
+                      <motion.div
+                        className="relative"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Avatar className="w-9 h-9 ring-2 ring-background">
+                          <AvatarImage src={creator.photo_url || undefined} alt={creator.display_name} />
+                          <AvatarFallback className="text-xs">
+                            {creator.display_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {/* Online indicator */}
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full" />
+                      </motion.div>
+                    </Link>
+                  )}
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   <p>@{creator.display_name}</p>
@@ -272,8 +301,8 @@ export function ActivityBar({
                 <NavIcon
                   icon={Settings}
                   label="Settings"
-                  isActive={activeView === 'settings'}
-                  onClick={() => handleNavClick({ id: 'settings', icon: Settings, label: 'Settings', view: 'settings' })}
+                  isActive={currentActiveView === 'settings'}
+                  href="/settings"
                 />
               </div>
             </TooltipTrigger>
@@ -285,25 +314,26 @@ export function ActivityBar({
           {/* Profile */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <motion.button
-                onClick={() => handleNavClick({ id: 'profile', icon: User, label: 'Profile', view: 'profile' })}
-                className={cn(
-                  "relative rounded-xl p-0.5",
-                  activeView === 'profile' && "bg-gradient-to-br from-primary to-pink-500"
-                )}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Avatar className={cn(
-                  "w-10 h-10",
-                  activeView === 'profile' ? "ring-2 ring-background" : "ring-2 ring-primary/20"
-                )}>
-                  <AvatarImage src={user?.photo_url || undefined} alt={user?.display_name} />
-                  <AvatarFallback>
-                    {user?.display_name?.slice(0, 2).toUpperCase() || 'ME'}
-                  </AvatarFallback>
-                </Avatar>
-              </motion.button>
+              <Link href="/profile" prefetch={true}>
+                <motion.div
+                  className={cn(
+                    "relative rounded-xl p-0.5",
+                    currentActiveView === 'profile' && "bg-gradient-to-br from-primary to-pink-500"
+                  )}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Avatar className={cn(
+                    "w-10 h-10",
+                    currentActiveView === 'profile' ? "ring-2 ring-background" : "ring-2 ring-primary/20"
+                  )}>
+                    <AvatarImage src={user?.photo_url || undefined} alt={user?.display_name} />
+                    <AvatarFallback>
+                      {user?.display_name?.slice(0, 2).toUpperCase() || 'ME'}
+                    </AvatarFallback>
+                  </Avatar>
+                </motion.div>
+              </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
               <p>Your Profile</p>

@@ -51,7 +51,7 @@ const NotificationsSection = memo(function NotificationsSection() {
 
         if (isOwnPost) {
           // Creator viewing notification about their own post → go to Creator Studio
-          link = `/dashboard?view=creator-studio&post=${notification.post.id}`;
+          link = `/creator-studio?post=${notification.post.id}`;
         } else {
           // Supporter viewing notification (e.g., reply to their comment) → go to creator's profile
           link = `/creator/${notification.post.creator_id}?post=${notification.post.id}`;

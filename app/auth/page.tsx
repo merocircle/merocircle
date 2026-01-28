@@ -26,7 +26,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user && userProfile && !authLoading) {
-      router.push('/dashboard');
+      router.push('/home');
     }
   }, [user, userProfile, authLoading, router]);
 

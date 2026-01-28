@@ -1,10 +1,11 @@
 'use client';
 
 import { ReactNode, useState, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
 import { useAuth } from '@/contexts/supabase-auth-context';
-import { DashboardProvider, useDashboardViewSafe } from '@/contexts/dashboard-context';
+import { DashboardProvider, type DashboardView } from '@/contexts/dashboard-context';
 import { useNotificationsData } from '@/hooks/useQueries';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { cn } from '@/lib/utils';
@@ -78,9 +79,24 @@ function PageLayoutInner({
   fullWidth: boolean;
 }) {
   const { userProfile } = useAuth();
-  const { activeView, setActiveView } = useDashboardViewSafe();
+  const router = useRouter();
+  const pathname = usePathname();
   const { data: notificationsData } = useNotificationsData();
   const { creators: supportedCreators } = useSupportedCreators();
+
+  // Get active view from pathname
+  const getActiveViewFromPath = (): DashboardView => {
+    if (pathname === '/home') return 'home';
+    if (pathname === '/explore') return 'explore';
+    if (pathname === '/chat') return 'chat';
+    if (pathname === '/notifications') return 'notifications';
+    if (pathname === '/settings') return 'settings';
+    if (pathname === '/profile') return 'profile';
+    if (pathname === '/creator-studio') return 'creator-studio';
+    return 'home';
+  };
+
+  const activeView = getActiveViewFromPath();
 
   const [feedFilter, setFeedFilter] = useState<'for-you' | 'following' | 'trending'>('for-you');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -90,9 +106,7 @@ function PageLayoutInner({
     console.log('Create post clicked');
   }, []);
 
-  const handleSettingsClick = useCallback(() => {
-    setActiveView('settings');
-  }, [setActiveView]);
+  // Settings navigation handled by Link components
 
   const mapViewToContext = (view: string) => {
     switch (view) {
@@ -134,7 +148,20 @@ function PageLayoutInner({
     <DashboardLayout
       user={user}
       activeView={activeView}
-      onViewChange={setActiveView}
+      onViewChange={(view) => {
+        // Map view to route and navigate
+        const routeMap: Record<DashboardView, string> = {
+          'home': '/home',
+          'explore': '/explore',
+          'chat': '/chat',
+          'notifications': '/notifications',
+          'settings': '/settings',
+          'profile': '/profile',
+          'creator-studio': '/creator-studio',
+          'creator-profile': '/home', // Fallback to home for creator-profile
+        };
+        router.push(routeMap[view] || '/home');
+      }}
       contextView={mapViewToContext(activeView) as any}
       unreadNotifications={notificationsData?.unreadCount || 0}
       unreadMessages={0}
@@ -144,7 +171,7 @@ function PageLayoutInner({
       selectedCategory={selectedCategory}
       onCategoryChange={setSelectedCategory}
       onCreateClick={handleCreateClick}
-      onSettingsClick={handleSettingsClick}
+      onSettingsClick={() => router.push('/settings')}
       hideRightPanel={shouldHideRightPanel}
       hideContextSidebar={shouldHideContextSidebar}
       fullWidth={shouldBeFullWidth}

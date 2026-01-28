@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, memo, useCallback, useEffect } from 'react';
+import { useState, memo, useEffect } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Search, TrendingUp, Sparkles, Users, Music, Camera, Palette, Code, Gamepad2, BookOpen, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,6 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useDiscoveryFeed, useCreatorSearch, Creator } from '@/hooks/useSocial';
-import { useDashboardView } from '@/contexts/dashboard-context';
 import { cn } from '@/lib/utils';
 
 // Animation variants
@@ -48,7 +48,6 @@ const categories = [
 ];
 
 const ExploreSection = memo(function ExploreSection() {
-  const { openCreatorProfile } = useDashboardView();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -76,9 +75,6 @@ const ExploreSection = memo(function ExploreSection() {
     }
   }, [debouncedQuery, searchCreators, clearResults]);
 
-  const handleCreatorClick = useCallback((creatorId: string) => {
-    openCreatorProfile(creatorId);
-  }, [openCreatorProfile]);
 
   const isSearching = debouncedQuery.length >= 2;
   const showSearchResults = isSearching;
@@ -140,7 +136,7 @@ const ExploreSection = memo(function ExploreSection() {
                 <CreatorListCard
                   key={creator.user_id}
                   creator={creator}
-                  onClick={() => handleCreatorClick(creator.user_id)}
+                  creatorId={creator.user_id}
                 />
               ))}
             </div>
@@ -224,10 +220,10 @@ const ExploreSection = memo(function ExploreSection() {
                   <div className="grid grid-cols-2 gap-3">
                     {trendingCreators.slice(0, 4).map((creator, index) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
-                        <Card
-                          className="p-4 cursor-pointer hover:border-primary/30 transition-colors"
-                          onClick={() => handleCreatorClick(creator.user_id)}
-                        >
+                        <Link href={`/creator/${creator.user_id}`}>
+                          <Card
+                            className="p-4 cursor-pointer hover:border-primary/30 transition-colors"
+                          >
                           <div className="flex flex-col items-center text-center">
                             <div className="relative mb-3">
                               <Avatar className="h-16 w-16 ring-2 ring-primary/20">
@@ -258,6 +254,7 @@ const ExploreSection = memo(function ExploreSection() {
                             )}
                           </div>
                         </Card>
+                        </Link>
                       </motion.div>
                     ))}
                   </div>
@@ -288,7 +285,7 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <CreatorListCard
                           creator={creator}
-                          onClick={() => handleCreatorClick(creator.user_id)}
+                          creatorId={creator.user_id}
                         />
                       </motion.div>
                     ))}
@@ -341,12 +338,12 @@ const ExploreSection = memo(function ExploreSection() {
 });
 
 // Creator list card component
-function CreatorListCard({ creator, onClick }: { creator: Creator; onClick: () => void }) {
+function CreatorListCard({ creator, creatorId }: { creator: Creator; creatorId: string }) {
   return (
-    <Card
-      className="p-3 cursor-pointer hover:border-primary/30 transition-colors"
-      onClick={onClick}
-    >
+    <Link href={`/creator/${creatorId}`}>
+      <Card
+        className="p-3 cursor-pointer hover:border-primary/30 transition-colors"
+      >
       <div className="flex items-center gap-3">
         <Avatar className="h-12 w-12">
           <AvatarImage src={creator.avatar_url || undefined} />
@@ -365,6 +362,7 @@ function CreatorListCard({ creator, onClick }: { creator: Creator; onClick: () =
         </Button>
       </div>
     </Card>
+    </Link>
   );
 }
 

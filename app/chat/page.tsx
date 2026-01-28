@@ -4,15 +4,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { PageLayout } from '@/components/common/PageLayout';
-import dynamic from 'next/dynamic';
-import { FeedSkeleton } from '@/components/dashboard/sections/LoadingSkeleton';
+import StreamCommunitySection from '@/components/dashboard/sections/StreamCommunitySection';
 
-const ProfileSection = dynamic(() => import('@/components/dashboard/sections/ProfileSection'), {
-  loading: () => <FeedSkeleton />,
-  ssr: false
-});
-
-export default function ProfilePage() {
+export default function ChatPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -32,7 +26,7 @@ export default function ProfilePage() {
 
   return (
     <PageLayout>
-      <ProfileSection />
+      <StreamCommunitySection />
     </PageLayout>
   );
 }

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useCallback } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Users, FileText, Bookmark } from "lucide-react";
@@ -13,7 +14,6 @@ import { VerifiedBadge } from "@/components/atoms/badges/VerifiedBadge";
 import { CategoryBadge } from "@/components/atoms/badges/CategoryBadge";
 import { BookmarkButton } from "@/components/atoms/buttons/BookmarkButton";
 import { fadeInUp, cardHover, countUp } from "@/components/animations/variants";
-import { useDashboardViewSafe } from "@/contexts/dashboard-context";
 
 interface CreatorCardProps {
   id: string;
@@ -44,12 +44,6 @@ export function CreatorCard({
   onBookmark,
   className,
 }: CreatorCardProps) {
-  const { openCreatorProfile } = useDashboardViewSafe();
-
-  const handleCreatorClick = useCallback(() => {
-    openCreatorProfile(id);
-  }, [openCreatorProfile, id]);
-
   return (
     <motion.div
       variants={fadeInUp}
@@ -90,34 +84,35 @@ export function CreatorCard({
         {/* Content */}
         <div className="relative px-4 pb-4">
           {/* Avatar */}
-          <motion.div
-            className="absolute -top-8 left-4 cursor-pointer"
-            whileHover={{ scale: 1.05 }}
-            onClick={handleCreatorClick}
-          >
-            <UserAvatar
-              src={photoUrl}
-              alt={displayName}
-              fallback={displayName}
-              size="xl"
-              showBorder
-              borderColor="border-card"
-            />
-          </motion.div>
+          <Link href={`/creator/${id}`}>
+            <motion.div
+              className="absolute -top-8 left-4 cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+            >
+              <UserAvatar
+                src={photoUrl}
+                alt={displayName}
+                fallback={displayName}
+                size="xl"
+                showBorder
+                borderColor="border-card"
+              />
+            </motion.div>
+          </Link>
 
           {/* Info */}
           <div className="pt-10">
             <div className="flex items-start justify-between">
               <div>
-                <div
-                  onClick={handleCreatorClick}
+                <Link
+                  href={`/creator/${id}`}
                   className="flex items-center gap-1.5 group/name cursor-pointer"
                 >
                   <h3 className="font-semibold text-lg group-hover/name:text-primary transition-colors">
                     {displayName}
                   </h3>
                   {isVerified && <VerifiedBadge size="md" />}
-                </div>
+                </Link>
 
                 {category && (
                   <div className="mt-1">
@@ -152,9 +147,11 @@ export function CreatorCard({
             <Button
               variant="outline"
               className="w-full mt-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-              onClick={handleCreatorClick}
+              asChild
             >
-              View Profile
+              <Link href={`/creator/${id}`}>
+                View Profile
+              </Link>
             </Button>
           </div>
         </div>

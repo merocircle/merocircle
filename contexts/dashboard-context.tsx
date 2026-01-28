@@ -50,15 +50,26 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       // If there's a creator param, open their profile view
       setViewingCreatorId(creator);
       setActiveViewState('creator-profile');
-      // Clean up URL
-      router.replace('/dashboard', { scroll: false });
+      // Clean up URL - navigate to creator profile page
+      router.replace(`/creator/${creator}`, { scroll: false });
     } else if (view) {
       setActiveViewState(view);
       // If there's a post param, set the highlighted post
       if (postId) {
         setHighlightedPostId(postId);
       }
-      router.replace('/dashboard', { scroll: false });
+      // Map view to route
+      const routeMap: Record<string, string> = {
+        'home': '/home',
+        'explore': '/explore',
+        'chat': '/chat',
+        'notifications': '/notifications',
+        'settings': '/settings',
+        'profile': '/profile',
+        'creator-studio': '/creator-studio',
+      };
+      const route = routeMap[view] || '/home';
+      router.replace(route, { scroll: false });
     }
   }, [searchParams, router]);
 
