@@ -82,7 +82,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   } | null>(null);
 
   // If viewing own profile, redirect to profile page
-  const router = useRouter();
   const isOwnProfile = user && user.id === creatorId && isWithinProvider;
   useEffect(() => {
     if (isOwnProfile) {
