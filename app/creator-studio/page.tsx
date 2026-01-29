@@ -17,14 +17,15 @@ export default function CreatorStudioPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth');
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      router.replace('/auth');
       return;
     }
 
-    if (!authLoading && !isCreator) {
-      router.push('/home');
-      return;
+    if (!isCreator) {
+      router.replace('/home');
     }
   }, [isAuthenticated, authLoading, isCreator, router]);
 
