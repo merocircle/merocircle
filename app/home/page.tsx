@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { PageLayout } from '@/components/common/PageLayout';
@@ -12,7 +12,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/auth');
+      router.replace('/auth', { scroll: false });
     }
   }, [isAuthenticated, authLoading, router]);
 

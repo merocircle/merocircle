@@ -1,16 +1,16 @@
 'use client';
 
 import { memo } from 'react';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Rss } from 'lucide-react';
 import { useUnifiedDashboard } from '@/hooks/useQueries';
 import { useDiscoveryFeed } from '@/hooks/useSocial';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
 import { EmptyStateCard } from '@/components/common/EmptyStateCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Rss } from 'lucide-react';
+import { PostSkeleton } from '@/components/feed/PostSkeleton';
+import { CreatorStories } from '@/components/feed/CreatorStories';
 
 // Animation variants for stagger effect
 const containerVariants = {
@@ -48,7 +48,7 @@ const skeletonVariants = {
 const FeedSection = memo(function FeedSection() {
   const { user } = useAuth();
   const { data: feedData, isLoading } = useUnifiedDashboard();
-  const { feed: discoveryFeed, loading: creatorsLoading } = useDiscoveryFeed();
+  const { data: discoveryFeed, isLoading: creatorsLoading } = useDiscoveryFeed();
 
   // Enable real-time updates for posts, likes, and comments
   useRealtimeFeed();
@@ -56,9 +56,7 @@ const FeedSection = memo(function FeedSection() {
   const showSkeleton = isLoading && !feedData;
 
   // Get suggested creators for the story-like section
-  const suggestedCreators = (discoveryFeed?.suggested_creators || [])
-    .filter((creator) => creator.user_id !== user?.id)
-    .slice(0, 10);
+  const suggestedCreators = discoveryFeed?.suggested_creators || [];
 
   return (
     <AnimatePresence mode="wait">
@@ -70,32 +68,7 @@ const FeedSection = memo(function FeedSection() {
           exit="exit"
           className="space-y-4"
         >
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.1 }}
-              className="rounded-xl overflow-hidden"
-            >
-              <div className="animate-pulse space-y-4 p-4 bg-card border border-border rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-muted rounded-full" />
-                  <div className="flex-1">
-                    <div className="h-4 bg-muted rounded w-24" />
-                    <div className="h-3 bg-muted rounded w-16 mt-2" />
-                  </div>
-                </div>
-                <div className="h-4 bg-muted rounded w-full" />
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="aspect-[4/5] bg-muted rounded-lg" />
-                <div className="flex gap-4">
-                  <div className="h-8 bg-muted rounded w-16" />
-                  <div className="h-8 bg-muted rounded w-16" />
-                </div>
-              </div>
-            </motion.div>
-          ))}
+          <PostSkeleton count={3} />
         </motion.div>
       ) : (
         <motion.div
@@ -106,53 +79,11 @@ const FeedSection = memo(function FeedSection() {
           className="space-y-4"
         >
           {/* Creators Story Section - Mobile Only */}
-          {suggestedCreators.length > 0 && (
-            <div className="xl:hidden -mx-4 px-4">
-              <div className="mb-2">
-                <h3 className="text-sm font-semibold text-muted-foreground">Creators for you</h3>
-              </div>
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-                {creatorsLoading ? (
-                  // Skeleton loading state
-                  [...Array(6)].map((_, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
-                      <div className="w-16 h-16 rounded-full bg-muted animate-pulse" />
-                      <div className="w-12 h-2 bg-muted rounded animate-pulse" />
-                    </div>
-                  ))
-                ) : (
-                  suggestedCreators.map((creator, index) => (
-                    <motion.div
-                      key={creator.user_id}
-                      className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Link href={`/creator/${creator.user_id}`} className="flex flex-col items-center gap-1.5">
-                        {/* Gradient ring like Instagram stories */}
-                        <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600">
-                          <div className="p-0.5 bg-background rounded-full">
-                            <Avatar className="w-14 h-14 border-0">
-                              <AvatarImage src={creator.avatar_url || undefined} />
-                              <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-sm font-medium">
-                                {creator.display_name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground truncate max-w-16 text-center">
-                          {creator.display_name.split(' ')[0]}
-                        </span>
-                      </Link>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+          <CreatorStories
+            creators={suggestedCreators}
+            loading={creatorsLoading}
+            currentUserId={user?.id}
+          />
 
           {/* Posts Feed */}
           {feedData?.posts && feedData.posts.length > 0 ? (

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 export interface Creator {
   user_id: string
@@ -37,38 +38,22 @@ export interface DiscoveryFeed {
   suggested_creators: Creator[]
 }
 
-// Hook for discovery feed
 export const useDiscoveryFeed = () => {
-  const [feed, setFeed] = useState<DiscoveryFeed | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchFeed = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const response = await fetch('/api/social/discover?limit=20')
+  return useQuery<DiscoveryFeed>({
+    queryKey: ['discovery', 'feed'],
+    queryFn: async () => {
+      const response = await fetch('/api/social/discover?limit=20');
       
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch discovery feed')
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch discovery feed' }));
+        throw new Error(errorData.error || 'Failed to fetch discovery feed');
       }
       
-      const data = await response.json()
-      setFeed(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchFeed()
-  }, [fetchFeed])
-
-  return { feed, loading, error, refetch: fetchFeed }
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 10 * 60 * 1000, // Auto-refresh every 10 minutes
+  });
 }
 
 // Hook for creator search

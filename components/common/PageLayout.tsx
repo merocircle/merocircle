@@ -82,7 +82,8 @@ function PageLayoutInner({
   const router = useRouter();
   const pathname = usePathname();
   const { data: notificationsData } = useNotificationsData();
-  const { creators: supportedCreators } = useSupportedCreators();
+  const { data: supportedCreatorsData } = useSupportedCreators();
+  const supportedCreators = supportedCreatorsData?.creators || [];
 
   // Get active view from pathname
   const getActiveViewFromPath = (): DashboardView => {

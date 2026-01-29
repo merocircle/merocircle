@@ -53,7 +53,7 @@ const ExploreSection = memo(function ExploreSection() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
   // Fetch discovery feed data from backend
-  const { feed, loading: feedLoading, error: feedError } = useDiscoveryFeed();
+  const { data: feed, isLoading: feedLoading, error: feedError } = useDiscoveryFeed();
 
   // Search functionality
   const { results: searchResults, loading: searchLoading, error: searchError, searchCreators, clearResults } = useCreatorSearch();
@@ -193,7 +193,9 @@ const ExploreSection = memo(function ExploreSection() {
           {/* Error State */}
           {feedError && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">{feedError}</p>
+              <p className="text-muted-foreground">
+                {feedError instanceof Error ? feedError.message : 'Failed to load creators'}
+              </p>
               <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
                 Try Again
               </Button>

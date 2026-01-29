@@ -30,7 +30,7 @@ export function RightPanel({
   const { openCreatorProfile, setActiveView } = useDashboardViewSafe();
 
   // Fetch real creators data from backend
-  const { feed, loading, error } = useDiscoveryFeed();
+  const { data: feed, isLoading: loading, error } = useDiscoveryFeed();
 
   const suggestedCreators = (feed?.suggested_creators || []).filter(
     (creator) => creator.user_id !== user?.id
@@ -73,7 +73,7 @@ export function RightPanel({
                 </div>
               ) : error ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Unable to load creators
+                  {error instanceof Error ? error.message : 'Unable to load creators'}
                 </p>
               ) : suggestedCreators.length > 0 ? (
                 <div className="space-y-3">

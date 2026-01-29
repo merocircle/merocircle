@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/supabase-auth-context';
 
 interface SupportedCreator {
@@ -30,52 +31,25 @@ interface SupportHistory {
 
 export function useSupportedCreators() {
   const { user } = useAuth();
-  const [creators, setCreators] = useState<SupportedCreator[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchSupportedCreators = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch('/api/supporter/creators');
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            setError('Please log in to view your supported creators');
-          } else {
-            setError('Failed to fetch supported creators');
-          }
-          return;
+  return useQuery<{ creators: SupportedCreator[] }>({
+    queryKey: ['supporter', 'creators', user?.id],
+    queryFn: async () => {
+      const response = await fetch('/api/supporter/creators');
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please log in to view your supported creators');
         }
-
-        const data = await response.json();
-        setCreators(data.creators || []);
-      } catch (err) {
-        console.error('Error fetching supported creators:', err);
-        setError('Error loading supported creators');
-      } finally {
-        setLoading(false);
+        throw new Error('Failed to fetch supported creators');
       }
-    };
 
-    fetchSupportedCreators();
-  }, [user]);
-
-  const refetch = useCallback(() => {
-    if (user) {
-      setLoading(true);
-    }
-  }, [user]);
-
-  return { creators, loading, error, refetch };
+      return response.json();
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
+  });
 }
 
 export function useSupportHistory(limit = 20) {
