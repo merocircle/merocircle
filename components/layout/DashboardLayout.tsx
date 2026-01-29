@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useCallback } from 'react';
+import { ReactNode, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActivityBar } from '@/components/navigation/ActivityBar';
 import { BottomNav, MobileHeader } from '@/components/navigation/BottomNav';
@@ -8,6 +8,12 @@ import { ContextSidebar } from '@/components/navigation/ContextSidebar';
 import { RightPanel } from './RightPanel';
 import { cn } from '@/lib/utils';
 import { type DashboardView } from '@/contexts/dashboard-context';
+import {
+  getMainContentClassName,
+  getContentWrapperClassName,
+  isFullWidthView,
+  shouldShowRightPanel as shouldShowRightPanelUtil,
+} from './utils';
 
 type ContextView = 'feed' | 'explore' | 'chat' | 'notifications' | 'creator-studio' | 'profile' | 'settings' | 'creator-profile';
 
@@ -104,14 +110,22 @@ export function DashboardLayout({
     }
   }, [onFeedFilterChange]);
 
-  // Hide mobile header and tabs for non-feed views
-  const shouldHideMobileHeader = contextView !== 'feed';
+  // Memoize computed layout values
+  const layoutState = useMemo(() => {
+    const shouldHideMobileHeader = contextView !== 'feed';
+    const shouldShowRightPanel = shouldShowRightPanelUtil(hideRightPanel, contextView);
+    const isFullWidth = isFullWidthView(contextView, fullWidth);
 
-  // Determine if we should show the right panel (only for feed/explore)
-  const shouldShowRightPanel = !hideRightPanel && (contextView === 'feed' || contextView === 'explore');
+    return {
+      shouldHideMobileHeader,
+      shouldShowRightPanel,
+      isFullWidth,
+    };
+  }, [contextView, hideRightPanel, fullWidth]);
 
-  // Full-width views (no constrained width)
-  const isFullWidthView = fullWidth || ['chat', 'creator-studio', 'profile', 'settings', 'creator-profile'].includes(contextView);
+  const toggleContextCollapse = useCallback(() => {
+    setIsContextCollapsed((prev) => !prev);
+  }, []);
 
   return (
     <div className={cn('min-h-screen bg-background', className)}>
@@ -122,7 +136,7 @@ export function DashboardLayout({
         activeTab={mobileTab}
         onTabChange={handleMobileTabChange}
         onSettingsClick={onSettingsClick}
-        hideHeader={shouldHideMobileHeader}
+        hideHeader={layoutState.shouldHideMobileHeader}
       />
 
       {/* Activity Bar - Desktop only */}
@@ -134,7 +148,6 @@ export function DashboardLayout({
           unreadMessages={unreadMessages}
           unreadNotifications={unreadNotifications}
           favoriteCreators={favoriteCreators}
-          onCreateClick={onCreateClick}
         />
       </div>
 
@@ -144,7 +157,7 @@ export function DashboardLayout({
           <ContextSidebar
             view={contextView}
             isCollapsed={isContextCollapsed}
-            onToggleCollapse={() => setIsContextCollapsed(!isContextCollapsed)}
+            onToggleCollapse={toggleContextCollapse}
             feedFilter={feedFilter}
             onFeedFilterChange={onFeedFilterChange}
             selectedCategory={selectedCategory}
@@ -156,22 +169,13 @@ export function DashboardLayout({
 
       {/* Main Content Area */}
       <main
-        className={cn(
-          'transition-all duration-300',
-          // Use fixed height for chat view, min-h-screen for others
-          contextView === 'chat' ? 'h-screen box-border overflow-hidden' : 'min-h-screen',
-          // Mobile: full width with padding for header and bottom nav
-          // Reduce top padding when header is hidden (non-feed views)
-          shouldHideMobileHeader ? 'pt-4 pb-20 px-0' : 'pt-24 pb-20 px-4',
-          // Tablet: left padding for activity bar
-          'md:pt-4 md:pb-4 md:pl-20 md:pr-4',
-          // Desktop: account for context sidebar (only shown for feed view)
-          !hideContextSidebar && contextView === 'feed' && !isContextCollapsed && 'lg:pl-[calc(64px+240px+16px)]',
-          !hideContextSidebar && contextView === 'feed' && isContextCollapsed && 'lg:pl-20',
-          (hideContextSidebar || contextView !== 'feed') && 'lg:pl-20',
-          // Large desktop: account for right panel (only for feed/explore)
-          shouldShowRightPanel && 'xl:pr-[304px]'
-        )}
+        className={getMainContentClassName({
+          contextView,
+          shouldHideMobileHeader: layoutState.shouldHideMobileHeader,
+          hideContextSidebar,
+          isContextCollapsed,
+          shouldShowRightPanel: layoutState.shouldShowRightPanel,
+        })}
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -180,12 +184,10 @@ export function DashboardLayout({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className={cn(
-              // Constrain width only for feed/explore views
-              !isFullWidthView && 'max-w-2xl mx-auto',
-              // Full height for chat view to enable internal scrolling
-              contextView === 'chat' && 'h-full min-h-0 overflow-hidden'
-            )}
+            className={getContentWrapperClassName({
+              isFullWidthView: layoutState.isFullWidth,
+              contextView,
+            })}
           >
             {children}
           </motion.div>
@@ -193,13 +195,9 @@ export function DashboardLayout({
       </main>
 
       {/* Right Panel - Extra large desktop only, only for feed/explore */}
-      {shouldShowRightPanel && (
+      {layoutState.shouldShowRightPanel && (
         <div className="hidden xl:block fixed right-0 top-0 z-40">
-          <RightPanel
-            stories={stories}
-            trendingCreators={trendingCreators}
-            suggestedCreators={suggestedCreators}
-          />
+          <RightPanel stories={stories} />
         </div>
       )}
 
