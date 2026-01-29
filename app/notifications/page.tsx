@@ -11,8 +11,10 @@ export default function NotificationsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth');
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      router.replace('/auth');
     }
   }, [isAuthenticated, authLoading, router]);
 

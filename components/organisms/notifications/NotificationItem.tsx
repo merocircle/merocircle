@@ -88,35 +88,9 @@ export function NotificationItem({
     }
 
     // Handle navigation for internal links
-    if (link) {
-      // Match /dashboard?view={view}&post={postId} format (legacy support)
-      const dashboardMatch = link.match(/^\/dashboard\?view=([^&]+)/);
-      if (dashboardMatch) {
-        const view = dashboardMatch[1];
-        const postMatch = link.match(/[?&]post=([^&]+)/);
-        const postId = postMatch ? postMatch[1] : undefined;
-        
-        // Map view to route
-        const routeMap: Record<string, string> = {
-          'home': '/home',
-          'explore': '/explore',
-          'chat': '/chat',
-          'notifications': '/notifications',
-          'settings': '/settings',
-          'profile': '/profile',
-          'creator-studio': '/creator-studio',
-        };
-        
-        const route = routeMap[view] || '/home';
-        router.push(postId ? `${route}?post=${postId}` : route);
-        return;
-      }
-      
-      // Direct route navigation (new format)
-      if (link.startsWith('/')) {
-        router.push(link);
-        return;
-      }
+    if (link && link.startsWith('/')) {
+      router.push(link);
+      return;
     }
 
     onClick?.();

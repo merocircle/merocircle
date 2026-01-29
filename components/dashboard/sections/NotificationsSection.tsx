@@ -6,27 +6,10 @@ import { motion } from 'framer-motion';
 import { useNotificationsData, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useQueries';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { fadeInUp } from '@/components/animations/variants';
-
-// New organism components
 import { NotificationList } from '@/components/organisms/notifications/NotificationList';
+import { mapNotificationType, generateNotificationLink } from './notifications/utils';
 
 type NotificationType = 'like' | 'comment' | 'payment' | 'follow' | 'mention' | 'announcement';
-
-const mapNotificationType = (type: string): NotificationType => {
-  switch (type) {
-    case 'like':
-      return 'like';
-    case 'comment':
-      return 'comment';
-    case 'payment':
-    case 'support':
-      return 'payment';
-    case 'follow':
-      return 'follow';
-    default:
-      return 'announcement';
-  }
-};
 
 const NotificationsSection = memo(function NotificationsSection() {
   const router = useRouter();
@@ -40,23 +23,12 @@ const NotificationsSection = memo(function NotificationsSection() {
   const notifications = useMemo(() => {
     const rawNotifications = data?.notifications || [];
     return rawNotifications.map((notification: any) => {
-      // For like and comment notifications, create clickable links
-      const notificationType = notification.type;
-      const isClickable = (notificationType === 'like' || notificationType === 'comment') && notification.post?.id;
-
-      let link: string | undefined;
-      if (isClickable && notification.post?.creator_id) {
-        // Check if the current user is the post creator
-        const isOwnPost = user?.id === notification.post.creator_id;
-
-        if (isOwnPost) {
-          // Creator viewing notification about their own post → go to Creator Studio
-          link = `/creator-studio?post=${notification.post.id}`;
-        } else {
-          // Supporter viewing notification (e.g., reply to their comment) → go to creator's profile
-          link = `/creator/${notification.post.creator_id}?post=${notification.post.id}`;
-        }
-      }
+      const link = generateNotificationLink({
+        notificationType: notification.type,
+        postId: notification.post?.id,
+        creatorId: notification.post?.creator_id,
+        currentUserId: user?.id,
+      });
 
       return {
         id: notification.id,
