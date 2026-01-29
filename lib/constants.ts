@@ -29,24 +29,3 @@ export const CATEGORIES: Category[] = [
   { name: 'Tech', icon: Code, color: 'from-blue-500 to-indigo-500' },
   { name: 'Fitness', icon: Dumbbell, color: 'from-green-500 to-teal-500' },
 ];
-
-export const APP_CONFIG = {
-  name: 'MeroCircle',
-  description: 'Support Nepal\'s creative community',
-  stats: {
-    activeCreators: 1234,
-    supporters: '50K+',
-    totalEarned: 2000000,
-    uptime: '99.9%',
-  },
-  currency: '₹',
-  recentlyVisitedLimit: 10,
-  defaultPostsPerPage: 20,
-};
-
-export const PAYMENT_PRESETS = [
-  { value: '500', label: '₹500' },
-  { value: '1000', label: '₹1000' },
-  { value: '2000', label: '₹2000' },
-  { value: '5000', label: '₹5000' },
-];
