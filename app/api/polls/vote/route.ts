@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     const { pollId, optionId } = await request.json();
 
@@ -63,7 +62,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error voting:', error);
       return NextResponse.json({ error: 'Failed to vote' }, { status: 500 });
     }
 
@@ -84,19 +82,16 @@ export async function POST(request: NextRequest) {
       voteCounts
     });
   } catch (error) {
-    console.error('Vote API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'POLLS_VOTE_API', 'Failed to vote');
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     const { searchParams } = new URL(request.url);
     const pollId = searchParams.get('pollId');
@@ -114,13 +109,11 @@ export async function DELETE(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error('Error removing vote:', error);
       return NextResponse.json({ error: 'Failed to remove vote' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete vote API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'POLLS_VOTE_API', 'Failed to remove vote');
   }
 }

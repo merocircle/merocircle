@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { khaltiConfig } from '@/lib/khalti/config';
 import { KhaltiInitiatePayload } from '@/lib/khalti/types';
-import { validateAmount, validateUUID, sanitizeString } from '@/lib/validation';
+import { sanitizeString } from '@/lib/validation';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { validatePaymentRequest, verifyCreator, generateTransactionUuid } from '@/lib/payment-utils';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,15 +18,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many payment requests. Please wait.' }, { status: 429 });
     }
 
-    // Validate amount
-    const amountValidation = validateAmount(amount);
-    if (!amountValidation.valid) {
-      return NextResponse.json({ error: amountValidation.error }, { status: 400 });
-    }
-
-    // Validate UUIDs
-    if (!validateUUID(creatorId) || !validateUUID(supporterId)) {
-      return NextResponse.json({ error: 'Invalid user IDs' }, { status: 400 });
+    // Validate payment request
+    const validation = validatePaymentRequest(amount, creatorId, supporterId);
+    if (!validation.valid || !validation.validatedAmount) {
+      return validation.errorResponse!;
     }
 
     // Validate Khalti configuration
@@ -41,18 +38,13 @@ export async function POST(request: NextRequest) {
       }, { status: 503 });
     }
 
-    const supabase = await createClient();
-
     // Verify creator exists
-    const { data: creator } = await supabase
-      .from('users')
-      .select('id, display_name')
-      .eq('id', creatorId)
-      .single();
-
-    if (!creator) {
-      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+    const { exists, creator, errorResponse } = await verifyCreator(creatorId);
+    if (!exists || !creator) {
+      return errorResponse!;
     }
+
+    const supabase = await createClient();
 
     // Generate unique purchase order ID
     const timestamp = Date.now();
@@ -60,7 +52,7 @@ export async function POST(request: NextRequest) {
     
     // Khalti expects amount in paisa (smallest unit)
     // Convert NPR to paisa: 1 NPR = 100 paisa
-    const amountInPaisa = Math.round(amountValidation.value! * 100);
+    const amountInPaisa = Math.round(validation.validatedAmount * 100);
     
     // Validate minimum amount (Khalti minimum is typically 10 NPR = 1000 paisa)
     if (amountInPaisa < 1000) {
@@ -101,7 +93,7 @@ export async function POST(request: NextRequest) {
     logger.info('Initiating Khalti payment', 'KHALTI_API', {
       purchaseOrderId,
       amount: amountInPaisa,
-      amountInNPR: amountValidation.value,
+      amountInNPR: validation.validatedAmount,
       creatorId,
     });
 
@@ -139,7 +131,7 @@ export async function POST(request: NextRequest) {
     const insertData = {
       supporter_id: supporterId,
       creator_id: creatorId,
-      amount: String(amountValidation.value), // Store in NPR
+      amount: String(validation.validatedAmount), // Store in NPR
       payment_method: 'khalti',
       status: 'pending',
       supporter_message: supporterMessage ? sanitizeString(supporterMessage) : null,
@@ -151,7 +143,7 @@ export async function POST(request: NextRequest) {
         pidx: khaltiData.pidx,
         purchase_order_id: purchaseOrderId,
         amount_paisa: amountInPaisa,
-        amount_npr: amountValidation.value,
+        amount_npr: validation.validatedAmount,
         tier_level: tier_level || 1,
         expires_at: khaltiData.expires_at,
         expires_in: khaltiData.expires_in,
@@ -184,18 +176,13 @@ export async function POST(request: NextRequest) {
       payment_url: khaltiData.payment_url,
       transaction_id: transaction.id,
       purchase_order_id: purchaseOrderId,
-      amount: amountValidation.value,
+      amount: validation.validatedAmount,
       expires_at: khaltiData.expires_at,
       expires_in: khaltiData.expires_in,
       message: 'Khalti payment initiated successfully',
     });
 
   } catch (error) {
-    logger.error('Khalti payment initiation failed', 'KHALTI_API', { 
-      error: error instanceof Error ? error.message : 'Unknown' 
-    });
-    return NextResponse.json({ 
-      error: 'Payment initiation failed. Please try again.' 
-    }, { status: 500 });
+    return handleApiError(error, 'KHALTI_API', 'Payment initiation failed. Please try again.');
   }
 }

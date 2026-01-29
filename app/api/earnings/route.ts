@@ -1,25 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { calculateTotalAmount } from '@/lib/api-helpers';
+import { getAuthenticatedUser, requireCreatorRole, handleApiError } from '@/lib/api-utils';
 
 export async function GET() {
   try {
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { isCreator, errorResponse: roleError } = await requireCreatorRole(user.id);
+    if (roleError) return roleError;
+
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { data: userProfile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!userProfile || userProfile.role !== 'creator') {
-      return NextResponse.json({ error: 'Creator access required' }, { status: 403 });
-    }
 
     const { data: transactions } = await supabase
       .from('supporter_transactions')
@@ -38,7 +30,7 @@ export async function GET() {
       },
       recentTransactions: (transactions || []).slice(0, 10)
     });
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, 'EARNINGS_API', 'Failed to fetch earnings');
   }
 } 

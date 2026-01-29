@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, parsePaginationParams, handleApiError } from '@/lib/api-utils';
 
 interface Params {
   id: string;
@@ -14,10 +15,7 @@ export async function GET(
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
-    
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = parsePaginationParams(searchParams);
 
     const { data: comments, error } = await supabase
       .from('post_comments')
@@ -61,11 +59,7 @@ export async function GET(
     });
 
   } catch (error) {
-    logger.error('Error fetching comments', 'COMMENTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'COMMENTS_API', 'Failed to fetch comments');
   }
 }
 
@@ -75,16 +69,11 @@ export async function POST(
 ) {
   const { id: postId } = await params;
   try {
-    const supabase = await createClient();
+    // Authenticate user
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const supabase = await createClient();
 
     const { data: post } = await supabase
       .from('posts')
@@ -223,10 +212,6 @@ export async function POST(
     return NextResponse.json(comment, { status: 201 });
 
   } catch (error) {
-    logger.error('Error creating comment', 'COMMENTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'COMMENTS_API', 'Failed to create comment');
   }
 } 

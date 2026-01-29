@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { khaltiConfig } from '@/lib/khalti/config';
 import { KhaltiLookupResponse } from '@/lib/khalti/types';
 import { logger } from '@/lib/logger';
+import { upsertSupporter, updateSupporterCount } from '@/lib/payment-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -115,55 +116,10 @@ export async function GET(request: NextRequest) {
           // Create/update supporter record
           const tierLevel = (transaction.esewa_data as any)?.tier_level || 1;
           const transactionAmount = Number(transaction.amount);
+          await upsertSupporter(transaction.supporter_id, transaction.creator_id, transactionAmount, tierLevel);
 
-          const { data: existingSupporter } = await supabase
-            .from('supporters')
-            .select('id')
-            .eq('supporter_id', transaction.supporter_id)
-            .eq('creator_id', transaction.creator_id)
-            .single();
-
-          if (!existingSupporter) {
-            await supabase
-              .from('supporters')
-              .insert({
-                supporter_id: transaction.supporter_id,
-                creator_id: transaction.creator_id,
-                tier: 'basic',
-                tier_level: tierLevel,
-                amount: transactionAmount,
-                is_active: true,
-              });
-          } else {
-            await supabase
-              .from('supporters')
-              .update({
-                is_active: true,
-                tier_level: tierLevel,
-                amount: transactionAmount,
-              })
-              .eq('id', existingSupporter.id);
-          }
-
-          // Update supporters_count in creator_profiles (count active supporters)
-          const { data: countResult } = await supabase
-            .from('supporters')
-            .select('supporter_id')
-            .eq('creator_id', transaction.creator_id)
-            .eq('is_active', true);
-
-          if (countResult) {
-            const uniqueSupporters = new Set(countResult.map(r => r.supporter_id)).size;
-            await supabase
-              .from('creator_profiles')
-              .update({ supporters_count: uniqueSupporters })
-              .eq('user_id', transaction.creator_id);
-
-            logger.info('Updated supporter count', 'KHALTI_VERIFY', {
-              creatorId: transaction.creator_id,
-              supportersCount: uniqueSupporters
-            });
-          }
+          // Update supporters_count in creator_profiles
+          await updateSupporterCount(transaction.creator_id);
 
           // Sync supporter to Stream Chat channels
           try {

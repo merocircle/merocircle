@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export async function POST(
   request: NextRequest,
@@ -7,12 +8,14 @@ export async function POST(
 ) {
   try {
     const { id: creatorId } = await params;
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!user || user.id !== creatorId) {
+    if (user.id !== creatorId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+
+    const supabase = await createClient();
 
     const { completed } = await request.json();
 
@@ -23,13 +26,11 @@ export async function POST(
       .eq('user_id', creatorId);
 
     if (error) {
-      console.error('Failed to update onboarding status:', error);
       return NextResponse.json({ error: 'Failed to update onboarding status' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Onboarding API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'ONBOARDING_API', 'Failed to update onboarding status');
   }
 }

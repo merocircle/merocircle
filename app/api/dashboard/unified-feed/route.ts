@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { parsePaginationParams, handleApiError } from '@/lib/api-utils';
 
 // Balanced feed ranking formula
 function calculatePostScore(post: any): number {
@@ -26,9 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Pagination support
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = parsePaginationParams(searchParams);
 
     // Get trending creators
     let trendingCreatorsQuery = supabase
@@ -222,10 +221,6 @@ export async function GET(request: NextRequest) {
       posts: rankedPosts
     });
   } catch (error) {
-    console.error('Unified feed API error:', error);
-    return NextResponse.json({
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return handleApiError(error, 'UNIFIED_FEED_API', 'Failed to fetch unified feed');
   }
 }

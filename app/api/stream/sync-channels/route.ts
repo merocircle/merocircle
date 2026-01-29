@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { serverStreamClient, upsertStreamUser } from '@/lib/stream-server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +12,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     const { creatorId } = await request.json();
     const targetCreatorId = creatorId || user.id;
@@ -128,9 +127,6 @@ export async function POST(request: Request) {
       message: `Synced ${syncedChannels.length} channels to Stream`
     });
   } catch (error) {
-    logger.error('Stream sync error', 'STREAM_SYNC', {
-      error: error instanceof Error ? error.message : 'Unknown'
-    });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'STREAM_SYNC', 'Failed to sync channels');
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 interface Params {
   id: string;
@@ -13,13 +14,11 @@ export async function POST(
   const { id: postId } = await params;
 
   try {
-    const supabase = await createClient();
+    // Authenticate user
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     // Check if post exists
     const { data: post, error: postError } = await supabase
@@ -103,14 +102,7 @@ export async function POST(
     });
 
   } catch (error) {
-    logger.error('Error liking post', 'LIKE_API', {
-      error: error instanceof Error ? error.message : 'Unknown',
-      postId
-    });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'LIKE_API', 'Failed to like post');
   }
 }
 
@@ -121,13 +113,11 @@ export async function DELETE(
   const { id: postId } = await params;
 
   try {
-    const supabase = await createClient();
+    // Authenticate user
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     // Remove like
     const { error: unlikeError } = await supabase
@@ -158,13 +148,6 @@ export async function DELETE(
     });
 
   } catch (error) {
-    logger.error('Error unliking post', 'LIKE_API', {
-      error: error instanceof Error ? error.message : 'Unknown',
-      postId
-    });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'LIKE_API', 'Failed to unlike post');
   }
 }

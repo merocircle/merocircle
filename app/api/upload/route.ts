@@ -4,15 +4,14 @@ import { config } from '@/lib/config';
 import { validateFileType, validateFileSize } from '@/lib/validation';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     if (!rateLimit(`upload:${user.id}`, 10, 60000)) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
@@ -65,7 +64,6 @@ export async function POST(request: NextRequest) {
       path: data.path
     });
   } catch (error) {
-    logger.error('Upload error', 'UPLOAD_API', { error: error instanceof Error ? error.message : 'Unknown' });
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return handleApiError(error, 'UPLOAD_API', 'Upload failed');
   }
 }

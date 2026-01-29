@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { serverStreamClient, upsertStreamUser } from '@/lib/stream-server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,12 +13,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     // Get user info
     const { data: userData, error: userError } = await supabase
@@ -105,9 +104,6 @@ export async function POST() {
       message: `Synced ${syncedChannels.length} channels, ${failedChannels.length} failed`
     });
   } catch (error) {
-    logger.error('Resync channels error', 'RESYNC_CHANNELS', {
-      error: error instanceof Error ? error.message : 'Unknown'
-    });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'RESYNC_CHANNELS', 'Failed to resync channels');
   }
 }

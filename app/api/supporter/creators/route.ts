@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const supabase = await createClient();
 
     // Fetch transactions with separate queries to avoid relationship issues
     const { data: transactions, error: transactionsError } = await supabase
@@ -103,7 +102,7 @@ export async function GET() {
       .sort((a, b) => new Date(b.lastSupportDate).getTime() - new Date(a.lastSupportDate).getTime());
 
     return NextResponse.json({ creators })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'SUPPORTER_API', 'Failed to fetch supported creators');
   }
 } 

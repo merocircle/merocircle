@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { slugifyDisplayName } from '@/lib/utils';
 
 // Legacy route: redirect to the public creator page by username slug
 
-export default function CreatorProfilePage() {
+function CreatorProfileContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,5 +47,20 @@ export default function CreatorProfilePage() {
         <p className="text-muted-foreground">Loading creator profile...</p>
       </div>
     </div>
+  );
+}
+
+export default function CreatorProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CreatorProfileContent />
+    </Suspense>
   );
 }

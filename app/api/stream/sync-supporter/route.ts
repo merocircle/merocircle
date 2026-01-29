@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { serverStreamClient, upsertStreamUser } from '@/lib/stream-server';
 import { logger } from '@/lib/logger';
+import { handleApiError } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,9 +105,6 @@ export async function POST(request: Request) {
       message: `Added supporter to ${addedToChannels.length} Stream channels`
     });
   } catch (error) {
-    logger.error('Stream supporter sync error', 'STREAM_SYNC_SUPPORTER', {
-      error: error instanceof Error ? error.message : 'Unknown'
-    });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'STREAM_SYNC_SUPPORTER', 'Failed to sync supporter to channels');
   }
 }

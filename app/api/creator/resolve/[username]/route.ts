@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { slugifyDisplayName } from '@/lib/utils';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function GET(
   _request: Request,
@@ -43,7 +44,6 @@ export async function GET(
       displayName: matched.users?.display_name || ''
     });
   } catch (error) {
-    console.error('Username resolve error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'CREATOR_RESOLVE_API', 'Failed to resolve creator username');
   }
 }

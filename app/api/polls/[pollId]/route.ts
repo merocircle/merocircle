@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function GET(
   request: NextRequest,
@@ -68,7 +69,6 @@ export async function GET(
       hasExpired: poll.expires_at ? new Date(poll.expires_at) < new Date() : false
     });
   } catch (error) {
-    console.error('Get poll API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'POLLS_API', 'Failed to fetch poll');
   }
 }

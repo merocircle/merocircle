@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import CreatorProfileSection from '@/components/dashboard/sections/CreatorProfileSection';
 
-export default function PublicCreatorPage() {
+function PublicCreatorContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -74,4 +74,16 @@ export default function PublicCreatorPage() {
   }
 
   return <CreatorProfileSection creatorId={creatorId} initialHighlightedPostId={postId} />;
+}
+
+export default function PublicCreatorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    }>
+      <PublicCreatorContent />
+    </Suspense>
+  );
 }

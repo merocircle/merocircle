@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Authenticate user
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     const body = await request.json();
     const { display_name, photo_url, bio, category, cover_image_url } = body;
@@ -61,7 +61,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {
-    logger.error('Profile update error', 'PROFILE_API', { error: error instanceof Error ? error.message : 'Unknown' });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'PROFILE_API', 'Failed to update profile');
   }
 }

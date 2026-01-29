@@ -1,41 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { validateAmount, validateUUID, sanitizeString } from '@/lib/validation';
+import { sanitizeString } from '@/lib/validation';
 import { logger } from '@/lib/logger';
 import { serverStreamClient, upsertStreamUser } from '@/lib/stream-server';
+import { validatePaymentRequest, verifyCreator, generateTransactionUuid, upsertSupporter, updateSupporterCount } from '@/lib/payment-utils';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { amount, creatorId, supporterId, supporterMessage, tier_level } = body;
 
-    // Validate amount
-    const amountValidation = validateAmount(amount);
-    if (!amountValidation.valid) {
-      return NextResponse.json({ error: amountValidation.error }, { status: 400 });
+    // Validate payment request
+    const validation = validatePaymentRequest(amount, creatorId, supporterId);
+    if (!validation.valid || !validation.validatedAmount) {
+      return validation.errorResponse!;
     }
 
-    // Validate UUIDs
-    if (!validateUUID(creatorId) || !validateUUID(supporterId)) {
-      return NextResponse.json({ error: 'Invalid user IDs' }, { status: 400 });
+    // Verify creator exists
+    const { exists, creator, errorResponse } = await verifyCreator(creatorId);
+    if (!exists || !creator) {
+      return errorResponse!;
     }
 
     const supabase = await createClient();
 
-    // Verify creator exists
-    const { data: creator } = await supabase
-      .from('users')
-      .select('id, display_name')
-      .eq('id', creatorId)
-      .single();
-
-    if (!creator) {
-      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
-    }
-
     // Generate transaction UUID
-    const transactionUuid = `DIRECT-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    const amountStr = amountValidation.value!.toString();
+    const transactionUuid = generateTransactionUuid('DIRECT');
+    const amountStr = validation.validatedAmount.toString();
     const tierLevel = tier_level || 1;
 
     // Create transaction as completed (bypassing payment gateway)
@@ -76,36 +68,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Ensure supporter record exists
-    const transactionAmount = Number(amountStr);
-
-    const { data: existingSupporter } = await supabase
-      .from('supporters')
-      .select('id')
-      .eq('supporter_id', supporterId)
-      .eq('creator_id', creatorId)
-      .single();
-
-    if (!existingSupporter) {
-      await supabase
-        .from('supporters')
-        .insert({
-          supporter_id: supporterId,
-          creator_id: creatorId,
-          tier: 'basic',
-          tier_level: tierLevel,
-          amount: transactionAmount,
-          is_active: true,
-        });
-    } else {
-      await supabase
-        .from('supporters')
-        .update({
-          is_active: true,
-          tier_level: tierLevel,
-          amount: transactionAmount,
-        })
-        .eq('id', existingSupporter.id);
-    }
+    await upsertSupporter(supporterId, creatorId, validation.validatedAmount, tierLevel);
 
     // Sync supporter to Stream Chat channels directly
     try {
@@ -165,30 +128,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Update supporters_count in creator_profiles
-    const { data: countResult } = await supabase
-      .from('supporters')
-      .select('supporter_id')
-      .eq('creator_id', creatorId)
-      .eq('is_active', true);
-
-    if (countResult) {
-      const uniqueSupporters = new Set(countResult.map(r => r.supporter_id)).size;
-      await supabase
-        .from('creator_profiles')
-        .update({ supporters_count: uniqueSupporters })
-        .eq('user_id', creatorId);
-
-      logger.info('Updated supporter count', 'DIRECT_PAYMENT', {
-        creatorId,
-        supportersCount: uniqueSupporters
-      });
-    }
+    await updateSupporterCount(creatorId);
 
     logger.info('Direct payment completed successfully', 'DIRECT_PAYMENT', {
       transactionId: transaction.id,
       creatorId,
       supporterId,
-      amount: transactionAmount
+      amount: validation.validatedAmount
     });
 
     return NextResponse.json({
@@ -202,12 +148,6 @@ export async function POST(request: NextRequest) {
       message: 'Support registered successfully'
     });
   } catch (error) {
-    logger.error('Direct payment failed', 'DIRECT_PAYMENT', {
-      error: error instanceof Error ? error.message : 'Unknown'
-    });
-    return NextResponse.json(
-      { error: 'Direct payment failed' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'DIRECT_PAYMENT', 'Direct payment failed');
   }
 }

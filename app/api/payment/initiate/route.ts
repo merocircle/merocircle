@@ -3,9 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import { generateEsewaSignature } from '@/lib/generateEsewaSignature';
 import { PaymentRequestData, EsewaConfig } from '@/lib/esewa-types';
 import { config } from '@/lib/config';
-import { validateAmount, validateUUID, sanitizeString } from '@/lib/validation';
+import { sanitizeString } from '@/lib/validation';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { validatePaymentRequest, verifyCreator, generateTransactionUuid } from '@/lib/payment-utils';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,33 +19,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many payment requests. Please wait.' }, { status: 429 });
     }
 
-    // Validate amount
-    const amountValidation = validateAmount(amount);
-    if (!amountValidation.valid) {
-      return NextResponse.json({ error: amountValidation.error }, { status: 400 });
+    // Validate payment request
+    const validation = validatePaymentRequest(amount, creatorId, supporterId);
+    if (!validation.valid || !validation.validatedAmount) {
+      return validation.errorResponse!;
     }
 
-    // Validate UUIDs
-    if (!validateUUID(creatorId) || !validateUUID(supporterId)) {
-      return NextResponse.json({ error: 'Invalid user IDs' }, { status: 400 });
+    // Verify creator exists
+    const { exists, creator, errorResponse } = await verifyCreator(creatorId);
+    if (!exists || !creator) {
+      return errorResponse!;
     }
 
     const supabase = await createClient();
 
-    // Verify creator exists
-    const { data: creator } = await supabase
-      .from('users')
-      .select('id, display_name')
-      .eq('id', creatorId)
-      .single();
-
-    if (!creator) {
-      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
-    }
-
     // Generate transaction UUID
-    const transactionUuid = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    const amountStr = amountValidation.value!.toString();
+    const transactionUuid = generateTransactionUuid();
+    const amountStr = validation.validatedAmount.toString();
 
     // Build eSewa config (without signature)
     const esewaConfig: Omit<EsewaConfig, 'signature'> = {
@@ -110,7 +102,6 @@ export async function POST(request: NextRequest) {
       message: 'Payment initiated'
     });
   } catch (error) {
-    logger.error('Payment initiation failed', 'PAYMENT_API', { error: error instanceof Error ? error.message : 'Unknown' });
-    return NextResponse.json({ error: 'Payment initiation failed' }, { status: 500 });
+    return handleApiError(error, 'PAYMENT_API', 'Payment initiation failed');
   }
 }

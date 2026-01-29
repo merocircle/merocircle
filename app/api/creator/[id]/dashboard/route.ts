@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { calculateMonthlyTotal, calculateTotalAmount } from '@/lib/api-helpers';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, requireCreatorRole, handleApiError } from '@/lib/api-utils';
 
 export async function GET(
   request: NextRequest,
@@ -9,22 +10,19 @@ export async function GET(
 ) {
   try {
     const { id: creatorId } = await params;
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user || user.id !== creatorId) {
+    // Authenticate and verify creator role
+    const { user, errorResponse: authError } = await getAuthenticatedUser();
+    if (authError || !user) return authError || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    if (user.id !== creatorId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', creatorId)
-      .single();
+    const { isCreator, errorResponse: roleError } = await requireCreatorRole(creatorId);
+    if (roleError) return roleError;
 
-    if (!userData || userData.role !== 'creator') {
-      return NextResponse.json({ error: 'User is not a creator' }, { status: 403 });
-    }
+    const supabase = await createClient();
 
     let creatorProfile = null;
     const { data: profileData, error: profileError } = await supabase
@@ -176,8 +174,8 @@ export async function GET(
         avatar: s.users?.photo_url
       }))
     });
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, 'CREATOR_DASHBOARD_API', 'Failed to fetch creator dashboard');
   }
 }
 

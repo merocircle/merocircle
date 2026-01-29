@@ -2,17 +2,16 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateStreamToken, upsertStreamUser } from '@/lib/stream-server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const supabase = await createClient();
 
     // Get user profile from Supabase
     const { data: userProfile, error: profileError } = await supabase
@@ -50,9 +49,6 @@ export async function GET() {
       userImage: userProfile.photo_url
     });
   } catch (error) {
-    logger.error('Error generating Stream token', 'STREAM_TOKEN_API', {
-      error: error instanceof Error ? error.message : 'Unknown'
-    });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'STREAM_TOKEN_API', 'Failed to generate Stream token');
   }
 }

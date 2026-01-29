@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, requireCreatorRole, handleApiError } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,23 +11,14 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
+    // Authenticate and verify creator role
+    const { user, errorResponse: authError } = await getAuthenticatedUser();
+    if (authError || !user) return authError || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { isCreator, errorResponse: roleError } = await requireCreatorRole(user.id);
+    if (roleError) return roleError;
+
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify user is a creator
-    const { data: userProfile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!userProfile || userProfile.role !== 'creator') {
-      return NextResponse.json({ error: 'Only creators can access this' }, { status: 403 });
-    }
 
     // Get all active supporters for this creator
     const { data: supporters, error } = await supabase
@@ -63,9 +55,6 @@ export async function GET() {
 
     return NextResponse.json({ supporters: validSupporters });
   } catch (error) {
-    logger.error('Error fetching supporters', 'CREATOR_SUPPORTERS', {
-      error: error instanceof Error ? error.message : 'Unknown'
-    });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'CREATOR_SUPPORTERS', 'Failed to fetch supporters');
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, checkResourceOwnership, handleApiError } from '@/lib/api-utils';
 
 interface Params {
   id: string;
@@ -69,38 +70,21 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
-    const supabase = await createClient();
+    // Authenticate user
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Check if post exists and user owns it
-    const { data: existingPost } = await supabase
-      .from('posts')
-      .select('creator_id')
-      .eq('id', id)
-      .single();
-
-    if (!existingPost) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
-    }
-
-    if (existingPost.creator_id !== user.id) {
+    // Check ownership
+    const { owns, errorResponse: ownershipError } = await checkResourceOwnership('posts', id, user.id);
+    if (ownershipError) return ownershipError;
+    if (!owns) {
       return NextResponse.json(
         { error: 'You can only edit your own posts' },
         { status: 403 }
       );
     }
+
+    const supabase = await createClient();
 
     const body = await request.json();
     const { title, content, image_url, media_url, is_public, tier_required } = body;
@@ -143,11 +127,7 @@ export async function PUT(
     return NextResponse.json(post);
 
   } catch (error) {
-    logger.error('Error updating post', 'POSTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId: id });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'POSTS_API', 'Failed to update post');
   }
 }
 
@@ -157,38 +137,21 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    const supabase = await createClient();
+    // Authenticate user
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Check if post exists and user owns it
-    const { data: existingPost } = await supabase
-      .from('posts')
-      .select('creator_id')
-      .eq('id', id)
-      .single();
-
-    if (!existingPost) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
-    }
-
-    if (existingPost.creator_id !== user.id) {
+    // Check ownership
+    const { owns, errorResponse: ownershipError } = await checkResourceOwnership('posts', id, user.id);
+    if (ownershipError) return ownershipError;
+    if (!owns) {
       return NextResponse.json(
         { error: 'You can only delete your own posts' },
         { status: 403 }
       );
     }
+
+    const supabase = await createClient();
 
     const { error } = await supabase
       .from('posts')
@@ -206,10 +169,6 @@ export async function DELETE(
     return NextResponse.json({ message: 'Post deleted successfully' });
 
   } catch (error) {
-    logger.error('Error deleting post', 'POSTS_API', { error: error instanceof Error ? error.message : 'Unknown', postId: id });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'POSTS_API', 'Failed to delete post');
   }
 } 

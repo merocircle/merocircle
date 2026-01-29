@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/supabase'
+import { handleApiError } from '@/lib/api-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -110,11 +111,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'SOCIAL_LIKE_API', 'Failed to like/unlike post');
   }
 }
 
@@ -185,10 +183,7 @@ export async function GET(request: NextRequest) {
       userHasLiked
     })
 
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'SOCIAL_LIKE_API', 'Failed to like/unlike post');
   }
 } 

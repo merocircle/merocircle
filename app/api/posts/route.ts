@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { validatePostContent, sanitizeString } from '@/lib/validation';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, requireCreatorRole, parsePaginationParams, handleApiError } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const { page, limit, offset } = parsePaginationParams(searchParams);
     const creator_id = searchParams.get('creator_id');
     const tier = searchParams.get('tier') || 'free';
-    const offset = (page - 1) * limit;
 
     let query = supabase
       .from('posts')
@@ -117,31 +116,20 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'POSTS_API', 'Failed to fetch posts');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate and check creator role
+    const { user, errorResponse: authError } = await getAuthenticatedUser();
+    if (authError || !user) return authError || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { isCreator, errorResponse: roleError } = await requireCreatorRole(user.id);
+    if (roleError) return roleError;
+
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { data: userProfile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (userProfile?.role !== 'creator') {
-      return NextResponse.json({ error: 'Only creators can create posts' }, { status: 403 });
-    }
 
     const body = await request.json();
     const {
@@ -246,7 +234,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(post, { status: 201 });
   } catch (error) {
-    logger.error('Post creation error', 'POSTS_API', { error: error instanceof Error ? error.message : 'Unknown' });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return handleApiError(error, 'POSTS_API', 'Failed to create post');
   }
 } 

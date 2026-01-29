@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { config } from '@/lib/config';
 import { logger } from '@/lib/logger';
+import { upsertSupporter, updateSupporterCount } from '@/lib/payment-utils';
+import { handleApiError } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -100,35 +102,7 @@ export async function GET(request: NextRequest) {
     if (transaction.supporter_id && transaction.creator_id) {
       // Get tier level from transaction metadata
       const tierLevel = transaction.esewa_data?.tier_level || 1;
-
-      const { data: existingSupporter } = await supabase
-        .from('supporters')
-        .select('id')
-        .eq('supporter_id', transaction.supporter_id)
-        .eq('creator_id', transaction.creator_id)
-        .single();
-
-      if (!existingSupporter) {
-        await supabase
-          .from('supporters')
-          .insert({
-            supporter_id: transaction.supporter_id,
-            creator_id: transaction.creator_id,
-            tier: 'basic',
-            tier_level: tierLevel,
-            amount: transactionAmount,
-            is_active: true,
-          });
-      } else {
-        await supabase
-          .from('supporters')
-          .update({
-            is_active: true,
-            tier_level: tierLevel,
-            amount: transactionAmount,
-          })
-          .eq('id', existingSupporter.id);
-      }
+      await upsertSupporter(transaction.supporter_id, transaction.creator_id, transactionAmount, tierLevel);
 
       // Channel membership is now handled by database trigger
       // Just sync the supporter to Stream Chat
@@ -159,24 +133,7 @@ export async function GET(request: NextRequest) {
 
     // Update supporters_count in creator_profiles
     if (transaction.creator_id) {
-      const { data: countResult } = await supabase
-        .from('supporters')
-        .select('supporter_id')
-        .eq('creator_id', transaction.creator_id)
-        .eq('is_active', true);
-
-      if (countResult) {
-        const uniqueSupporters = new Set(countResult.map(r => r.supporter_id)).size;
-        await supabase
-          .from('creator_profiles')
-          .update({ supporters_count: uniqueSupporters })
-          .eq('user_id', transaction.creator_id);
-
-        logger.info('Updated supporter count', 'PAYMENT_VERIFY', {
-          creatorId: transaction.creator_id,
-          supportersCount: uniqueSupporters
-        });
-      }
+      await updateSupporterCount(transaction.creator_id);
     }
 
     logger.info('Transaction completed successfully', 'PAYMENT_VERIFY', {
@@ -198,13 +155,7 @@ export async function GET(request: NextRequest) {
       test_mode: config.esewa.testMode
     });
   } catch (error) {
-    logger.error('Payment verification failed', 'PAYMENT_VERIFY', {
-      error: error instanceof Error ? error.message : 'Unknown'
-    });
-    return NextResponse.json(
-      { error: 'Payment verification failed' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'PAYMENT_VERIFY', 'Payment verification failed');
   }
 }
 

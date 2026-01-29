@@ -3,6 +3,7 @@ export interface PaymentRequestData {
   creatorId: string;
   supporterId: string;
   supporterMessage?: string;
+  tier_level?: number;
 }
 
 export interface EsewaConfig {
