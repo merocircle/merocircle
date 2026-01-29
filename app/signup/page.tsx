@@ -20,7 +20,7 @@ export default function SignupPage() {
 
   const handleRoleSelection = (role: 'supporter' | 'creator') => {
     if (role === 'supporter') {
-      router.push('/signup/supporter');
+      router.push('/auth');
     } else {
       router.push('/signup/creator');
     }

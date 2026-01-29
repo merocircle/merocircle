@@ -435,7 +435,7 @@ export default function CreatorSignupPage() {
               <div className="text-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Want to support creators?{' '}
-                  <Link href="/signup/supporter" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                  <Link href="/auth" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
                     Sign up as a Supporter
                   </Link>
                 </p>
