@@ -1,0 +1,93 @@
+.hero-section {
+  /* Hero section styles */
+}
+
+.hero-title-mobile {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  font-family: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+@media (min-width: 640px) {
+  .hero-title-mobile {
+    font-size: 42px;
+  }
+}
+
+.hero-title-desktop {
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  font-family: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+@media (min-width: 1024px) {
+  .hero-title-desktop {
+    font-size: 56px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-title-desktop {
+    font-size: 64px;
+  }
+}
+
+.hero-subtitle-mobile {
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  color: #000;
+  margin-bottom: 1rem;
+}
+
+.hero-subtitle-desktop {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  color: #000;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .hero-subtitle-desktop {
+    font-size: 24px;
+  }
+}
+
+.hero-description-mobile {
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.hero-description-desktop {
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+@media (min-width: 1024px) {
+  .hero-description-desktop {
+    font-size: 18px;
+  }
+}
+
+.gradient-orange {
+  background: linear-gradient(to right, #ff4000, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-purple {
+  background: linear-gradient(to right, #8b5cf6, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
