@@ -100,7 +100,6 @@ function PageLayoutInner({
 
   const activeView = getActiveViewFromPath();
 
-  const [feedFilter, setFeedFilter] = useState<'for-you' | 'following' | 'trending'>('for-you');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const handleCreateClick = useCallback(() => {
@@ -112,7 +111,7 @@ function PageLayoutInner({
 
   const mapViewToContext = (view: string) => {
     switch (view) {
-      case 'home': return 'feed';
+      case 'home': return 'explore';
       case 'explore': return 'explore';
       case 'chat': return 'chat';
       case 'notifications': return 'notifications';
@@ -120,7 +119,7 @@ function PageLayoutInner({
       case 'profile': return 'profile';
       case 'settings': return 'settings';
       case 'creator-profile': return 'creator-profile';
-      default: return 'feed';
+      default: return 'explore';
     }
   };
 
@@ -171,8 +170,6 @@ function PageLayoutInner({
       unreadNotifications={notificationsData?.unreadCount || 0}
       unreadMessages={0}
       favoriteCreators={favoriteCreators}
-      feedFilter={feedFilter}
-      onFeedFilterChange={setFeedFilter}
       selectedCategory={selectedCategory}
       onCategoryChange={setSelectedCategory}
       onCreateClick={handleCreateClick}

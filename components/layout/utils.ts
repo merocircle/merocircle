@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-type ContextView = 'feed' | 'explore' | 'chat' | 'notifications' | 'creator-studio' | 'profile' | 'settings' | 'creator-profile';
+type ContextView = 'explore' | 'chat' | 'notifications' | 'creator-studio' | 'profile' | 'settings' | 'creator-profile';
 
 const FULL_WIDTH_VIEWS: ContextView[] = ['chat', 'creator-studio', 'profile', 'settings', 'creator-profile'];
 
@@ -65,5 +65,5 @@ export function shouldShowRightPanel(
   hideRightPanel: boolean,
   contextView: ContextView
 ): boolean {
-  return !hideRightPanel && (contextView === 'feed' || contextView === 'explore');
+  return !hideRightPanel && contextView === 'explore';
 }
