@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { validatePostContent, sanitizeString } from '@/lib/validation';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUser, requireCreatorRole, parsePaginationParams, handleApiError } from '@/lib/api-utils';
+import { sendBulkPostNotifications } from '@/lib/sendgrid';
+import { slugifyDisplayName } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -232,8 +234,106 @@ export async function POST(request: NextRequest) {
       }
     }
 
+
+    sendPostNotificationsToSupporters(post, user.id, supabase).catch((error) => {
+
+      logger.error('Failed to send post notifications', 'POSTS_API', {
+        error: error.message,
+        postId: post.id,
+        creatorId: user.id
+      });
+    });
+
     return NextResponse.json(post, { status: 201 });
   } catch (error) {
     return handleApiError(error, 'POSTS_API', 'Failed to create post');
+  }
+}
+
+/**
+ * Sends email notifications to all active supporters when a creator posts
+ */
+async function sendPostNotificationsToSupporters(
+  post: any,
+  creatorId: string,
+  supabase: any
+): Promise<void> {
+  try {
+    const { data: supporters, error } = await supabase
+      .from('supporters')
+      .select(`
+        supporter_id,
+        user:supporter_id!inner(
+          id,
+          email,
+          display_name
+        )
+      `)
+      .eq('creator_id', creatorId)
+      .eq('is_active', true);
+
+    if (error) {
+      logger.error('Failed to fetch supporters for email notifications', 'POSTS_API', {
+        error: error.message,
+        creatorId
+      });
+      return;
+    }
+
+    if (!supporters || supporters.length === 0) {
+      logger.info('No active supporters to notify', 'POSTS_API', { creatorId, postId: post.id });
+      return;
+    }
+
+    const { data: creatorData } = await supabase
+      .from('users')
+      .select('display_name')
+      .eq('id', creatorId)
+      .single();
+
+    const creatorName = creatorData?.display_name || 'Your creator';
+    const creatorSlug = creatorData?.display_name ? slugifyDisplayName(creatorData.display_name) : null;
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.com';
+    const postUrl = creatorSlug 
+      ? `${appUrl}/${encodeURIComponent(creatorSlug)}?post=${post.id}`
+      : `${appUrl}/creator/${creatorId}?post=${post.id}`;
+
+    const supportersWithEmails = supporters
+      .filter((s: any) => s.user && s.user.email)
+      .map((s: any) => ({
+        email: s.user.email,
+        name: s.user.display_name || 'Supporter'
+      }));
+
+    if (supportersWithEmails.length === 0) {
+      logger.info('No supporters with valid emails found', 'POSTS_API', { creatorId, postId: post.id });
+      return;
+    }
+
+    // Send bulk email notifications
+    const { sent, failed } = await sendBulkPostNotifications(supportersWithEmails, {
+      creatorName,
+      postTitle: post.title || 'New Post',
+      postContent: post.content || '',
+      postImageUrl: post.image_url || (post.image_urls && post.image_urls[0]) || null,
+      postUrl,
+      isPoll: post.post_type === 'poll'
+    });
+
+    logger.info('Post notification emails sent', 'POSTS_API', {
+      creatorId,
+      postId: post.id,
+      totalSupporters: supportersWithEmails.length,
+      sent,
+      failed
+    });
+  } catch (error: any) {
+    // Don't throw - this is a background operation
+    logger.error('Error sending post notifications', 'POSTS_API', {
+      error: error.message,
+      creatorId,
+      postId: post.id
+    });
   }
 } 
