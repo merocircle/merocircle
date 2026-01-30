@@ -25,15 +25,11 @@ export function getMainContentClassName({
     // Use fixed height for chat view, min-h-screen for others
     contextView === 'chat' ? 'h-screen box-border overflow-hidden' : 'min-h-screen',
     // Mobile: full width with padding for header and bottom nav
-    shouldHideMobileHeader ? 'pt-4 pb-20 px-0' : 'pt-24 pb-20 px-4',
-    // Tablet: left padding for activity bar
-    'md:pt-4 md:pb-4 md:pl-20 md:pr-4',
-    // Desktop: account for context sidebar (only shown for feed view)
-    !hideContextSidebar && contextView === 'feed' && !isContextCollapsed && 'lg:pl-[calc(64px+240px+16px)]',
-    !hideContextSidebar && contextView === 'feed' && isContextCollapsed && 'lg:pl-20',
-    (hideContextSidebar || contextView !== 'feed') && 'lg:pl-20',
-    // Large desktop: account for right panel (only for feed/explore)
-    shouldShowRightPanel && 'xl:pr-[304px]'
+    shouldHideMobileHeader ? 'pt-4 pb-20 px-4' : 'pt-24 pb-20 px-4',
+    // Tablet: reduced gap after activity bar (64px bar + 4px gap = 68px)
+    'md:pt-4 md:pb-4 md:pl-[68px]',
+    // Tablet and up: account for right panel when visible
+    shouldShowRightPanel ? 'md:pr-[328px]' : 'md:pr-4'
   );
 }
 
@@ -48,8 +44,8 @@ export function getContentWrapperClassName({
   contextView: ContextView;
 }): string {
   return cn(
-    // Constrain width only for feed/explore views
-    !isFullWidthView && 'max-w-2xl mx-auto',
+    // Wider max-width to better utilize available space
+    !isFullWidthView && 'max-w-[700px] mx-auto',
     // Full height for chat view to enable internal scrolling
     contextView === 'chat' && 'h-full min-h-0 overflow-hidden'
   );

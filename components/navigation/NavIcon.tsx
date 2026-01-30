@@ -118,7 +118,17 @@ export function NavIcon({
 
   if (href) {
     return (
-      <Link href={href} prefetch={true}>
+      <Link 
+        href={href} 
+        prefetch={true}
+        onMouseEnter={() => {
+          // Preload route on hover for instant navigation
+          if (typeof window !== 'undefined') {
+            const router = require('next/navigation').useRouter;
+            // Next.js automatically prefetches with prefetch={true}
+          }
+        }}
+      >
         <motion.div
           className={baseClasses}
           whileHover={{ y: -2, scale: 1.05 }}

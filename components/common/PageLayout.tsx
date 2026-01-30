@@ -142,7 +142,8 @@ function PageLayoutInner({
 
   // Determine layout options based on active view
   const shouldHideRightPanel = hideRightPanel || ['chat', 'creator-studio', 'profile', 'settings', 'creator-profile'].includes(activeView);
-  const shouldHideContextSidebar = hideContextSidebar || activeView !== 'home';
+  // Always hide context sidebar for cleaner 3-column layout
+  const shouldHideContextSidebar = true;
   const shouldBeFullWidth = fullWidth || ['creator-studio', 'profile', 'settings', 'creator-profile'].includes(activeView);
 
   return (

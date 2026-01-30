@@ -26,6 +26,15 @@ const nextConfig: NextConfig = {
       resolveAlias: {},
     },
   },
+  // Suppress Supabase realtime dependency warning
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.ignoreWarnings = [
+        { module: /node_modules\/@supabase\/realtime-js/ }
+      ];
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

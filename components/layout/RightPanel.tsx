@@ -49,19 +49,19 @@ export function RightPanel({
   return (
     <aside
       className={cn(
-        'w-72 h-screen border-l border-border/50 bg-card/30 backdrop-blur-sm',
+        'w-full h-screen overflow-hidden',
         className
       )}
     >
       <ScrollArea className="h-full">
-        <div className="pl-4 pr-3 py-4 space-y-6">
+        <div className="px-2 py-6 space-y-6">
           {/* Stories Section */}
           {stories.length > 0 && <StoriesSection stories={stories} />}
 
           {/* Creators */}
-          <section className="space-y-3">
+          <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Creators</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground">Suggestions For You</h3>
               <Button
                 variant="link"
                 size="sm"
@@ -72,7 +72,7 @@ export function RightPanel({
               </Button>
             </div>
 
-            <div className="rounded-2xl border bg-background/60 p-3">
+            <div className="space-y-3">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

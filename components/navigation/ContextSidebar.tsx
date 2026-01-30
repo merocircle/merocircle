@@ -177,64 +177,6 @@ function FeedContext({
 
   return (
     <div className="px-4 space-y-6">
-      {/* Feed Filters */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          <Filter size={12} />
-          Feed Filters
-        </div>
-        <div className="space-y-1">
-          {filters.map(({ id, label, icon: Icon }) => (
-            <motion.button
-              key={id}
-              onClick={() => onFilterChange?.(id)}
-              className={cn(
-                'flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors',
-                filter === id
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              )}
-              whileHover={{ x: 2 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Icon size={16} />
-              {label}
-              {filter === id && (
-                <motion.div
-                  layoutId="feed-filter-indicator"
-                  className="ml-auto w-1.5 h-1.5 bg-primary rounded-full"
-                />
-              )}
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
-      {/* Categories */}
-      <div className="space-y-2">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Categories
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
-            <motion.button
-              key={category}
-              onClick={() => onCategoryChange?.(category)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
-                selectedCategory === category
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground'
-              )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {category}
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
       {/* Suggested Creators */}
       {suggestedCreators.length > 0 && (
         <div className="space-y-3">

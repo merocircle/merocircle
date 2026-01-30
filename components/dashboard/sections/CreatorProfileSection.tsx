@@ -4,11 +4,14 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft,
   ShoppingBag,
@@ -16,7 +19,18 @@ import {
   Info,
   Calendar,
   Loader2,
-  Chrome
+  Chrome,
+  Heart,
+  Users,
+  CheckCircle2,
+  Share2,
+  Shield,
+  Globe,
+  Lock,
+  Sparkles,
+  Star,
+  MessageCircle,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
@@ -26,13 +40,7 @@ import { TierSelection } from '@/components/creator/TierSelection';
 import { fadeInUp, staggerContainer } from '@/components/animations/variants';
 import { slugifyDisplayName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-
-import {
-  CreatorHero,
-  CreatorTabs,
-  CreatorStats,
-  SocialLinksCard,
-} from '@/components/organisms/creator';
+import { SocialLinksCard } from '@/components/organisms/creator';
 
 // Lazy load PaymentGatewaySelector
 const PaymentGatewaySelector = dynamic(
@@ -533,8 +541,16 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10">
+        <div className="max-w-6xl mx-auto px-4 py-20">
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
+              <Loader2 className="w-12 h-12 animate-spin text-primary relative" />
+            </div>
+            <p className="text-sm text-muted-foreground">Loading creator profile...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -542,8 +558,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   // If viewing own profile, show loading while redirecting
   if (isOwnProfile) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10">
+        <div className="max-w-6xl mx-auto px-4 py-20">
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -551,9 +571,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   // Error state
   if (error || !creatorDetails) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10 flex items-center justify-center p-6">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
           <Card className="p-8 text-center border-border">
@@ -569,64 +589,403 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="-mx-4 md:mx-0"
-    >
-      {/* Back Button */}
-      <div className="px-4 py-3 md:px-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBack}
-          className="gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/5">
+      {/* Professional Hero Section */}
+      <div className="relative">
+        {/* Cover Image */}
+        <div className="relative h-80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+          {creatorDetails.cover_image_url && (
+            <>
+              <Image
+                src={creatorDetails.cover_image_url}
+                alt="Cover"
+                fill
+                className="object-cover opacity-40"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+            </>
+          )}
+          {!creatorDetails.cover_image_url && (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-pink-500/5 to-purple-500/5" />
+          )}
+        </div>
+
+        {/* Profile Section */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative -mt-20"
+          >
+            <div className="bg-background/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl p-8">
+              <div className="flex flex-col md:flex-row gap-8">
+                {/* Avatar */}
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200 }}
+                  className="flex-shrink-0"
+                >
+                  <div className="relative">
+                    <Avatar className="w-32 h-32 border-4 border-background shadow-xl ring-4 ring-muted/20">
+                      <AvatarImage src={creatorDetails.avatar_url} alt={creatorDetails.display_name} />
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-4xl font-bold">
+                        {creatorDetails.display_name?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {creatorDetails.is_verified && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.3, type: "spring" }}
+                        className="absolute -bottom-2 -right-2 bg-blue-500 rounded-full p-2 shadow-lg"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* Creator Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <h1 className="text-3xl md:text-4xl font-bold text-foreground truncate">
+                          {creatorDetails.display_name}
+                        </h1>
+                      </div>
+
+                      {creatorDetails.bio && (
+                        <p className="text-muted-foreground text-lg leading-relaxed mb-4">
+                          {creatorDetails.bio}
+                        </p>
+                      )}
+
+                      {/* Stats */}
+                      <div className="flex flex-wrap items-center gap-6">
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                            <Users className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold text-foreground">
+                              {creatorDetails.supporter_count || 0}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Supporters</p>
+                          </div>
+                        </motion.div>
+
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-pink-500/10">
+                            <FileText className="w-5 h-5 text-pink-500" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold text-foreground">
+                              {creatorDetails.posts_count || 0}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Posts</p>
+                          </div>
+                        </motion.div>
+
+                        {creatorDetails.category && (
+                          <Badge variant="outline" className="gap-2 px-4 py-2 text-sm">
+                            <Star className="w-4 h-4 text-amber-500" />
+                            {creatorDetails.category}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3">
+                      {isSupporter && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", delay: 0.2 }}
+                        >
+                          <Badge className="gap-2 px-4 py-2 bg-gradient-to-r from-primary to-pink-500">
+                            <Heart className="w-4 h-4 fill-current" />
+                            Supporter
+                          </Badge>
+                        </motion.div>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleShare}
+                        className="hover:bg-muted/50 transition-colors"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleBack}
+                        className="gap-2"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      {/* Hero Section */}
-      <CreatorHero
-        displayName={creatorDetails.display_name}
-        avatarUrl={creatorDetails.avatar_url}
-        coverImageUrl={creatorDetails.cover_image_url}
-        bio={creatorDetails.bio}
-        category={creatorDetails.category}
-        isVerified={creatorDetails.is_verified}
-        supporterCount={creatorDetails.supporter_count || 0}
-        postsCount={creatorDetails.posts_count || 0}
-        isSupporter={isSupporter}
-        onShare={handleShare}
-      />
-
       {/* Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-          {/* Main Content with Tabs */}
-          <div className="lg:col-span-2">
-            <CreatorTabs
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              tabs={tabs}
-            />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Support Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="border-border/50 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-primary/5 via-pink-500/5 to-purple-500/5 p-6 border-b border-border/50">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">Support This Creator</h2>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Choose a tier to unlock exclusive content and perks
+                  </p>
+                </div>
+                <div className="p-6">
+                  <TierSelection
+                    tiers={subscriptionTiers}
+                    creatorName={creatorDetails.display_name || ''}
+                    currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                    onSelectTier={handlePayment}
+                    loading={paymentLoading}
+                  />
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Tabs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid h-12 bg-muted/50">
+                  <TabsTrigger value="posts" className="gap-2">
+                    <FileText className="w-4 h-4" />
+                    Posts
+                  </TabsTrigger>
+                  <TabsTrigger value="shop" className="gap-2">
+                    <ShoppingBag className="w-4 h-4" />
+                    Shop
+                  </TabsTrigger>
+                  <TabsTrigger value="about" className="gap-2">
+                    <Info className="w-4 h-4" />
+                    About
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="posts" className="mt-6 space-y-6">
+                  {recentPosts.length > 0 ? (
+                    (recentPosts as Array<Record<string, unknown>>).map((post) => {
+                      const postId = String(post.id);
+                      const isHighlighted = highlightedPostId === postId;
+                      return (
+                        <motion.div
+                          key={postId}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          ref={isHighlighted ? highlightedPostRef : undefined}
+                          className={cn(
+                            'transition-all duration-500',
+                            isHighlighted && 'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
+                          )}
+                        >
+                          <EnhancedPostCard
+                            post={transformPost(post)}
+                            currentUserId={user?.id}
+                            showActions={true}
+                            isSupporter={isSupporter}
+                          />
+                        </motion.div>
+                      );
+                    })
+                  ) : (
+                    <Card className="p-16 text-center border-dashed border-2 border-border/50">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                          <FileText className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-2">No Posts Yet</h3>
+                          <p className="text-muted-foreground">
+                            This creator hasn&apos;t shared any content yet. Check back soon!
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="shop" className="mt-6">
+                  <Card className="p-16 text-center border-border/50">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+                        <ShoppingBag className="w-8 h-8 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground mb-2">Shop Coming Soon</h3>
+                        <p className="text-muted-foreground max-w-md mx-auto">
+                          This creator will soon be able to sell products and merchandise directly to their supporters.
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="about" className="mt-6">
+                  <Card className="border-border/50 shadow-lg">
+                    <div className="p-6 space-y-6">
+                      {creatorDetails.bio && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <MessageCircle className="w-5 h-5 text-primary" />
+                            About
+                          </h3>
+                          <p className="text-muted-foreground leading-relaxed">
+                            {creatorDetails.bio}
+                          </p>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {creatorDetails.category && (
+                          <div>
+                            <h4 className="font-medium text-sm text-muted-foreground mb-3">Category</h4>
+                            <Badge variant="outline" className="gap-2 px-3 py-1.5">
+                              <Star className="w-4 h-4 text-amber-500" />
+                              {creatorDetails.category}
+                            </Badge>
+                          </div>
+                        )}
+
+                        {creatorDetails.created_at && (
+                          <div>
+                            <h4 className="font-medium text-sm text-muted-foreground mb-3">Member Since</h4>
+                            <div className="flex items-center gap-2 text-foreground">
+                              <Calendar className="w-4 h-4 text-primary" />
+                              <span className="font-medium">
+                                {new Date(creatorDetails.created_at).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 && (
+                        <>
+                          <Separator />
+                          <div>
+                            <h4 className="font-medium text-sm text-muted-foreground mb-4 flex items-center gap-2">
+                              <Globe className="w-4 h-4 text-primary" />
+                              Connect with {creatorDetails.display_name}
+                            </h4>
+                            <SocialLinksCard
+                              socialLinks={creatorDetails.social_links}
+                              variant="inline"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </motion.div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <div className="sticky top-4 space-y-6">
-              <CreatorStats
-                supporterCount={creatorDetails.supporter_count || 0}
-                postsCount={creatorDetails.posts_count || 0}
-                category={creatorDetails.category}
-              />
+            {/* Trust Indicators */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="border-border/50 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-br from-green-500/5 to-blue-500/5 p-4 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-green-600" />
+                    <h3 className="font-semibold text-foreground">Trusted Creator</h3>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center gap-3 text-sm">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-muted-foreground">Verified identity</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <Lock className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    <span className="text-muted-foreground">Secure payments</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <TrendingUp className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                    <span className="text-muted-foreground">Active community</span>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
 
-              <SocialLinksCard
-                socialLinks={creatorDetails.social_links}
-              />
-            </div>
+            {/* Quick Stats */}
+            {creatorDetails.supporter_count > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card className="border-border/50 shadow-lg p-6">
+                  <h3 className="font-semibold text-foreground mb-4">Community</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-3xl font-bold text-foreground">
+                          {creatorDetails.supporter_count}
+                        </span>
+                        <span className="text-sm text-muted-foreground">supporters</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Join the growing community
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
@@ -683,6 +1042,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           </Button>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }

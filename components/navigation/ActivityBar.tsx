@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Home,
@@ -135,22 +136,18 @@ export function ActivityBar({
           <TooltipTrigger asChild>
             <Link href="/home" prefetch={true}>
               <motion.div
-                className="mb-6 flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary cursor-pointer"
+                className="mb-6 flex items-center justify-center w-10 h-10 cursor-pointer"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <motion.div
-                  animate={{
-                    scale: [1, 1.05, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut'
-                  }}
-                >
-                  <Heart size={24} fill="currentColor" />
-                </motion.div>
+                <Image
+                  src="/logo/logo-small.png"
+                  alt="MeroCircle"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
               </motion.div>
             </Link>
           </TooltipTrigger>

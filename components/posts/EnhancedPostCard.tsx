@@ -435,7 +435,7 @@ export function EnhancedPostCard({
       transition={{ duration: 0.3 }}
       className="w-full"
     >
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="overflow-hidden bg-card">
         {/* Header - Instagram style */}
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
@@ -469,6 +469,13 @@ export function EnhancedPostCard({
                     <span>{post.creator_profile.category}</span>
                   </>
                 )}
+                {/* Social Proof: Show supporter count */}
+                {(post as any).creator_supporter_count > 0 && (
+                  <>
+                    <span>·</span>
+                    <span className="text-primary font-medium">{(post as any).creator_supporter_count} supporters</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -484,52 +491,127 @@ export function EnhancedPostCard({
           </div>
         </div>
 
-        {/* Content Text - Before Media (Instagram style) */}
-        {!shouldBlur && post.content && (
+        {/* Content Text - Show preview even for locked content */}
+        {post.content && (
           <div className="px-4 pb-3">
-            <p className="text-sm text-foreground leading-relaxed line-clamp-2">
-              {post.content}
-            </p>
+            {shouldBlur ? (
+              <div className="relative">
+                <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+                  {post.content}
+                </p>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
+              </div>
+            ) : (
+              <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+                {post.content}
+              </p>
+            )}
           </div>
         )}
 
         {/* Media Section */}
         <div className="relative">
           {shouldBlur ? (
-            /* Locked content - Instagram style */
+            /* Psychology-driven locked content */
             <div
-              className="relative w-full aspect-[4/5] bg-gradient-to-br from-muted to-muted/50 overflow-hidden"
+              className="relative w-full aspect-square bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
               onClick={handleDoubleTap}
             >
-              {/* Decorative blur pattern */}
+              {/* Subtle preview of content (blurred) */}
+              {allImages.length > 0 && (
+                <Image
+                  src={allImages[0]}
+                  alt="Preview"
+                  fill
+                  className="object-cover opacity-20 blur-2xl"
+                  sizes="630px"
+                />
+              )}
+              
+              {/* Decorative gradient overlay */}
               <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5" />
-                <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-purple-500/5 to-pink-500/10" />
+                <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
               </div>
-              {/* Lock overlay */}
-              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px]">
-                <div className="text-center p-6 max-w-xs">
+              
+              {/* Value proposition overlay */}
+              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+                <div className="text-center p-6 max-w-sm space-y-4">
+                  {/* Lock icon with hover animation */}
                   <motion.div
-                    className="mb-4 flex justify-center"
-                    animate={{ y: [0, -4, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="mb-2 flex justify-center"
+                    whileHover={{ scale: 1.1, rotate: [0, -10, 10, -10, 0] }}
+                    transition={{ duration: 0.5 }}
                   >
-                    <div className="p-4 bg-background/80 backdrop-blur-sm rounded-2xl shadow-lg border border-border">
+                    <div className="p-4 bg-background/90 backdrop-blur-md rounded-2xl shadow-xl border border-primary/20 group-hover:border-primary/40 transition-colors">
                       <Lock className="w-8 h-8 text-primary" />
                     </div>
                   </motion.div>
-                  <h3 className="text-base font-semibold text-foreground mb-2">
-                    Supporter-only content
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Support {post.creator.display_name} to unlock
-                  </p>
-                  <Button size="sm" className="w-full" asChild>
-                    <Link href={creatorProfileLink}>
-                      Become a Supporter
-                    </Link>
-                  </Button>
+                  
+                  {/* Heading with social proof */}
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-1">
+                      Exclusive Content
+                    </h3>
+                    {(post as any).supporter_engagement && (
+                      <p className="text-xs text-primary font-medium">
+                        {(post as any).supporter_engagement} supporters loved this
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Clear value proposition */}
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Get access to exclusive content, early releases, and direct creator support
+                    </p>
+                    
+                    {/* Benefits list */}
+                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <span>HD Content</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <span>Early Access</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <span>Priority Chat</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Tier badge and CTA */}
+                  <div className="space-y-3">
+                    {post.tier_required && post.tier_required !== 'free' && (
+                      <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
+                        {post.tier_required} Tier Required
+                      </Badge>
+                    )}
+                    
+                    <Button 
+                      size="sm" 
+                      className="w-full shadow-lg hover:shadow-xl transition-all group-hover:scale-105" 
+                      asChild
+                    >
+                      <Link href={creatorProfileLink}>
+                        <span>Support {post.creator.display_name}</span>
+                        {post.tier_required && post.tier_required !== 'free' && (
+                          <span className="ml-1 text-xs opacity-75">from Rs.100/mo</span>
+                        )}
+                      </Link>
+                    </Button>
+                    
+                    {/* Social proof footer */}
+                    {(post as any).creator_supporter_count > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Join {(post as any).creator_supporter_count}+ supporters
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -559,7 +641,7 @@ export function EnhancedPostCard({
               {/* Post Images - Instagram style carousel with double-tap */}
               {post.post_type !== 'poll' && allImages.length > 0 && (
                 <div
-                  className="relative w-full aspect-[4/5] bg-muted cursor-pointer select-none"
+                  className="relative w-full aspect-square bg-muted cursor-pointer select-none"
                   onClick={handleDoubleTap}
                 >
                   <Image

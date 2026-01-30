@@ -1,21 +1,16 @@
 'use client';
 
-import { ReactNode, useState, useCallback, useMemo } from 'react';
+import { ReactNode, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActivityBar } from '@/components/navigation/ActivityBar';
 import { BottomNav, MobileHeader } from '@/components/navigation/BottomNav';
-import { ContextSidebar } from '@/components/navigation/ContextSidebar';
 import { RightPanel } from './RightPanel';
 import { cn } from '@/lib/utils';
 import { type DashboardView } from '@/contexts/dashboard-context';
-import {
-  getMainContentClassName,
-  getContentWrapperClassName,
-  isFullWidthView,
-  shouldShowRightPanel as shouldShowRightPanelUtil,
-} from './utils';
 
 type ContextView = 'feed' | 'explore' | 'chat' | 'notifications' | 'creator-studio' | 'profile' | 'settings' | 'creator-profile';
+
+const FULL_WIDTH_VIEWS: ContextView[] = ['chat', 'creator-studio', 'profile', 'settings', 'creator-profile'];
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -24,10 +19,9 @@ interface DashboardLayoutProps {
     display_name: string;
     photo_url: string | null;
   } | null;
-  // Dashboard view state (single-page navigation)
+  // Dashboard view state
   activeView?: DashboardView;
   onViewChange?: (view: DashboardView) => void;
-  // Navigation state
   contextView?: ContextView;
   unreadMessages?: number;
   unreadNotifications?: number;
@@ -84,21 +78,15 @@ export function DashboardLayout({
   favoriteCreators = [],
   feedFilter = 'for-you',
   onFeedFilterChange,
-  selectedCategory = 'All',
-  onCategoryChange,
-  suggestedCreators = [],
-  trendingCreators = [],
   stories = [],
   onCreateClick,
   onSettingsClick,
   hideRightPanel = false,
-  hideContextSidebar = false,
   fullWidth = false,
   mobileTitle = 'MeroCircle',
   showMobileTabs = true,
   className
 }: DashboardLayoutProps) {
-  const [isContextCollapsed, setIsContextCollapsed] = useState(false);
   const [mobileTab, setMobileTab] = useState<'for-you' | 'following'>('for-you');
 
   const handleMobileTabChange = useCallback((tab: 'for-you' | 'following') => {
@@ -110,96 +98,78 @@ export function DashboardLayout({
     }
   }, [onFeedFilterChange]);
 
-  // Memoize computed layout values
-  const layoutState = useMemo(() => {
-    const shouldHideMobileHeader = contextView !== 'feed';
-    const shouldShowRightPanel = shouldShowRightPanelUtil(hideRightPanel, contextView);
-    const isFullWidth = isFullWidthView(contextView, fullWidth);
-
-    return {
-      shouldHideMobileHeader,
-      shouldShowRightPanel,
-      isFullWidth,
-    };
-  }, [contextView, hideRightPanel, fullWidth]);
-
-  const toggleContextCollapse = useCallback(() => {
-    setIsContextCollapsed((prev) => !prev);
-  }, []);
+  // Layout computed values
+  const shouldShowRightPanel = !hideRightPanel && (contextView === 'feed' || contextView === 'explore');
+  const isFullWidth = fullWidth || FULL_WIDTH_VIEWS.includes(contextView);
+  const shouldHideMobileHeader = contextView !== 'feed';
 
   return (
     <div className={cn('min-h-screen bg-background', className)}>
-      {/* Mobile Header - Only show on feed view */}
+      {/* Mobile Header */}
       <MobileHeader
         title={mobileTitle}
         showTabs={showMobileTabs && contextView === 'feed'}
         activeTab={mobileTab}
         onTabChange={handleMobileTabChange}
         onSettingsClick={onSettingsClick}
-        hideHeader={layoutState.shouldHideMobileHeader}
+        hideHeader={shouldHideMobileHeader}
       />
 
-      {/* Activity Bar - Desktop only */}
-      <div className="hidden md:block">
-        <ActivityBar
-          user={user}
-          activeView={activeView}
-          onViewChange={onViewChange}
-          unreadMessages={unreadMessages}
-          unreadNotifications={unreadNotifications}
-          favoriteCreators={favoriteCreators}
-        />
-      </div>
-
-      {/* Context Sidebar - Large desktop only, hidden for chat/notifications (they have their own UI) */}
-      {!hideContextSidebar && contextView === 'feed' && (
-        <div className="hidden lg:block fixed left-16 top-0 z-40">
-          <ContextSidebar
-            view={contextView}
-            isCollapsed={isContextCollapsed}
-            onToggleCollapse={toggleContextCollapse}
-            feedFilter={feedFilter}
-            onFeedFilterChange={onFeedFilterChange}
-            selectedCategory={selectedCategory}
-            onCategoryChange={onCategoryChange}
-            suggestedCreators={suggestedCreators}
-          />
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <main
-        className={getMainContentClassName({
-          contextView,
-          shouldHideMobileHeader: layoutState.shouldHideMobileHeader,
-          hideContextSidebar,
-          isContextCollapsed,
-          shouldShowRightPanel: layoutState.shouldShowRightPanel,
-        })}
+      {/* Desktop Grid Layout: [ActivityBar | Content | RightPanel?] */}
+      <div 
+        className={cn(
+          'grid min-h-screen',
+          // Mobile: single column with header/bottom nav spacing
+          shouldHideMobileHeader ? 'pt-4 pb-20' : 'pt-24 pb-20',
+          // Desktop: 2 or 3 column grid
+          'md:grid-cols-[64px_1fr] md:pt-0 md:pb-0',
+          shouldShowRightPanel && 'lg:grid-cols-[64px_1fr_320px]'
+        )}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={contextView}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className={getContentWrapperClassName({
-              isFullWidthView: layoutState.isFullWidth,
-              contextView,
-            })}
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+        {/* Activity Bar - Desktop only */}
+        <aside className="hidden md:block">
+          <ActivityBar
+            user={user}
+            activeView={activeView}
+            onViewChange={onViewChange}
+            unreadMessages={unreadMessages}
+            unreadNotifications={unreadNotifications}
+            favoriteCreators={favoriteCreators}
+          />
+        </aside>
 
-      {/* Right Panel - Extra large desktop only, only for feed/explore */}
-      {layoutState.shouldShowRightPanel && (
-        <div className="hidden xl:block fixed right-0 top-0 z-40">
-          <RightPanel stories={stories} />
-        </div>
-      )}
+        {/* Main Content Area */}
+        <main className={cn(
+          'min-h-screen overflow-x-hidden',
+          contextView === 'chat' && 'h-screen overflow-hidden'
+        )}>
+          <div className={cn(
+            'h-full',
+            !isFullWidth && 'max-w-[630px] mx-auto w-full',
+            contextView === 'chat' && 'overflow-hidden'
+          )}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={contextView}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full py-4"
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </main>
+
+        {/* Right Panel - LG screens and above */}
+        {shouldShowRightPanel && (
+          <aside className="hidden lg:block overflow-hidden">
+            <RightPanel stories={stories} />
+          </aside>
+        )}
+      </div>
 
       {/* Bottom Navigation - Mobile only */}
       <BottomNav
@@ -212,7 +182,7 @@ export function DashboardLayout({
   );
 }
 
-// Page transition wrapper for use inside DashboardLayout
+// Page transition wrapper
 interface PageTransitionProps {
   children: ReactNode;
   className?: string;
