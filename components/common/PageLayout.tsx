@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useCallback } from 'react';
+import { ReactNode, useState, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
@@ -81,6 +81,7 @@ function PageLayoutInner({
   const { userProfile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
   const { data: notificationsData } = useNotificationsData();
   const { data: supportedCreatorsData } = useSupportedCreators();
   const supportedCreators = supportedCreatorsData?.creators || [];
@@ -151,18 +152,20 @@ function PageLayoutInner({
       user={user}
       activeView={activeView}
       onViewChange={(view) => {
-        // Map view to route and navigate
-        const routeMap: Record<DashboardView, string> = {
-          'home': '/home',
-          'explore': '/explore',
-          'chat': '/chat',
-          'notifications': '/notifications',
-          'settings': '/settings',
-          'profile': '/profile',
-          'creator-studio': '/creator-studio',
-          'creator-profile': '/home', // Fallback to home for creator-profile
-        };
-        router.push(routeMap[view] || '/home');
+        // Use startTransition for smooth navigation
+        startTransition(() => {
+          const routeMap: Record<DashboardView, string> = {
+            'home': '/home',
+            'explore': '/explore',
+            'chat': '/chat',
+            'notifications': '/notifications',
+            'settings': '/settings',
+            'profile': '/profile',
+            'creator-studio': '/creator-studio',
+            'creator-profile': '/home',
+          };
+          router.push(routeMap[view] || '/home');
+        });
       }}
       contextView={mapViewToContext(activeView) as any}
       unreadNotifications={notificationsData?.unreadCount || 0}
@@ -173,7 +176,7 @@ function PageLayoutInner({
       selectedCategory={selectedCategory}
       onCategoryChange={setSelectedCategory}
       onCreateClick={handleCreateClick}
-      onSettingsClick={() => router.push('/settings')}
+      onSettingsClick={() => startTransition(() => router.push('/settings'))}
       hideRightPanel={shouldHideRightPanel}
       hideContextSidebar={shouldHideContextSidebar}
       fullWidth={shouldBeFullWidth}

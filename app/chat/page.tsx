@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect, Suspense, lazy } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { Suspense, lazy } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
 
 // Lazy load the heavy chat component
@@ -44,23 +42,6 @@ function ChatLoadingSkeleton() {
 }
 
 export default function ChatPage() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth');
-    }
-  }, [isAuthenticated, authLoading, router]);
-
-  if (authLoading) {
-    return <PageLayout loading />;
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
     <PageLayout>
       <Suspense fallback={<ChatLoadingSkeleton />}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode, useTransition } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 // All available dashboard views
@@ -30,6 +30,7 @@ const DashboardContext = createContext<DashboardContextType | undefined>(undefin
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const [activeView, setActiveViewState] = useState<DashboardView>('home');
   const [viewingCreatorId, setViewingCreatorId] = useState<string | null>(null);
@@ -84,12 +85,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const openCreatorProfile = useCallback((creatorId: string, postId?: string) => {
-    // Save current view to go back to
-    previousViewRef.current = activeView !== 'creator-profile' ? activeView : previousViewRef.current;
-    setViewingCreatorId(creatorId);
-    setHighlightedPostId(postId || null);
-    setActiveViewState('creator-profile');
-  }, [activeView]);
+    // Use startTransition for smooth navigation
+    startTransition(() => {
+      // Navigate to creator's public profile page
+      const url = postId ? `/creator/${creatorId}?post=${postId}` : `/creator/${creatorId}`;
+      router.push(url);
+    });
+  }, [router, startTransition]);
 
   const closeCreatorProfile = useCallback(() => {
     setViewingCreatorId(null);

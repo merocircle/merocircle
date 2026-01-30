@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -200,6 +200,9 @@ export function EnhancedPostCard({
   showActions = true,
   isSupporter = false
 }: EnhancedPostCardProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  
   // Optimistic mutations
   const likeMutation = useLikePost();
   const commentMutation = useAddComment();
@@ -277,12 +280,23 @@ export function EnhancedPostCard({
     return true;
   }, [post.is_public, post.tier_required, isSupporter, currentUserId, post.creator.id]);
 
-  const router = useRouter();
-
   // Determine creator profile link
   const creatorProfileLink = currentUserId === post.creator.id 
     ? '/profile' 
     : `/creator/${post.creator.id}`;
+
+  // Prefetch creator profile on hover/focus for instant navigation
+  const handlePrefetch = useCallback(() => {
+    router.prefetch(creatorProfileLink);
+  }, [router, creatorProfileLink]);
+
+  // Optimistic navigation - no waiting
+  const handleCreatorClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    startTransition(() => {
+      router.push(creatorProfileLink);
+    });
+  }, [router, creatorProfileLink, startTransition]);
 
   const handleLike = useCallback(() => {
     if (!currentUserId) {
@@ -439,7 +453,13 @@ export function EnhancedPostCard({
         {/* Header - Instagram style */}
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href={creatorProfileLink} className="cursor-pointer">
+            <Link 
+              href={creatorProfileLink} 
+              className="cursor-pointer"
+              onMouseEnter={handlePrefetch}
+              onFocus={handlePrefetch}
+              onClick={handleCreatorClick}
+            >
               <Avatar className="h-10 w-10 ring-2 ring-background hover:ring-primary/50 transition-all">
                 <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
@@ -452,6 +472,9 @@ export function EnhancedPostCard({
                 <Link
                   href={creatorProfileLink}
                   className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+                  onMouseEnter={handlePrefetch}
+                  onFocus={handlePrefetch}
+                  onClick={handleCreatorClick}
                 >
                   {post.creator.display_name}
                 </Link>

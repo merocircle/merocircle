@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Heart, Users, FileText, Star, Bookmark, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,10 +17,27 @@ interface EnhancedCreatorCardProps {
 }
 
 export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [animatedSupporters, setAnimatedSupporters] = useState(0);
   const [animatedPosts, setAnimatedPosts] = useState(0);
   const supporterCount = creator.supporter_count || 0;
+
+  const creatorLink = `/creator/${creator.user_id}`;
+
+  // Prefetch on hover for instant navigation
+  const handlePrefetch = useCallback(() => {
+    router.prefetch(creatorLink);
+  }, [router, creatorLink]);
+
+  // Optimistic navigation
+  const handleNavigate = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    startTransition(() => {
+      router.push(creatorLink);
+    });
+  }, [router, creatorLink, startTransition]);
 
   // Animate counters
   useEffect(() => {
@@ -106,7 +124,12 @@ export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
           </div>
 
           {/* Name and Bio */}
-          <Link href={`/creator/${creator.user_id}`}>
+          <Link 
+            href={creatorLink}
+            onMouseEnter={handlePrefetch}
+            onFocus={handlePrefetch}
+            onClick={handleNavigate}
+          >
             <h3 className="text-xl font-bold text-foreground mb-1 hover:text-primary transition-colors cursor-pointer">
               {creator.display_name}
             </h3>
@@ -147,7 +170,12 @@ export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
           </div>
 
           {/* View Profile Button */}
-          <Link href={`/creator/${creator.user_id}`}>
+          <Link 
+            href={creatorLink}
+            onMouseEnter={handlePrefetch}
+            onFocus={handlePrefetch}
+            onClick={handleNavigate}
+          >
             <Button
               variant="default"
               className="w-full"
