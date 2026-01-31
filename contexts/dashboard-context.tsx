@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode, useTransition } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode, useTransition, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 // All available dashboard views
@@ -27,7 +27,8 @@ interface DashboardContextType {
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
-export function DashboardProvider({ children }: { children: ReactNode }) {
+// Inner component that uses useSearchParams
+function DashboardProviderInner({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -112,6 +113,36 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }}>
       {children}
     </DashboardContext.Provider>
+  );
+}
+
+// Fallback provider with default values (used during Suspense)
+function DashboardProviderFallback({ children }: { children: ReactNode }) {
+  const setActiveView = useCallback((view: DashboardView, postId?: string) => {}, []);
+  const setHighlightedPostId = useCallback((postId: string | null) => {}, []);
+  const openCreatorProfile = useCallback((creatorId: string, postId?: string) => {}, []);
+  const closeCreatorProfile = useCallback(() => {}, []);
+
+  return (
+    <DashboardContext.Provider value={{
+      activeView: 'home',
+      setActiveView,
+      viewingCreatorId: null,
+      highlightedPostId: null,
+      setHighlightedPostId,
+      openCreatorProfile,
+      closeCreatorProfile
+    }}>
+      {children}
+    </DashboardContext.Provider>
+  );
+}
+
+export function DashboardProvider({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<DashboardProviderFallback>{children}</DashboardProviderFallback>}>
+      <DashboardProviderInner>{children}</DashboardProviderInner>
+    </Suspense>
   );
 }
 
