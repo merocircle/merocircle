@@ -147,7 +147,7 @@ function CreatorProfileContent() {
         transition={{ duration: 0.5 }}
         className="min-h-screen"
       >
-        <CreatorProfileSection creatorId={creatorId} initialHighlightedPostId={postId} />
+        <CreatorProfileSection creatorId={creatorId} initialHighlightedPostId={postId} defaultTab="posts" />
       </motion.div>
     </PageLayout>
   );
