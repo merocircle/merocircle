@@ -4,13 +4,21 @@ import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
 import { PageTransition } from '@/components/common/PageTransition';
 import { usePerformanceMonitor } from '@/lib/performance-monitor';
+import { MinimumDelay } from '@/components/common/MinimumDelay';
+import { motion } from 'framer-motion';
 
 // Lazy load with prefetch support
 const NotificationsSection = lazy(() => import('@/components/dashboard/sections/NotificationsSection'));
 
 function NotificationsLoadingSkeleton() {
   return (
-    <div className="space-y-1">
+    <motion.div
+      className="space-y-1"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       {[...Array(10)].map((_, i) => (
         <div key={i} className="flex items-start gap-4 p-4 border-b border-border/50">
           <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
@@ -21,7 +29,7 @@ function NotificationsLoadingSkeleton() {
           </div>
         </div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -40,9 +48,15 @@ export default function NotificationsPage() {
   return (
     <PageLayout>
       <Suspense fallback={<NotificationsLoadingSkeleton />}>
-        <PageTransition>
-          <NotificationsSection />
-        </PageTransition>
+        <MinimumDelay
+          isLoading={false}
+          minimumDelay={200}
+          fallback={<NotificationsLoadingSkeleton />}
+        >
+          <PageTransition>
+            <NotificationsSection />
+          </PageTransition>
+        </MinimumDelay>
       </Suspense>
     </PageLayout>
   );

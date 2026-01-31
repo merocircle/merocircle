@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 interface NavIconProps {
   icon: LucideIcon;
@@ -30,6 +31,8 @@ export function NavIcon({
   className,
   onMouseEnter
 }: NavIconProps) {
+  const [isPressed, setIsPressed] = useState(false);
+
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
@@ -125,9 +128,14 @@ export function NavIcon({
         href={href} 
         prefetch={true}
         onMouseEnter={onMouseEnter}
+        onClick={() => setIsPressed(true)}
       >
         <motion.div
           className={baseClasses}
+          animate={{
+            scale: isPressed ? 0.92 : 1,
+            opacity: isPressed ? 0.7 : 1
+          }}
           whileHover={{ y: -2, scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 400, damping: 17 }}
