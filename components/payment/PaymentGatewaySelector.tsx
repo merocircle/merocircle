@@ -143,14 +143,15 @@ export function PaymentGatewaySelector({
 
                 const result = await response.json();
                 
-                if (result.success) {
+                if (result.success && result.transaction) {
                   // Close modal first
                   onClose();
-                  // Then trigger the callback to refresh data
-                  // Use setTimeout to ensure modal closes before callback
-                  setTimeout(() => {
-                    onSelectGateway('direct');
-                  }, 100);
+                  // Redirect to payment success page with transaction details
+                  const transactionUuid = result.transaction.transaction_uuid;
+                  const totalAmount = result.transaction.amount;
+                  
+                  // Use window.location to ensure full page navigation (creatorId is from props)
+                  window.location.href = `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`;
                 } else {
                   throw new Error(result.error || 'Payment failed');
                 }

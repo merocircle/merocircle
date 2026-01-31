@@ -6,7 +6,6 @@ import { useDashboardView } from '@/contexts/dashboard-context';
 import { useAuth } from '@/contexts/supabase-auth-context';
 
 // Eager-loaded sections (small, frequently used)
-import FeedSection from './sections/FeedSection';
 import ExploreSection from './sections/ExploreSection';
 import StreamCommunitySection from './sections/StreamCommunitySection';
 import NotificationsSection from './sections/NotificationsSection';
@@ -37,7 +36,7 @@ const UnifiedDashboard = memo(function UnifiedDashboard() {
   const { component: renderView, skeleton } = useMemo(() => {
     switch (activeView) {
       case 'home':
-        return { component: <FeedSection />, skeleton: <FeedSkeleton /> };
+        return { component: <ExploreSection />, skeleton: <FeedSkeleton /> };
       case 'explore':
         return { component: <ExploreSection />, skeleton: <FeedSkeleton /> };
       case 'chat':
@@ -49,7 +48,7 @@ const UnifiedDashboard = memo(function UnifiedDashboard() {
       case 'creator-studio':
         // Only render for creators
         if (!isCreator) {
-          return { component: <FeedSection />, skeleton: <FeedSkeleton /> };
+          return { component: <ExploreSection />, skeleton: <FeedSkeleton /> };
         }
         return { component: <CreatorStudioSection />, skeleton: <SettingsSkeleton /> };
       case 'profile':
@@ -57,14 +56,14 @@ const UnifiedDashboard = memo(function UnifiedDashboard() {
       case 'creator-profile':
         // Viewing another creator's profile
         if (!viewingCreatorId) {
-          return { component: <FeedSection />, skeleton: <FeedSkeleton /> };
+          return { component: <ExploreSection />, skeleton: <FeedSkeleton /> };
         }
         return {
           component: <CreatorProfileSection creatorId={viewingCreatorId} />,
           skeleton: <FeedSkeleton />
         };
       default:
-        return { component: <FeedSection />, skeleton: <FeedSkeleton /> };
+        return { component: <ExploreSection />, skeleton: <FeedSkeleton /> };
     }
   }, [activeView, isCreator, viewingCreatorId]);
 

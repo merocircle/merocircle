@@ -27,7 +27,21 @@ export async function GET(
     let creatorProfile = null;
     const { data: profileData, error: profileError } = await supabase
       .from('creator_profiles')
-      .select('*')
+      .select(`
+        user_id,
+        bio,
+        category,
+        is_verified,
+        supporters_count,
+        posts_count,
+        likes_count,
+        total_earnings,
+        created_at,
+        updated_at,
+        social_links,
+        cover_image_url,
+        onboarding_completed
+      `)
       .eq('user_id', creatorId)
       .single();
 

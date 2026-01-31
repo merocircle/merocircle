@@ -2,6 +2,7 @@
 
 import { useState, memo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, TrendingUp, Sparkles, Users, Music, Camera, Palette, Code, Gamepad2, BookOpen, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useDiscoveryFeed, useCreatorSearch, Creator } from '@/hooks/useSocial';
+import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { cn } from '@/lib/utils';
 
 // Animation variants
@@ -48,12 +50,16 @@ const categories = [
 ];
 
 const ExploreSection = memo(function ExploreSection() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
   // Fetch discovery feed data from backend
   const { data: feed, isLoading: feedLoading, error: feedError } = useDiscoveryFeed();
+
+  // Fetch supported creators for "Your Circle" section
+  const { data: supportedCreatorsData, isLoading: supportedLoading } = useSupportedCreators();
 
   // Search functionality
   const { results: searchResults, loading: searchLoading, error: searchError, searchCreators, clearResults } = useCreatorSearch();
@@ -86,6 +92,22 @@ const ExploreSection = memo(function ExploreSection() {
       c.creator_profile?.category?.toLowerCase() === selectedCategory.toLowerCase()
     );
   };
+
+  // Format supported creators to match Creator type
+  const supportedCreators: Creator[] = (supportedCreatorsData?.creators || []).map((creator: any) => ({
+    user_id: creator.id || '',
+    display_name: creator.name || 'Creator',
+    avatar_url: creator.photo_url || null,
+    bio: creator.bio || null,
+    supporter_count: creator.supporters_count || 0,
+    posts_count: 0,
+    total_earned: creator.total_earnings || 0,
+    created_at: creator.lastSupportDate || new Date().toISOString(),
+    creator_profile: {
+      category: creator.category || null,
+      is_verified: creator.is_verified || false
+    }
+  }));
 
   const trendingCreators = filterByCategory(feed?.trending_creators || []);
   const suggestedCreators = filterByCategory(feed?.suggested_creators || []);
@@ -202,9 +224,71 @@ const ExploreSection = memo(function ExploreSection() {
             </div>
           )}
 
-          {/* Trending Creators */}
+          {/* Your Circle - Creators I Support */}
           {!feedLoading && !feedError && (
             <>
+              <motion.section
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-semibold">Your Circle</h2>
+                  </div>
+                </div>
+
+                {supportedLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : supportedCreators.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {supportedCreators.map((creator) => (
+                      <motion.div key={creator.user_id} variants={itemVariants}>
+                        <Card className="p-4 border-2 border-gray-300 dark:border-border shadow-lg hover:border-primary dark:hover:border-primary/60 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 bg-card hover:scale-[1.02] hover:-translate-y-1">
+                          <div className="flex flex-col items-center text-center">
+                            <div className="relative mb-3">
+                              <Avatar className="h-16 w-16 ring-2 ring-primary/20">
+                                <AvatarImage src={creator.avatar_url || undefined} />
+                                <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-lg">
+                                  {creator.display_name.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            </div>
+                            <p className="font-semibold text-sm truncate w-full mb-1">{creator.display_name || 'Creator'}</p>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              {formatCount(creator.supporter_count)} supporters
+                            </p>
+                            {creator.creator_profile?.category && (
+                              <Badge variant="outline" className="mb-3 text-xs">
+                                {creator.creator_profile.category}
+                              </Badge>
+                            )}
+                            <Button 
+                              size="sm" 
+                              className="w-full rounded-full"
+                              onClick={() => {
+                                router.push(`/creator/${creator.user_id}`);
+                              }}
+                            >
+                              Enter Circle
+                            </Button>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4 text-sm">
+                    You haven't supported any creators yet. Start supporting creators to build your circle!
+                  </p>
+                )}
+              </motion.section>
+
+              {/* Trending Creators */}
               <motion.section
                 variants={containerVariants}
                 initial="hidden"
@@ -224,14 +308,14 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <Link href={`/creator/${creator.user_id}`}>
                           <Card
-                            className="p-4 cursor-pointer hover:border-primary/30 transition-colors"
+                            className="p-4 cursor-pointer border-2 border-gray-300 dark:border-border shadow-md hover:border-primary dark:hover:border-primary/60 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-card"
                           >
                           <div className="flex flex-col items-center text-center">
                             <div className="relative mb-3">
                               <Avatar className="h-16 w-16 ring-2 ring-primary/20">
                                 <AvatarImage src={creator.avatar_url || undefined} />
                                 <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-lg">
-                                  {creator.display_name.slice(0, 2).toUpperCase()}
+                                  {(creator.display_name || 'CR').slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               {index < 3 && (
@@ -245,7 +329,7 @@ const ExploreSection = memo(function ExploreSection() {
                                 </span>
                               )}
                             </div>
-                            <p className="font-semibold text-sm truncate w-full">{creator.display_name}</p>
+                            <p className="font-semibold text-sm truncate w-full">{creator.display_name || 'Creator'}</p>
                             <p className="text-xs text-muted-foreground">
                               {formatCount(creator.supporter_count)} supporters
                             </p>
@@ -318,7 +402,7 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.button
                         key={category.id}
                         onClick={() => setSelectedCategory(category.id)}
-                        className="flex flex-col items-center gap-2 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                        className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border-2 border-gray-300 dark:border-border shadow-md hover:border-primary dark:hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300"
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -344,17 +428,17 @@ function CreatorListCard({ creator, creatorId }: { creator: Creator; creatorId: 
   return (
     <Link href={`/creator/${creatorId}`}>
       <Card
-        className="p-3 cursor-pointer hover:border-primary/30 transition-colors"
+        className="p-3 cursor-pointer border-2 border-gray-300 dark:border-border shadow-md hover:border-primary dark:hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-[1.01] bg-card"
       >
       <div className="flex items-center gap-3">
         <Avatar className="h-12 w-12">
           <AvatarImage src={creator.avatar_url || undefined} />
           <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground">
-            {creator.display_name.slice(0, 2).toUpperCase()}
+            {(creator.display_name || 'CR').slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{creator.display_name}</p>
+          <p className="font-semibold text-sm truncate">{creator.display_name || 'Creator'}</p>
           <p className="text-xs text-muted-foreground line-clamp-1">
             {creator.bio || `${creator.creator_profile?.category || 'Creator'} · ${formatCount(creator.supporter_count)} supporters`}
           </p>
@@ -369,7 +453,10 @@ function CreatorListCard({ creator, creatorId }: { creator: Creator; creatorId: 
 }
 
 // Helper function to format counts
-function formatCount(count: number): string {
+function formatCount(count: number | undefined | null): string {
+  if (count === undefined || count === null || isNaN(count)) {
+    return '0';
+  }
   if (count >= 1000000) {
     return (count / 1000000).toFixed(1) + 'M';
   }

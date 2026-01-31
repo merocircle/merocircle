@@ -91,6 +91,8 @@ export async function GET() {
           category: profile?.category ? String(profile.category) : null,
           bio: profile?.bio ? String(profile.bio) : null,
           is_verified: profile?.is_verified === true,
+          supporters_count: profile?.supporters_count ? Number(profile.supporters_count) : 0,
+          total_earnings: profile?.total_earnings ? Number(profile.total_earnings) : 0,
           totalSupported: Number(transaction.amount) || 0,
           transactionCount: 1,
           lastSupportDate: transaction.created_at as string
