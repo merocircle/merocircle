@@ -1,12 +1,31 @@
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import { logger } from './logger';
 
-// Initialize SendGrid with API key from environment
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-} else {
-  logger.warn('SENDGRID_API_KEY not found in environment variables', 'SENDGRID');
-}
+const createTransporter = () => {
+  const smtpHost = process.env.SMTP_HOST || 'smtp.hostinger.com';
+  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPassword = process.env.SMTP_PASSWORD;
+  const smtpSecure = process.env.SMTP_SECURE !== 'false'; // Default to true (SSL)
+
+  if (!smtpUser || !smtpPassword) {
+    logger.warn('SMTP credentials not configured', 'EMAIL');
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: smtpUser,
+      pass: smtpPassword,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+  });
+};
 
 interface PostNotificationEmailData {
   supporterEmail: string;
@@ -24,45 +43,50 @@ interface PostNotificationEmailData {
  */
 export async function sendPostNotificationEmail(data: PostNotificationEmailData): Promise<boolean> {
   try {
-    if (!process.env.SENDGRID_API_KEY) {
-      logger.warn('SendGrid API key not configured, skipping email', 'SENDGRID');
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping email', 'EMAIL');
       return false;
     }
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@merocircle.com';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.com';
+    const smtpUser = process.env.SMTP_USER;
+    if (!smtpUser) {
+      logger.warn('SMTP_USER not configured, cannot send email', 'EMAIL');
+      return false;
+    }
+    const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
 
-    // Create email HTML content
     const emailHtml = createPostNotificationEmailHtml(data, appUrl);
 
-    // Create email text content
     const emailText = createPostNotificationEmailText(data, appUrl);
 
-    const msg = {
-      to: data.supporterEmail,
+    const mailOptions = {
       from: {
-        email: fromEmail,
-        name: 'MeroCircle'
+        name: 'MeroCircle',
+        address: fromEmail,
       },
+      to: data.supporterEmail,
       subject: `${data.creatorName} just posted something new!`,
       text: emailText,
       html: emailHtml,
     };
 
-    await sgMail.send(msg);
+    const info = await transporter.sendMail(mailOptions);
     
-    logger.info('Post notification email sent successfully', 'SENDGRID', {
+    logger.info('Post notification email sent successfully', 'EMAIL', {
       to: data.supporterEmail,
       creatorName: data.creatorName,
-      postId: data.postUrl.split('/').pop()
+      postId: data.postUrl.split('/').pop(),
+      messageId: info.messageId,
     });
 
     return true;
   } catch (error: any) {
-    logger.error('Failed to send post notification email', 'SENDGRID', {
+    logger.error('Failed to send post notification email', 'EMAIL', {
       error: error.message,
       supporterEmail: data.supporterEmail,
-      response: error.response?.body
+      stack: error.stack,
     });
     return false;
   }
@@ -78,7 +102,6 @@ export async function sendBulkPostNotifications(
   let sent = 0;
   let failed = 0;
 
-  // Send emails in parallel batches to avoid rate limits
   const batchSize = 10;
   for (let i = 0; i < supporters.length; i += batchSize) {
     const batch = supporters.slice(i, i + batchSize);
@@ -98,6 +121,11 @@ export async function sendBulkPostNotifications(
         sent++;
       } else {
         failed++;
+        if (result.status === 'rejected') {
+          logger.error('Email send failed in batch', 'EMAIL', {
+            error: result.reason?.message || 'Unknown error',
+          });
+        }
       }
     });
 
@@ -120,13 +148,29 @@ function createPostNotificationEmailHtml(
     ? data.postContent.substring(0, 200) + '...' 
     : data.postContent;
 
+  const escapeHtml = (text: string) => {
+    const map: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;',
+    };
+    return text.replace(/[&<>"']/g, (m) => map[m]);
+  };
+
+  const safeCreatorName = escapeHtml(data.creatorName);
+  const safeSupporterName = escapeHtml(data.supporterName);
+  const safePostTitle = escapeHtml(data.postTitle);
+  const safePostPreview = escapeHtml(postPreview);
+
   return `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Post from ${data.creatorName}</title>
+  <title>New Post from ${safeCreatorName}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -136,7 +180,7 @@ function createPostNotificationEmailHtml(
           <!-- Header -->
           <tr>
             <td style="padding: 30px 30px 20px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">New Post from ${data.creatorName}</h1>
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">New Post from ${safeCreatorName}</h1>
             </td>
           </tr>
           
@@ -144,36 +188,36 @@ function createPostNotificationEmailHtml(
           <tr>
             <td style="padding: 30px;">
               <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
-                Hi ${data.supporterName},
+                Hi ${safeSupporterName},
               </p>
               
               <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
-                ${data.creatorName} just posted something new that you might be interested in!
+                ${safeCreatorName} just posted something new that you might be interested in!
               </p>
               
               ${data.postImageUrl ? `
               <div style="margin: 20px 0; text-align: center;">
-                <img src="${data.postImageUrl}" alt="Post image" style="max-width: 100%; height: auto; border-radius: 8px;" />
+                <img src="${escapeHtml(data.postImageUrl)}" alt="Post image" style="max-width: 100%; height: auto; border-radius: 8px;" />
               </div>
               ` : ''}
               
               <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
                 <h2 style="margin: 0 0 10px; color: #333333; font-size: 18px; font-weight: 600;">
-                  ${data.postTitle}
+                  ${safePostTitle}
                 </h2>
                 <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">
-                  ${postPreview}
+                  ${safePostPreview}
                 </p>
               </div>
               
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.postUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                <a href="${escapeHtml(data.postUrl)}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
                   View Post
                 </a>
               </div>
               
               <p style="margin: 20px 0 0; color: #999999; font-size: 12px; line-height: 1.6;">
-                You're receiving this email because you're supporting ${data.creatorName} on MeroCircle.
+                You're receiving this email because you're supporting ${safeCreatorName} on MeroCircle.
               </p>
             </td>
           </tr>
@@ -195,7 +239,9 @@ function createPostNotificationEmailHtml(
   `.trim();
 }
 
-
+/**
+ * Creates plain text email template for post notifications
+ */
 function createPostNotificationEmailText(
   data: PostNotificationEmailData,
   appUrl: string

@@ -51,9 +51,10 @@ const PaymentGatewaySelector = dynamic(
 interface CreatorProfileSectionProps {
   creatorId: string;
   initialHighlightedPostId?: string | null;
+  defaultTab?: 'home' | 'posts' | 'shop' | 'about';
 }
 
-export default function CreatorProfileSection({ creatorId, initialHighlightedPostId }: CreatorProfileSectionProps) {
+export default function CreatorProfileSection({ creatorId, initialHighlightedPostId, defaultTab }: CreatorProfileSectionProps) {
   const router = useRouter();
   const { user, signInWithGoogle } = useAuth();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
@@ -62,6 +63,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   // Use either the context highlighted post (for dashboard) or the prop (for public page)
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const highlightedPostId = isWithinProvider ? contextHighlightedPostId : localHighlightedPostId;
+
+  useEffect(() => {
+    if (initialHighlightedPostId && !isWithinProvider) {
+      setLocalHighlightedPostId(initialHighlightedPostId);
+      setActiveTab('posts'); // Switch to posts tab immediately
+    }
+  }, [initialHighlightedPostId, isWithinProvider]);
+
+  useEffect(() => {
+    if (highlightedPostId && !isWithinProvider) {
+      setActiveTab('posts');
+    }
+  }, [highlightedPostId, isWithinProvider]);
 
   const {
     creatorDetails,
@@ -77,7 +91,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
 
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(defaultTab || (initialHighlightedPostId ? 'posts' : 'home'));
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showGatewaySelector, setShowGatewaySelector] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -144,30 +158,33 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   // Handle highlighted post - switch to posts tab and scroll to the post
   useEffect(() => {
-    if (highlightedPostId && !loading) {
-      // Switch to posts tab
+    if (highlightedPostId && !loading && recentPosts.length > 0) {
       setActiveTab('posts');
 
-      // Scroll to the highlighted post after a short delay for rendering
-      const scrollTimer = setTimeout(() => {
-        if (highlightedPostRef.current) {
-          highlightedPostRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 500);
+      const postExists = recentPosts.some((post: any) => String(post.id) === highlightedPostId);
+      
+      if (postExists) {
+        // Scroll to the highlighted post after a delay to ensure rendering
+        const scrollTimer = setTimeout(() => {
+          if (highlightedPostRef.current) {
+            highlightedPostRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 800); // Increased delay to ensure tab content is fully rendered
 
-      // Clear the highlighted post after 5 seconds (for public page)
-      const clearTimer = setTimeout(() => {
-        if (!isWithinProvider) {
-          setLocalHighlightedPostId(null);
-        }
-      }, 5000);
+        // Clear the highlighted post after 5 seconds (for public page)
+        const clearTimer = setTimeout(() => {
+          if (!isWithinProvider) {
+            setLocalHighlightedPostId(null);
+          }
+        }, 5000);
 
-      return () => {
-        clearTimeout(scrollTimer);
-        clearTimeout(clearTimer);
-      };
+        return () => {
+          clearTimeout(scrollTimer);
+          clearTimeout(clearTimer);
+        };
+      }
     }
-  }, [highlightedPostId, loading, isWithinProvider]);
+  }, [highlightedPostId, loading, recentPosts, isWithinProvider]);
 
   const handleGatewaySelection = useCallback(async (gateway: 'esewa' | 'khalti' | 'direct') => {
     if (!pendingPayment || !user) return;

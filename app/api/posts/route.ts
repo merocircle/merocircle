@@ -3,8 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { validatePostContent, sanitizeString } from '@/lib/validation';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUser, requireCreatorRole, parsePaginationParams, handleApiError } from '@/lib/api-utils';
-import { sendBulkPostNotifications } from '@/lib/sendgrid';
-import { slugifyDisplayName } from '@/lib/utils';
+import { sendBulkPostNotifications } from '@/lib/email';
 
 export async function GET(request: NextRequest) {
   try {
@@ -292,12 +291,9 @@ async function sendPostNotificationsToSupporters(
       .single();
 
     const creatorName = creatorData?.display_name || 'Your creator';
-    const creatorSlug = creatorData?.display_name ? slugifyDisplayName(creatorData.display_name) : null;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.com';
-    const postUrl = creatorSlug 
-      ? `${appUrl}/${encodeURIComponent(creatorSlug)}?post=${post.id}`
-      : `${appUrl}/creator/${creatorId}?post=${post.id}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
+    const postUrl = `${appUrl}/creator/${creatorId}?post=${post.id}`;
 
     const supportersWithEmails = supporters
       .filter((s: any) => s.user && s.user.email)
