@@ -1,5 +1,8 @@
 import nodemailer from 'nodemailer';
 import { logger } from './logger';
+import { render } from '@react-email/render';
+import { PostNotification, PollNotification, WelcomeEmail } from '@/emails/templates';
+import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
 const createTransporter = () => {
   const smtpHost = process.env.SMTP_HOST || 'smtp.hostinger.com';
@@ -49,25 +52,47 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
       return false;
     }
 
-    const smtpUser = process.env.SMTP_USER;
-    if (!smtpUser) {
-      logger.warn('SMTP_USER not configured, cannot send email', 'EMAIL');
-      return false;
-    }
-    const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
 
-    const emailHtml = createPostNotificationEmailHtml(data, appUrl);
+    // Render email using appropriate template
+    const EmailTemplate = data.isPoll ? PollNotification : PostNotification;
+    
+    const emailHtml = await render(
+      EmailTemplate({
+        supporterName: data.supporterName,
+        creatorName: data.creatorName,
+        ...(data.isPoll
+          ? {
+              pollQuestion: data.postTitle,
+              pollDescription: data.postContent,
+              pollUrl: data.postUrl,
+            }
+          : {
+              postTitle: data.postTitle,
+              postContent: data.postContent,
+              postImageUrl: data.postImageUrl,
+              postUrl: data.postUrl,
+            }),
+        creatorProfileUrl,
+        settingsUrl: EMAIL_CONFIG.urls.settings,
+        helpUrl: EMAIL_CONFIG.urls.help,
+      })
+    );
 
     const emailText = createPostNotificationEmailText(data, appUrl);
 
+    const subject = data.isPoll 
+      ? EMAIL_SUBJECTS.pollNotification(data.creatorName)
+      : EMAIL_SUBJECTS.postNotification(data.creatorName);
+
     const mailOptions = {
       from: {
-        name: 'MeroCircle',
-        address: fromEmail,
+        name: EMAIL_CONFIG.from.name,
+        address: EMAIL_CONFIG.from.email,
       },
       to: data.supporterEmail,
-      subject: `${data.creatorName} just posted something new!`,
+      subject,
       text: emailText,
       html: emailHtml,
     };
@@ -138,131 +163,97 @@ export async function sendBulkPostNotifications(
 }
 
 /**
- * Creates HTML email template for post notifications
- */
-function createPostNotificationEmailHtml(
-  data: PostNotificationEmailData,
-  appUrl: string
-): string {
-  const postPreview = data.postContent.length > 200 
-    ? data.postContent.substring(0, 200) + '...' 
-    : data.postContent;
-
-  const escapeHtml = (text: string) => {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (m) => map[m]);
-  };
-
-  const safeCreatorName = escapeHtml(data.creatorName);
-  const safeSupporterName = escapeHtml(data.supporterName);
-  const safePostTitle = escapeHtml(data.postTitle);
-  const safePostPreview = escapeHtml(postPreview);
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Post from ${safeCreatorName}</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td style="padding: 40px 20px; text-align: center;">
-        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <!-- Header -->
-          <tr>
-            <td style="padding: 30px 30px 20px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">New Post from ${safeCreatorName}</h1>
-            </td>
-          </tr>
-          
-          <!-- Content -->
-          <tr>
-            <td style="padding: 30px;">
-              <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
-                Hi ${safeSupporterName},
-              </p>
-              
-              <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.6;">
-                ${safeCreatorName} just posted something new that you might be interested in!
-              </p>
-              
-              ${data.postImageUrl ? `
-              <div style="margin: 20px 0; text-align: center;">
-                <img src="${escapeHtml(data.postImageUrl)}" alt="Post image" style="max-width: 100%; height: auto; border-radius: 8px;" />
-              </div>
-              ` : ''}
-              
-              <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                <h2 style="margin: 0 0 10px; color: #333333; font-size: 18px; font-weight: 600;">
-                  ${safePostTitle}
-                </h2>
-                <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">
-                  ${safePostPreview}
-                </p>
-              </div>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${escapeHtml(data.postUrl)}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  View Post
-                </a>
-              </div>
-              
-              <p style="margin: 20px 0 0; color: #999999; font-size: 12px; line-height: 1.6;">
-                You're receiving this email because you're supporting ${safeCreatorName} on MeroCircle.
-              </p>
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 20px 30px; background-color: #f8f9fa; border-radius: 0 0 12px 12px; text-align: center;">
-              <p style="margin: 0; color: #999999; font-size: 12px;">
-                © ${new Date().getFullYear()} MeroCircle. All rights reserved.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-  `.trim();
-}
-
-/**
  * Creates plain text email template for post notifications
  */
 function createPostNotificationEmailText(
   data: PostNotificationEmailData,
   appUrl: string
 ): string {
-  const postPreview = data.postContent.length > 200 
-    ? data.postContent.substring(0, 200) + '...' 
+  const postPreview = data.postContent.length > 150 
+    ? data.postContent.substring(0, 150) + '...' 
     : data.postContent;
+  
+  const contentType = data.isPoll ? 'poll' : 'post';
 
   return `
-Hi ${data.supporterName},
+Hey ${data.supporterName} 👋
 
-${data.creatorName} just posted something new that you might be interested in!
+${data.creatorName} just shared a new ${contentType}
 
-${data.postTitle}
+${data.postTitle && data.postTitle !== 'Untitled' ? `${data.postTitle}\n\n` : ''}${postPreview}
 
-${postPreview}
+${data.isPoll ? 'Vote Now' : 'Read & React'}: ${data.postUrl}
 
-View the full post: ${data.postUrl}
+---
+Your support helps ${data.creatorName} create more amazing content.
+You're part of a community that matters.
 
-You're receiving this email because you're supporting ${data.creatorName} on MeroCircle.
+Notification Settings: ${appUrl}/settings
+View Profile: ${appUrl}/${data.creatorName}
 
-© ${new Date().getFullYear()} MeroCircle. All rights reserved.
+MeroCircle © ${new Date().getFullYear()}
   `.trim();
+}
+
+interface WelcomeEmailData {
+  userEmail: string;
+  userName: string;
+  userRole: 'creator' | 'supporter';
+}
+
+/**
+ * Sends a welcome email to a new user
+ * Triggered by database webhook when a new user signs up
+ */
+export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping welcome email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const profileUrl = data.userRole === 'creator' 
+      ? `${appUrl}/creator-studio` 
+      : `${appUrl}/profile`;
+    const exploreUrl = `${appUrl}/explore`;
+    const settingsUrl = EMAIL_CONFIG.urls.settings;
+    const helpUrl = EMAIL_CONFIG.urls.help;
+
+    // Render welcome email template
+    const html = await render(
+      WelcomeEmail({
+        userName: data.userName,
+        userRole: data.userRole,
+        profileUrl,
+        exploreUrl,
+        settingsUrl,
+        helpUrl,
+      })
+    );
+
+    const mailOptions = {
+      from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
+      to: data.userEmail,
+      subject: EMAIL_SUBJECTS.welcome(data.userName),
+      html,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('Welcome email sent successfully', 'EMAIL', {
+      recipient: data.userEmail,
+      userName: data.userName,
+      userRole: data.userRole,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send welcome email', 'EMAIL', {
+      error: error.message,
+      recipient: data.userEmail,
+    });
+    return false;
+  }
 }
