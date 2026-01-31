@@ -3,10 +3,11 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ArrowLeft, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/supabase-auth-context';
+import { BalloonBurst } from '@/components/animations/BalloonBurst';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,39 +23,27 @@ function PaymentSuccessContent() {
     status?: string;
     created_at?: string;
   } | null>(null);
+  const [showAnimation, setShowAnimation] = useState(false);
 
   useEffect(() => {
     verifyPayment();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Redirect to creator page after verification and auth check
+  // Show animation when verified
   useEffect(() => {
-    if (verified && !authLoading) {
-      const creator_id = searchParams.get('creator_id');
-      // Wait a bit for auth to initialize after redirect
-      const timer = setTimeout(() => {
-        if (creator_id) {
-          // Redirect back to the creator page where payment was initiated
-          router.push(`/creator/${creator_id}`);
-        } else if (isAuthenticated) {
-          // Fallback to home if no creator_id
-          router.push('/home');
-        } else {
-          // If not authenticated, redirect to home page
-          router.push('/');
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (verified && !showAnimation) {
+      setShowAnimation(true);
     }
-  }, [verified, isAuthenticated, authLoading, router, searchParams]);
+  }, [verified, showAnimation]);
 
   const verifyPayment = async () => {
     try {
-      // Get parameters from eSewa callback
+      // Get parameters from payment callback (eSewa, Khalti, or Direct)
       const transaction_uuid = searchParams.get('transaction_uuid');
       const total_amount = searchParams.get('total_amount');
       const product_code = searchParams.get('product_code') || 'EPAYTEST';
+      const gateway = searchParams.get('gateway'); // 'esewa', 'khalti', or 'direct'
       const creator_id = searchParams.get('creator_id');
       const ref_id = searchParams.get('refId');
 
@@ -62,6 +51,7 @@ function PaymentSuccessContent() {
         transaction_uuid,
         total_amount,
         product_code,
+        gateway,
         creator_id,
         ref_id,
       });
@@ -72,7 +62,21 @@ function PaymentSuccessContent() {
         return;
       }
 
-      // Verify payment with backend
+      // For direct payments, they're already completed, so we can skip verification
+      // and just set the transaction data directly
+      if (gateway === 'direct') {
+        setVerified(true);
+        setTransaction({
+          id: transaction_uuid,
+          amount: parseFloat(total_amount),
+          status: 'completed',
+          created_at: new Date().toISOString(),
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Verify payment with backend for eSewa and Khalti
       const response = await fetch(
         `/api/payment/verify?transaction_uuid=${transaction_uuid}&total_amount=${total_amount}&product_code=${product_code}`
       );
@@ -116,58 +120,87 @@ function PaymentSuccessContent() {
     );
   }
 
+  const creatorId = searchParams.get('creator_id');
+
+  const handleGoToCreator = () => {
+    if (creatorId) {
+      router.push(`/creator/${creatorId}`);
+    } else if (isAuthenticated) {
+      router.push('/home');
+    } else {
+      router.push('/');
+    }
+  };
+
+  const handleGoToChat = () => {
+    router.push('/chat');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <Card className="p-8 text-center">
-            <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-12 h-12 text-green-600" />
-            </div>
-            
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              {verified ? 'Payment Successful! 🎉' : 'Payment Received'}
-            </h1>
-            
-            <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
-              Thank you for supporting a creator on MeroCircle
-            </p>
-
-            {transaction && (
-              <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg p-6 mb-6">
-                <p className="text-green-100 text-sm mb-1">Amount Paid</p>
-                <p className="text-3xl font-bold">NPR {transaction.amount}</p>
+    <>
+      {showAnimation && <BalloonBurst />}
+      
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <Card className="p-8 text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-12 h-12 text-white" />
+                </div>
               </div>
-            )}
-
-            <div className="space-y-3 mt-6">
-              <Button 
-                onClick={() => {
-                  const creator_id = searchParams.get('creator_id');
-                  if (creator_id) {
-                    router.push(`/creator/${creator_id}`);
-                  } else if (isAuthenticated) {
-                    router.push('/home');
-                  } else {
-                    router.push('/');
-                  }
-                }}
-                className="w-full"
-              >
-                {searchParams.get('creator_id') ? 'Back to Creator Page' : (isAuthenticated ? 'Go to Dashboard' : 'Go to Home')}
-              </Button>
               
-              <Button variant="outline" asChild className="w-full">
-                <Link href="/">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Home
-                </Link>
-              </Button>
-            </div>
-          </Card>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Congratulations! 🎉
+              </h1>
+              
+              <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
+                You have successfully supported this creator!
+              </p>
+
+              {transaction && (
+                <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg p-6 mb-6">
+                  <p className="text-green-100 text-sm mb-1">Amount Paid</p>
+                  <p className="text-3xl font-bold">NPR {transaction.amount}</p>
+                </div>
+              )}
+
+              <div className="space-y-3 mt-6">
+                <Button 
+                  onClick={handleGoToCreator}
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  {creatorId ? 'See Creator Page' : 'Go to Dashboard'}
+                </Button>
+                
+                <Button 
+                  onClick={handleGoToChat}
+                  variant="outline"
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Open Chat
+                </Button>
+                
+                <Button 
+                  variant="ghost"
+                  asChild 
+                  className="w-full"
+                >
+                  <Link href="/">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Home
+                  </Link>
+                </Button>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

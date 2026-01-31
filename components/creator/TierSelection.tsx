@@ -34,6 +34,20 @@ const tierIcons = [
   { level: 3, icon: Crown, color: 'from-purple-500 to-pink-600', stars: 3 }
 ];
 
+// Map tier levels to display names (backend keeps 1, 2, 3 star)
+const getTierDisplayName = (tierLevel: number): string => {
+  switch (tierLevel) {
+    case 1:
+      return 'Supporter';
+    case 2:
+      return 'Inner Circle';
+    case 3:
+      return 'Core Member';
+    default:
+      return 'Supporter';
+  }
+};
+
 export function TierSelection({
   tiers,
   creatorName,
@@ -50,21 +64,8 @@ export function TierSelection({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center mb-4">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 mb-3">
-          <Sparkles className="w-6 h-6 text-white" />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
-          Support {creatorName}
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 text-xs">
-          Choose a tier and unlock exclusive benefits
-        </p>
-      </div>
-
-      {/* Tier Cards - Vertical Layout */}
-      <div className="space-y-3">
+      {/* Tier Cards - Horizontal 3-Column Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {tiers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No tiers available. Please check back later.
@@ -113,10 +114,10 @@ export function TierSelection({
                 className="relative"
               >
                 <Card
-                  className={`relative overflow-hidden border-2 ${styles.border} ${styles.hoverBorder} bg-gradient-to-br ${styles.gradient} cursor-pointer transition-all duration-300 ${
-                    loading ? 'opacity-50 cursor-not-allowed' : ''
+                  className={`relative overflow-hidden border-2 ${styles.border} ${styles.hoverBorder} bg-gradient-to-br ${styles.gradient} transition-all duration-300 ${
+                    loading || isCurrent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   } ${isCurrent ? 'ring-4 ring-purple-400 ring-opacity-50' : ''}`}
-                  onClick={() => !loading && handleTierSelect(tier)}
+                  onClick={() => !loading && !isCurrent && handleTierSelect(tier)}
                 >
                   {loading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-20 rounded-lg">
@@ -158,7 +159,7 @@ export function TierSelection({
                             ))}
                           </div>
                           <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                            {tier.tier_name}
+                            {getTierDisplayName(tier.tier_level)}
                           </h4>
                         </div>
                       </div>
@@ -232,13 +233,15 @@ export function TierSelection({
 
                     {/* CTA Button */}
                     <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={!isCurrent && !loading ? { scale: 1.02 } : {}}
+                      whileTap={!isCurrent && !loading ? { scale: 0.98 } : {}}
                     >
-                      <div className={`w-full py-3 px-4 rounded-lg bg-gradient-to-r ${styles.iconGradient} text-white font-semibold text-center shadow-lg ${
-                        loading ? 'opacity-50' : 'hover:shadow-xl'
-                      } transition-all duration-300`}>
-                        {isCurrent ? 'Upgrade Tier' : `Select ${tier.tier_name}`}
+                      <div className={`w-full py-3 px-4 rounded-lg font-semibold text-center shadow-lg transition-all duration-300 ${
+                        isCurrent 
+                          ? 'bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed' 
+                          : `bg-gradient-to-r ${styles.iconGradient} text-white ${loading ? 'opacity-50' : 'hover:shadow-xl'}`
+                      }`}>
+                        {isCurrent ? 'Current Plan' : `Select ${getTierDisplayName(tier.tier_level)}`}
                       </div>
                     </motion.div>
                   </div>
@@ -260,7 +263,7 @@ export function TierSelection({
         className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-800"
       >
         <Check className="w-4 h-4 text-green-500" />
-        <span>Secure payment via eSewa</span>
+        <span>Secure payment</span>
       </motion.div>
     </div>
   );

@@ -18,15 +18,13 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-type ContextView = 'feed' | 'chat' | 'explore' | 'notifications';
+type ContextView = 'chat' | 'explore' | 'notifications';
 
 interface ContextSidebarProps {
   view: ContextView;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  // Feed view props
-  feedFilter?: 'for-you' | 'following' | 'trending';
-  onFeedFilterChange?: (filter: 'for-you' | 'following' | 'trending') => void;
+  // Explore view props
   categories?: string[];
   selectedCategory?: string;
   onCategoryChange?: (category: string) => void;
@@ -59,12 +57,9 @@ export function ContextSidebar({
   view,
   isCollapsed = false,
   onToggleCollapse,
-  feedFilter = 'for-you',
-  onFeedFilterChange,
   categories = ['All', 'Music', 'Art', 'Photography', 'Video', 'Writing'],
   selectedCategory = 'All',
   onCategoryChange,
-  suggestedCreators = [],
   channels = [],
   directMessages = [],
   activeChannelId,
@@ -109,17 +104,6 @@ export function ContextSidebar({
             className="h-full w-60"
           >
             <ScrollArea className="h-full py-4">
-              {view === 'feed' && (
-                <FeedContext
-                  filter={feedFilter}
-                  onFilterChange={onFeedFilterChange}
-                  categories={categories}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={onCategoryChange}
-                  suggestedCreators={suggestedCreators}
-                />
-              )}
-
               {view === 'chat' && (
                 <ChatContext
                   channels={channels}
@@ -145,72 +129,6 @@ export function ContextSidebar({
         )}
       </AnimatePresence>
     </motion.aside>
-  );
-}
-
-// Feed Context Content
-function FeedContext({
-  filter,
-  onFilterChange,
-  categories,
-  selectedCategory,
-  onCategoryChange,
-  suggestedCreators
-}: {
-  filter: 'for-you' | 'following' | 'trending';
-  onFilterChange?: (filter: 'for-you' | 'following' | 'trending') => void;
-  categories: string[];
-  selectedCategory: string;
-  onCategoryChange?: (category: string) => void;
-  suggestedCreators: Array<{
-    id: string;
-    display_name: string;
-    photo_url: string | null;
-    supporter_count: number;
-  }>;
-}) {
-  const filters = [
-    { id: 'for-you', label: 'For You', icon: Sparkles },
-    { id: 'following', label: 'Following', icon: Users },
-    { id: 'trending', label: 'Trending', icon: TrendingUp }
-  ] as const;
-
-  return (
-    <div className="px-4 space-y-6">
-      {/* Suggested Creators */}
-      {suggestedCreators.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Suggested Creators
-          </h3>
-          <div className="space-y-2">
-            {suggestedCreators.slice(0, 4).map((creator) => (
-              <motion.div
-                key={creator.id}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                whileHover={{ x: 2 }}
-              >
-                <Avatar className="w-9 h-9">
-                  <AvatarImage src={creator.photo_url || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {creator.display_name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{creator.display_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {creator.supporter_count} supporters
-                  </p>
-                </div>
-                <Button size="sm" variant="outline" className="h-7 text-xs">
-                  Follow
-                </Button>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
   );
 }
 

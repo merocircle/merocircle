@@ -8,7 +8,7 @@ import { RightPanel } from './RightPanel';
 import { cn } from '@/lib/utils';
 import { type DashboardView } from '@/contexts/dashboard-context';
 
-type ContextView = 'feed' | 'explore' | 'chat' | 'notifications' | 'creator-studio' | 'profile' | 'settings' | 'creator-profile';
+type ContextView = 'explore' | 'chat' | 'notifications' | 'creator-studio' | 'profile' | 'settings' | 'creator-profile';
 
 const FULL_WIDTH_VIEWS: ContextView[] = ['chat', 'creator-studio', 'profile', 'settings', 'creator-profile'];
 
@@ -30,9 +30,6 @@ interface DashboardLayoutProps {
     display_name: string;
     photo_url: string | null;
   }>;
-  // Feed state
-  feedFilter?: 'for-you' | 'following' | 'trending';
-  onFeedFilterChange?: (filter: 'for-you' | 'following' | 'trending') => void;
   selectedCategory?: string;
   onCategoryChange?: (category: string) => void;
   // Right panel data
@@ -72,12 +69,10 @@ export function DashboardLayout({
   user,
   activeView = 'home',
   onViewChange,
-  contextView = 'feed',
+  contextView = 'explore',
   unreadMessages = 0,
   unreadNotifications = 0,
   favoriteCreators = [],
-  feedFilter = 'for-you',
-  onFeedFilterChange,
   stories = [],
   onCreateClick,
   onSettingsClick,
@@ -87,30 +82,18 @@ export function DashboardLayout({
   showMobileTabs = true,
   className
 }: DashboardLayoutProps) {
-  const [mobileTab, setMobileTab] = useState<'for-you' | 'following'>('for-you');
-
-  const handleMobileTabChange = useCallback((tab: 'for-you' | 'following') => {
-    setMobileTab(tab);
-    if (tab === 'following') {
-      onFeedFilterChange?.('following');
-    } else {
-      onFeedFilterChange?.('for-you');
-    }
-  }, [onFeedFilterChange]);
 
   // Layout computed values
-  const shouldShowRightPanel = !hideRightPanel && (contextView === 'feed' || contextView === 'explore');
+  const shouldShowRightPanel = !hideRightPanel && contextView === 'explore';
   const isFullWidth = fullWidth || FULL_WIDTH_VIEWS.includes(contextView);
-  const shouldHideMobileHeader = contextView !== 'feed';
+  const shouldHideMobileHeader = contextView !== 'explore';
 
   return (
     <div className={cn('min-h-screen bg-background', className)}>
       {/* Mobile Header */}
       <MobileHeader
         title={mobileTitle}
-        showTabs={showMobileTabs && contextView === 'feed'}
-        activeTab={mobileTab}
-        onTabChange={handleMobileTabChange}
+        showTabs={false}
         onSettingsClick={onSettingsClick}
         hideHeader={shouldHideMobileHeader}
       />

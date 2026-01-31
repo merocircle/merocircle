@@ -20,7 +20,20 @@ export function useDMChannels(chatClient: StreamChat | null, user: { id: string 
       const dms: DMChannel[] = [];
       for (const channel of channels) {
         const channelId = channel.id || '';
-        if (channelId.includes('creator-')) continue;
+        const channelData = channel.data || {};
+        
+        // Skip channels that are part of a server/community (they have a name or custom properties)
+        // True DMs don't have a name, category, min_tier_required, or supabase_channel_id
+        if (
+          channelId.includes('creator-') || 
+          channelId.startsWith('ch_') || // Community channels have this prefix
+          channelData.name || // Group channels have a name
+          channelData.category || // Community channels have a category
+          channelData.min_tier_required !== undefined || // Community channels have tier requirements
+          channelData.supabase_channel_id // Community channels are linked to Supabase
+        ) {
+          continue;
+        }
 
         const members = Object.values(channel.state.members);
         const otherMember = members.find((m: any) => m.user_id !== user.id);
