@@ -10,11 +10,11 @@ import {
   Users,
   Share2,
   Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/supabase-auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
-import { slugifyDisplayName } from '@/lib/utils';
 import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
 import {
   StatsCards,
@@ -80,31 +80,31 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     }
   }, [highlightedPostId, dashboardLoading, setHighlightedPostId]);
 
-  const sharePath = useMemo(() => {
-    if (!userProfile?.display_name) {
-      return '';
-    }
-    return `/${slugifyDisplayName(userProfile.display_name)}`;
-  }, [userProfile?.display_name]);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const handleShareProfile = useCallback(async () => {
-    if (!sharePath) return;
-    const url = typeof window !== 'undefined'
-      ? `${window.location.origin}${sharePath}`
-      : sharePath;
+    if (!user?.id || typeof window === 'undefined') return;
+    // Use creator ID instead of username slug to avoid conflicts with duplicate names
+    const url = `${window.location.origin}/creator/${user.id}`;
     try {
+      // Always copy to clipboard
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+      
+      // Also try native share if available
       if (navigator.share) {
         await navigator.share({
           title: `Support ${userProfile?.display_name || 'this creator'}`,
           url
         });
-      } else {
-        await navigator.clipboard.writeText(url);
       }
     } catch {
-      // Ignore share errors
+      // Ignore share errors, but still show copied state
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
     }
-  }, [sharePath, userProfile?.display_name]);
+  }, [user?.id, userProfile?.display_name]);
 
   useEffect(() => {
     if (dashboardData) {
@@ -308,14 +308,23 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
           })}
         </div>
 
-        {sharePath && (
+        {user?.id && (
           <Button
-            variant="outline"
+            variant={shareCopied ? "default" : "outline"}
             className="gap-2 rounded-xl"
             onClick={handleShareProfile}
           >
-            <Share2 className="w-4 h-4" />
-            Share your profile
+            {shareCopied ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4" />
+                Share your profile
+              </>
+            )}
           </Button>
         )}
       </div>
