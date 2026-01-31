@@ -15,6 +15,7 @@ interface NavIconProps {
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
+  onMouseEnter?: () => void;
 }
 
 export function NavIcon({
@@ -26,7 +27,8 @@ export function NavIcon({
   href,
   size = 'md',
   showLabel = false,
-  className
+  className,
+  onMouseEnter
 }: NavIconProps) {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -60,6 +62,7 @@ export function NavIcon({
           scale: isActive ? 1.1 : 1
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        whileTap={{ scale: 0.95 }}
       >
         <Icon
           size={iconSizes[size]}
@@ -121,13 +124,7 @@ export function NavIcon({
       <Link 
         href={href} 
         prefetch={true}
-        onMouseEnter={() => {
-          // Preload route on hover for instant navigation
-          if (typeof window !== 'undefined') {
-            const router = require('next/navigation').useRouter;
-            // Next.js automatically prefetches with prefetch={true}
-          }
-        }}
+        onMouseEnter={onMouseEnter}
       >
         <motion.div
           className={baseClasses}
@@ -167,7 +164,8 @@ export function BottomNavIcon({
   onClick,
   href,
   isCenter = false,
-  className
+  className,
+  onMouseEnter
 }: BottomNavIconProps) {
   if (isCenter) {
     const centerButton = (
@@ -252,7 +250,7 @@ export function BottomNavIcon({
 
   if (href) {
     return (
-      <Link href={href} prefetch={true}>
+      <Link href={href} prefetch={true} onMouseEnter={onMouseEnter}>
         <motion.div
           className={bottomNavClasses}
           whileTap={{ scale: 0.9 }}

@@ -1,9 +1,11 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
+import { PageTransition } from '@/components/common/PageTransition';
+import { usePerformanceMonitor } from '@/lib/performance-monitor';
 
-// Lazy load the notifications component
+// Lazy load with prefetch support
 const NotificationsSection = lazy(() => import('@/components/dashboard/sections/NotificationsSection'));
 
 function NotificationsLoadingSkeleton() {
@@ -24,10 +26,23 @@ function NotificationsLoadingSkeleton() {
 }
 
 export default function NotificationsPage() {
+  // Track performance
+  usePerformanceMonitor('/notifications');
+
+  // Prefetch component for subsequent visits
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('@/components/dashboard/sections/NotificationsSection');
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <PageLayout>
       <Suspense fallback={<NotificationsLoadingSkeleton />}>
-        <NotificationsSection />
+        <PageTransition>
+          <NotificationsSection />
+        </PageTransition>
       </Suspense>
     </PageLayout>
   );

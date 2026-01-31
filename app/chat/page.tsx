@@ -1,9 +1,11 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
+import { PageTransition } from '@/components/common/PageTransition';
+import { usePerformanceMonitor } from '@/lib/performance-monitor';
 
-// Lazy load the heavy chat component
+// Lazy load with prefetch support
 const StreamCommunitySection = lazy(() => import('@/components/dashboard/sections/StreamCommunitySection'));
 
 function ChatLoadingSkeleton() {
@@ -42,10 +44,23 @@ function ChatLoadingSkeleton() {
 }
 
 export default function ChatPage() {
+  // Track performance
+  usePerformanceMonitor('/chat');
+
+  // Prefetch component for subsequent visits
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('@/components/dashboard/sections/StreamCommunitySection');
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <PageLayout>
       <Suspense fallback={<ChatLoadingSkeleton />}>
-        <StreamCommunitySection />
+        <PageTransition>
+          <StreamCommunitySection />
+        </PageTransition>
       </Suspense>
     </PageLayout>
   );

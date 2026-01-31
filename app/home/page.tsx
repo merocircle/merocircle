@@ -1,9 +1,11 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
+import { PageTransition } from '@/components/common/PageTransition';
+import { usePerformanceMonitor } from '@/lib/performance-monitor';
 
-// Lazy load the explore component
+// Lazy load with prefetch support
 const ExploreSection = lazy(() => import('@/components/dashboard/sections/ExploreSection'));
 
 function ExploreLoadingSkeleton() {
@@ -29,10 +31,23 @@ function ExploreLoadingSkeleton() {
 }
 
 export default function HomePage() {
+  // Track performance
+  usePerformanceMonitor('/home');
+
+  // Prefetch component for subsequent visits
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('@/components/dashboard/sections/ExploreSection');
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <PageLayout>
       <Suspense fallback={<ExploreLoadingSkeleton />}>
-        <ExploreSection />
+        <PageTransition>
+          <ExploreSection />
+        </PageTransition>
       </Suspense>
     </PageLayout>
   );

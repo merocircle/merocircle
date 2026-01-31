@@ -12,9 +12,10 @@ function LoadingBarContent() {
     // Show loading bar on route change
     setIsLoading(true);
     
+    // Shorter duration for faster perceived performance
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 400);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [pathname]);
@@ -34,14 +35,14 @@ function LoadingBarContent() {
             className="w-full h-full bg-gradient-to-r from-red-500 via-pink-500 to-purple-500"
             initial={{ scaleX: 0, transformOrigin: 'left' }}
             animate={{ 
-              scaleX: [0, 0.3, 0.7, 1],
+              scaleX: [0, 0.6, 0.9, 1],
             }}
             exit={{ 
-              scaleX: [1, 1, 0],
-              transformOrigin: 'right'
+              scaleX: 1,
+              opacity: 0
             }}
             transition={{
-              duration: 0.5,
+              duration: 0.3,
               ease: [0.4, 0, 0.2, 1]
             }}
             style={{
