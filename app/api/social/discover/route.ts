@@ -34,7 +34,17 @@ export async function GET(request: NextRequest) {
     const [trendingResult, postsResult, suggestedResult] = await Promise.all([
       supabase
         .from('creator_profiles')
-        .select('*, users!inner(id, display_name, photo_url, email)')
+        .select(`
+          user_id,
+          bio,
+          category,
+          is_verified,
+          supporters_count,
+          posts_count,
+          total_earnings,
+          created_at,
+          users!inner(id, display_name, photo_url, email)
+        `)
         .order('supporters_count', { ascending: false })
         .limit(10),
       supabase
@@ -45,7 +55,17 @@ export async function GET(request: NextRequest) {
         .limit(20),
       supabase
         .from('creator_profiles')
-        .select('*, users!inner(id, display_name, photo_url, email)')
+        .select(`
+          user_id,
+          bio,
+          category,
+          is_verified,
+          supporters_count,
+          posts_count,
+          total_earnings,
+          created_at,
+          users!inner(id, display_name, photo_url, email)
+        `)
         .order('total_earnings', { ascending: false })
         .limit(10)
     ])

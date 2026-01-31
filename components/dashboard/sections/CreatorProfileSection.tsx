@@ -88,6 +88,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     amount: number;
     message?: string;
   } | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // If viewing own profile, redirect to profile page
   const isOwnProfile = user && user.id === creatorId && isWithinProvider;
@@ -173,9 +174,47 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
     if (gateway === 'direct') {
       setShowGatewaySelector(false);
-      setPendingPayment(null);
-      refreshCreatorDetails();
-      alert('Support registered successfully!');
+      setPaymentLoading(true);
+      
+      try {
+        const { tierLevel, amount, message } = pendingPayment;
+        
+        const response = await fetch('/api/payment/direct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            creatorId,
+            supporterId: user.id,
+            supporterMessage: message || '',
+            tier_level: tierLevel,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Direct payment failed');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.transaction) {
+          // Redirect to payment success page with transaction details
+          const transactionUuid = result.transaction.transaction_uuid;
+          const totalAmount = result.transaction.amount;
+          router.push(
+            `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`
+          );
+        } else {
+          throw new Error(result.error || 'Payment failed');
+        }
+      } catch (error) {
+        console.error('Direct payment error:', error);
+        alert(error instanceof Error ? error.message : 'Failed to register support. Please try again.');
+        setPaymentLoading(false);
+      } finally {
+        setPendingPayment(null);
+      }
       return;
     }
 
@@ -303,22 +342,28 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   }, []);
 
   const handleShare = useCallback(async () => {
-    if (!creatorDetails?.display_name || typeof window === 'undefined') return;
-    const slug = slugifyDisplayName(creatorDetails.display_name);
-    const url = `${window.location.origin}/${slug}`;
+    if (!creatorId || typeof window === 'undefined') return;
+    // Use creator ID instead of username slug to avoid conflicts with duplicate names
+    const url = `${window.location.origin}/creator/${creatorId}`;
     try {
+      // Always copy to clipboard
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+      
+      // Also try native share if available
       if (navigator.share) {
         await navigator.share({
-          title: `Support ${creatorDetails.display_name}`,
+          title: `Support ${creatorDetails?.display_name || 'this creator'}`,
           url
         });
-      } else {
-        await navigator.clipboard.writeText(url);
       }
     } catch {
-      // Ignore share errors
+      // Ignore share errors, but still show copied state
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
     }
-  }, [creatorDetails?.display_name]);
+  }, [creatorId, creatorDetails?.display_name]);
 
   const handleBack = useCallback(() => {
     if (isWithinProvider) {
@@ -721,12 +766,17 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                       )}
 
                       <Button
-                        variant="outline"
+                        variant={shareCopied ? "default" : "outline"}
                         size="icon"
                         onClick={handleShare}
                         className="hover:bg-muted/50 transition-colors"
+                        title={shareCopied ? "Link copied!" : "Share creator profile"}
                       >
-                        <Share2 className="w-4 h-4" />
+                        {shareCopied ? (
+                          <CheckCircle2 className="w-4 h-4" />
+                        ) : (
+                          <Share2 className="w-4 h-4" />
+                        )}
                       </Button>
 
                       <Button
@@ -749,38 +799,54 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
       {/* Content Area */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Support Section - Full Width */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <Card className="border-border/50 shadow-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/5 via-pink-500/5 to-purple-500/5 p-6 border-b border-border/50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground">Support This Creator</h2>
+                </div>
+                {/* Chat Button for Supporters (Inner Circle or Core Member) */}
+                {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 && (
+                  <Button
+                    onClick={() => {
+                      router.push('/chat');
+                    }}
+                    className="gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Chat
+                  </Button>
+                )}
+              </div>
+              <p className="text-muted-foreground">
+                Choose a tier to unlock exclusive content and perks
+              </p>
+            </div>
+            <div className="p-6">
+              <TierSelection
+                tiers={subscriptionTiers}
+                creatorName={creatorDetails.display_name || ''}
+                currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                onSelectTier={handlePayment}
+                loading={paymentLoading}
+              />
+            </div>
+          </Card>
+        </motion.div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Support Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="border-border/50 shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-primary/5 via-pink-500/5 to-purple-500/5 p-6 border-b border-border/50">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                      <Sparkles className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground">Support This Creator</h2>
-                  </div>
-                  <p className="text-muted-foreground">
-                    Choose a tier to unlock exclusive content and perks
-                  </p>
-                </div>
-                <div className="p-6">
-                  <TierSelection
-                    tiers={subscriptionTiers}
-                    creatorName={creatorDetails.display_name || ''}
-                    currentTierLevel={creatorDetails.supporter_tier_level || 0}
-                    onSelectTier={handlePayment}
-                    loading={paymentLoading}
-                  />
-                </div>
-              </Card>
-            </motion.div>
 
             {/* Tabs */}
             <motion.div
@@ -931,36 +997,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Trust Indicators */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="border-border/50 shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-br from-green-500/5 to-blue-500/5 p-4 border-b border-border/50">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-green-600" />
-                    <h3 className="font-semibold text-foreground">Trusted Creator</h3>
-                  </div>
-                </div>
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="text-muted-foreground">Verified identity</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Lock className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    <span className="text-muted-foreground">Secure payments</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <TrendingUp className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                    <span className="text-muted-foreground">Active community</span>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-
             {/* Quick Stats */}
             {creatorDetails.supporter_count > 0 && (
               <motion.div
