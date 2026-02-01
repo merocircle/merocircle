@@ -334,7 +334,11 @@ export function EnhancedPostCard({
     }
   }, [showComments, post.id]);
 
-  const handleCommentClick = () => {
+  const handleCommentClick = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     if (!currentUserId) {
       router.push('/auth');
       return;
@@ -398,7 +402,15 @@ export function EnhancedPostCard({
     >
       <div 
         className="overflow-hidden bg-card rounded-xl border border-border cursor-pointer"
-        onClick={handlePostClick}
+        onClick={(e) => {
+          // Don't open modal if clicking on comments section or action buttons
+          const target = e.target as HTMLElement;
+          const isClickOnComments = target.closest('[data-comments-section]') !== null;
+          const isClickOnActions = target.closest('[data-actions-section]') !== null;
+          if (!isClickOnComments && !isClickOnActions) {
+            handlePostClick();
+          }
+        }}
       >
         {/* Header - Instagram style */}
         <div className="flex items-center justify-between px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
@@ -690,7 +702,7 @@ export function EnhancedPostCard({
 
         {/* Actions Row - Instagram style */}
         {showActions && (
-          <div className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+          <div className="px-3 py-2.5" data-actions-section onClick={(e) => e.stopPropagation()}>
             {/* Action buttons */}
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-4">
@@ -725,7 +737,8 @@ export function EnhancedPostCard({
                 <motion.button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCommentClick();
+                    e.preventDefault();
+                    handleCommentClick(e);
                   }}
                   whileTap={{ scale: 0.9 }}
                   className="p-1"
@@ -770,7 +783,11 @@ export function EnhancedPostCard({
             {/* View comments link */}
             {commentsCount > 0 && !showComments && (
               <button
-                onClick={handleCommentClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleCommentClick(e);
+                }}
                 className="text-sm text-muted-foreground hover:text-foreground mt-1"
               >
                 View all {commentsCount} comments
@@ -787,9 +804,11 @@ export function EnhancedPostCard({
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="              overflow-hidden border-t border-border"
+              className="overflow-hidden border-t border-border"
+              data-comments-section
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-3 py-2.5 max-h-96 overflow-y-auto">
+              <div className="px-3 py-2.5 max-h-96 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 {/* Threaded Comments */}
                 {loadingComments ? (
                   <div className="flex items-center justify-center py-4">
@@ -807,9 +826,13 @@ export function EnhancedPostCard({
               </div>
 
               {/* Add Comment Input - Instagram style inline */}
-              <div className="px-3 py-2.5 border-t border-border">
+              <div className="px-3 py-2.5 border-t border-border" onClick={(e) => e.stopPropagation()}>
                 {currentUserId ? (
-                  <form onSubmit={handleSubmitComment} className="flex items-center gap-3">
+                  <form 
+                    onSubmit={handleSubmitComment} 
+                    className="flex items-center gap-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Avatar className="h-7 w-7 flex-shrink-0">
                       <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-primary/60 text-white">
                         {currentUserId.charAt(0).toUpperCase()}
@@ -821,6 +844,7 @@ export function EnhancedPostCard({
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Add a comment..."
                       className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <button
                       type="submit"
@@ -831,6 +855,7 @@ export function EnhancedPostCard({
                           ? "text-primary hover:text-primary/80"
                           : "text-primary/50 cursor-not-allowed"
                       )}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {commentMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -840,7 +865,7 @@ export function EnhancedPostCard({
                     </button>
                   </form>
                 ) : (
-                  <Link href="/auth" className="block text-center">
+                  <Link href="/auth" className="block text-center" onClick={(e) => e.stopPropagation()}>
                     <span className="text-sm text-muted-foreground hover:text-foreground">
                       Log in to comment
                     </span>

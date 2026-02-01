@@ -28,6 +28,13 @@ class Logger {
   }
 
   private log(level: LogLevel, message: string, context?: string, data?: Record<string, unknown>) {
+    // Always log errors, even in production
+    if (level === 'error') {
+      const formatted = this.formatMessage(level, message, context, data);
+      console.error(formatted);
+      return;
+    }
+
     if (!isLoggingEnabled) return;
 
     const formatted = this.formatMessage(level, message, context, data);
