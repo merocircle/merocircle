@@ -984,7 +984,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
                       <div className="h-[600px]">
-                        <StreamCommunitySection />
+                        <StreamCommunitySection creatorId={creatorId} />
                       </div>
                     </Card>
                   ) : (
