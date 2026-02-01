@@ -254,6 +254,8 @@ export function useRealtimeComments(postId: string | null) {
       channelRef.current = null;
     }
 
+    const channelName = `comments-${postId}`;
+
     // Create and subscribe to new channel
     const channel = supabase
       .channel(channelName)
