@@ -106,8 +106,6 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
     const unsubscribeToken = generateUnsubscribeToken(data.supporterId, data.creatorId, data.supporterEmail);
     const unsubscribeUrl = `${appUrl}/api/supporter/unsubscribe?token=${unsubscribeToken}`;
 
-    const emailHtml = createPostNotificationEmailHtml(data, appUrl, unsubscribeUrl);
-
     const emailText = createPostNotificationEmailText(data, appUrl, unsubscribeUrl);
 
     const subject = data.isPoll 
@@ -222,6 +220,24 @@ Notification Settings: ${appUrl}/settings
 View Profile: ${appUrl}/${data.creatorName}
 
 MeroCircle © ${new Date().getFullYear()}
+  `.trim();
+}
+
+/**
+ * Creates HTML email template for post notifications
+ */
+function createPostNotificationEmailHtml(
+  data: PostNotificationEmailData,
+  unsubscribeUrl: string
+): string {
+  const safeCreatorName = escapeHtml(data.creatorName);
+  const safeSupporterName = escapeHtml(data.supporterName);
+  const safePostTitle = escapeHtml(data.postTitle || 'New Post');
+  const postPreview = data.postContent.length > 300 
+    ? data.postContent.substring(0, 300) + '...' 
+    : data.postContent;
+  const safePostPreview = escapeHtml(postPreview);
+
   return `
 <!DOCTYPE html>
 <html>
@@ -339,21 +355,6 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
         helpUrl,
       })
     );
-function createPostNotificationEmailText(
-  data: PostNotificationEmailData,
-  appUrl: string,
-  unsubscribeUrl: string
-): string {
-  const postPreview = data.postContent.length > 200 
-    ? data.postContent.substring(0, 200) + '...' 
-    : data.postContent;
-
-  return `
-Hi ${data.supporterName},
-
-${data.creatorName} just posted something new!
-
-"${data.postTitle}"
 
     const mailOptions = {
       from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
@@ -378,8 +379,4 @@ ${data.creatorName} just posted something new!
     });
     return false;
   }
-To unsubscribe from email notifications: ${unsubscribeUrl}
-
-© ${new Date().getFullYear()} MeroCircle. All rights reserved.
-  `.trim();
 }
