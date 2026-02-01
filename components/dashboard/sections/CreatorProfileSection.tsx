@@ -42,6 +42,12 @@ import { slugifyDisplayName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { SocialLinksCard } from '@/components/organisms/creator';
 
+// Lazy load chat component
+const StreamCommunitySection = dynamic(
+  () => import('./StreamCommunitySection'),
+  { loading: () => <div className="flex items-center justify-center h-96"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>, ssr: false }
+);
+
 // Lazy load PaymentGatewaySelector
 const PaymentGatewaySelector = dynamic(
   () => import('@/components/payment/PaymentGatewaySelector').then(mod => ({ default: mod.PaymentGatewaySelector })),
@@ -64,18 +70,14 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const highlightedPostId = isWithinProvider ? contextHighlightedPostId : localHighlightedPostId;
 
+  const [activeTab, setActiveTab] = useState(defaultTab || (initialHighlightedPostId ? 'posts' : 'home'));
+
   useEffect(() => {
     if (initialHighlightedPostId && !isWithinProvider) {
       setLocalHighlightedPostId(initialHighlightedPostId);
-      setActiveTab('posts'); // Switch to posts tab immediately
-    }
-  }, [initialHighlightedPostId, isWithinProvider]);
-
-  useEffect(() => {
-    if (highlightedPostId && !isWithinProvider) {
       setActiveTab('posts');
     }
-  }, [highlightedPostId, isWithinProvider]);
+  }, [initialHighlightedPostId, isWithinProvider]);
 
   const {
     creatorDetails,
@@ -90,8 +92,13 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
-
-  const [activeTab, setActiveTab] = useState(defaultTab || (initialHighlightedPostId ? 'posts' : 'home'));
+  
+  // Ensure posts tab is active when there's a highlighted post
+  useEffect(() => {
+    if (highlightedPostId && !isWithinProvider && activeTab !== 'posts') {
+      setActiveTab('posts');
+    }
+  }, [highlightedPostId, isWithinProvider, activeTab]);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showGatewaySelector, setShowGatewaySelector] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -103,6 +110,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     message?: string;
   } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showTiers, setShowTiers] = useState(false);
 
   // If viewing own profile, redirect to profile page
   const isOwnProfile = user && user.id === creatorId && isWithinProvider;
@@ -158,18 +166,39 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   // Handle highlighted post - switch to posts tab and scroll to the post
   useEffect(() => {
-    if (highlightedPostId && !loading && recentPosts.length > 0) {
-      setActiveTab('posts');
-
-      const postExists = recentPosts.some((post: any) => String(post.id) === highlightedPostId);
+    if (highlightedPostId && !loading && recentPosts.length > 0 && activeTab === 'posts') {
+      const normalizedHighlightedId = String(highlightedPostId).toLowerCase().trim();
+      const postExists = recentPosts.some((post: any) => {
+        const normalizedPostId = String(post.id).toLowerCase().trim();
+        return normalizedPostId === normalizedHighlightedId;
+      });
       
       if (postExists) {
-        // Scroll to the highlighted post after a delay to ensure rendering
-        const scrollTimer = setTimeout(() => {
-          if (highlightedPostRef.current) {
-            highlightedPostRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const attemptScroll = (attempts = 0) => {
+          const element = document.querySelector(`[data-post-id="${highlightedPostId}"]`) as HTMLElement ||
+            highlightedPostRef.current;
+          
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+            
+            if (!isVisible || attempts === 0) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.style.scrollMarginTop = '20px';
+            }
+          } else if (attempts < 20) {
+            setTimeout(() => attemptScroll(attempts + 1), 200 * (attempts + 1));
           }
-        }, 800); // Increased delay to ensure tab content is fully rendered
+        };
+
+        // Start scrolling after ensuring tab is active and content is rendered
+        const scrollTimer = setTimeout(() => {
+          attemptScroll();
+        }, 500);
+
+        const backupTimer = setTimeout(() => {
+          attemptScroll();
+        }, 2000);
 
         // Clear the highlighted post after 5 seconds (for public page)
         const clearTimer = setTimeout(() => {
@@ -180,11 +209,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
         return () => {
           clearTimeout(scrollTimer);
+          clearTimeout(backupTimer);
           clearTimeout(clearTimer);
         };
       }
     }
-  }, [highlightedPostId, loading, recentPosts, isWithinProvider]);
+  }, [highlightedPostId, loading, recentPosts, activeTab, isWithinProvider]);
 
   const handleGatewaySelection = useCallback(async (gateway: 'esewa' | 'khalti' | 'direct') => {
     if (!pendingPayment || !user) return;
@@ -830,7 +860,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground">Support This Creator</h2>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    {isSupporter ? 'Your Support' : 'Support This Creator'}
+                  </h2>
                 </div>
                 {/* Chat Button for Supporters (Inner Circle or Core Member) */}
                 {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 && (
@@ -845,19 +877,69 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   </Button>
                 )}
               </div>
-              <p className="text-muted-foreground">
-                Choose a tier to unlock exclusive content and perks
-              </p>
+              {!isSupporter && (
+                <p className="text-muted-foreground">
+                  Choose a tier to unlock exclusive content and perks
+                </p>
+              )}
             </div>
-            <div className="p-6">
-              <TierSelection
-                tiers={subscriptionTiers}
-                creatorName={creatorDetails.display_name || ''}
-                currentTierLevel={creatorDetails.supporter_tier_level || 0}
-                onSelectTier={handlePayment}
-                loading={paymentLoading}
-              />
-            </div>
+            
+            {isSupporter ? (
+              /* Collapsed View for Supporters */
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500">
+                      <CheckCircle2 className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">You're supporting at</p>
+                      <p className="text-xl font-bold text-foreground">
+                        {creatorDetails?.supporter_tier_level === 1 && 'Supporter'}
+                        {creatorDetails?.supporter_tier_level === 2 && 'Inner Circle'}
+                        {creatorDetails?.supporter_tier_level === 3 && 'Core Member'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowTiers(!showTiers)}
+                    className="gap-2"
+                  >
+                    {showTiers ? 'Hide' : 'View'} Support Tiers
+                  </Button>
+                </div>
+                
+                {showTiers && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-6 pt-6 border-t border-border"
+                  >
+                    <TierSelection
+                      tiers={subscriptionTiers}
+                      creatorName={creatorDetails.display_name || ''}
+                      currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                      onSelectTier={handlePayment}
+                      loading={paymentLoading}
+                    />
+                  </motion.div>
+                )}
+              </div>
+            ) : (
+              /* Full View for Non-Supporters */
+              <div className="p-6">
+                <TierSelection
+                  tiers={subscriptionTiers}
+                  creatorName={creatorDetails.display_name || ''}
+                  currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                  onSelectTier={handlePayment}
+                  loading={paymentLoading}
+                />
+              </div>
+            )}
           </Card>
         </motion.div>
 
@@ -872,11 +954,22 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               transition={{ delay: 0.3 }}
             >
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid h-12 bg-muted/50">
+                <TabsList className={cn(
+                  "grid w-full lg:w-auto lg:inline-grid h-12 bg-muted/50",
+                  isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 
+                    ? "grid-cols-4" 
+                    : "grid-cols-3"
+                )}>
                   <TabsTrigger value="posts" className="gap-2">
                     <FileText className="w-4 h-4" />
                     Posts
                   </TabsTrigger>
+                  {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 && (
+                    <TabsTrigger value="chat" className="gap-2">
+                      <MessageCircle className="w-4 h-4" />
+                      Chat
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger value="shop" className="gap-2">
                     <ShoppingBag className="w-4 h-4" />
                     Shop
@@ -886,6 +979,30 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     About
                   </TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="chat" className="mt-6">
+                  {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 ? (
+                    <Card className="border-border/50 shadow-lg overflow-hidden">
+                      <div className="h-[600px]">
+                        <StreamCommunitySection />
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card className="p-16 text-center border-border/50">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+                          <MessageCircle className="w-8 h-8 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-foreground mb-2">Chat Access Required</h3>
+                          <p className="text-muted-foreground max-w-md mx-auto">
+                            Upgrade to Inner Circle or Core Member tier to access the chat with this creator.
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </TabsContent>
 
                 <TabsContent value="posts" className="mt-6 space-y-6">
                   {recentPosts.length > 0 ? (
@@ -898,6 +1015,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           ref={isHighlighted ? highlightedPostRef : undefined}
+                          data-post-id={postId}
                           className={cn(
                             'transition-all duration-500',
                             isHighlighted && 'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
