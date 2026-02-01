@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/supabase-auth-context';
@@ -138,86 +138,92 @@ export function useRealtimeFeed() {
     queryClient.invalidateQueries({ queryKey: ['comments', deletedComment.post_id] });
   }, [queryClient, user?.id]);
 
+  const postsChannelRef = useRef<RealtimeChannel | null>(null);
+  const likesChannelRef = useRef<RealtimeChannel | null>(null);
+  const commentsChannelRef = useRef<RealtimeChannel | null>(null);
+
   useEffect(() => {
-    let postsChannel: RealtimeChannel;
-    let likesChannel: RealtimeChannel;
-    let commentsChannel: RealtimeChannel;
+    // Cleanup previous channels if they exist
+    if (postsChannelRef.current) {
+      supabase.removeChannel(postsChannelRef.current);
+      postsChannelRef.current = null;
+    }
+    if (likesChannelRef.current) {
+      supabase.removeChannel(likesChannelRef.current);
+      likesChannelRef.current = null;
+    }
+    if (commentsChannelRef.current) {
+      supabase.removeChannel(commentsChannelRef.current);
+      commentsChannelRef.current = null;
+    }
 
-    const setupSubscriptions = () => {
-      // Remove any existing channels with these names to prevent duplicate subscriptions
-      const existingPostsChannel = supabase.getChannels().find(ch => ch.topic === 'posts-realtime');
-      if (existingPostsChannel) {
-        supabase.removeChannel(existingPostsChannel);
-      }
-      
-      const existingLikesChannel = supabase.getChannels().find(ch => ch.topic === 'likes-realtime');
-      if (existingLikesChannel) {
-        supabase.removeChannel(existingLikesChannel);
-      }
-      
-      const existingCommentsChannel = supabase.getChannels().find(ch => ch.topic === 'comments-realtime');
-      if (existingCommentsChannel) {
-        supabase.removeChannel(existingCommentsChannel);
-      }
+    // Subscribe to posts changes
+    const postsChannel = supabase
+      .channel('posts-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        handleNewPost
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts' },
+        handlePostUpdate
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'posts' },
+        handlePostDelete
+      )
+      .subscribe();
+    postsChannelRef.current = postsChannel;
 
-      // Subscribe to posts changes
-      postsChannel = supabase
-        .channel('posts-realtime')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'posts' },
-          handleNewPost
-        )
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'posts' },
-          handlePostUpdate
-        )
-        .on(
-          'postgres_changes',
-          { event: 'DELETE', schema: 'public', table: 'posts' },
-          handlePostDelete
-        )
-        .subscribe();
+    // Subscribe to likes changes
+    const likesChannel = supabase
+      .channel('likes-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_likes' },
+        handleNewLike
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_likes' },
+        handleLikeDelete
+      )
+      .subscribe();
+    likesChannelRef.current = likesChannel;
 
-      // Subscribe to likes changes
-      likesChannel = supabase
-        .channel('likes-realtime')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'post_likes' },
-          handleNewLike
-        )
-        .on(
-          'postgres_changes',
-          { event: 'DELETE', schema: 'public', table: 'post_likes' },
-          handleLikeDelete
-        )
-        .subscribe();
+    // Subscribe to comments changes
+    const commentsChannel = supabase
+      .channel('comments-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_comments' },
+        handleNewComment
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_comments' },
+        handleCommentDelete
+      )
+      .subscribe();
+    commentsChannelRef.current = commentsChannel;
 
-      // Subscribe to comments changes
-      commentsChannel = supabase
-        .channel('comments-realtime')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'post_comments' },
-          handleNewComment
-        )
-        .on(
-          'postgres_changes',
-          { event: 'DELETE', schema: 'public', table: 'post_comments' },
-          handleCommentDelete
-        )
-        .subscribe();
-    };
-
-    setupSubscriptions();
-
-    // Cleanup subscriptions on unmount
+    // Cleanup subscriptions on unmount or when dependencies change
     return () => {
-      if (postsChannel) supabase.removeChannel(postsChannel);
-      if (likesChannel) supabase.removeChannel(likesChannel);
-      if (commentsChannel) supabase.removeChannel(commentsChannel);
+      if (postsChannelRef.current) {
+        supabase.removeChannel(postsChannelRef.current);
+        postsChannelRef.current = null;
+      }
+      if (likesChannelRef.current) {
+        supabase.removeChannel(likesChannelRef.current);
+        likesChannelRef.current = null;
+      }
+      if (commentsChannelRef.current) {
+        supabase.removeChannel(commentsChannelRef.current);
+        commentsChannelRef.current = null;
+      }
     };
   }, [
     handleNewPost,
@@ -237,18 +243,18 @@ export function useRealtimeFeed() {
  */
 export function useRealtimeComments(postId: string | null) {
   const queryClient = useQueryClient();
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     if (!postId) return;
 
-    const channelName = `comments-${postId}`;
-    
-    // Remove any existing channel with this name to prevent duplicate subscriptions
-    const existingChannel = supabase.getChannels().find(ch => ch.topic === channelName);
-    if (existingChannel) {
-      supabase.removeChannel(existingChannel);
+    // Cleanup previous channel if it exists
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
 
+    // Create and subscribe to new channel
     const channel = supabase
       .channel(channelName)
       .on(
@@ -266,8 +272,13 @@ export function useRealtimeComments(postId: string | null) {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [postId, queryClient]);
 }
