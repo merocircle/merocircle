@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { CheckCircle, ArrowLeft, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { BalloonBurst } from '@/components/animations/BalloonBurst';
 
 export const dynamic = 'force-dynamic';

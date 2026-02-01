@@ -4,7 +4,7 @@ import { ReactNode, useState, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout';
 import { LoadingSpinner } from '@/components/dashboard/LoadingSpinner';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { DashboardProvider, type DashboardView } from '@/contexts/dashboard-context';
 import { useNotificationsData } from '@/hooks/useQueries';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';

@@ -4,7 +4,7 @@ import { useState, useMemo, memo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useNotificationsData, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useQueries';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { fadeInUp } from '@/components/animations/variants';
 import { NotificationList } from '@/components/organisms/notifications/NotificationList';
 import { mapNotificationType, generateNotificationLink } from './notifications/utils';

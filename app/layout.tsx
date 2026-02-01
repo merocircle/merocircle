@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/contexts/supabase-auth-context";
+import { AuthProvider } from "@/contexts/auth-provider";
+import { AuthContextProvider } from "@/contexts/auth-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { StreamChatProvider } from "@/contexts/stream-chat-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -65,12 +66,14 @@ export default function RootLayout({
       >
           <QueryProvider>
           <AuthProvider>
-            <StreamChatProvider>
-              <PageLoadingBar />
-              <AppBackground>
-                {children}
-              </AppBackground>
-            </StreamChatProvider>
+            <AuthContextProvider>
+              <StreamChatProvider>
+                <PageLoadingBar />
+                <AppBackground>
+                  {children}
+                </AppBackground>
+              </StreamChatProvider>
+            </AuthContextProvider>
           </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

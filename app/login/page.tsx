@@ -8,32 +8,29 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart, ArrowLeft, Chrome, Shield, Zap, Users } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { signIn, useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { user, signInWithGoogle } = useAuth();
+  const { data: session, status } = useSession();
+  const { userProfile } = useAuth();
 
   // Redirect if already logged in
   React.useEffect(() => {
-    if (user) {
+    if (status === 'authenticated' && userProfile) {
       router.push('/home');
     }
-  }, [user, router]);
+  }, [status, userProfile, router]);
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const { error } = await signInWithGoogle();
-      
-      if (error) {
-        setError(error.message || 'Failed to sign in');
-        return;
-      }
+
+      await signIn('google', { callbackUrl: '/home' });
       
       // Will be redirected by the useEffect watching user state
     } catch (error: any) {

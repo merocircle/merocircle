@@ -16,20 +16,21 @@ import {
   Crown,
   MessageCircle
 } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import { spacing, layout, responsive, colors, typography } from '@/lib/tailwind-utils';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const { user, userProfile, isAuthenticated, isCreator, loading, signOut } = useAuth();
+  const { data: session } = useSession();
+  const { userProfile, isAuthenticated, isCreator, loading } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      router.push('/');
+      await signOut({ callbackUrl: '/' });
     } catch {
       // Silently handle error
     }

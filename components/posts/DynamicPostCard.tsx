@@ -14,7 +14,8 @@ import {
   Edit3,
   Trash2
 } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 import { spacing, layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils';
 
@@ -58,13 +59,14 @@ export default function DynamicPostCard({
   onEdit, 
   onDelete 
 }: DynamicPostCardProps) {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   
   // Check if current user has liked the post
   const checkIsLiked = () => {
-    if (!user?.id || !post.likes) return false;
+    if (!userId || !post.likes) return false;
     return post.likes.some((like: Record<string, unknown>) => 
-      (like.user_id as string) === user.id
+      (like.user_id as string) === userId
     );
   };
   
@@ -72,14 +74,14 @@ export default function DynamicPostCard({
   const [likesCount, setLikesCount] = useState(post.likes_count || post.likes?.length || 0);
   const [isLiking, setIsLiking] = useState(false);
 
-  // Update isLiked when post.likes or user changes
+  // Update isLiked when post.likes or userId changes
   useEffect(() => {
     setIsLiked(checkIsLiked());
     setLikesCount(post.likes_count || post.likes?.length || 0);
-  }, [post.likes, post.likes_count, user?.id]);
+  }, [post.likes, post.likes_count, userId]);
 
   const handleLike = () => {
-    if (!user) return;
+    if (!userId) return;
     
     const wasLiked = isLiked;
     const previousCount = likesCount;
@@ -101,7 +103,7 @@ export default function DynamicPostCard({
 
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !user || isSubmittingComment) return;
+    if (!newComment.trim() || !userId || isSubmittingComment) return;
 
     setIsSubmittingComment(true);
     try {
@@ -137,7 +139,7 @@ export default function DynamicPostCard({
     return date.toLocaleDateString();
   };
 
-  const isOwner = user?.id === post.creator_id;
+  const isOwner = userId === post.creator_id;
 
   return (
     <Card className={cn(spacing.card, 'hover:shadow-lg transition-shadow')}>
