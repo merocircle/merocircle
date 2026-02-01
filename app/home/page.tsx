@@ -1,24 +1,14 @@
 'use client';
 
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
-import { PageTransition } from '@/components/common/PageTransition';
-import { usePerformanceMonitor } from '@/lib/performance-monitor';
-import { MinimumDelay } from '@/components/common/MinimumDelay';
-import { motion } from 'framer-motion';
 
-// Lazy load with prefetch support
+// Lazy load the explore component
 const ExploreSection = lazy(() => import('@/components/dashboard/sections/ExploreSection'));
 
 function ExploreLoadingSkeleton() {
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-    >
+    <div className="space-y-6">
       <div className="h-10 bg-muted rounded animate-pulse w-full" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(9)].map((_, i) => (
@@ -34,34 +24,15 @@ function ExploreLoadingSkeleton() {
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 export default function HomePage() {
-  // Track performance
-  usePerformanceMonitor('/home');
-
-  // Prefetch component for subsequent visits
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      import('@/components/dashboard/sections/ExploreSection');
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <PageLayout>
       <Suspense fallback={<ExploreLoadingSkeleton />}>
-        <MinimumDelay
-          isLoading={false}
-          minimumDelay={200}
-          fallback={<ExploreLoadingSkeleton />}
-        >
-          <PageTransition>
-            <ExploreSection />
-          </PageTransition>
-        </MinimumDelay>
+        <ExploreSection />
       </Suspense>
     </PageLayout>
   );
