@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/supabase-auth-context";
 import { QueryProvider } from "@/contexts/query-provider";
 import { StreamChatProvider } from "@/contexts/stream-chat-context";
-import { MotionProvider } from "@/contexts/motion-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppBackground } from "@/components/ui/app-background";
 import { PageLoadingBar } from "@/components/common/PageLoadingBar";
@@ -67,12 +66,10 @@ export default function RootLayout({
           <QueryProvider>
           <AuthProvider>
             <StreamChatProvider>
-              <MotionProvider>
-                <PageLoadingBar />
-                <AppBackground>
-                  {children}
-                </AppBackground>
-              </MotionProvider>
+              <PageLoadingBar />
+              <AppBackground>
+                {children}
+              </AppBackground>
             </StreamChatProvider>
           </AuthProvider>
           </QueryProvider>
