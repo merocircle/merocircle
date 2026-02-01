@@ -1,14 +1,24 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
+import { PageTransition } from '@/components/common/PageTransition';
+import { usePerformanceMonitor } from '@/lib/performance-monitor';
+import { MinimumDelay } from '@/components/common/MinimumDelay';
+import { motion } from 'framer-motion';
 
-// Lazy load the heavy chat component
+// Lazy load with prefetch support
 const StreamCommunitySection = lazy(() => import('@/components/dashboard/sections/StreamCommunitySection'));
 
 function ChatLoadingSkeleton() {
   return (
-    <div className="flex h-screen">
+    <motion.div
+      className="flex h-screen"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       <div className="w-80 border-r border-border/50 p-4 space-y-4">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="flex items-center gap-3 p-2">
@@ -37,15 +47,34 @@ function ChatLoadingSkeleton() {
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 export default function ChatPage() {
+  // Track performance
+  usePerformanceMonitor('/chat');
+
+  // Prefetch component for subsequent visits
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import('@/components/dashboard/sections/StreamCommunitySection');
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <PageLayout>
       <Suspense fallback={<ChatLoadingSkeleton />}>
-        <StreamCommunitySection />
+        <MinimumDelay
+          isLoading={false}
+          minimumDelay={200}
+          fallback={<ChatLoadingSkeleton />}
+        >
+          <PageTransition>
+            <StreamCommunitySection />
+          </PageTransition>
+        </MinimumDelay>
       </Suspense>
     </PageLayout>
   );

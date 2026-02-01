@@ -13,6 +13,8 @@ import {
 import { BottomNavIcon } from './NavIcon';
 import { cn } from '@/lib/utils';
 import { type DashboardView } from '@/contexts/dashboard-context';
+import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
+import { debouncedPrefetch, prefetchComponent } from '@/lib/prefetch-utils';
 
 interface BottomNavProps {
   activeView?: DashboardView;
@@ -30,6 +32,7 @@ export function BottomNav({
   className
 }: BottomNavProps) {
   const pathname = usePathname();
+  const { prefetchHome, prefetchNotifications, prefetchChat } = useRoutePrefetch();
 
   // Map pathname to active view
   const getActiveViewFromPath = (): DashboardView => {
@@ -59,6 +62,10 @@ export function BottomNav({
         label="Home"
         isActive={currentActiveView === 'home'}
         href="/home"
+        onMouseEnter={debouncedPrefetch(() => {
+          prefetchHome();
+          prefetchComponent(() => import('@/components/dashboard/sections/ExploreSection'));
+        })}
       />
 
       {/* Explore */}
@@ -84,6 +91,10 @@ export function BottomNav({
         isActive={currentActiveView === 'chat'}
         badge={unreadMessages}
         href="/chat"
+        onMouseEnter={debouncedPrefetch(() => {
+          prefetchChat();
+          prefetchComponent(() => import('@/components/dashboard/sections/StreamCommunitySection'));
+        })}
       />
 
       {/* Profile */}
