@@ -18,6 +18,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLikePost, useAddComment } from '@/hooks/useQueries';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import ThreadedComments from './ThreadedComments';
+import { ShareModal } from './ShareModal';
+import { PostDetailModal } from './PostDetailModal';
 
 // Lazy load PollCard component (only loads when needed for poll posts)
 const PollCard = dynamic(() => import('./PollCard').then(mod => ({ default: mod.PollCard })), {
@@ -81,35 +83,6 @@ interface Comment {
     display_name: string;
     photo_url?: string;
   };
-}
-
-// Double-tap heart animation component
-function DoubleTapHeart({ show }: { show: boolean }) {
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{
-              scale: [0, 1.5, 1.2],
-              opacity: [0, 1, 0]
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <Heart
-              className="w-24 h-24 text-white fill-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
-            />
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
 }
 
 // Heart particles burst effect
@@ -221,10 +194,10 @@ export function EnhancedPostCard({
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
   const [showHeartParticles, setShowHeartParticles] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const lastTapRef = useRef<number>(0);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
 
   // Get all images (support both image_url and image_urls)
   const allImages = useMemo(() => {
@@ -321,39 +294,13 @@ export function EnhancedPostCard({
     onLike?.(post.id);
   }, [currentUserId, isLiked, router, post.id, likeMutation, onLike]);
 
-  // Double-tap handler for liking on images
-  const handleDoubleTap = useCallback(() => {
-    const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
+  // Handle post click to open modal
+  const handlePostClick = useCallback(() => {
+    setShowPostModal(true);
+  }, []);
 
-    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-      // Double tap detected - like the post
-      if (!isLiked && currentUserId) {
-        setShowDoubleTapHeart(true);
-        setTimeout(() => setShowDoubleTapHeart(false), 800);
-        // Trigger like
-        setShowHeartParticles(true);
-        setTimeout(() => setShowHeartParticles(false), 500);
-        setIsLiked(true);
-        setLikesCount(prev => prev + 1);
-        likeMutation.mutate({ postId: post.id, action: 'like' });
-        onLike?.(post.id);
-      }
-    }
-    lastTapRef.current = now;
-  }, [isLiked, currentUserId, post.id, likeMutation, onLike]);
-
-  const handleShare = async () => {
-    const url = `${window.location.origin}/posts/${post.id}`;
-    if (navigator.share) {
-      await navigator.share({
-        title: post.title,
-        text: post.content.substring(0, 100) + '...',
-        url
-      });
-    } else {
-      await navigator.clipboard.writeText(url);
-    }
+  const handleShare = () => {
+    setShowShareModal(true);
     onShare?.(post.id);
   };
 
@@ -449,9 +396,12 @@ export function EnhancedPostCard({
       transition={{ duration: 0.3 }}
       className="w-full"
     >
-      <div className="overflow-hidden bg-card">
+      <div 
+        className="overflow-hidden bg-card rounded-xl border border-border cursor-pointer"
+        onClick={handlePostClick}
+      >
         {/* Header - Instagram style */}
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-3">
             <Link 
               href={creatorProfileLink} 
@@ -516,7 +466,7 @@ export function EnhancedPostCard({
 
         {/* Content Text - Show preview even for locked content */}
         {post.content && (
-          <div className="px-4 pb-3">
+          <div className="px-3 pb-2">
             {shouldBlur ? (
               <div className="relative">
                 <p className="text-sm text-foreground leading-relaxed line-clamp-2">
@@ -537,8 +487,7 @@ export function EnhancedPostCard({
           {shouldBlur ? (
             /* Psychology-driven locked content */
             <div
-              className="relative w-full aspect-square bg-gradient-to-br from-muted to-muted/50 overflow-hidden group cursor-pointer"
-              onClick={handleDoubleTap}
+              className="relative w-full aspect-square max-w-[600px] mx-auto bg-gradient-to-br from-muted to-muted/50 overflow-hidden group"
             >
               {/* Subtle preview of content (blurred) */}
               {allImages.length > 0 && (
@@ -661,11 +610,10 @@ export function EnhancedPostCard({
                 </div>
               )}
 
-              {/* Post Images - Instagram style carousel with double-tap */}
+              {/* Post Images - Instagram style carousel */}
               {post.post_type !== 'poll' && allImages.length > 0 && (
                 <div
-                  className="relative w-full aspect-square bg-muted cursor-pointer select-none"
-                  onClick={handleDoubleTap}
+                  className="relative w-full aspect-square max-w-[600px] mx-auto bg-muted select-none"
                 >
                   <Image
                     src={allImages[currentImageIndex]}
@@ -734,9 +682,6 @@ export function EnhancedPostCard({
                       </div>
                     </>
                   )}
-
-                  {/* Double-tap heart overlay */}
-                  <DoubleTapHeart show={showDoubleTapHeart} />
                 </div>
               )}
             </>
@@ -745,14 +690,17 @@ export function EnhancedPostCard({
 
         {/* Actions Row - Instagram style */}
         {showActions && (
-          <div className="px-4 py-3">
+          <div className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
             {/* Action buttons */}
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-4">
                 {/* Like button with particles */}
                 <div className="relative">
                   <motion.button
-                    onClick={handleLike}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLike();
+                    }}
                     disabled={!currentUserId || likeMutation.isPending}
                     whileTap={{ scale: 0.8 }}
                     className="p-1"
@@ -775,7 +723,10 @@ export function EnhancedPostCard({
                 </div>
                 {/* Comment button */}
                 <motion.button
-                  onClick={handleCommentClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCommentClick();
+                  }}
                   whileTap={{ scale: 0.9 }}
                   className="p-1"
                 >
@@ -783,7 +734,10 @@ export function EnhancedPostCard({
                 </motion.button>
                 {/* Share button */}
                 <motion.button
-                  onClick={handleShare}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare();
+                  }}
                   whileTap={{ scale: 0.9 }}
                   className="p-1"
                 >
@@ -792,7 +746,10 @@ export function EnhancedPostCard({
               </div>
               {/* Bookmark button */}
               <motion.button
-                onClick={() => setIsBookmarked(!isBookmarked)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsBookmarked(!isBookmarked);
+                }}
                 whileTap={{ scale: 0.9 }}
                 className="p-1"
               >
@@ -830,9 +787,9 @@ export function EnhancedPostCard({
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden border-t border-border"
+              className="              overflow-hidden border-t border-border"
             >
-              <div className="px-4 py-3 max-h-96 overflow-y-auto">
+              <div className="px-3 py-2.5 max-h-96 overflow-y-auto">
                 {/* Threaded Comments */}
                 {loadingComments ? (
                   <div className="flex items-center justify-center py-4">
@@ -850,7 +807,7 @@ export function EnhancedPostCard({
               </div>
 
               {/* Add Comment Input - Instagram style inline */}
-              <div className="px-4 py-3 border-t border-border">
+              <div className="px-3 py-2.5 border-t border-border">
                 {currentUserId ? (
                   <form onSubmit={handleSubmitComment} className="flex items-center gap-3">
                     <Avatar className="h-7 w-7 flex-shrink-0">
@@ -894,6 +851,25 @@ export function EnhancedPostCard({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        postId={post.id}
+        postTitle={post.title}
+        postContent={post.content}
+        creatorId={post.creator.id}
+      />
+
+      {/* Post Detail Modal */}
+      <PostDetailModal
+        open={showPostModal}
+        onClose={() => setShowPostModal(false)}
+        post={post}
+        currentUserId={currentUserId}
+        isSupporter={isSupporter}
+      />
     </motion.div>
   );
 }

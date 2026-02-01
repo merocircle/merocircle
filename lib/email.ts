@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 import { logger } from './logger';
 
 const createTransporter = () => {
@@ -30,12 +31,34 @@ const createTransporter = () => {
 interface PostNotificationEmailData {
   supporterEmail: string;
   supporterName: string;
+  supporterId: string;
+  creatorId: string;
   creatorName: string;
   postTitle: string;
   postContent: string;
   postImageUrl?: string | null;
   postUrl: string;
   isPoll?: boolean;
+}
+
+function generateUnsubscribeToken(supporterId: string, creatorId: string, email: string): string {
+  const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET || 'default-secret-change-in-production';
+  
+  const payload = {
+    supporterId,
+    creatorId,
+    email,
+    exp: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+  };
+
+  const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  
+  const signature = crypto
+    .createHmac('sha256', UNSUBSCRIBE_SECRET)
+    .update(payloadBase64)
+    .digest('base64url');
+
+  return `${payloadBase64}.${signature}`;
 }
 
 /**
@@ -57,9 +80,13 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
     const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
 
-    const emailHtml = createPostNotificationEmailHtml(data, appUrl);
+    // Generate unsubscribe token
+    const unsubscribeToken = generateUnsubscribeToken(data.supporterId, data.creatorId, data.supporterEmail);
+    const unsubscribeUrl = `${appUrl}/api/supporter/unsubscribe?token=${unsubscribeToken}`;
 
-    const emailText = createPostNotificationEmailText(data, appUrl);
+    const emailHtml = createPostNotificationEmailHtml(data, appUrl, unsubscribeUrl);
+
+    const emailText = createPostNotificationEmailText(data, appUrl, unsubscribeUrl);
 
     const mailOptions = {
       from: {
@@ -96,8 +123,8 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
  * Sends email notifications to multiple supporters
  */
 export async function sendBulkPostNotifications(
-  supporters: Array<{ email: string; name: string }>,
-  postData: Omit<PostNotificationEmailData, 'supporterEmail' | 'supporterName'>
+  supporters: Array<{ email: string; name: string; id: string }>,
+  postData: Omit<PostNotificationEmailData, 'supporterEmail' | 'supporterName' | 'supporterId'>
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -112,6 +139,7 @@ export async function sendBulkPostNotifications(
           ...postData,
           supporterEmail: supporter.email,
           supporterName: supporter.name,
+          supporterId: supporter.id,
         })
       )
     );
@@ -142,7 +170,8 @@ export async function sendBulkPostNotifications(
  */
 function createPostNotificationEmailHtml(
   data: PostNotificationEmailData,
-  appUrl: string
+  appUrl: string,
+  unsubscribeUrl: string
 ): string {
   const postPreview = data.postContent.length > 200 
     ? data.postContent.substring(0, 200) + '...' 
@@ -202,9 +231,9 @@ function createPostNotificationEmailHtml(
               ` : ''}
               
               <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                <h2 style="margin: 0 0 10px; color: #333333; font-size: 18px; font-weight: 600;">
+                <p style="margin: 0 0 10px; color: #333333; font-size: 16px; font-weight: 600;">
                   ${safePostTitle}
-                </h2>
+                </p>
                 <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">
                   ${safePostPreview}
                 </p>
@@ -225,8 +254,13 @@ function createPostNotificationEmailHtml(
           <!-- Footer -->
           <tr>
             <td style="padding: 20px 30px; background-color: #f8f9fa; border-radius: 0 0 12px 12px; text-align: center;">
-              <p style="margin: 0; color: #999999; font-size: 12px;">
+              <p style="margin: 0 0 10px; color: #999999; font-size: 12px;">
                 © ${new Date().getFullYear()} MeroCircle. All rights reserved.
+              </p>
+              <p style="margin: 0; color: #999999; font-size: 11px;">
+                <a href="${escapeHtml(unsubscribeUrl)}" style="color: #999999; text-decoration: underline;">
+                  Unsubscribe from email notifications
+                </a>
               </p>
             </td>
           </tr>
@@ -244,7 +278,8 @@ function createPostNotificationEmailHtml(
  */
 function createPostNotificationEmailText(
   data: PostNotificationEmailData,
-  appUrl: string
+  appUrl: string,
+  unsubscribeUrl: string
 ): string {
   const postPreview = data.postContent.length > 200 
     ? data.postContent.substring(0, 200) + '...' 
@@ -253,15 +288,17 @@ function createPostNotificationEmailText(
   return `
 Hi ${data.supporterName},
 
-${data.creatorName} just posted something new that you might be interested in!
+${data.creatorName} just posted something new!
 
-${data.postTitle}
+"${data.postTitle}"
 
 ${postPreview}
 
 View the full post: ${data.postUrl}
 
 You're receiving this email because you're supporting ${data.creatorName} on MeroCircle.
+
+To unsubscribe from email notifications: ${unsubscribeUrl}
 
 © ${new Date().getFullYear()} MeroCircle. All rights reserved.
   `.trim();

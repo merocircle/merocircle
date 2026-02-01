@@ -1,11 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { StreamChat } from 'stream-chat';
 
 export function useUnreadCounts(chatClient: StreamChat | null, user: { id: string } | null) {
   const [channelUnreadCounts, setChannelUnreadCounts] = useState<Record<string, number>>({});
+  const lastFetchRef = useRef<number>(0);
+  const isFetchingRef = useRef<boolean>(false);
 
   const fetchUnreadCounts = useCallback(async () => {
     if (!chatClient || !user) return;
+
+    // Throttle requests to prevent rate limiting (max once per 2 seconds)
+    const now = Date.now();
+    if (isFetchingRef.current || (now - lastFetchRef.current < 2000)) {
+      return;
+    }
+
+    isFetchingRef.current = true;
+    lastFetchRef.current = now;
 
     try {
       const filter = {
@@ -23,8 +34,13 @@ export function useUnreadCounts(chatClient: StreamChat | null, user: { id: strin
       }
 
       setChannelUnreadCounts(counts);
-    } catch (err) {
-      console.error('Failed to fetch unread counts:', err);
+    } catch (err: any) {
+      // Silently handle rate limiting errors
+      if (err?.code !== 9) {
+        console.error('Failed to fetch unread counts:', err);
+      }
+    } finally {
+      isFetchingRef.current = false;
     }
   }, [chatClient, user]);
 
