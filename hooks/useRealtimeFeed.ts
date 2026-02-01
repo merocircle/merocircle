@@ -144,6 +144,22 @@ export function useRealtimeFeed() {
     let commentsChannel: RealtimeChannel;
 
     const setupSubscriptions = () => {
+      // Remove any existing channels with these names to prevent duplicate subscriptions
+      const existingPostsChannel = supabase.getChannels().find(ch => ch.topic === 'posts-realtime');
+      if (existingPostsChannel) {
+        supabase.removeChannel(existingPostsChannel);
+      }
+      
+      const existingLikesChannel = supabase.getChannels().find(ch => ch.topic === 'likes-realtime');
+      if (existingLikesChannel) {
+        supabase.removeChannel(existingLikesChannel);
+      }
+      
+      const existingCommentsChannel = supabase.getChannels().find(ch => ch.topic === 'comments-realtime');
+      if (existingCommentsChannel) {
+        supabase.removeChannel(existingCommentsChannel);
+      }
+
       // Subscribe to posts changes
       postsChannel = supabase
         .channel('posts-realtime')
@@ -225,8 +241,16 @@ export function useRealtimeComments(postId: string | null) {
   useEffect(() => {
     if (!postId) return;
 
+    const channelName = `comments-${postId}`;
+    
+    // Remove any existing channel with this name to prevent duplicate subscriptions
+    const existingChannel = supabase.getChannels().find(ch => ch.topic === channelName);
+    if (existingChannel) {
+      supabase.removeChannel(existingChannel);
+    }
+
     const channel = supabase
-      .channel(`comments-${postId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
