@@ -3,6 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUser, parsePaginationParams, handleApiError } from '@/lib/api-utils';
 
+// Vercel runtime configuration
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 10;
+
 interface Params {
   id: string;
 }
@@ -68,6 +73,19 @@ export async function POST(
   { params }: { params: Promise<Params> }
 ) {
   const { id: postId } = await params;
+  
+  // Validate environment variables for Vercel
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    logger.error('Missing Supabase environment variables', 'COMMENTS_API', {
+      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    });
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+
   try {
     // Authenticate user
     const { user, errorResponse } = await getAuthenticatedUser();
@@ -140,9 +158,17 @@ export async function POST(
       .single();
 
     if (error) {
-      logger.error('Error creating comment', 'COMMENTS_API', { error: error.message, postId, userId: user.id });
+      logger.error('Error creating comment', 'COMMENTS_API', { 
+        error: error.message, 
+        errorCode: error.code,
+        errorDetails: error.details,
+        hint: error.hint,
+        postId, 
+        userId: user.id,
+        environment: process.env.VERCEL_ENV || 'local'
+      });
       return NextResponse.json(
-        { error: 'Failed to create comment' },
+        { error: 'Failed to create comment', details: error.message },
         { status: 500 }
       );
     }
@@ -204,7 +230,12 @@ export async function POST(
         .insert(notificationsToCreate);
 
       if (notifError) {
-        logger.error('Error creating comment notifications', 'COMMENTS_API', { error: notifError.message });
+        logger.error('Error creating comment notifications', 'COMMENTS_API', { 
+          error: notifError.message,
+          errorCode: notifError.code,
+          errorDetails: notifError.details,
+          notificationCount: notificationsToCreate.length
+        });
         // Don't fail the request, just log the error
       }
     }
@@ -212,6 +243,13 @@ export async function POST(
     return NextResponse.json(comment, { status: 201 });
 
   } catch (error) {
+    logger.error('Unexpected error in POST /api/posts/[id]/comments', 'COMMENTS_API', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      postId,
+      environment: process.env.VERCEL_ENV || 'local',
+      nodeVersion: process.version
+    });
     return handleApiError(error, 'COMMENTS_API', 'Failed to create comment');
   }
 } 
