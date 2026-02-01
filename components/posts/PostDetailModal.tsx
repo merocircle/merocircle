@@ -391,7 +391,7 @@ export function PostDetailModal({
             {/* Right Side - Content, Caption, Comments */}
             <div className="w-[30%] flex flex-col bg-background overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
                 <div className="flex items-center gap-3">
                   <Link href={creatorProfileLink}>
                     <Avatar className="h-10 w-10">
@@ -414,9 +414,9 @@ export function PostDetailModal({
                 </div>
               </div>
 
-              {/* Caption */}
-              <div className="px-4 py-3 border-b border-border overflow-y-auto flex-1">
-                <div className="flex items-start gap-3 mb-4">
+              {/* Caption - Fixed */}
+              <div className="px-4 py-3 border-b border-border flex-shrink-0">
+                <div className="flex items-start gap-3">
                   <Link href={creatorProfileLink}>
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
@@ -437,8 +437,10 @@ export function PostDetailModal({
                     </span>
                   </div>
                 </div>
+              </div>
 
-                {/* Comments Section */}
+              {/* Comments Section - Scrollable */}
+              <div className="flex-1 overflow-y-auto px-4 py-3">
                 <div className="space-y-4">
                   {loadingComments ? (
                     <div className="flex items-center justify-center py-8">
@@ -456,8 +458,8 @@ export function PostDetailModal({
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="px-4 py-3 border-t border-border space-y-2">
+              {/* Actions - Fixed at bottom */}
+              <div className="px-4 py-3 border-t border-border space-y-2 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <motion.button
