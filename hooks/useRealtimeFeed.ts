@@ -256,7 +256,7 @@ export function useRealtimeComments(postId: string | null) {
 
     // Create and subscribe to new channel
     const channel = supabase
-      .channel(`comments-${postId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
