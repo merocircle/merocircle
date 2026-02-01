@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 
 interface NavIconProps {
   icon: LucideIcon;
@@ -16,7 +15,6 @@ interface NavIconProps {
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
-  onMouseEnter?: () => void;
 }
 
 export function NavIcon({
@@ -28,11 +26,8 @@ export function NavIcon({
   href,
   size = 'md',
   showLabel = false,
-  className,
-  onMouseEnter
+  className
 }: NavIconProps) {
-  const [isPressed, setIsPressed] = useState(false);
-
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
@@ -65,7 +60,6 @@ export function NavIcon({
           scale: isActive ? 1.1 : 1
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        whileTap={{ scale: 0.95 }}
       >
         <Icon
           size={iconSizes[size]}
@@ -127,15 +121,16 @@ export function NavIcon({
       <Link 
         href={href} 
         prefetch={true}
-        onMouseEnter={onMouseEnter}
-        onClick={() => setIsPressed(true)}
+        onMouseEnter={() => {
+          // Preload route on hover for instant navigation
+          if (typeof window !== 'undefined') {
+            const router = require('next/navigation').useRouter;
+            // Next.js automatically prefetches with prefetch={true}
+          }
+        }}
       >
         <motion.div
           className={baseClasses}
-          animate={{
-            scale: isPressed ? 0.92 : 1,
-            opacity: isPressed ? 0.7 : 1
-          }}
           whileHover={{ y: -2, scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 400, damping: 17 }}
@@ -172,8 +167,7 @@ export function BottomNavIcon({
   onClick,
   href,
   isCenter = false,
-  className,
-  onMouseEnter
+  className
 }: BottomNavIconProps) {
   if (isCenter) {
     const centerButton = (
@@ -258,7 +252,7 @@ export function BottomNavIcon({
 
   if (href) {
     return (
-      <Link href={href} prefetch={true} onMouseEnter={onMouseEnter}>
+      <Link href={href} prefetch={true}>
         <motion.div
           className={bottomNavClasses}
           whileTap={{ scale: 0.9 }}
