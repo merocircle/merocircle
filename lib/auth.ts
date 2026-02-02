@@ -61,6 +61,31 @@ export const authOptions: NextAuthOptions = {
           }
 
           console.log('New user created:', newUser?.id);
+          
+          // 🚀 SENIOR DEV: Send welcome email immediately (simple & reliable)
+          try {
+            // Import dynamically to avoid blocking
+            const { sendWelcomeEmail } = await import('@/lib/email');
+            
+            // Send in background (fire & forget)
+            sendWelcomeEmail({
+              userEmail: user.email,
+              userName: user.name || user.email.split('@')[0],
+              userRole: 'supporter',
+            }).then(success => {
+              if (success) {
+                console.log('✅ Welcome email sent to:', user.email);
+              } else {
+                console.warn('⚠️ Welcome email failed (non-critical):', user.email);
+              }
+            }).catch(err => {
+              console.warn('⚠️ Welcome email error (non-critical):', err.message);
+            });
+          } catch (emailError) {
+            // Never block signup if email fails
+            console.error('Failed to send welcome email:', emailError);
+          }
+          
           // Store the new user's ID for the JWT token
           if (newUser) {
             user.id = newUser.id;

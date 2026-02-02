@@ -7,10 +7,10 @@ import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/con
 
 const createTransporter = () => {
   const smtpHost = process.env.SMTP_HOST || 'smtp.hostinger.com';
-  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+  const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10); // Changed to 587 (TLS)
   const smtpUser = process.env.SMTP_USER;
   const smtpPassword = process.env.SMTP_PASSWORD;
-  const smtpSecure = process.env.SMTP_SECURE !== 'false'; // Default to true (SSL)
+  const smtpSecure = smtpPort === 465; // Only true for port 465
 
   if (!smtpUser || !smtpPassword) {
     logger.warn('SMTP credentials not configured', 'EMAIL');
@@ -20,14 +20,27 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
-    secure: smtpSecure,
+    secure: smtpSecure, // false for 587, true for 465
     auth: {
       user: smtpUser,
       pass: smtpPassword,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    // Senior dev: Increase timeouts for reliability
+    connectionTimeout: 30000, // 30 seconds (was 10)
+    greetingTimeout: 30000,   // 30 seconds (was 10)
+    socketTimeout: 30000,     // 30 seconds (was 10)
+    // Add pool to reuse connections
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    // Retry on failure
+    logger: false,
+    debug: false,
+    // TLS options for port 587
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed certificates
+      ciphers: 'SSLv3'
+    }
   });
 };
 
