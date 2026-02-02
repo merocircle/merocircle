@@ -48,9 +48,9 @@ const StreamCommunitySection = memo(function StreamCommunitySection({ creatorId 
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Stream Chat Wrapper with full Discord-like UI */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <StreamChatWrapper className="h-full" creatorId={creatorId} />
       </div>
     </div>

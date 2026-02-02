@@ -8,7 +8,7 @@ const StreamCommunitySection = lazy(() => import('@/components/dashboard/section
 
 function ChatLoadingSkeleton() {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-[calc(100vh-80px)]">
       <div className="w-80 border-r border-border/50 p-4 space-y-4">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="flex items-center gap-3 p-2">
@@ -45,7 +45,9 @@ export default function ChatPage() {
   return (
     <PageLayout>
       <Suspense fallback={<ChatLoadingSkeleton />}>
-        <StreamCommunitySection />
+        <div className="h-[calc(100vh-80px)]">
+          <StreamCommunitySection />
+        </div>
       </Suspense>
     </PageLayout>
   );
