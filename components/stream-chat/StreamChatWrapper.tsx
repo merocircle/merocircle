@@ -11,7 +11,7 @@ import {
 } from 'stream-chat-react';
 import type { Channel as StreamChannelType } from 'stream-chat';
 import { useStreamChat } from '@/contexts/stream-chat-context';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
 import {

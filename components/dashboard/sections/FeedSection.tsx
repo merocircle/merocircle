@@ -3,8 +3,9 @@
 import { memo, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rss, Sparkles, Users, TrendingUp } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { useUnifiedDashboard } from '@/hooks/useQueries';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
 import { EmptyStateCard } from '@/components/common/EmptyStateCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
@@ -45,7 +46,8 @@ const skeletonVariants = {
 };
 
 const FeedSection = memo(function FeedSection() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const { data: feedData, isLoading } = useUnifiedDashboard();
   const [feedFilter, setFeedFilter] = useState<'for-you' | 'following' | 'trending'>('for-you');
 
@@ -145,7 +147,7 @@ const FeedSection = memo(function FeedSection() {
                 <motion.div key={post.id} variants={itemVariants}>
                   <EnhancedPostCard
                     post={post}
-                    currentUserId={user?.id}
+                    currentUserId={userId}
                     showActions={true}
                     isSupporter={post.is_supporter || false}
                   />

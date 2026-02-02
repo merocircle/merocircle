@@ -48,3 +48,7 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# Email previews
+email-preview.html
+*.email-preview.html

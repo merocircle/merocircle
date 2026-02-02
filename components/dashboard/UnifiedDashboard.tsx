@@ -3,7 +3,7 @@
 import { Suspense, useMemo, memo } from 'react';
 import dynamic from 'next/dynamic';
 import { useDashboardView } from '@/contexts/dashboard-context';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 
 // Eager-loaded sections (small, frequently used)
 import ExploreSection from './sections/ExploreSection';

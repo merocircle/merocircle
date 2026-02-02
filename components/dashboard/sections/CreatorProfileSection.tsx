@@ -32,7 +32,7 @@ import {
   MessageCircle,
   TrendingUp
 } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';

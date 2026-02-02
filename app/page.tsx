@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
-import { useAuth } from "@/contexts/supabase-auth-context";
+import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/auth-context";
 import {
   UrlMessageBanner,
   HeroSection,
@@ -18,15 +19,16 @@ import {
 
 export default function LandingPage() {
   const [urlMessage, setUrlMessage] = useState<string | null>(null);
+  const { status } = useSession();
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
   // Redirect authenticated users immediately - check before rendering landing page
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (status !== 'loading' && !loading && isAuthenticated) {
       router.replace('/home');
     }
-  }, [loading, isAuthenticated, router]);
+  }, [status, loading, isAuthenticated, router]);
 
   useEffect(() => {
     // Check for URL messages
@@ -39,7 +41,7 @@ export default function LandingPage() {
   }, []);
 
   // Don't render landing page content if authenticated or still loading
-  if (loading || isAuthenticated) {
+  if (status === 'loading' || loading || isAuthenticated) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">

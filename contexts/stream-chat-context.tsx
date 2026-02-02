@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { StreamChat, Channel as StreamChannel, UserResponse, OwnUserResponse } from 'stream-chat';
-import { useAuth } from './supabase-auth-context';
+import { useSession } from 'next-auth/react';
+import { useAuth } from './auth-context';
 
 // Stream Chat client type
 type StreamChatClient = StreamChat;
@@ -22,7 +23,8 @@ const StreamChatContext = createContext<StreamChatContextType | undefined>(undef
 const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 
 export function StreamChatProvider({ children }: { children: React.ReactNode }) {
-  const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const { userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const [chatClient, setChatClient] = useState<StreamChatClient | null>(null);
   const [streamUser, setStreamUser] = useState<UserResponse | OwnUserResponse | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -36,7 +38,7 @@ export function StreamChatProvider({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    if (!user || !userProfile) {
+    if (!session?.user || !userProfile) {
       return;
     }
 
@@ -81,7 +83,7 @@ export function StreamChatProvider({ children }: { children: React.ReactNode }) 
     } finally {
       setIsConnecting(false);
     }
-  }, [user, userProfile]);
+  }, [session?.user, userProfile]);
 
   // Function to disconnect from Stream
   const disconnectFromStream = useCallback(async () => {
@@ -95,10 +97,10 @@ export function StreamChatProvider({ children }: { children: React.ReactNode }) 
 
   // Connect when authenticated
   useEffect(() => {
-    if (!authLoading && isAuthenticated && !isConnected && !isConnecting) {
+    if (status !== 'loading' && !authLoading && isAuthenticated && !isConnected && !isConnecting) {
       connectToStream();
     }
-  }, [authLoading, isAuthenticated, isConnected, isConnecting, connectToStream]);
+  }, [status, authLoading, isAuthenticated, isConnected, isConnecting, connectToStream]);
 
   // Disconnect when user signs out
   useEffect(() => {

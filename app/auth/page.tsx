@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ArrowRight, AlertCircle, Heart } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { signIn, useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -43,7 +44,8 @@ function AuthPageContent() {
   const [dragOffset, setDragOffset] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, userProfile, signInWithGoogle, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const { userProfile, loading: authLoading } = useAuth();
   
   const leftSideRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
@@ -58,10 +60,10 @@ function AuthPageContent() {
   }, [searchParams, router]);
 
   useEffect(() => {
-    if (user && userProfile && !authLoading) {
+    if (session && userProfile && status === 'authenticated') {
       router.replace('/home');
     }
-  }, [user, userProfile, authLoading, router]);
+  }, [session, userProfile, status, router]);
 
   // Entrance animations
   useEffect(() => {
@@ -198,19 +200,19 @@ function AuthPageContent() {
       setLoading(true);
       setError(null);
 
-      const { error } = await signInWithGoogle();
+      const result = await signIn('google', { callbackUrl: '/home' });
 
-      if (error) {
-        setError(error.message || 'Failed to sign in');
+      if (result?.error) {
+        setError(result.error || 'Failed to sign in');
+        setLoading(false);
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Failed to sign in. Please try again.');
-    } finally {
       setLoading(false);
     }
-  }, [signInWithGoogle]);
+  }, []);
 
-  if (authLoading) {
+  if (status === 'loading' || authLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-gray-900" />

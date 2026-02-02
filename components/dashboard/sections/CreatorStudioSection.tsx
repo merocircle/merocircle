@@ -12,7 +12,7 @@ import {
   Loader2,
   CheckCircle2,
 } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
 import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, X } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { signIn } from 'next-auth/react';
 import {
   Dialog,
   DialogContent,
@@ -22,24 +22,23 @@ interface AuthModalProps {
 export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { signInWithGoogle } = useAuth();
 
   const handleGoogleSignIn = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const { error } = await signInWithGoogle();
+      const result = await signIn('google', { callbackUrl: '/home' });
 
-      if (error) {
-        setError(error.message || 'Failed to sign in');
+      if (result?.error) {
+        setError(result.error || 'Failed to sign in');
+        setLoading(false);
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Failed to sign in. Please try again.');
-    } finally {
       setLoading(false);
     }
-  }, [signInWithGoogle]);
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

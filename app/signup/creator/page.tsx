@@ -23,7 +23,8 @@ import {
   Calculator,
   TrendingUp
 } from 'lucide-react';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
+import { useSession, signIn } from 'next-auth/react';
 import { supabase } from '@/lib/supabase';
 
 const CREATOR_CATEGORIES = [
@@ -70,7 +71,8 @@ export default function CreatorSignupPage() {
   });
   const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
   const router = useRouter();
-  const { user, userProfile, signInWithGoogle, createCreatorProfile } = useAuth();
+  const { data: session, status } = useSession();
+  const { userProfile, createCreatorProfile } = useAuth();
 
   // Validate URL format
   const validateUrl = (url: string): boolean => {
