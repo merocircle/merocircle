@@ -37,7 +37,7 @@ export function useUnreadCounts(chatClient: StreamChat | null, user: { id: strin
     } catch (err: any) {
       // Silently handle rate limiting errors
       if (err?.code !== 9) {
-        console.error('Failed to fetch unread counts:', err);
+      console.error('Failed to fetch unread counts:', err);
       }
     } finally {
       isFetchingRef.current = false;

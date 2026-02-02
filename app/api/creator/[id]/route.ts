@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { handleApiError } from '@/lib/api-utils';
+import { handleApiError, getOptionalUser } from '@/lib/api-utils';
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { id: creatorId } = await params;
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getOptionalUser();
 
     const { data: creatorProfile, error: profileError } = await supabase
       .from('creator_profiles')
@@ -43,19 +43,17 @@ export async function GET(
       .eq('creator_id', creatorId)
       .eq('is_active', true);
 
-    let isSupporter = false;
-    let supporterTierLevel = 0;
-    if (user) {
-      const { data: supporterData } = await supabase
-        .from('supporters')
-        .select('id, tier_level')
-        .eq('supporter_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('is_active', true)
-        .single();
-      isSupporter = !!supporterData;
-      supporterTierLevel = supporterData?.tier_level || 0;
-    }
+    // Check supporter status if user is authenticated
+    const { data: supporterData } = user ? await supabase
+      .from('supporters')
+      .select('tier_level')
+      .eq('supporter_id', user.id)
+      .eq('creator_id', creatorId)
+      .eq('is_active', true)
+      .maybeSingle() : { data: null };
+    
+    const isSupporter = !!supporterData;
+    const supporterTierLevel = supporterData?.tier_level || 0;
 
     // Get subscription tiers for this creator
     const { data: tiers } = await supabase

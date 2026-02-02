@@ -413,8 +413,8 @@ export function EnhancedPostCard({
         }}
       >
         {/* Header - Instagram style */}
-        <div className="flex items-center justify-between px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-2.5 py-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2.5">
             <Link 
               href={creatorProfileLink} 
               className="cursor-pointer"
@@ -422,7 +422,7 @@ export function EnhancedPostCard({
               onFocus={handlePrefetch}
               onClick={handleCreatorClick}
             >
-              <Avatar className="h-10 w-10 ring-2 ring-background hover:ring-primary/50 transition-all">
+              <Avatar className="h-8 w-8 ring-2 ring-background hover:ring-primary/50 transition-all">
                 <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
                   {post.creator.display_name.charAt(0).toUpperCase()}
@@ -433,7 +433,7 @@ export function EnhancedPostCard({
               <div className="flex items-center gap-1.5">
                 <Link
                   href={creatorProfileLink}
-                  className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-xs font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
                   onMouseEnter={handlePrefetch}
                   onFocus={handlePrefetch}
                   onClick={handleCreatorClick}
@@ -441,12 +441,12 @@ export function EnhancedPostCard({
                   {post.creator.display_name}
                 </Link>
                 {post.creator_profile?.is_verified && (
-                  <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-blue-500/10 text-blue-500 border-0">
+                  <Badge variant="secondary" className="h-3 px-1 text-[9px] bg-blue-500/10 text-blue-500 border-0">
                     ✓
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
                 {post.creator_profile?.category && (
                   <>
@@ -466,28 +466,28 @@ export function EnhancedPostCard({
           </div>
           <div className="flex items-center gap-1">
             {post.tier_required !== 'free' && (
-              <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+              <Badge variant="secondary" className="text-[9px] px-1.5 py-0.5">
                 {post.tier_required}
               </Badge>
             )}
-            <button className="p-2 rounded-full hover:bg-muted transition-colors">
-              <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+            <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
         </div>
 
         {/* Content Text - Show preview even for locked content */}
         {post.content && (
-          <div className="px-3 pb-2">
+          <div className="px-2.5 pb-1.5">
             {shouldBlur ? (
               <div className="relative">
-                <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+                <p className="text-xs text-foreground leading-relaxed line-clamp-2">
                   {post.content}
                 </p>
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
               </div>
             ) : (
-              <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+              <p className="text-xs text-foreground leading-relaxed line-clamp-2">
                 {post.content}
               </p>
             )}
@@ -499,7 +499,7 @@ export function EnhancedPostCard({
           {shouldBlur ? (
             /* Psychology-driven locked content */
             <div
-              className="relative w-full aspect-square max-w-[600px] mx-auto bg-gradient-to-br from-muted to-muted/50 overflow-hidden group"
+              className="relative w-full aspect-square max-w-[480px] mx-auto bg-gradient-to-br from-muted to-muted/50 overflow-hidden group"
             >
               {/* Subtle preview of content (blurred) */}
               {allImages.length > 0 && (
@@ -625,7 +625,7 @@ export function EnhancedPostCard({
               {/* Post Images - Instagram style carousel */}
               {post.post_type !== 'poll' && allImages.length > 0 && (
                 <div
-                  className="relative w-full aspect-square max-w-[600px] mx-auto bg-muted select-none"
+                  className="relative w-full aspect-square max-w-[480px] mx-auto bg-muted select-none"
                 >
                   <Image
                     src={allImages[currentImageIndex]}
@@ -702,10 +702,10 @@ export function EnhancedPostCard({
 
         {/* Actions Row - Instagram style */}
         {showActions && (
-          <div className="px-3 py-2.5" data-actions-section onClick={(e) => e.stopPropagation()}>
+          <div className="px-2.5 py-2" data-actions-section onClick={(e) => e.stopPropagation()}>
             {/* Action buttons */}
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-3">
                 {/* Like button with particles */}
                 <div className="relative">
                   <motion.button
@@ -725,7 +725,7 @@ export function EnhancedPostCard({
                     >
                       <Heart
                         className={cn(
-                          'w-6 h-6 transition-colors',
+                          'w-5 h-5 transition-colors',
                           isLiked ? 'text-rose-500 fill-rose-500' : 'text-foreground'
                         )}
                       />
@@ -743,7 +743,7 @@ export function EnhancedPostCard({
                   whileTap={{ scale: 0.9 }}
                   className="p-1"
                 >
-                  <MessageCircle className="w-6 h-6 text-foreground" />
+                  <MessageCircle className="w-5 h-5 text-foreground" />
                 </motion.button>
                 {/* Share button */}
                 <motion.button
@@ -754,7 +754,7 @@ export function EnhancedPostCard({
                   whileTap={{ scale: 0.9 }}
                   className="p-1"
                 >
-                  <Share2 className="w-6 h-6 text-foreground" />
+                  <Share2 className="w-5 h-5 text-foreground" />
                 </motion.button>
               </div>
               {/* Bookmark button */}
@@ -768,7 +768,7 @@ export function EnhancedPostCard({
               >
                 <Bookmark
                   className={cn(
-                    'w-6 h-6 transition-colors',
+                    'w-5 h-5 transition-colors',
                     isBookmarked ? 'text-foreground fill-foreground' : 'text-foreground'
                   )}
                 />
@@ -776,7 +776,7 @@ export function EnhancedPostCard({
             </div>
 
             {/* Likes count */}
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-xs font-semibold text-foreground">
               {likesCount.toLocaleString()} {likesCount === 1 ? 'like' : 'likes'}
             </p>
 
@@ -788,7 +788,7 @@ export function EnhancedPostCard({
                   e.preventDefault();
                   handleCommentClick(e);
                 }}
-                className="text-sm text-muted-foreground hover:text-foreground mt-1"
+                className="text-xs text-muted-foreground hover:text-foreground mt-1"
               >
                 View all {commentsCount} comments
               </button>
@@ -808,7 +808,7 @@ export function EnhancedPostCard({
               data-comments-section
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-3 py-2.5 max-h-96 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="px-2.5 py-2 max-h-96 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 {/* Threaded Comments */}
                 {loadingComments ? (
                   <div className="flex items-center justify-center py-4">
@@ -843,7 +843,7 @@ export function EnhancedPostCard({
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       placeholder="Add a comment..."
-                      className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                      className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <button
@@ -866,7 +866,7 @@ export function EnhancedPostCard({
                   </form>
                 ) : (
                   <Link href="/auth" className="block text-center" onClick={(e) => e.stopPropagation()}>
-                    <span className="text-sm text-muted-foreground hover:text-foreground">
+                    <span className="text-xs text-muted-foreground hover:text-foreground">
                       Log in to comment
                     </span>
                   </Link>
