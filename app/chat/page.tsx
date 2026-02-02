@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, lazy } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PageLayout } from '@/components/common/PageLayout';
 
 // Lazy load the heavy chat component
@@ -41,13 +42,22 @@ function ChatLoadingSkeleton() {
   );
 }
 
+function ChatPageContent() {
+  const searchParams = useSearchParams();
+  const channelId = searchParams.get('channel');
+
+  return (
+    <div className="h-[calc(100vh-80px)]">
+      <StreamCommunitySection channelId={channelId || undefined} />
+    </div>
+  );
+}
+
 export default function ChatPage() {
   return (
     <PageLayout>
       <Suspense fallback={<ChatLoadingSkeleton />}>
-        <div className="h-[calc(100vh-80px)]">
-          <StreamCommunitySection />
-        </div>
+        <ChatPageContent />
       </Suspense>
     </PageLayout>
   );

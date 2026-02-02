@@ -33,9 +33,10 @@ import 'stream-chat-react/dist/css/v2/index.css';
 interface StreamChatWrapperProps {
   className?: string;
   creatorId?: string; // Filter to show only this creator's server
+  channelId?: string; // Stream channel ID to auto-open from URL
 }
 
-export function StreamChatWrapper({ className = '', creatorId }: StreamChatWrapperProps) {
+export function StreamChatWrapper({ className = '', creatorId, channelId: urlChannelId }: StreamChatWrapperProps) {
   const { chatClient, isConnecting, isConnected, error, reconnect } = useStreamChat();
   const { user, isCreator } = useAuth();
   const { resolvedTheme } = useTheme();
@@ -50,6 +51,7 @@ export function StreamChatWrapper({ className = '', creatorId }: StreamChatWrapp
   const [mobileView, setMobileView] = useState<MobileView>('servers');
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
 
   // Custom hooks
   const { otherServers, myServer, loading, fetchChannels } = useChannels(user);
@@ -129,6 +131,84 @@ export function StreamChatWrapper({ className = '', creatorId }: StreamChatWrapp
       chatClient.off('notification.mark_read', handleNewMessage);
     };
   }, [chatClient, fetchUnreadCounts, fetchDMChannels, creatorId]);
+
+  useEffect(() => {
+    if (!chatClient || !user) return;
+
+    const handleMessageNew = async (event: any) => {
+      try {
+        const message = event.message;
+        const messageText = message?.text || '';
+        const senderId = message?.user?.id;
+        const channelId = message?.cid;
+        const mentionedUsers = message?.mentioned_users || [];
+
+        if (senderId !== user.id || !channelId) return;
+
+        const streamChannelId = channelId.split(':')[1];
+        if (!streamChannelId) return;
+
+        const hasEveryoneMention = /\@everyone\b/i.test(messageText);
+        
+        if (hasEveryoneMention) {
+          try {
+            const response = await fetch('/api/stream/mention-everyone', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                channelId: streamChannelId,
+                messageId: message.id,
+                senderId,
+                messageText,
+              }),
+            });
+
+            if (!response.ok) {
+              console.error('Failed to send @everyone mention emails:', await response.text());
+            }
+          } catch (error) {
+            console.error('Error calling @everyone mention API:', error);
+          }
+        }
+
+        if (!hasEveryoneMention && mentionedUsers.length > 0) {
+          const mentionedUserIds = mentionedUsers
+            .map((u: any) => u.id)
+            .filter((id: string) => id && id !== senderId); // Filter out sender
+
+          if (mentionedUserIds.length > 0) {
+            try {
+              const response = await fetch('/api/stream/mention-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  channelId: streamChannelId,
+                  messageId: message.id,
+                  senderId,
+                  messageText,
+                  mentionedUserIds,
+                }),
+              });
+
+              if (!response.ok) {
+                console.error('Failed to send user mention emails:', await response.text());
+              }
+            } catch (error) {
+              console.error('Error calling user mention API:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling mentions:', error);
+      }
+    };
+
+    chatClient.on('message.new', handleMessageNew);
+
+    return () => {
+      chatClient.off('message.new', handleMessageNew);
+    };
+  }, [chatClient, user]);
 
   // Handle avatar clicks for DM
   useEffect(() => {
@@ -252,9 +332,88 @@ export function StreamChatWrapper({ className = '', creatorId }: StreamChatWrapp
     }
   }, [fetchChannels]);
 
-  // Auto-select first channel when filtering by creator
   useEffect(() => {
-    if (creatorId && !loading && !activeChannel && selectChannel) {
+    if (urlChannelId) {
+      urlChannelOpenedRef.current = false;
+    }
+  }, [urlChannelId]);
+
+  useEffect(() => {
+    if (!urlChannelId || !chatClient || !isConnected || !selectChannel) {
+      return;
+    }
+
+    if (activeChannel) {
+      const currentChannelId = (activeChannel.data as any)?.id;
+      if (currentChannelId === urlChannelId) {
+        urlChannelOpenedRef.current = true;
+        return;
+      }
+    }
+
+    if (loading) {
+      return;
+    }
+
+    const allServers = [...(filteredMyServer ? [filteredMyServer] : []), ...filteredOtherServers];
+    const hasChannels = allServers.some(server => server.channels.length > 0);
+
+    if (!hasChannels) {
+      const timeout = setTimeout(() => {
+        if (!urlChannelOpenedRef.current) {
+          fetchChannels();
+        }
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+
+    if (urlChannelOpenedRef.current && activeChannel) {
+      return;
+    }
+
+    let targetChannel: SupabaseChannel | null = null;
+    let targetServer: Server | null = null;
+
+    for (const server of allServers) {
+      const channel = server.channels.find(
+        (ch: SupabaseChannel) => ch.stream_channel_id === urlChannelId
+      );
+      
+      if (channel) {
+        targetChannel = channel;
+        targetServer = server;
+        break;
+      }
+    }
+
+    if (targetChannel && targetServer) {
+      urlChannelOpenedRef.current = true;
+      
+      setExpandedServers(prev => new Set([...prev, targetServer!.id]));
+      
+      setTimeout(() => {
+        selectChannel(targetChannel!);
+      }, 100);
+    } else if (hasChannels) {
+      urlChannelOpenedRef.current = true;
+      console.warn(`Channel ${urlChannelId} not found in available channels`, {
+        availableChannels: allServers.flatMap(s => s.channels.map(ch => ch.stream_channel_id)),
+      });
+    }
+  }, [
+    urlChannelId,
+    loading,
+    chatClient,
+    isConnected,
+    selectChannel,
+    filteredMyServer,
+    filteredOtherServers,
+    fetchChannels,
+    activeChannel,
+  ]);
+
+  useEffect(() => {
+    if (creatorId && !urlChannelId && !loading && !activeChannel && selectChannel) {
       const targetServer = filteredMyServer || filteredOtherServers[0];
       if (targetServer && targetServer.channels.length > 0) {
         const firstChannel = targetServer.channels.find((ch: SupabaseChannel) => ch.stream_channel_id);
@@ -263,7 +422,7 @@ export function StreamChatWrapper({ className = '', creatorId }: StreamChatWrapp
         }
       }
     }
-  }, [creatorId, loading, filteredMyServer, filteredOtherServers, activeChannel, selectChannel]);
+  }, [creatorId, urlChannelId, loading, filteredMyServer, filteredOtherServers, activeChannel, selectChannel]);
 
   const handleStartDM = useCallback(async (userId: string) => {
     if (!chatClient || !user || userId === user.id) return;
