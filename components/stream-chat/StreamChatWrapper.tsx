@@ -11,7 +11,7 @@ import {
 } from 'stream-chat-react';
 import type { Channel as StreamChannelType } from 'stream-chat';
 import { useStreamChat } from '@/contexts/stream-chat-context';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
 import {
@@ -32,9 +32,10 @@ import 'stream-chat-react/dist/css/v2/index.css';
 
 interface StreamChatWrapperProps {
   className?: string;
+  creatorId?: string; // Filter to show only this creator's server
 }
 
-export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
+export function StreamChatWrapper({ className = '', creatorId }: StreamChatWrapperProps) {
   const { chatClient, isConnecting, isConnected, error, reconnect } = useStreamChat();
   const { user, isCreator } = useAuth();
   const { resolvedTheme } = useTheme();
@@ -55,32 +56,66 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
   const { dmChannels, fetchDMChannels } = useDMChannels(chatClient, user);
   const { channelUnreadCounts, fetchUnreadCounts } = useUnreadCounts(chatClient, user);
 
+  // Filter servers to show only the specified creator's server
+  const filteredOtherServers = creatorId 
+    ? otherServers.filter((server: Server) => server.id === creatorId)
+    : otherServers;
+  
+  const filteredMyServer = creatorId && myServer?.id === creatorId 
+    ? myServer 
+    : (!creatorId ? myServer : null);
+
   const streamTheme = resolvedTheme === 'dark' ? 'str-chat__theme-dark' : 'str-chat__theme-light';
 
-  // Initialize data
+  // Initialize data with debouncing to prevent rate limiting
   useEffect(() => {
     if (isConnected && user) {
-      fetchChannels();
-      fetchUnreadCounts();
-      fetchDMChannels();
+      // Debounce to prevent too many requests
+      const timer = setTimeout(() => {
+        fetchChannels();
+        // Only fetch unread counts and DMs if not filtering by creator (to reduce API calls)
+        if (!creatorId) {
+          fetchUnreadCounts();
+          fetchDMChannels();
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
-  }, [isConnected, user, fetchChannels, fetchDMChannels, fetchUnreadCounts]);
+  }, [isConnected, user, fetchChannels, fetchDMChannels, fetchUnreadCounts, creatorId]);
 
   // Auto-expand servers when loaded
   useEffect(() => {
-    if (!loading && (otherServers.length > 0 || myServer)) {
-      const allIds = new Set([...otherServers.map(s => s.id), ...(myServer ? [myServer.id] : [])]);
-      setExpandedServers(allIds);
+    if (!loading && (filteredOtherServers.length > 0 || filteredMyServer)) {
+      const allIds = new Set([...filteredOtherServers.map((s: Server) => s.id), ...(filteredMyServer ? [filteredMyServer.id] : [])]);
+      
+      // Only update if the set actually changed
+      const currentIds = Array.from(expandedServers).sort().join(',');
+      const newIds = Array.from(allIds).sort().join(',');
+      
+      if (currentIds !== newIds) {
+        setExpandedServers(allIds);
+      }
     }
-  }, [loading, otherServers, myServer]);
+  }, [loading, filteredOtherServers, filteredMyServer, expandedServers]);
 
-  // Listen for new messages
+  // Listen for new messages (debounced to prevent rate limiting)
   useEffect(() => {
     if (!chatClient) return;
 
+    let debounceTimer: NodeJS.Timeout;
     const handleNewMessage = () => {
-      fetchUnreadCounts();
-      fetchDMChannels();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        // Only fetch if not filtering by creator (to reduce API calls)
+        if (!creatorId) {
+          fetchUnreadCounts();
+          fetchDMChannels();
+        } else {
+          // When filtering by creator, only fetch unread counts for that creator's channels
+          fetchUnreadCounts();
+        }
+      }, 1000); // Debounce by 1 second
     };
 
     chatClient.on('message.new', handleNewMessage);
@@ -88,11 +123,12 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
     chatClient.on('notification.mark_read', handleNewMessage);
 
     return () => {
+      clearTimeout(debounceTimer);
       chatClient.off('message.new', handleNewMessage);
       chatClient.off('notification.message_new', handleNewMessage);
       chatClient.off('notification.mark_read', handleNewMessage);
     };
-  }, [chatClient, fetchUnreadCounts, fetchDMChannels]);
+  }, [chatClient, fetchUnreadCounts, fetchDMChannels, creatorId]);
 
   // Handle avatar clicks for DM
   useEffect(() => {
@@ -215,6 +251,19 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
       // Silent fail
     }
   }, [fetchChannels]);
+
+  // Auto-select first channel when filtering by creator
+  useEffect(() => {
+    if (creatorId && !loading && !activeChannel && selectChannel) {
+      const targetServer = filteredMyServer || filteredOtherServers[0];
+      if (targetServer && targetServer.channels.length > 0) {
+        const firstChannel = targetServer.channels.find((ch: SupabaseChannel) => ch.stream_channel_id);
+        if (firstChannel) {
+          selectChannel(firstChannel);
+        }
+      }
+    }
+  }, [creatorId, loading, filteredMyServer, filteredOtherServers, activeChannel, selectChannel]);
 
   const handleStartDM = useCallback(async (userId: string) => {
     if (!chatClient || !user || userId === user.id) return;
@@ -387,7 +436,7 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
     );
   }
 
-  const allServers = [...otherServers, ...(myServer ? [myServer] : [])];
+  const allServers = [...filteredOtherServers, ...(filteredMyServer ? [filteredMyServer] : [])];
 
   return (
     <div className={`stream-chat-wrapper h-full overflow-hidden ${className}`} ref={chatContainerRef}>
@@ -406,25 +455,25 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
                 </div>
               ) : (
                 <>
-                  {otherServers.length > 0 && (
+                  {filteredOtherServers.length > 0 && (
                     <div className="mb-4">
                       <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        My Channels
+                        {creatorId ? 'Community' : 'My Channels'}
                       </div>
-                      {otherServers.map(server => renderServerDesktop(server, false))}
+                      {filteredOtherServers.map((server: Server) => renderServerDesktop(server, false))}
                     </div>
                   )}
 
-                  {isCreator && myServer && (
+                  {isCreator && filteredMyServer && (
                     <div className="mb-4">
                       <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         My Server
                       </div>
-                      {renderServerDesktop(myServer, true)}
+                      {renderServerDesktop(filteredMyServer, true)}
                     </div>
                   )}
 
-                  {dmChannels.length > 0 && (
+                  {!creatorId && dmChannels.length > 0 && (
                     <div className="mb-4">
                       <button
                         onClick={() => setExpandedDMs(!expandedDMs)}
@@ -459,11 +508,13 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
                     </div>
                   )}
 
-                  {otherServers.length === 0 && !myServer && (
+                  {filteredOtherServers.length === 0 && !filteredMyServer && (
                     <div className="p-4 text-center text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No channels yet</p>
-                      <p className="text-xs mt-1">Support a creator to join their community</p>
+                      <p className="text-xs mt-1">
+                        {creatorId ? 'This creator has no channels yet' : 'Support a creator to join their community'}
+                      </p>
                     </div>
                   )}
                 </>
@@ -517,25 +568,25 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
                   </div>
                 ) : (
                   <>
-                    {otherServers.length > 0 && (
+                    {filteredOtherServers.length > 0 && (
                       <div className="mb-4">
                         <div className="px-1 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          My Channels
+                          {creatorId ? 'Community' : 'My Channels'}
                         </div>
-                        {otherServers.map(server => renderServerMobile(server))}
+                        {filteredOtherServers.map((server: Server) => renderServerMobile(server))}
                       </div>
                     )}
 
-                    {isCreator && myServer && (
+                    {isCreator && filteredMyServer && (
                       <div className="mb-4">
                         <div className="px-1 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                           My Server
                         </div>
-                        {renderServerMobile(myServer)}
+                        {renderServerMobile(filteredMyServer)}
                       </div>
                     )}
 
-                    {dmChannels.length > 0 && (
+                    {!creatorId && dmChannels.length > 0 && (
                       <div className="mb-4">
                         <div className="px-1 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                           {isCreator ? 'Direct Messages' : 'Messages'}
@@ -578,7 +629,7 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
                       </div>
                     )}
 
-                    {allServers.length === 0 && dmChannels.length === 0 && (
+                    {allServers.length === 0 && (!creatorId && dmChannels.length === 0) && (
                       <div className="p-4 text-center text-muted-foreground">
                         <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
                         <p className="text-base font-medium">No servers yet</p>

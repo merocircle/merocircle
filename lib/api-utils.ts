@@ -1,27 +1,61 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import type { User } from '@supabase/supabase-js';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  image?: string;
+}
 
 /**
- * Get authenticated user from Supabase
+ * Get authenticated user from NextAuth session
  * Returns user or null, and error response if unauthorized
  */
 export async function getAuthenticatedUser(): Promise<{
-  user: User | null;
+  user: AuthUser | null;
   errorResponse: NextResponse | null;
 }> {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const session = await getServerSession(authOptions);
 
-  if (authError || !user) {
+  if (!session?.user?.id) {
     return {
       user: null,
       errorResponse: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
 
-  return { user, errorResponse: null };
+  return { 
+    user: {
+      id: session.user.id,
+      email: session.user.email || '',
+      name: session.user.name || undefined,
+      image: session.user.image || undefined,
+    }, 
+    errorResponse: null 
+  };
+}
+
+/**
+ * Get optional authenticated user (doesn't return error if not authenticated)
+ * Useful for endpoints that work with or without authentication
+ */
+export async function getOptionalUser(): Promise<AuthUser | null> {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  return {
+    id: session.user.id,
+    email: session.user.email || '',
+    name: session.user.name || undefined,
+    image: session.user.image || undefined,
+  };
 }
 
 /**

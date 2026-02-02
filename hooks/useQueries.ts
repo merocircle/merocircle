@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 
 export function useUnifiedDashboard() {
   const { user, loading: authLoading } = useAuth();

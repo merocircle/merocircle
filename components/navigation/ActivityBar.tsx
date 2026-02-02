@@ -20,10 +20,8 @@ import { NavIcon } from './NavIcon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { type DashboardView } from '@/contexts/dashboard-context';
-import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
-import { debouncedPrefetch, prefetchComponent } from '@/lib/prefetch-utils';
 
 interface ActivityBarProps {
   user?: {
@@ -65,7 +63,6 @@ export function ActivityBar({
   const pathname = usePathname();
   const { isCreator } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { prefetchHome, prefetchNotifications, prefetchChat } = useRoutePrefetch();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -159,50 +156,24 @@ export function ActivityBar({
 
         {/* Main Navigation */}
         <nav className="flex flex-col items-center gap-2">
-          {navItems.map((item) => {
-            // Determine prefetch handler based on view
-            const getPrefetchHandler = () => {
-              if (item.view === 'home') {
-                return debouncedPrefetch(() => {
-                  prefetchHome();
-                  prefetchComponent(() => import('@/components/dashboard/sections/ExploreSection'));
-                });
-              }
-              if (item.view === 'chat') {
-                return debouncedPrefetch(() => {
-                  prefetchChat();
-                  prefetchComponent(() => import('@/components/dashboard/sections/StreamCommunitySection'));
-                });
-              }
-              if (item.view === 'notifications') {
-                return debouncedPrefetch(() => {
-                  prefetchNotifications();
-                  prefetchComponent(() => import('@/components/dashboard/sections/NotificationsSection'));
-                });
-              }
-              return undefined;
-            };
-
-            return (
-              <Tooltip key={item.id}>
-                <TooltipTrigger asChild>
-                  <div>
-                    <NavIcon
-                      icon={item.icon}
-                      label={item.label}
-                      isActive={isActive(item)}
-                      badge={item.badge}
-                      href={item.view ? getRoute(item.view) : undefined}
-                      onMouseEnter={getPrefetchHandler()}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{item.label}</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
+          {navItems.map((item) => (
+            <Tooltip key={item.id}>
+              <TooltipTrigger asChild>
+                <div>
+                  <NavIcon
+                    icon={item.icon}
+                    label={item.label}
+                    isActive={isActive(item)}
+                    badge={item.badge}
+                    href={item.view ? getRoute(item.view) : undefined}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{item.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
 
           {/* Creator Studio - Only for creators */}
           {creatorNavItem && (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 
 interface SupportedCreator {
   id: string;

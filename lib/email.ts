@@ -1,12 +1,16 @@
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 import { logger } from './logger';
+import { render } from '@react-email/render';
+import { PostNotification, PollNotification, WelcomeEmail } from '@/emails/templates';
+import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
 const createTransporter = () => {
   const smtpHost = process.env.SMTP_HOST || 'smtp.hostinger.com';
-  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
+  const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10); // Changed to 587 (TLS)
   const smtpUser = process.env.SMTP_USER;
   const smtpPassword = process.env.SMTP_PASSWORD;
-  const smtpSecure = process.env.SMTP_SECURE !== 'false'; // Default to true (SSL)
+  const smtpSecure = smtpPort === 465; // Only true for port 465
 
   if (!smtpUser || !smtpPassword) {
     logger.warn('SMTP credentials not configured', 'EMAIL');
@@ -16,26 +20,61 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
-    secure: smtpSecure,
+    secure: smtpSecure, // false for 587, true for 465
     auth: {
       user: smtpUser,
       pass: smtpPassword,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    // Senior dev: Increase timeouts for reliability
+    connectionTimeout: 30000, // 30 seconds (was 10)
+    greetingTimeout: 30000,   // 30 seconds (was 10)
+    socketTimeout: 30000,     // 30 seconds (was 10)
+    // Add pool to reuse connections
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    // Retry on failure
+    logger: false,
+    debug: false,
+    // TLS options for port 587
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed certificates
+      ciphers: 'SSLv3'
+    }
   });
 };
 
 interface PostNotificationEmailData {
   supporterEmail: string;
   supporterName: string;
+  supporterId: string;
+  creatorId: string;
   creatorName: string;
   postTitle: string;
   postContent: string;
   postImageUrl?: string | null;
   postUrl: string;
   isPoll?: boolean;
+}
+
+function generateUnsubscribeToken(supporterId: string, creatorId: string, email: string): string {
+  const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET || 'default-secret-change-in-production';
+  
+  const payload = {
+    supporterId,
+    creatorId,
+    email,
+    exp: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+  };
+
+  const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  
+  const signature = crypto
+    .createHmac('sha256', UNSUBSCRIBE_SECRET)
+    .update(payloadBase64)
+    .digest('base64url');
+
+  return `${payloadBase64}.${signature}`;
 }
 
 /**
@@ -49,25 +88,50 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
       return false;
     }
 
-    const smtpUser = process.env.SMTP_USER;
-    if (!smtpUser) {
-      logger.warn('SMTP_USER not configured, cannot send email', 'EMAIL');
-      return false;
-    }
-    const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
 
-    const emailHtml = createPostNotificationEmailHtml(data, appUrl);
+    // Render email using appropriate template
+    const EmailTemplate = data.isPoll ? PollNotification : PostNotification;
+    
+    const emailHtml = await render(
+      EmailTemplate({
+        supporterName: data.supporterName,
+        creatorName: data.creatorName,
+        ...(data.isPoll
+          ? {
+              pollQuestion: data.postTitle,
+              pollDescription: data.postContent,
+              pollUrl: data.postUrl,
+            }
+          : {
+              postTitle: data.postTitle,
+              postContent: data.postContent,
+              postImageUrl: data.postImageUrl,
+              postUrl: data.postUrl,
+            }),
+        creatorProfileUrl,
+        settingsUrl: EMAIL_CONFIG.urls.settings,
+        helpUrl: EMAIL_CONFIG.urls.help,
+      })
+    );
 
-    const emailText = createPostNotificationEmailText(data, appUrl);
+    const unsubscribeToken = generateUnsubscribeToken(data.supporterId, data.creatorId, data.supporterEmail);
+    const unsubscribeUrl = `${appUrl}/api/supporter/unsubscribe?token=${unsubscribeToken}`;
+
+    const emailText = createPostNotificationEmailText(data, appUrl, unsubscribeUrl);
+
+    const subject = data.isPoll 
+      ? EMAIL_SUBJECTS.pollNotification(data.creatorName)
+      : EMAIL_SUBJECTS.postNotification(data.creatorName);
 
     const mailOptions = {
       from: {
-        name: 'MeroCircle',
-        address: fromEmail,
+        name: EMAIL_CONFIG.from.name,
+        address: EMAIL_CONFIG.from.email,
       },
       to: data.supporterEmail,
-      subject: `${data.creatorName} just posted something new!`,
+      subject,
       text: emailText,
       html: emailHtml,
     };
@@ -96,8 +160,8 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
  * Sends email notifications to multiple supporters
  */
 export async function sendBulkPostNotifications(
-  supporters: Array<{ email: string; name: string }>,
-  postData: Omit<PostNotificationEmailData, 'supporterEmail' | 'supporterName'>
+  supporters: Array<{ email: string; name: string; id: string }>,
+  postData: Omit<PostNotificationEmailData, 'supporterEmail' | 'supporterName' | 'supporterId'>
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -112,6 +176,7 @@ export async function sendBulkPostNotifications(
           ...postData,
           supporterEmail: supporter.email,
           supporterName: supporter.name,
+          supporterId: supporter.id,
         })
       )
     );
@@ -138,30 +203,52 @@ export async function sendBulkPostNotifications(
 }
 
 /**
+ * Creates plain text email template for post notifications
+ */
+function createPostNotificationEmailText(
+  data: PostNotificationEmailData,
+  appUrl: string,
+  unsubscribeUrl: string
+): string {
+  const postPreview = data.postContent.length > 150 
+    ? data.postContent.substring(0, 150) + '...' 
+    : data.postContent;
+  
+  const contentType = data.isPoll ? 'poll' : 'post';
+
+  return `
+Hey ${data.supporterName} 👋
+
+${data.creatorName} just shared a new ${contentType}
+
+${data.postTitle && data.postTitle !== 'Untitled' ? `${data.postTitle}\n\n` : ''}${postPreview}
+
+${data.isPoll ? 'Vote Now' : 'Read & React'}: ${data.postUrl}
+
+---
+Your support helps ${data.creatorName} create more amazing content.
+You're part of a community that matters.
+
+Notification Settings: ${appUrl}/settings
+View Profile: ${appUrl}/${data.creatorName}
+
+MeroCircle © ${new Date().getFullYear()}
+  `.trim();
+}
+
+/**
  * Creates HTML email template for post notifications
  */
 function createPostNotificationEmailHtml(
   data: PostNotificationEmailData,
-  appUrl: string
+  unsubscribeUrl: string
 ): string {
-  const postPreview = data.postContent.length > 200 
-    ? data.postContent.substring(0, 200) + '...' 
-    : data.postContent;
-
-  const escapeHtml = (text: string) => {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (m) => map[m]);
-  };
-
   const safeCreatorName = escapeHtml(data.creatorName);
   const safeSupporterName = escapeHtml(data.supporterName);
-  const safePostTitle = escapeHtml(data.postTitle);
+  const safePostTitle = escapeHtml(data.postTitle || 'New Post');
+  const postPreview = data.postContent.length > 300 
+    ? data.postContent.substring(0, 300) + '...' 
+    : data.postContent;
   const safePostPreview = escapeHtml(postPreview);
 
   return `
@@ -202,9 +289,9 @@ function createPostNotificationEmailHtml(
               ` : ''}
               
               <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                <h2 style="margin: 0 0 10px; color: #333333; font-size: 18px; font-weight: 600;">
+                <p style="margin: 0 0 10px; color: #333333; font-size: 16px; font-weight: 600;">
                   ${safePostTitle}
-                </h2>
+                </p>
                 <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">
                   ${safePostPreview}
                 </p>
@@ -225,8 +312,13 @@ function createPostNotificationEmailHtml(
           <!-- Footer -->
           <tr>
             <td style="padding: 20px 30px; background-color: #f8f9fa; border-radius: 0 0 12px 12px; text-align: center;">
-              <p style="margin: 0; color: #999999; font-size: 12px;">
+              <p style="margin: 0 0 10px; color: #999999; font-size: 12px;">
                 © ${new Date().getFullYear()} MeroCircle. All rights reserved.
+              </p>
+              <p style="margin: 0; color: #999999; font-size: 11px;">
+                <a href="${escapeHtml(unsubscribeUrl)}" style="color: #999999; text-decoration: underline;">
+                  Unsubscribe from email notifications
+                </a>
               </p>
             </td>
           </tr>
@@ -239,30 +331,65 @@ function createPostNotificationEmailHtml(
   `.trim();
 }
 
+interface WelcomeEmailData {
+  userEmail: string;
+  userName: string;
+  userRole: 'creator' | 'supporter';
+}
+
 /**
- * Creates plain text email template for post notifications
+ * Sends a welcome email to a new user
+ * Triggered by database webhook when a new user signs up
  */
-function createPostNotificationEmailText(
-  data: PostNotificationEmailData,
-  appUrl: string
-): string {
-  const postPreview = data.postContent.length > 200 
-    ? data.postContent.substring(0, 200) + '...' 
-    : data.postContent;
+export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping welcome email', 'EMAIL');
+      return false;
+    }
 
-  return `
-Hi ${data.supporterName},
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const profileUrl = data.userRole === 'creator' 
+      ? `${appUrl}/creator-studio` 
+      : `${appUrl}/profile`;
+    const exploreUrl = `${appUrl}/explore`;
+    const settingsUrl = EMAIL_CONFIG.urls.settings;
+    const helpUrl = EMAIL_CONFIG.urls.help;
 
-${data.creatorName} just posted something new that you might be interested in!
+    // Render welcome email template
+    const html = await render(
+      WelcomeEmail({
+        userName: data.userName,
+        userRole: data.userRole,
+        profileUrl,
+        exploreUrl,
+        settingsUrl,
+        helpUrl,
+      })
+    );
 
-${data.postTitle}
+    const mailOptions = {
+      from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
+      to: data.userEmail,
+      subject: EMAIL_SUBJECTS.welcome(data.userName),
+      html,
+    };
 
-${postPreview}
+    await transporter.sendMail(mailOptions);
 
-View the full post: ${data.postUrl}
+    logger.info('Welcome email sent successfully', 'EMAIL', {
+      recipient: data.userEmail,
+      userName: data.userName,
+      userRole: data.userRole,
+    });
 
-You're receiving this email because you're supporting ${data.creatorName} on MeroCircle.
-
-© ${new Date().getFullYear()} MeroCircle. All rights reserved.
-  `.trim();
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send welcome email', 'EMAIL', {
+      error: error.message,
+      recipient: data.userEmail,
+    });
+    return false;
+  }
 }

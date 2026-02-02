@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { PageLayout } from '@/components/common/PageLayout';
 import dynamic from 'next/dynamic';
 import { FeedSkeleton } from '@/components/dashboard/sections/LoadingSkeleton';

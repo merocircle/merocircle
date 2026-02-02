@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useDashboardView } from '@/contexts/dashboard-context';
 import { useNotificationsData } from '@/hooks/useQueries';
 import { useStreamUnreadCount } from '@/hooks/useStreamUnreadCount';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, memo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/supabase-auth-context';
+import { useAuth } from '@/contexts/auth-context';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -251,10 +251,7 @@ const SettingsSection = memo(function SettingsSection() {
           </p>
           <Button
             variant="destructive"
-            onClick={async () => {
-              await signOut();
-              router.push('/');
-            }}
+            onClick={signOut}
           >
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out

@@ -4,6 +4,10 @@ import { memo } from 'react';
 import { StreamChatWrapper } from '@/components/stream-chat/StreamChatWrapper';
 import { AlertTriangle } from 'lucide-react';
 
+interface StreamCommunitySectionProps {
+  creatorId?: string;
+}
+
 /**
  * Stream Chat powered Community Section
  *
@@ -15,8 +19,9 @@ import { AlertTriangle } from 'lucide-react';
  * - Discord-like server structure with "My Channels" and "My Server" sections
  * - Creators can create custom channels with tier requirements
  * - Supporters are auto-added to channels based on their tier level
+ * - If creatorId is provided, filters to show only that creator's server
  */
-const StreamCommunitySection = memo(function StreamCommunitySection() {
+const StreamCommunitySection = memo(function StreamCommunitySection({ creatorId }: StreamCommunitySectionProps) {
   // Show warning if Stream is not configured
   if (!process.env.NEXT_PUBLIC_STREAM_API_KEY) {
     return (
@@ -46,7 +51,7 @@ const StreamCommunitySection = memo(function StreamCommunitySection() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Stream Chat Wrapper with full Discord-like UI */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <StreamChatWrapper className="h-full" />
+        <StreamChatWrapper className="h-full" creatorId={creatorId} />
       </div>
     </div>
   );
