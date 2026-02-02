@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 import { supabase } from '@/lib/supabase';
 
 interface UserProfile {
@@ -39,6 +39,7 @@ interface AuthContextType {
   updateUserRole: (role: 'user' | 'creator') => Promise<{ error: any }>;
   createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
+  signOut: () => Promise<void>;
   signInWithGoogle?: () => void; // Optional for compatibility
 }
 
@@ -169,6 +170,27 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     }
   };
 
+  const signOut = async () => {
+    try {
+      // Clear local state first
+      setUserProfile(null);
+      setCreatorProfile(null);
+      setLoading(true);
+      
+      // Sign out from NextAuth with redirect
+      await nextAuthSignOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      });
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Fallback: force redirect
+      window.location.href = '/';
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     userProfile,
     user: userProfile, // Alias for backward compatibility
@@ -179,6 +201,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     updateUserRole,
     createCreatorProfile,
     refreshProfile,
+    signOut,
     signInWithGoogle: undefined, // Not needed with NextAuth
   };
 

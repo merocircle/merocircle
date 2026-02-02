@@ -15,6 +15,8 @@ import { logger } from '@/lib/logger';
  * Senior dev approach: Queue-based with retry logic
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     // Verify cron secret in production
     const authHeader = request.headers.get('authorization');
@@ -45,9 +47,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!pendingEmails || pendingEmails.length === 0) {
+      logger.info('No pending emails to process', 'EMAIL_QUEUE');
       return NextResponse.json({ 
         message: 'No pending emails',
-        processed: 0 
+        processed: 0,
+        duration: Date.now() - startTime,
       });
     }
 
@@ -146,17 +150,21 @@ export async function POST(request: NextRequest) {
       processed: pendingEmails.length,
       sent,
       failed,
+      duration: Date.now() - startTime,
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error: any) {
-    logger.error('Queue processor error', 'EMAIL_QUEUE', { 
+    logger.error('Queue processor failed', 'EMAIL_QUEUE', {
       error: error.message,
-      stack: error.stack 
+      stack: error.stack,
+      duration: Date.now() - startTime,
     });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error.message,
+      duration: Date.now() - startTime,
+    }, { status: 500 });
   }
 }
 

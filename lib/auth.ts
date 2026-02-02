@@ -61,6 +61,40 @@ export const authOptions: NextAuthOptions = {
           }
 
           console.log('New user created:', newUser?.id);
+          
+          // 🎯 Queue welcome email for new users
+          try {
+            await supabase.from('email_queue').insert({
+              email_type: 'welcome',
+              recipient_email: user.email,
+              payload: {
+                userId: newUser.id,
+                userName: user.name || user.email.split('@')[0],
+                userRole: 'supporter',
+                userEmail: user.email,
+              },
+              scheduled_for: new Date().toISOString(),
+            });
+            
+            console.log('✅ Welcome email queued for:', user.email);
+            
+            // 🚀 NO CRON NEEDED: Trigger processor immediately (fire & forget)
+            // This works on free Vercel tier - processes within seconds
+            const processorUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/email/process-queue`;
+            fetch(processorUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.CRON_SECRET || 'dev-secret'}`,
+                'Content-Type': 'application/json',
+              },
+            }).catch(err => {
+              console.warn('Email processor trigger failed (non-critical):', err.message);
+            });
+          } catch (emailError) {
+            // Don't block signup if email queueing fails
+            console.error('Failed to queue welcome email:', emailError);
+          }
+          
           // Store the new user's ID for the JWT token
           if (newUser) {
             user.id = newUser.id;
