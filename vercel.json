@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "_comment": "No cron jobs needed! Email system uses activity-based triggers (see docs/NO-CRON-EMAIL-SYSTEM.md)",
-  "functions": {
+    "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 10
     }
