@@ -9,7 +9,6 @@ import { StreamChatProvider } from "@/contexts/stream-chat-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppBackground } from "@/components/ui/app-background";
 import { PageLoadingBar } from "@/components/common/PageLoadingBar";
-import { EmailTriggerClient } from "@/components/EmailTriggerClient";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -69,7 +68,6 @@ export default function RootLayout({
           <AuthProvider>
             <AuthContextProvider>
               <StreamChatProvider>
-                <EmailTriggerClient />
                 <PageLoadingBar />
                 <AppBackground>
                   {children}
