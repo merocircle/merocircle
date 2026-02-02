@@ -2,7 +2,6 @@
 
 import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
-import { PageTransition } from '@/components/common/PageTransition';
 import { usePerformanceMonitor } from '@/lib/performance-monitor';
 import { MinimumDelay } from '@/components/common/MinimumDelay';
 import { motion } from 'framer-motion';
@@ -13,7 +12,7 @@ const StreamCommunitySection = lazy(() => import('@/components/dashboard/section
 function ChatLoadingSkeleton() {
   return (
     <motion.div
-      className="flex h-screen"
+      className="flex h-[calc(100vh-80px)]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -71,9 +70,9 @@ export default function ChatPage() {
           minimumDelay={200}
           fallback={<ChatLoadingSkeleton />}
         >
-          <PageTransition>
+          <div className="h-[calc(100vh-80px)]">
             <StreamCommunitySection />
-          </PageTransition>
+          </div>
         </MinimumDelay>
       </Suspense>
     </PageLayout>

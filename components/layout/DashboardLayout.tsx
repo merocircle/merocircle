@@ -124,12 +124,12 @@ export function DashboardLayout({
         {/* Main Content Area */}
         <main className={cn(
           'min-h-screen overflow-x-hidden',
-          contextView === 'chat' && 'h-screen overflow-hidden'
+          contextView === 'chat' && 'h-[100vh] md:h-screen overflow-hidden'
         )}>
           <div className={cn(
             'h-full',
             !isFullWidth && 'max-w-[630px] mx-auto w-full',
-            contextView === 'chat' && 'overflow-hidden'
+            contextView === 'chat' && 'overflow-hidden max-w-none'
           )}>
             <AnimatePresence mode="wait">
               <motion.div
@@ -138,7 +138,10 @@ export function DashboardLayout({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full py-4"
+                className={cn(
+                  'h-full',
+                  contextView !== 'chat' && 'py-4'
+                )}
               >
                 {children}
               </motion.div>

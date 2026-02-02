@@ -390,16 +390,16 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
   const allServers = [...otherServers, ...(myServer ? [myServer] : [])];
 
   return (
-    <div className={`stream-chat-wrapper h-full ${className}`} ref={chatContainerRef}>
+    <div className={`stream-chat-wrapper h-full overflow-hidden ${className}`} ref={chatContainerRef}>
       <Chat client={chatClient} theme={streamTheme}>
         {/* Desktop Layout */}
-        <div className="hidden md:flex h-full">
-          <div className="w-72 border-r border-border flex-shrink-0 bg-muted/50 flex flex-col">
-            <div className="p-4 border-b border-border bg-card">
+        <div className="hidden md:flex h-full overflow-hidden">
+          <div className="w-72 border-r border-border flex-shrink-0 bg-muted/50 flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-border bg-card flex-shrink-0">
               <h2 className="text-lg font-semibold text-foreground">Community</h2>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto p-2 min-h-0">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
@@ -472,7 +472,7 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
           </div>
 
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {activeChannel ? (
               <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
                 <Window>
@@ -503,14 +503,14 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden h-full flex flex-col">
+        <div className="md:hidden h-full flex flex-col overflow-hidden">
           {mobileView === 'servers' && (
-            <div className="h-full flex flex-col bg-background">
-              <div className="p-4 border-b border-border bg-card">
+            <div className="h-full flex flex-col bg-background overflow-hidden">
+              <div className="p-4 border-b border-border bg-card flex-shrink-0">
                 <h2 className="text-lg font-semibold text-foreground">Community</h2>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 min-h-0">
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
@@ -592,8 +592,8 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
           )}
 
           {mobileView === 'channels' && selectedServer && (
-            <div className="h-full flex flex-col bg-background">
-              <div className="p-4 border-b border-border bg-card flex items-center gap-3">
+            <div className="h-full flex flex-col bg-background overflow-hidden">
+              <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0">
                 <button
                   onClick={goBackToServers}
                   className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
@@ -612,7 +612,7 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 min-h-0">
                 <div className="space-y-1">
                   {selectedServer.channels.map(channel => (
                     <ChannelListItem
@@ -640,10 +640,10 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
           )}
 
           {mobileView === 'chat' && activeChannel && (
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col overflow-hidden">
               <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
                 <Window>
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
                     <button
                       onClick={goBackToChannels}
                       className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
@@ -661,8 +661,8 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
           )}
 
           {mobileView === 'chat' && channelError && (
-            <div className="h-full flex flex-col bg-background">
-              <div className="p-4 border-b border-border bg-card flex items-center gap-3">
+            <div className="h-full flex flex-col bg-background overflow-hidden">
+              <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0">
                 <button
                   onClick={goBackToChannels}
                   className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
@@ -671,7 +671,7 @@ export function StreamChatWrapper({ className = '' }: StreamChatWrapperProps) {
                 </button>
                 <h2 className="text-lg font-semibold text-foreground">Error</h2>
               </div>
-              <div className="flex-1 flex items-center justify-center p-6">
+              <div className="flex-1 flex items-center justify-center p-6 min-h-0">
                 <div className="text-center">
                   <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-3" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">Channel Access Error</h3>
