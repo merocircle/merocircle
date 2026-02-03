@@ -124,6 +124,21 @@ export default function CreatorSignupPage() {
     setSelectedPlatformToAdd('');
   };
 
+  // Auto-add platform when selected from dropdown
+  const handlePlatformSelect = (platformId: string) => {
+    if (!platformId) return;
+    
+    // Check if platform is already added
+    if (addedSocialPlatforms.includes(platformId)) {
+      setSelectedPlatformToAdd('');
+      return;
+    }
+
+    // Automatically add the platform when selected
+    setAddedSocialPlatforms([...addedSocialPlatforms, platformId]);
+    setSelectedPlatformToAdd('');
+  };
+
   const handleRemoveSocialPlatform = (platformId: string) => {
     // Remove from added list
     setAddedSocialPlatforms(addedSocialPlatforms.filter(id => id !== platformId));
@@ -631,7 +646,7 @@ export default function CreatorSignupPage() {
                       <div className="flex items-center gap-2">
                         <select
                           value={selectedPlatformToAdd}
-                          onChange={(e) => setSelectedPlatformToAdd(e.target.value)}
+                          onChange={(e) => handlePlatformSelect(e.target.value)}
                           className="flex-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
                         >
                           <option value="">Select a platform to add...</option>
@@ -641,16 +656,6 @@ export default function CreatorSignupPage() {
                             </option>
                           ))}
                         </select>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleAddSocialPlatform}
-                          disabled={!selectedPlatformToAdd}
-                          className="flex-shrink-0"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add
-                        </Button>
                       </div>
                     )}
                     
