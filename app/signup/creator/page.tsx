@@ -70,9 +70,11 @@ export default function CreatorSignupPage() {
     tier3: '10'
   });
   const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
+  const [addedSocialPlatforms, setAddedSocialPlatforms] = useState<string[]>([]);
+  const [selectedPlatformToAdd, setSelectedPlatformToAdd] = useState<string>('');
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { userProfile, createCreatorProfile } = useAuth();
+  const { user, userProfile, createCreatorProfile } = useAuth();
 
   // Validate URL format
   const validateUrl = (url: string): boolean => {
@@ -107,6 +109,42 @@ export default function CreatorSignupPage() {
       delete newErrors[platformId];
       setSocialLinkErrors(newErrors);
     }
+  };
+
+  const handleAddSocialPlatform = () => {
+    if (!selectedPlatformToAdd) return;
+    
+    // Check if platform is already added
+    if (addedSocialPlatforms.includes(selectedPlatformToAdd)) {
+      return;
+    }
+
+    // Add platform to the list
+    setAddedSocialPlatforms([...addedSocialPlatforms, selectedPlatformToAdd]);
+    setSelectedPlatformToAdd('');
+  };
+
+  const handleRemoveSocialPlatform = (platformId: string) => {
+    // Remove from added list
+    setAddedSocialPlatforms(addedSocialPlatforms.filter(id => id !== platformId));
+    
+    // Remove from social links
+    const newSocialLinks = { ...creatorData.socialLinks };
+    delete newSocialLinks[platformId];
+    setCreatorData({
+      ...creatorData,
+      socialLinks: newSocialLinks
+    });
+
+    // Remove error if exists
+    const newErrors = { ...socialLinkErrors };
+    delete newErrors[platformId];
+    setSocialLinkErrors(newErrors);
+  };
+
+  // Get available platforms (not yet added)
+  const getAvailablePlatforms = () => {
+    return SOCIAL_PLATFORMS.filter(platform => !addedSocialPlatforms.includes(platform.id));
   };
 
   // Handle extra perks management
@@ -179,20 +217,13 @@ export default function CreatorSignupPage() {
       // Mark this as creator signup flow
       localStorage.setItem('isCreatorSignupFlow', 'true');
       
-      const { error } = await signInWithGoogle();
-      
-      if (error) {
-        setError(error.message || 'Failed to sign in with Google');
-        localStorage.removeItem('isCreatorSignupFlow');
-        return;
-      }
+      await signIn('google', { callbackUrl: '/signup/creator' });
       
       // After OAuth redirect, the useEffect will handle the rest
     } catch (error: unknown) {
       console.error('Creator signup error:', error);
       setError(error instanceof Error ? error.message : 'Failed to create account. Please try again.');
       localStorage.removeItem('isCreatorSignupFlow');
-    } finally {
       setLoading(false);
     }
   };
@@ -479,9 +510,9 @@ export default function CreatorSignupPage() {
                 {user && (
                   <div className="flex items-center space-x-4 p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl mb-8 border border-purple-100 dark:border-purple-800">
                     <div className="relative">
-                      {user.user_metadata?.avatar_url ? (
+                      {user.photo_url ? (
                         <img
-                          src={user.user_metadata.avatar_url}
+                          src={user.photo_url}
                           alt="Profile"
                           className="w-16 h-16 rounded-full object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg"
                         />
@@ -497,7 +528,7 @@ export default function CreatorSignupPage() {
                     
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                        {user.user_metadata?.display_name || user.email?.split('@')[0] || 'Creator'}
+                        {user.display_name || user.email?.split('@')[0] || 'Creator'}
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
                         {user.email}
@@ -555,29 +586,79 @@ export default function CreatorSignupPage() {
                     <p className="text-xs text-gray-500 mb-4">
                       Add your social media profiles to help supporters find you across platforms
                     </p>
-                    <div className="space-y-3">
-                      {SOCIAL_PLATFORMS.map((platform) => (
-                        <div key={platform.id} className="flex items-center gap-3">
-                          <span className="text-2xl">{platform.icon}</span>
-                          <div className="flex-1">
-                            <input
-                              type="url"
-                              placeholder={`${platform.name} profile URL (e.g., https://facebook.com/yourpage)`}
-                              value={creatorData.socialLinks[platform.id] || ''}
-                              onChange={(e) => handleSocialLinkChange(platform.id, e.target.value)}
-                              className={`w-full rounded-md border ${
-                                socialLinkErrors[platform.id] 
-                                  ? 'border-red-500 dark:border-red-500' 
-                                  : 'border-gray-300 dark:border-gray-600'
-                              } bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none`}
-                            />
-                            {socialLinkErrors[platform.id] && (
-                              <p className="text-xs text-red-500 mt-1">{socialLinkErrors[platform.id]}</p>
-                            )}
+                    
+                    {/* Added Social Platforms */}
+                    <div className="space-y-3 mb-4">
+                      {addedSocialPlatforms.map((platformId) => {
+                        const platform = SOCIAL_PLATFORMS.find(p => p.id === platformId);
+                        if (!platform) return null;
+                        
+                        return (
+                          <div key={platform.id} className="flex items-center gap-3">
+                            <span className="text-2xl flex-shrink-0">{platform.icon}</span>
+                            <div className="flex-1">
+                              <input
+                                type="url"
+                                placeholder={`${platform.name} profile URL (e.g., https://facebook.com/yourpage)`}
+                                value={creatorData.socialLinks[platform.id] || ''}
+                                onChange={(e) => handleSocialLinkChange(platform.id, e.target.value)}
+                                className={`w-full rounded-md border ${
+                                  socialLinkErrors[platform.id] 
+                                    ? 'border-red-500 dark:border-red-500' 
+                                    : 'border-gray-300 dark:border-gray-600'
+                                } bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none`}
+                              />
+                              {socialLinkErrors[platform.id] && (
+                                <p className="text-xs text-red-500 mt-1">{socialLinkErrors[platform.id]}</p>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveSocialPlatform(platform.id)}
+                              className="h-10 w-10 flex-shrink-0 text-gray-400 hover:text-red-500"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
+
+                    {/* Add More Social Platform */}
+                    {getAvailablePlatforms().length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedPlatformToAdd}
+                          onChange={(e) => setSelectedPlatformToAdd(e.target.value)}
+                          className="flex-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                        >
+                          <option value="">Select a platform to add...</option>
+                          {getAvailablePlatforms().map((platform) => (
+                            <option key={platform.id} value={platform.id}>
+                              {platform.icon} {platform.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleAddSocialPlatform}
+                          disabled={!selectedPlatformToAdd}
+                          className="flex-shrink-0"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {addedSocialPlatforms.length === 0 && (
+                      <p className="text-xs text-gray-400 italic text-center py-2">
+                        No social media platforms added yet. Use the dropdown above to add one.
+                      </p>
+                    )}
                   </div>
 
                   {error && (
