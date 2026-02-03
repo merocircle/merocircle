@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { handleApiError } from '@/lib/api-utils';
+import { getOptionalUser, handleApiError } from '@/lib/api-utils';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ pollId: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     const { pollId } = await params;
+    const user = await getOptionalUser();
+    const supabase = await createClient();
 
     // Get poll details
     const { data: poll, error: pollError } = await supabase

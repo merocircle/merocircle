@@ -53,6 +53,7 @@ export const EMAIL_SUBJECTS = {
   welcome: (userName: string) => `Welcome to MeroCircle, ${userName}`,
   paymentSuccess: (creatorName: string) => `Payment confirmed - Supporting ${creatorName}`,
   paymentFailed: () => 'Payment issue - Action required',
+  channelMention: (senderName: string, channelName: string) => `${senderName} mentioned everyone in ${channelName}`,
 } as const;
 
 // Helper function to get full URL

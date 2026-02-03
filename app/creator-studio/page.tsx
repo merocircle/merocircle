@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { PageLayout } from '@/components/common/PageLayout';
 import dynamic from 'next/dynamic';
 import { SettingsSkeleton } from '@/components/dashboard/sections/LoadingSkeleton';
@@ -11,6 +12,20 @@ const CreatorStudioSection = dynamic(() => import('@/components/dashboard/sectio
   loading: () => <SettingsSkeleton />,
   ssr: false
 });
+
+function CreatorStudioContent() {
+  const searchParams = useSearchParams();
+  const { setHighlightedPostId } = useDashboardViewSafe();
+
+  useEffect(() => {
+    const postId = searchParams.get('post');
+    if (postId) {
+      setHighlightedPostId(postId);
+    }
+  }, [searchParams, setHighlightedPostId]);
+
+  return <CreatorStudioSection />;
+}
 
 export default function CreatorStudioPage() {
   const { isAuthenticated, loading: authLoading, isCreator } = useAuth();
@@ -39,7 +54,9 @@ export default function CreatorStudioPage() {
 
   return (
     <PageLayout>
-      <CreatorStudioSection />
+      <Suspense fallback={<SettingsSkeleton />}>
+        <CreatorStudioContent />
+      </Suspense>
     </PageLayout>
   );
 }

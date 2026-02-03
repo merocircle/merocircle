@@ -41,6 +41,7 @@ import { fadeInUp, staggerContainer } from '@/components/animations/variants';
 import { slugifyDisplayName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { SocialLinksCard } from '@/components/organisms/creator';
+import { SupportBanner } from '@/components/creator/SupportBanner';
 
 // Lazy load chat component
 const StreamCommunitySection = dynamic(
@@ -57,7 +58,7 @@ const PaymentGatewaySelector = dynamic(
 interface CreatorProfileSectionProps {
   creatorId: string;
   initialHighlightedPostId?: string | null;
-  defaultTab?: 'home' | 'posts' | 'shop' | 'about';
+  defaultTab?: 'posts' | 'membership' | 'shop' | 'about' | 'chat';
 }
 
 export default function CreatorProfileSection({ creatorId, initialHighlightedPostId, defaultTab }: CreatorProfileSectionProps) {
@@ -70,7 +71,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const highlightedPostId = isWithinProvider ? contextHighlightedPostId : localHighlightedPostId;
 
-  const [activeTab, setActiveTab] = useState(defaultTab || (initialHighlightedPostId ? 'posts' : 'home'));
+  const [activeTab, setActiveTab] = useState(defaultTab || 'posts');
 
   useEffect(() => {
     if (initialHighlightedPostId && !isWithinProvider) {
@@ -111,6 +112,25 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [showTiers, setShowTiers] = useState(false);
+  const [showSupportBanner, setShowSupportBanner] = useState(false);
+
+  // Handle scroll for support banner
+  useEffect(() => {
+    if (activeTab !== 'posts' || isSupporter) {
+      setShowSupportBanner(false);
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrolled = window.scrollY > 400;
+      setShowSupportBanner(scrolled);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check initial scroll position
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab, isSupporter]);
 
   // If viewing own profile, redirect to profile page
   const isOwnProfile = user && user.id === creatorId && isWithinProvider;
@@ -744,10 +764,25 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-3 mb-3 flex-wrap">
                         <h1 className="text-3xl md:text-4xl font-bold text-foreground truncate">
                           {creatorDetails.display_name}
                         </h1>
+                        {isSupporter ? (
+                          <Badge className="gap-2 px-3 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Supported
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => setActiveTab('membership')}
+                            className="gap-2"
+                          >
+                            <Heart className="w-4 h-4" />
+                            Support Him
+                          </Button>
+                        )}
                       </div>
 
                       {creatorDetails.bio && (
@@ -842,110 +877,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             </div>
           </motion.div>
         </div>
-      </div>
 
       {/* Content Area */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Support Section - Full Width */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <Card className="border-border/50 shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/5 via-pink-500/5 to-purple-500/5 p-6 border-b border-border/50">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-foreground">
-                    {isSupporter ? 'Your Support' : 'Support This Creator'}
-                  </h2>
-                </div>
-                {/* Chat Button for Supporters (Inner Circle or Core Member) */}
-                {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 && (
-                  <Button
-                    onClick={() => {
-                      router.push('/chat');
-                    }}
-                    className="gap-2"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Chat
-                  </Button>
-                )}
-              </div>
-              {!isSupporter && (
-                <p className="text-muted-foreground">
-                  Choose a tier to unlock exclusive content and perks
-                </p>
-              )}
-            </div>
-            
-            {isSupporter ? (
-              /* Collapsed View for Supporters */
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500">
-                      <CheckCircle2 className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">You're supporting at</p>
-                      <p className="text-xl font-bold text-foreground">
-                        {creatorDetails?.supporter_tier_level === 1 && 'Supporter'}
-                        {creatorDetails?.supporter_tier_level === 2 && 'Inner Circle'}
-                        {creatorDetails?.supporter_tier_level === 3 && 'Core Member'}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowTiers(!showTiers)}
-                    className="gap-2"
-                  >
-                    {showTiers ? 'Hide' : 'View'} Support Tiers
-                  </Button>
-                </div>
-                
-                {showTiers && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-6 pt-6 border-t border-border"
-                  >
-                    <TierSelection
-                      tiers={subscriptionTiers}
-                      creatorName={creatorDetails.display_name || ''}
-                      currentTierLevel={creatorDetails.supporter_tier_level || 0}
-                      onSelectTier={handlePayment}
-                      loading={paymentLoading}
-                    />
-                  </motion.div>
-                )}
-              </div>
-            ) : (
-              /* Full View for Non-Supporters */
-              <div className="p-6">
-                <TierSelection
-                  tiers={subscriptionTiers}
-                  creatorName={creatorDetails.display_name || ''}
-                  currentTierLevel={creatorDetails.supporter_tier_level || 0}
-                  onSelectTier={handlePayment}
-                  loading={paymentLoading}
-                />
-              </div>
-            )}
-          </Card>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="space-y-6">
 
             {/* Tabs */}
             <motion.div
@@ -954,22 +889,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               transition={{ delay: 0.3 }}
             >
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className={cn(
-                  "grid w-full lg:w-auto lg:inline-grid h-12 bg-muted/50",
-                  isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 
-                    ? "grid-cols-4" 
-                    : "grid-cols-3"
-                )}>
+                <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid h-12 bg-muted/50">
                   <TabsTrigger value="posts" className="gap-2">
                     <FileText className="w-4 h-4" />
                     Posts
                   </TabsTrigger>
-                  {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 && (
-                    <TabsTrigger value="chat" className="gap-2">
-                      <MessageCircle className="w-4 h-4" />
-                      Chat
-                    </TabsTrigger>
-                  )}
+                  <TabsTrigger value="membership" className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Membership
+                  </TabsTrigger>
+                  <TabsTrigger value="chat" className="gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Chat
+                  </TabsTrigger>
                   <TabsTrigger value="shop" className="gap-2">
                     <ShoppingBag className="w-4 h-4" />
                     Shop
@@ -981,55 +913,183 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </TabsList>
 
                 <TabsContent value="chat" className="mt-6">
-                  {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 ? (
-                    <Card className="border-border/50 shadow-lg overflow-hidden">
-                      <div className="h-[600px]">
-                        <StreamCommunitySection creatorId={creatorId} />
-                      </div>
-                    </Card>
-                  ) : (
-                    <Card className="p-16 text-center border-border/50">
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-                          <MessageCircle className="w-8 h-8 text-primary" />
+                  <div className="relative">
+                    {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 ? (
+                      <Card className="border-border/50 shadow-lg overflow-hidden">
+                        <div className="h-[600px]">
+                          <StreamCommunitySection creatorId={creatorId} />
                         </div>
-                        <div>
-                          <h3 className="text-xl font-semibold text-foreground mb-2">Chat Access Required</h3>
-                          <p className="text-muted-foreground max-w-md mx-auto">
-                            Upgrade to Inner Circle or Core Member tier to access the chat with this creator.
-                          </p>
-                        </div>
+                      </Card>
+                    ) : (
+                      /* Blurred Chat Preview */
+                      <div className="relative">
+                        <Card className="border-border/50 overflow-hidden">
+                          <div className="h-[600px] relative">
+                            {/* Blurred Preview */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                              <div className="absolute inset-0 opacity-20 blur-xl">
+                                <div className="p-4 space-y-4">
+                                  <div className="h-12 bg-foreground/20 rounded" />
+                                  <div className="h-20 bg-foreground/10 rounded" />
+                                  <div className="h-16 bg-foreground/10 rounded" />
+                                  <div className="h-24 bg-foreground/10 rounded" />
+                                </div>
+                              </div>
+                              
+                              {/* Lock Overlay */}
+                              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm bg-background/80">
+                                <div className="text-center p-8 max-w-md space-y-6">
+                                  <div className="flex justify-center">
+                                    <div className="p-4 bg-background rounded-2xl shadow-xl border border-border">
+                                      <MessageCircle className="w-12 h-12 text-primary" />
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <h3 className="text-2xl font-bold text-foreground mb-2">
+                                      Chat Access Locked
+                                    </h3>
+                                    <p className="text-muted-foreground">
+                                      Upgrade to Inner Circle or Core Member tier to access exclusive chat with {creatorDetails.display_name}
+                                    </p>
+                                  </div>
+                                  
+                                  <div className="flex flex-col gap-2 text-xs text-muted-foreground">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                      <span>Direct messages with creator</span>
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                      <span>Private community channels</span>
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                      <span>Priority support</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <Button 
+                                    size="lg" 
+                                    className="w-full shadow-lg" 
+                                    onClick={() => setActiveTab('membership')}
+                                  >
+                                    <span>View Membership Tiers</span>
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
                       </div>
-                    </Card>
-                  )}
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="membership" className="mt-6">
+                  <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-8">
+                      <h2 className="text-3xl font-bold text-foreground mb-3">
+                        Support {creatorDetails.display_name}
+                      </h2>
+                      <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                        {creatorDetails.bio || `Join ${creatorDetails.supporter_count || 0} supporters and get exclusive content, early access, and more.`}
+                      </p>
+                      {creatorDetails.supporter_count > 0 && (
+                        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                          <Users className="w-4 h-4" />
+                          <span><span className="font-semibold text-foreground">{creatorDetails.supporter_count}</span> supporters</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {isSupporter ? (
+                      /* Supporter View */
+                      <div>
+                        <Card className="border-border/50 p-6 mb-6">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-green-500/10 border-2 border-green-500/20">
+                              <CheckCircle2 className="w-7 h-7 text-green-500" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">You're supporting at</p>
+                              <p className="text-2xl font-bold text-foreground">
+                                {creatorDetails?.supporter_tier_level === 1 && 'Supporter'}
+                                {creatorDetails?.supporter_tier_level === 2 && 'Inner Circle'}
+                                {creatorDetails?.supporter_tier_level === 3 && 'Core Member'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowTiers(!showTiers)}
+                            className="w-full"
+                          >
+                            {showTiers ? 'Hide' : 'View'} All Membership Tiers
+                          </Button>
+                        </Card>
+                        
+                        {showTiers && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <TierSelection
+                              tiers={subscriptionTiers}
+                              creatorName={creatorDetails.display_name || ''}
+                              currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                              onSelectTier={handlePayment}
+                              loading={paymentLoading}
+                            />
+                          </motion.div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Non-Supporter View */
+                      <TierSelection
+                        tiers={subscriptionTiers}
+                        creatorName={creatorDetails.display_name || ''}
+                        currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                        onSelectTier={handlePayment}
+                        loading={paymentLoading}
+                      />
+                    )}
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="posts" className="mt-6 space-y-6">
                   {recentPosts.length > 0 ? (
-                    (recentPosts as Array<Record<string, unknown>>).map((post) => {
-                      const postId = String(post.id);
-                      const isHighlighted = highlightedPostId === postId;
-                      return (
-                        <motion.div
-                          key={postId}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          ref={isHighlighted ? highlightedPostRef : undefined}
-                          data-post-id={postId}
-                          className={cn(
-                            'transition-all duration-500',
-                            isHighlighted && 'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
-                          )}
-                        >
-                          <EnhancedPostCard
-                            post={transformPost(post)}
-                            currentUserId={user?.id}
-                            showActions={true}
-                            isSupporter={isSupporter}
-                          />
-                        </motion.div>
-                      );
-                    })
+                    <>
+                      {(recentPosts as Array<Record<string, unknown>>).map((post) => {
+                        const postId = String(post.id);
+                        const isHighlighted = highlightedPostId === postId;
+                        return (
+                          <motion.div
+                            key={postId}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            ref={isHighlighted ? highlightedPostRef : undefined}
+                            data-post-id={postId}
+                            className={cn(
+                              'transition-all duration-500',
+                              isHighlighted && 'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
+                            )}
+                          >
+                            <EnhancedPostCard
+                              post={transformPost(post)}
+                              currentUserId={user?.id}
+                              showActions={true}
+                              isSupporter={isSupporter}
+                            />
+                          </motion.div>
+                        );
+                      })}
+                      {/* Bottom padding when banner is visible */}
+                      {showSupportBanner && <div className="h-24" />}
+                    </>
                   ) : (
                     <Card className="p-16 text-center border-dashed border-2 border-border/50">
                       <div className="flex flex-col items-center gap-4">
@@ -1129,35 +1189,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               </Tabs>
             </motion.div>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Stats */}
-            {creatorDetails.supporter_count > 0 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                <Card className="border-border/50 shadow-lg p-6">
-                  <h3 className="font-semibold text-foreground mb-4">Community</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-3xl font-bold text-foreground">
-                          {creatorDetails.supporter_count}
-                        </span>
-                        <span className="text-sm text-muted-foreground">supporters</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Join the growing community
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -1213,6 +1244,17 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           </Button>
         </DialogContent>
       </Dialog>
+
+      {/* Support Banner - Only for non-supporters in Posts tab */}
+      {!isSupporter && activeTab === 'posts' && (
+        <SupportBanner
+          creatorName={creatorDetails.display_name}
+          creatorAvatar={creatorDetails.avatar_url}
+          supporterCount={creatorDetails.supporter_count || 0}
+          onJoinClick={() => setActiveTab('membership')}
+          show={showSupportBanner}
+        />
+      )}
     </div>
   );
 }

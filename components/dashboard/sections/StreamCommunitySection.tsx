@@ -6,6 +6,7 @@ import { AlertTriangle } from 'lucide-react';
 
 interface StreamCommunitySectionProps {
   creatorId?: string;
+  channelId?: string; // Stream channel ID to auto-open
 }
 
 /**
@@ -21,7 +22,7 @@ interface StreamCommunitySectionProps {
  * - Supporters are auto-added to channels based on their tier level
  * - If creatorId is provided, filters to show only that creator's server
  */
-const StreamCommunitySection = memo(function StreamCommunitySection({ creatorId }: StreamCommunitySectionProps) {
+const StreamCommunitySection = memo(function StreamCommunitySection({ creatorId, channelId }: StreamCommunitySectionProps) {
   // Show warning if Stream is not configured
   if (!process.env.NEXT_PUBLIC_STREAM_API_KEY) {
     return (
@@ -51,7 +52,7 @@ const StreamCommunitySection = memo(function StreamCommunitySection({ creatorId 
     <div className="flex flex-col h-full overflow-hidden">
       {/* Stream Chat Wrapper with full Discord-like UI */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <StreamChatWrapper className="h-full" creatorId={creatorId} />
+        <StreamChatWrapper className="h-full" creatorId={creatorId} channelId={channelId} />
       </div>
     </div>
   );

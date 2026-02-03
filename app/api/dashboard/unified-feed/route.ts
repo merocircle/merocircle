@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { parsePaginationParams, handleApiError } from '@/lib/api-utils';
+import { getOptionalUser, parsePaginationParams, handleApiError } from '@/lib/api-utils';
 
 // Balanced feed ranking formula
 function calculatePostScore(post: any): number {
@@ -22,8 +22,8 @@ function calculatePostScore(post: any): number {
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getOptionalUser();
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
     // Pagination support
     const searchParams = request.nextUrl.searchParams;

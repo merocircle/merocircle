@@ -43,11 +43,19 @@ export function RecentPostsList({
       <h3 className="text-lg font-semibold text-foreground">Recent Posts</h3>
       <div className="space-y-4">
         {posts.map((post) => {
-          const isHighlighted = highlightedPostId === post.id;
+          // Normalize both IDs for comparison (case-insensitive, trimmed)
+          const normalizedHighlightedId = highlightedPostId ? String(highlightedPostId).trim().toLowerCase() : null;
+          const normalizedPostId = String(post.id || '').trim().toLowerCase();
+          const isHighlighted = normalizedHighlightedId === normalizedPostId;
+          
           return (
             <motion.div
               key={post.id}
-              ref={isHighlighted && highlightedPostRef ? highlightedPostRef : undefined}
+              ref={(node) => {
+                if (isHighlighted && highlightedPostRef) {
+                  highlightedPostRef.current = node;
+                }
+              }}
               animate={isHighlighted ? {
                 boxShadow: [
                   '0 0 0 0 rgba(239, 68, 68, 0)',

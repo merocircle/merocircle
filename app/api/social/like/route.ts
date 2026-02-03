@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { Database } from '@/lib/supabase'
-import { handleApiError } from '@/lib/api-utils'
+import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser, getOptionalUser, handleApiError } from '@/lib/api-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,31 +13,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const cookieStore = await cookies()
-    
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { user, errorResponse } = await getAuthenticatedUser()
+    if (errorResponse || !user) {
+      return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const supabase = await createClient()
 
     // Check if post exists
     const { data: post, error: postError } = await supabase
@@ -128,28 +107,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const cookieStore = await cookies()
-    
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getOptionalUser()
+    const supabase = await createClient()
 
     // Get like count
     const { count: likesCount, error: countError } = await supabase

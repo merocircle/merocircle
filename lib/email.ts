@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { logger } from './logger';
 import { render } from '@react-email/render';
-import { PostNotification, PollNotification, WelcomeEmail } from '@/emails/templates';
+import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification } from '@/emails/templates';
 import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
 const createTransporter = () => {
@@ -125,6 +125,9 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
       ? EMAIL_SUBJECTS.pollNotification(data.creatorName)
       : EMAIL_SUBJECTS.postNotification(data.creatorName);
 
+    // Generate unique Message-ID to prevent email threading
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.supporterId}@merocircle.app>`;
+
     const mailOptions = {
       from: {
         name: EMAIL_CONFIG.from.name,
@@ -134,6 +137,13 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
       subject,
       text: emailText,
       html: emailHtml,
+      messageId,
+      headers: {
+        'Message-ID': messageId,
+        'X-Mailer': 'MeroCircle',
+        'X-Priority': '3',
+        'Precedence': 'bulk',
+      },
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -369,11 +379,19 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
       })
     );
 
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.userEmail.replace('@', '-at-')}@merocircle.app>`;
+
     const mailOptions = {
       from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
       to: data.userEmail,
       subject: EMAIL_SUBJECTS.welcome(data.userName),
       html,
+      messageId,
+      headers: {
+        'Message-ID': messageId,
+        'X-Mailer': 'MeroCircle',
+        'X-Priority': '3',
+      },
     };
 
     await transporter.sendMail(mailOptions);
@@ -392,4 +410,134 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     });
     return false;
   }
+}
+
+interface ChannelMentionEmailData {
+  memberEmail: string;
+  memberName: string;
+  memberId: string;
+  creatorId: string;
+  creatorName: string;
+  channelName: string;
+  channelId: string;
+  messageText: string;
+  senderName: string;
+  senderId: string;
+}
+
+/**
+ * Sends an email notification to a channel member when @everyone is mentioned
+ */
+export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const channelUrl = `${appUrl}/chat?channel=${data.channelId}`;
+
+    // Render email using ChannelMentionNotification template
+    const emailHtml = await render(
+      ChannelMentionNotification({
+        memberName: data.memberName,
+        creatorName: data.creatorName,
+        channelName: data.channelName,
+        messageText: data.messageText,
+        senderName: data.senderName,
+        channelUrl,
+        creatorProfileUrl,
+        settingsUrl: EMAIL_CONFIG.urls.settings,
+        helpUrl: EMAIL_CONFIG.urls.help,
+      })
+    );
+
+    const subject = `${data.senderName} mentioned everyone in ${data.channelName}`;
+
+    // Generate unique Message-ID to prevent email threading
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.memberId}@merocircle.app>`;
+
+    const mailOptions = {
+      from: {
+        name: EMAIL_CONFIG.from.name,
+        address: EMAIL_CONFIG.from.email,
+      },
+      to: data.memberEmail,
+      subject,
+      html: emailHtml,
+      messageId,
+      headers: {
+        'Message-ID': messageId,
+        'X-Mailer': 'MeroCircle',
+        'X-Priority': '3',
+        'Precedence': 'bulk',
+      },
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('Channel mention email sent successfully', 'EMAIL', {
+      recipient: data.memberEmail,
+      channelId: data.channelId,
+      senderId: data.senderId,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send channel mention email', 'EMAIL', {
+      error: error.message,
+      recipient: data.memberEmail,
+      channelId: data.channelId,
+    });
+    return false;
+  }
+}
+
+/**
+ * Sends email notifications to all channel members when @everyone is mentioned
+ */
+export async function sendBulkChannelMentionEmails(
+  members: Array<{ email: string; name: string; id: string }>,
+  mentionData: Omit<ChannelMentionEmailData, 'memberEmail' | 'memberName' | 'memberId'>
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  const batchSize = 10;
+  for (let i = 0; i < members.length; i += batchSize) {
+    const batch = members.slice(i, i + batchSize);
+    
+    const results = await Promise.allSettled(
+      batch.map(member =>
+        sendChannelMentionEmail({
+          ...mentionData,
+          memberEmail: member.email,
+          memberName: member.name,
+          memberId: member.id,
+        })
+      )
+    );
+
+    results.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value) {
+        sent++;
+      } else {
+        failed++;
+        if (result.status === 'rejected') {
+          logger.error('Email send failed in batch', 'EMAIL', {
+            error: result.reason?.message || 'Unknown error',
+          });
+        }
+      }
+    });
+
+    if (i + batchSize < members.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  return { sent, failed };
 }

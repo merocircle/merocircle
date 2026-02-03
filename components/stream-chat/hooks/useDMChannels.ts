@@ -66,7 +66,7 @@ export function useDMChannels(chatClient: StreamChat | null, user: { id: string 
     } catch (err: any) {
       // Silently handle rate limiting errors
       if (err?.code !== 9) {
-        console.error('Failed to fetch DM channels:', err);
+      console.error('Failed to fetch DM channels:', err);
       }
     } finally {
       isFetchingRef.current = false;
