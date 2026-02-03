@@ -55,9 +55,9 @@ export default function CreatorSignupPage() {
     socialLinks: {} as Record<string, string>
   });
   const [tierPrices, setTierPrices] = useState({
-    tier1: '100',
-    tier2: '500',
-    tier3: '1000'
+    tier1: '500',
+    tier2: '2000',
+    tier3: '5000'
   });
   const [tierExtraPerks, setTierExtraPerks] = useState<Record<number, string[]>>({
     1: [],
