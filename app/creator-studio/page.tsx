@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
+import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { PageLayout } from '@/components/common/PageLayout';
 import dynamic from 'next/dynamic';
 import { SettingsSkeleton } from '@/components/dashboard/sections/LoadingSkeleton';
@@ -15,6 +16,15 @@ const CreatorStudioSection = dynamic(() => import('@/components/dashboard/sectio
 export default function CreatorStudioPage() {
   const { isAuthenticated, loading: authLoading, isCreator } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { setHighlightedPostId } = useDashboardViewSafe();
+
+  useEffect(() => {
+    const postId = searchParams.get('post');
+    if (postId) {
+      setHighlightedPostId(postId);
+    }
+  }, [searchParams, setHighlightedPostId]);
 
   useEffect(() => {
     if (authLoading) return;

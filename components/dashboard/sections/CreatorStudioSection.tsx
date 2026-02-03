@@ -11,7 +11,9 @@ import {
   Share2,
   Loader2,
   CheckCircle2,
+  Plus,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
@@ -29,7 +31,6 @@ import {
 // Tab configuration
 const tabs = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
-  { id: 'posts', label: 'Posts', icon: FileText },
   { id: 'supporters', label: 'Supporters', icon: Users }
 ];
 
@@ -41,7 +42,9 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState<string | null>(null);
-  const highlightedPostRef = useRef<HTMLDivElement>(null);
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const highlightedPostRef = useRef<HTMLDivElement | null>(null);
+  const scrollAttemptedRef = useRef(false);
 
   const [newPostContent, setNewPostContent] = useState('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -58,27 +61,94 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
 
-  // Handle highlighted post - switch to posts tab and scroll to the post
   useEffect(() => {
-    if (highlightedPostId && !dashboardLoading) {
-      setActiveTab('posts');
-
-      const scrollTimer = setTimeout(() => {
-        if (highlightedPostRef.current) {
-          highlightedPostRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 500);
-
-      const clearTimer = setTimeout(() => {
-        setHighlightedPostId(null);
-      }, 5000);
-
-      return () => {
-        clearTimeout(scrollTimer);
-        clearTimeout(clearTimer);
-      };
+    if (!highlightedPostId || dashboardLoading) {
+      scrollAttemptedRef.current = false;
+      return;
     }
-  }, [highlightedPostId, dashboardLoading, setHighlightedPostId]);
+
+    scrollAttemptedRef.current = false;
+
+    if (activeTab !== 'overview') {
+      setActiveTab('overview');
+    }
+
+    // Normalize post ID (remove any whitespace, convert to lowercase for comparison)
+    const normalizedPostId = String(highlightedPostId).trim().toLowerCase();
+
+    // Function to attempt scrolling
+    const attemptScroll = (attempt: number = 1) => {
+      // Only scroll if we're on the overview tab
+      if (activeTab !== 'overview') {
+        if (attempt < 5) {
+          setTimeout(() => attemptScroll(attempt + 1), 200);
+        }
+        return;
+      }
+
+      // Check if posts are loaded
+      const posts = dashboardData?.posts || [];
+
+      const matchingPost = posts.find((p: any) => {
+        const postId = String(p.id || '').trim().toLowerCase();
+        return postId === normalizedPostId;
+      });
+
+      if (!matchingPost && attempt < 10) {
+        // Post not found yet, retry after delay
+        setTimeout(() => attemptScroll(attempt + 1), 200 * attempt);
+        return;
+      }
+
+      if (matchingPost && !scrollAttemptedRef.current) {
+        scrollAttemptedRef.current = true;
+        
+        // Use requestAnimationFrame to ensure DOM is updated
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (highlightedPostRef.current) {
+              highlightedPostRef.current.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center',
+                inline: 'nearest'
+              });
+            } else {
+              // Retry once more after a longer delay
+              setTimeout(() => {
+                if (highlightedPostRef.current) {
+                  highlightedPostRef.current.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                  });
+                }
+              }, 500);
+            }
+          });
+        });
+      }
+    };
+
+    // Start scrolling attempts with increasing delays (wait for tab switch and data load)
+    const scrollTimer1 = setTimeout(() => attemptScroll(), 300);
+    const scrollTimer2 = setTimeout(() => attemptScroll(), 800);
+    const scrollTimer3 = setTimeout(() => attemptScroll(), 1500);
+    const scrollTimer4 = setTimeout(() => attemptScroll(), 2500);
+
+    // Clear highlight after 5 seconds
+    const clearTimer = setTimeout(() => {
+      setHighlightedPostId(null);
+      scrollAttemptedRef.current = false;
+    }, 5000);
+
+    return () => {
+      clearTimeout(scrollTimer1);
+      clearTimeout(scrollTimer2);
+      clearTimeout(scrollTimer3);
+      clearTimeout(scrollTimer4);
+      clearTimeout(clearTimer);
+    };
+  }, [highlightedPostId, dashboardLoading, dashboardData, activeTab, setHighlightedPostId]);
 
   const [shareCopied, setShareCopied] = useState(false);
 
@@ -205,6 +275,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         setAllowsMultipleAnswers(false);
         setPollDuration(null);
         setPostVisibility('public');
+        setShowCreatePostModal(false);
 
         setShowSuccessMessage(true);
         setTimeout(() => setShowSuccessMessage(false), 3000);
@@ -309,23 +380,33 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         </div>
 
         {user?.id && (
-          <Button
-            variant={shareCopied ? "default" : "outline"}
-            className="gap-2 rounded-xl"
-            onClick={handleShareProfile}
-          >
-            {shareCopied ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4" />
-                Share your profile
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="default"
+              className="gap-2 rounded-xl"
+              onClick={() => setShowCreatePostModal(true)}
+            >
+              <Plus className="w-4 h-4" />
+              Create Post
+            </Button>
+            <Button
+              variant={shareCopied ? "default" : "outline"}
+              className="gap-2 rounded-xl"
+              onClick={handleShareProfile}
+            >
+              {shareCopied ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  Share your profile
+                </>
+              )}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -349,30 +430,56 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               />
             )}
 
-            <StatsCards stats={stats} />
-            <AnalyticsCharts
-              earningsData={analyticsData?.charts.earnings}
-              supporterFlowData={analyticsData?.charts.supporterFlow}
-            />
-            <TopSupporters supporters={analyticsData?.topSupporters || []} />
-          </motion.div>
-        )}
-
-        {/* Posts Tab */}
-        {activeTab === 'posts' && (
-          <motion.div
-            key="posts"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
-          >
             <ToastMessages
               showSuccess={showSuccessMessage}
               showError={!!showErrorMessage}
               errorMessage={showErrorMessage}
             />
 
+            <StatsCards stats={stats} />
+            <AnalyticsCharts
+              earningsData={analyticsData?.charts.earnings}
+              supporterFlowData={analyticsData?.charts.supporterFlow}
+            />
+            <TopSupporters supporters={analyticsData?.topSupporters || []} />
+
+            {/* Posts Section */}
+            <div className="pt-6 border-t border-border/50">
+              <RecentPostsList
+                posts={dashboardData?.posts || []}
+                highlightedPostId={highlightedPostId}
+                currentUserId={user?.id}
+                onboardingCompleted={onboardingCompleted}
+                highlightedPostRef={highlightedPostRef}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {/* Supporters Tab */}
+        {activeTab === 'supporters' && (
+          <motion.div
+            key="supporters"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
+          >
+            <SupportersList
+              supporters={dashboardData?.supporters || []}
+              totalCount={stats.supporters}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Create Post Modal */}
+      <Dialog open={showCreatePostModal} onOpenChange={setShowCreatePostModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
+            <DialogTitle>Create New Post</DialogTitle>
+          </DialogHeader>
+          <div className="px-6 pb-6">
             <PostCreationForm
               postType={postType}
               newPostContent={newPostContent}
@@ -394,33 +501,9 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               onRemoveImage={(index) => setUploadedImages(prev => prev.filter((_, i) => i !== index))}
               onPublish={handlePublishPost}
             />
-
-            <RecentPostsList
-              posts={dashboardData?.posts || []}
-              highlightedPostId={highlightedPostId}
-              currentUserId={user?.id}
-              onboardingCompleted={onboardingCompleted}
-              highlightedPostRef={highlightedPostRef}
-            />
-          </motion.div>
-        )}
-
-        {/* Supporters Tab */}
-        {activeTab === 'supporters' && (
-          <motion.div
-            key="supporters"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
-          >
-            <SupportersList
-              supporters={dashboardData?.supporters || []}
-              totalCount={stats.supporters}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });
