@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { serverStreamClient, upsertStreamUser } from '@/lib/stream-server';
 import { getAuthenticatedUser, requireCreatorRole, handleApiError } from '@/lib/api-utils';
+import { syncChannelToStream } from '@/lib/stream-server-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +50,28 @@ export async function GET() {
         }
         return (a.position || 0) - (b.position || 0);
       });
+
+    // Auto-sync channels that don't have stream_channel_id (created by triggers)
+    // Do this in the background to avoid blocking the response
+    const unsyncedChannels = channels.filter((c: any) => !c.stream_channel_id);
+    if (unsyncedChannels.length > 0) {
+      // Sync in background (don't await to avoid blocking response)
+      Promise.all(
+        unsyncedChannels.map(async (channel: any) => {
+          try {
+            await syncChannelToStream(channel.id);
+            logger.info('Auto-synced channel', 'CHANNELS_API', { channelId: channel.id });
+          } catch (err) {
+            logger.error('Failed to auto-sync channel', 'CHANNELS_API', {
+              channelId: channel.id,
+              error: err instanceof Error ? err.message : 'Unknown'
+            });
+          }
+        })
+      ).catch(() => {
+        // Silently handle any errors in background sync
+      });
+    }
 
     // Get creator info for all channels
     const creatorIds = [...new Set(channels.map((c: any) => c.creator_id).filter(Boolean))];

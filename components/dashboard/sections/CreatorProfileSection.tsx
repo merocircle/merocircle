@@ -1083,6 +1083,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               currentUserId={user?.id}
                               showActions={true}
                               isSupporter={isSupporter}
+                              onNavigateToMembership={() => setActiveTab('membership')}
                             />
                           </motion.div>
                         );

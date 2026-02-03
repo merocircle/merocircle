@@ -71,6 +71,7 @@ interface EnhancedPostCardProps {
   onShare?: (postId: string) => void;
   showActions?: boolean;
   isSupporter?: boolean; // Whether the current user is a supporter of this creator
+  onNavigateToMembership?: () => void; // Callback to navigate to membership tab
 }
 
 interface Comment {
@@ -171,7 +172,8 @@ export function EnhancedPostCard({
   onComment,
   onShare,
   showActions = true,
-  isSupporter = false
+  isSupporter = false,
+  onNavigateToMembership
 }: EnhancedPostCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -403,11 +405,12 @@ export function EnhancedPostCard({
       <div 
         className="overflow-hidden bg-card rounded-xl border border-border cursor-pointer"
         onClick={(e) => {
-          // Don't open modal if clicking on comments section or action buttons
+          // Don't open modal if clicking on comments section, action buttons, or blurred content
           const target = e.target as HTMLElement;
           const isClickOnComments = target.closest('[data-comments-section]') !== null;
           const isClickOnActions = target.closest('[data-actions-section]') !== null;
-          if (!isClickOnComments && !isClickOnActions) {
+          const isClickOnBlurred = shouldBlur && target.closest('[data-blurred-section]') !== null;
+          if (!isClickOnComments && !isClickOnActions && !isClickOnBlurred) {
             handlePostClick();
           }
         }}
@@ -476,30 +479,14 @@ export function EnhancedPostCard({
           </div>
         </div>
 
-        {/* Content Text - Show preview even for locked content */}
-        {post.content && (
-          <div className="px-2.5 pb-1.5">
-            {shouldBlur ? (
-              <div className="relative">
-                <p className="text-xs text-foreground leading-relaxed line-clamp-2">
-                  {post.content}
-                </p>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
-              </div>
-            ) : (
-              <p className="text-xs text-foreground leading-relaxed line-clamp-2">
-                {post.content}
-              </p>
-            )}
-          </div>
-        )}
-
         {/* Media Section */}
         <div className="relative">
           {shouldBlur ? (
-            /* Psychology-driven locked content */
+            /* Blurred content with simple overlay */
             <div
-              className="relative w-full aspect-square max-w-[480px] mx-auto bg-gradient-to-br from-muted to-muted/50 overflow-hidden group"
+              className="relative w-full aspect-square max-w-[480px] mx-auto bg-gradient-to-br from-muted to-muted/50 overflow-hidden"
+              data-blurred-section
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Subtle preview of content (blurred) */}
               {allImages.length > 0 && (
@@ -512,90 +499,44 @@ export function EnhancedPostCard({
                 />
               )}
               
-              {/* Decorative gradient overlay */}
-              <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-purple-500/5 to-pink-500/10" />
-                <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-              </div>
-              
-              {/* Value proposition overlay */}
-              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
-                <div className="text-center p-6 max-w-sm space-y-4">
-                  {/* Lock icon with hover animation */}
-                  <motion.div
-                    className="mb-2 flex justify-center"
-                    whileHover={{ scale: 1.1, rotate: [0, -10, 10, -10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <div className="p-4 bg-background/90 backdrop-blur-md rounded-2xl shadow-xl border border-primary/20 group-hover:border-primary/40 transition-colors">
-                      <Lock className="w-8 h-8 text-primary" />
-                    </div>
-                  </motion.div>
-                  
-                  {/* Heading with social proof */}
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground mb-1">
-                      Exclusive Content
-                    </h3>
-                    {(post as any).supporter_engagement && (
-                      <p className="text-xs text-primary font-medium">
-                        {(post as any).supporter_engagement} supporters loved this
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Clear value proposition */}
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Get access to exclusive content, early releases, and direct creator support
-                    </p>
-                    
-                    {/* Benefits list */}
-                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <span>HD Content</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <span>Early Access</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <span>Priority Chat</span>
-                      </div>
+              {/* Simple overlay */}
+              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
+                <div className="text-center p-6 max-w-sm space-y-4" onClick={(e) => e.stopPropagation()}>
+                  {/* Lock icon */}
+                  <div className="flex justify-center mb-2">
+                    <div className="p-3 bg-background/90 backdrop-blur-md rounded-xl shadow-lg border border-primary/20">
+                      <Lock className="w-6 h-6 text-primary" />
                     </div>
                   </div>
                   
-                  {/* Tier badge and CTA */}
-                  <div className="space-y-3">
-                    {post.tier_required && post.tier_required !== 'free' && (
-                      <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
-                        {post.tier_required} Tier Required
-                      </Badge>
-                    )}
-                    
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Get access to this exclusive content
+                  </p>
+                  
+                  {onNavigateToMembership ? (
                     <Button 
                       size="sm" 
-                      className="w-full shadow-lg hover:shadow-xl transition-all group-hover:scale-105" 
-                      asChild
+                      className="w-full" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onNavigateToMembership();
+                      }}
                     >
-                      <Link href={creatorProfileLink}>
-                        <span>Support {post.creator.display_name}</span>
-                        {post.tier_required && post.tier_required !== 'free' && (
-                          <span className="ml-1 text-xs opacity-75">from Rs.100/mo</span>
-                        )}
+                      View Membership
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      className="w-full" 
+                      asChild
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Link href={creatorProfileLink} onClick={(e) => e.stopPropagation()}>
+                        View Membership
                       </Link>
                     </Button>
-                    
-                    {/* Social proof footer */}
-                    {(post as any).creator_supporter_count > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Join {(post as any).creator_supporter_count}+ supporters
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -779,6 +720,16 @@ export function EnhancedPostCard({
             <p className="text-xs font-semibold text-foreground">
               {likesCount.toLocaleString()} {likesCount === 1 ? 'like' : 'likes'}
             </p>
+
+            {/* Caption - Show after image (Instagram style) */}
+            {(post.content || post.title) && (
+              <div className="mt-1">
+                <p className="text-xs text-foreground leading-relaxed">
+                  <span className="font-semibold">{post.creator.display_name}</span>{' '}
+                  {post.content || post.title}
+                </p>
+              </div>
+            )}
 
             {/* View comments link */}
             {commentsCount > 0 && !showComments && (
