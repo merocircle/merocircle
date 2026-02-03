@@ -69,6 +69,9 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
   const streamTheme = resolvedTheme === 'dark' ? 'str-chat__theme-dark' : 'str-chat__theme-light';
 
+  // Don't add this effect - it can cause infinite loops
+  // The channels will load automatically when user connects
+
   // Initialize data with debouncing to prevent rate limiting
   useEffect(() => {
     if (isConnected && user) {
@@ -273,7 +276,31 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
   }, []);
 
   const selectChannel = useCallback(async (channel: SupabaseChannel, isRetry = false) => {
-    if (!chatClient || !channel.stream_channel_id) return;
+    if (!chatClient) {
+      setChannelError('Channel not available. This channel may have been deleted. Please refresh the page.');
+      return;
+    }
+
+    // If channel doesn't have stream_channel_id, try to sync it first
+    if (!channel.stream_channel_id) {
+      try {
+        const syncResponse = await fetch(`/api/community/channels/${channel.id}/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json();
+          // Update channel with stream_channel_id
+          channel.stream_channel_id = syncData.streamChannelId;
+        } else {
+          setChannelError('Channel is not synced. Please refresh the page.');
+          return;
+        }
+      } catch (err) {
+        setChannelError('Failed to sync channel. Please refresh the page.');
+        return;
+      }
+    }
 
     setChannelError(null);
     try {
@@ -284,19 +311,27 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
       await streamChannel.markRead();
       fetchUnreadCounts();
     } catch (err: any) {
-      if ((err?.message?.includes('not allowed') || err?.code === 17) && !isRetry) {
-        try {
-          await fetch('/api/stream/resync-my-channels', { method: 'POST' });
-          await new Promise(resolve => setTimeout(resolve, 500));
-          return selectChannel(channel, true);
-        } catch {
-          setChannelError('Unable to access this channel. Please try again later.');
+      // If channel doesn't exist or user not a member, provide clearer error
+      if (err?.code === 17 || err?.message?.includes('not allowed') || err?.message?.includes('not found')) {
+        if (!isRetry) {
+          try {
+            // Try to resync channels first
+            await fetch('/api/stream/resync-my-channels', { method: 'POST' });
+            await new Promise(resolve => setTimeout(resolve, 500));
+            // Refresh channels list
+            fetchChannels();
+            return selectChannel(channel, true);
+          } catch {
+            setChannelError('This channel no longer exists or you do not have access. Please refresh the page to see updated channels.');
+          }
+        } else {
+          setChannelError('This channel no longer exists or you do not have access. Please refresh the page to see updated channels.');
         }
       } else {
         setChannelError('Unable to access this channel. Please try again later.');
       }
     }
-  }, [chatClient, fetchUnreadCounts]);
+  }, [chatClient, fetchUnreadCounts, fetchChannels]);
 
   const selectDMChannel = useCallback(async (dmChannel: DMChannel) => {
     try {
@@ -394,11 +429,43 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
       setTimeout(() => {
         selectChannel(targetChannel!);
       }, 100);
-    } else if (hasChannels) {
-      urlChannelOpenedRef.current = true;
-      console.warn(`Channel ${urlChannelId} not found in available channels`, {
-        availableChannels: allServers.flatMap(s => s.channels.map(ch => ch.stream_channel_id)),
-      });
+    } else {
+      // Channel not found in Supabase list, try to access directly from Stream
+      // This handles cases where user has access but channel isn't in channel_members yet
+      if (chatClient && urlChannelId && !urlChannelOpenedRef.current) {
+        urlChannelOpenedRef.current = true;
+        
+        // Try to access the channel directly
+        (async () => {
+          try {
+            const streamChannel = chatClient.channel('messaging', urlChannelId);
+            await streamChannel.watch();
+            setActiveChannel(streamChannel);
+            setMobileView('chat');
+            await streamChannel.markRead();
+            fetchUnreadCounts();
+          } catch (err: any) {
+            // If direct access fails, try to resync channels
+            if (err?.message?.includes('not allowed') || err?.code === 17) {
+              try {
+                await fetch('/api/stream/resync-my-channels', { method: 'POST' });
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                fetchChannels();
+                // Reset the ref so we can try again after resync
+                urlChannelOpenedRef.current = false;
+              } catch {
+                setChannelError('Unable to access this channel. You may not have permission to view this channel.');
+              }
+            } else {
+              setChannelError('Unable to access this channel. You may not have permission to view this channel.');
+            }
+          }
+        })();
+      } else if (hasChannels) {
+        console.warn(`Channel ${urlChannelId} not found in available channels`, {
+          availableChannels: allServers.flatMap(s => s.channels.map(ch => ch.stream_channel_id)),
+        });
+      }
     }
   }, [
     urlChannelId,

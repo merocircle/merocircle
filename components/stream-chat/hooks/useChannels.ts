@@ -31,7 +31,10 @@ export function useChannels(user: { id: string } | null) {
   const [loading, setLoading] = useState(true);
 
   const fetchChannels = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -46,9 +49,15 @@ export function useChannels(user: { id: string } | null) {
 
         setMyServer(mine || null);
         setOtherServers(others);
+      } else {
+        // If API returns error, still set empty state
+        setMyServer(null);
+        setOtherServers([]);
       }
     } catch (err) {
       // Silent fail - channels will show empty state
+      setMyServer(null);
+      setOtherServers([]);
     } finally {
       setLoading(false);
     }
