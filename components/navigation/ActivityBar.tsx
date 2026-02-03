@@ -13,7 +13,8 @@ import {
   Heart,
   User,
   Sun,
-  Moon
+  Moon,
+  Calendar
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
@@ -108,6 +109,13 @@ export function ActivityBar({
     ? { id: 'creator-studio', icon: BarChart3, label: 'Creator Studio', view: 'creator-studio' }
     : null;
 
+  // Events navigation item (coming soon)
+  const eventsNavItem: NavItem = {
+    id: 'events',
+    icon: Calendar,
+    label: 'Events'
+  };
+
   const isActive = (item: NavItem) => {
     return item.view === currentActiveView;
   };
@@ -190,6 +198,25 @@ export function ActivityBar({
               </TooltipTrigger>
               <TooltipContent side="right">
                 <p>{creatorNavItem.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Events - Coming Soon */}
+          {creatorNavItem && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <NavIcon
+                    icon={eventsNavItem.icon}
+                    label={eventsNavItem.label}
+                    badgeText="Soon"
+                    disabled={true}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{eventsNavItem.label} - Coming Soon</p>
               </TooltipContent>
             </Tooltip>
           )}

@@ -10,11 +10,13 @@ interface NavIconProps {
   label: string;
   isActive?: boolean;
   badge?: number;
+  badgeText?: string; // For custom badge text like "Coming Soon"
   onClick?: () => void;
   href?: string;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
+  disabled?: boolean; // For disabled items like "Coming Soon"
 }
 
 export function NavIcon({
@@ -22,11 +24,13 @@ export function NavIcon({
   label,
   isActive = false,
   badge,
+  badgeText,
   onClick,
   href,
   size = 'md',
   showLabel = false,
-  className
+  className,
+  disabled = false
 }: NavIconProps) {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -95,6 +99,19 @@ export function NavIcon({
         )}
       </motion.div>
 
+      {/* Custom Badge Text (e.g., "Coming Soon") - Positioned relative to container */}
+      {badgeText && (
+        <motion.span
+          className="absolute top-0 right-0 px-1 py-0.5 flex items-center justify-center text-[6px] font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-sm leading-none whitespace-nowrap min-w-[18px] h-[12px]"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+          style={{ transform: 'translate(30%, -30%)' }}
+        >
+          {badgeText}
+        </motion.span>
+      )}
+
       {/* Label */}
       {showLabel && (
         <span className={cn(
@@ -113,10 +130,11 @@ export function NavIcon({
     isActive
       ? 'text-primary'
       : 'text-muted-foreground hover:text-foreground',
+    disabled && 'opacity-50 cursor-not-allowed',
     className
   );
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <Link 
         href={href} 
@@ -142,15 +160,20 @@ export function NavIcon({
   }
 
   return (
-    <motion.button
-      onClick={onClick}
+    <motion.div
       className={baseClasses}
-      whileHover={{ y: -2, scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={!disabled ? { y: -2, scale: 1.05 } : {}}
+      whileTap={!disabled ? { scale: 0.95 } : {}}
       transition={{ type: 'spring', stiffness: 400, damping: 17 }}
     >
-      {content}
-    </motion.button>
+      {onClick && !disabled ? (
+        <button onClick={onClick} className="w-full h-full">
+          {content}
+        </button>
+      ) : (
+        content
+      )}
+    </motion.div>
   );
 }
 
