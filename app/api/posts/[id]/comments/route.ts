@@ -99,7 +99,7 @@ export async function POST(
     const result = await createComment({
       userId: user.id,
       postId,
-      content,
+        content,
       parentCommentId: parent_comment_id,
       createNotifications: true,
       logActivity: true,

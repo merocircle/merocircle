@@ -41,18 +41,18 @@ export async function POST(request: NextRequest) {
       postId,
       createNotification: true,
       logActivity: true,
-    })
+        })
 
     if (!result.success) {
       if (result.error === 'Post not found') {
         return NextResponse.json({ error: result.error }, { status: 404 })
       }
       if (result.action === 'already_liked' && action === 'like') {
-        return NextResponse.json(
-          { error: 'Post already liked' },
-          { status: 409 }
-        )
-      }
+          return NextResponse.json(
+            { error: 'Post already liked' },
+            { status: 409 }
+          )
+        }
       return NextResponse.json({ error: result.error || 'Failed to like/unlike post' }, { status: 500 })
     }
 
@@ -68,14 +68,14 @@ export async function POST(request: NextRequest) {
         { error: 'Post not liked' },
         { status: 400 }
       )
-    }
+      }
 
-    return NextResponse.json({ 
-      success: true, 
+      return NextResponse.json({ 
+        success: true, 
       message: result.action === 'liked' ? 'Post liked successfully' : 'Post unliked successfully',
       action: result.action,
       likesCount: result.likesCount,
-    })
+      })
 
   } catch (error) {
     return handleApiError(error, 'SOCIAL_LIKE_API', 'Failed to like/unlike post');

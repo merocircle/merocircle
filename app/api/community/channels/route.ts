@@ -242,21 +242,21 @@ export async function POST(request: Request) {
 
     // Create corresponding Stream channel using unified engine
     // First, ensure custom channel members are added to Supabase if needed
-    if (validSupporterIds.length > 0) {
+      if (validSupporterIds.length > 0) {
       // Custom channel with selected supporters - add them to Supabase channel_members
-      for (const supporterId of validSupporterIds) {
-        await supabase
-          .from('channel_members')
-          .upsert({
-            channel_id: channel.id,
-            user_id: supporterId
-          }, { onConflict: 'channel_id,user_id' });
-      }
+        for (const supporterId of validSupporterIds) {
+          await supabase
+            .from('channel_members')
+            .upsert({
+              channel_id: channel.id,
+              user_id: supporterId
+            }, { onConflict: 'channel_id,user_id' });
+        }
     }
 
     // Use unified Stream channel engine to create/sync channel
     const streamResult = await createStreamChannel({
-      channelId: channel.id,
+        channelId: channel.id,
       creatorId: user.id,
       name: channel.name,
       category: 'custom',

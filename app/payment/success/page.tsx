@@ -39,13 +39,15 @@ function PaymentSuccessContent() {
 
   const verifyPayment = async () => {
     try {
-      // Get parameters from payment callback (eSewa, Khalti, or Direct)
+      // Get parameters from payment callback (eSewa, Khalti, Direct, or Dodo)
       const transaction_uuid = searchParams.get('transaction_uuid');
       const total_amount = searchParams.get('total_amount');
       const product_code = searchParams.get('product_code') || 'EPAYTEST';
-      const gateway = searchParams.get('gateway'); // 'esewa', 'khalti', or 'direct'
+      const gateway = searchParams.get('gateway'); // 'esewa', 'khalti', 'direct', or 'dodo'
       const creator_id = searchParams.get('creator_id');
       const ref_id = searchParams.get('refId');
+      const subscription_id = searchParams.get('subscription_id');
+      const transaction_id = searchParams.get('transaction_id');
 
       console.log('[SUCCESS] Verifying payment:', {
         transaction_uuid,
@@ -54,8 +56,36 @@ function PaymentSuccessContent() {
         gateway,
         creator_id,
         ref_id,
+        subscription_id,
+        transaction_id,
       });
 
+      if (gateway === 'dodo') {
+        if (!subscription_id || !transaction_id) {
+          console.error('[SUCCESS] Missing Dodo parameters');
+          setIsVerifying(false);
+          return;
+        }
+
+        const response = await fetch(
+          `/api/payment/dodo/subscription/verify?subscription_id=${subscription_id}&transaction_id=${transaction_id}`
+        );
+
+        const result = await response.json();
+        
+        console.log('[SUCCESS] Dodo verification result:', result);
+
+        if (result.success && result.status === 'active') {
+          setVerified(true);
+          setTransaction(result.subscription || { id: transaction_id, status: 'active' });
+        } else {
+          console.error('[SUCCESS] Dodo subscription verification failed:', result.error);
+        }
+        setIsVerifying(false);
+        return;
+      }
+
+      // Handle other payment gateways (eSewa, Khalti, Direct)
       if (!transaction_uuid || !total_amount) {
         console.error('[SUCCESS] Missing parameters');
         setIsVerifying(false);

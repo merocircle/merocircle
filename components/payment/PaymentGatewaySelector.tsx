@@ -9,7 +9,7 @@ import Image from 'next/image';
 interface PaymentGatewaySelectorProps {
   open: boolean;
   onClose: () => void;
-  onSelectGateway: (gateway: 'esewa' | 'khalti' | 'direct') => void;
+  onSelectGateway: (gateway: 'esewa' | 'khalti' | 'dodo' | 'direct') => void;
   amount: number;
   tierLevel: number;
   creatorId: string;
@@ -33,18 +33,29 @@ export function PaymentGatewaySelector({
       name: 'eSewa',
       logoPath: '/esewa.jpg',
       available: true,
+      description: 'One-time payment',
     },
     {
       id: 'khalti' as const,
       name: 'Khalti',
       logoPath: '/khalti.png',
       available: true,
+      description: 'One-time payment',
+    },
+    {
+      id: 'dodo' as const,
+      name: 'Visa/Mastercard',
+      logoPath: '/dodo.png',
+      available: true,
+      description: 'Monthly subscription',
+      isSubscription: true,
     },
     {
       id: 'fonepay' as const,
       name: 'Fonepay',
       logoPath: '/fonepay.png',
       available: false,
+      description: 'Coming soon',
     },
   ];
 
@@ -55,6 +66,8 @@ export function PaymentGatewaySelector({
           <DialogTitle className="text-xl font-bold">Select Payment Method</DialogTitle>
           <DialogDescription className="text-sm">
             NPR {amount.toLocaleString()} • Tier {tierLevel}
+            <br />
+            <span className="text-xs text-muted-foreground">Choose one-time payment or monthly subscription</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -70,8 +83,8 @@ export function PaymentGatewaySelector({
                   isComingSoon 
                     ? 'opacity-50 cursor-not-allowed' 
                     : 'cursor-pointer hover:shadow-md hover:border-purple-400 active:scale-[0.98]'
-                }`}
-                onClick={() => !isComingSoon && onSelectGateway(gateway.id as 'esewa' | 'khalti')}
+                } ${(gateway as any).isSubscription ? 'border-blue-500/50' : ''}`}
+                onClick={() => !isComingSoon && onSelectGateway(gateway.id as 'esewa' | 'khalti' | 'dodo')}
               >
                 {/* Coming Soon Badge */}
                 {isComingSoon && (
@@ -83,25 +96,35 @@ export function PaymentGatewaySelector({
                 )}
 
                 <div className="relative p-3 flex items-center justify-between">
-                  {/* Logo - Clickable */}
+                  {/* Logo and Info */}
                   <div 
                     className="flex items-center flex-1 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!isComingSoon) {
-                        onSelectGateway(gateway.id as 'esewa' | 'khalti');
+                        onSelectGateway(gateway.id as 'esewa' | 'khalti' | 'dodo');
                       }
                     }}
                   >
-                    <div className="relative h-12 w-auto flex items-center">
-                      <Image
-                        src={gateway.logoPath}
-                        alt={gateway.name}
-                        width={140}
-                        height={48}
-                        className="object-contain max-h-12"
-                        unoptimized
-                      />
+                    <div className="flex flex-col">
+                      <div className="relative h-12 w-auto flex items-center">
+                        <Image
+                          src={gateway.logoPath}
+                          alt={gateway.name}
+                          width={140}
+                          height={48}
+                          className="object-contain max-h-12"
+                          unoptimized
+                        />
+                      </div>
+                      {(gateway as any).description && (
+                        <span className="text-xs text-muted-foreground mt-1">{(gateway as any).description}</span>
+                      )}
+                      {(gateway as any).isSubscription && (
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
+                          🔄 Recurring monthly
+                        </span>
+                      )}
                     </div>
                   </div>
 

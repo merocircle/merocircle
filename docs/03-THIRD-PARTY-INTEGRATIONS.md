@@ -9,6 +9,7 @@ This document provides comprehensive information about all third-party services 
 3. [SendGrid](#sendgrid)
 4. [eSewa Payment Gateway](#esewa-payment-gateway)
 5. [Khalti Payment Gateway](#khalti-payment-gateway)
+6. [Dodo Payments](#dodo-payments)
 
 ---
 
@@ -602,4 +603,134 @@ KHALTI_WEBSITE_URL=
 
 ---
 
-**Last Updated**: January 2025
+## Dodo Payments
+
+### Overview
+
+Dodo Payments provides subscription-based payment processing with support for **Visa/Mastercard** credit and debit cards. It's designed for recurring monthly payments and offers a hosted checkout experience.
+
+**Key Features**:
+- Subscription-based payments (monthly recurring)
+- Visa/Mastercard support
+- Hosted checkout page
+- Webhook support for payment events
+- Test mode for development
+
+### Setup Instructions
+
+1. **Create Dodo Payments Account**
+   - Visit [dodopayments.com](https://dodopayments.com)
+   - Sign up and complete business verification
+   - Access your dashboard
+
+2. **Get API Credentials**
+   - Navigate to **Settings → API Keys**
+   - Copy your **API Key** (starts with `v3...`)
+   - Copy your **Webhook Secret** (starts with `whsec_...`)
+
+3. **Configure Environment Variables**
+   ```bash
+   DODO_PAYMENTS_API_KEY=your_api_key
+   DODO_PAYMENTS_WEBHOOK_KEY=your_webhook_secret
+   DODO_PAYMENTS_ENVIRONMENT=test_mode  # or 'production'
+   ```
+
+4. **Configure Webhook URL**
+   - In Dodo dashboard: **Settings → Webhooks**
+   - Add URL: `https://yourdomain.com/api/payment/dodo/webhook`
+   - Select events: `subscription.activated`, `payment.succeeded`, `subscription.cancelled`, `subscription.expired`, `payment.failed`
+
+### Implementation Details
+
+#### Configuration
+**File**: `lib/dodo/config.ts`
+
+```typescript
+export const dodoConfig = {
+  apiKey: process.env.DODO_PAYMENTS_API_KEY,
+  webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_KEY,
+  returnUrl: getBaseUrl(), // Auto-detects localhost or Vercel
+  environment: process.env.DODO_PAYMENTS_ENVIRONMENT || 'test',
+  apiUrl: getApiUrl(), // test.dodopayments.com or live.dodopayments.com
+};
+```
+
+#### API Client
+**File**: `lib/dodo/client.ts`
+
+Provides methods for:
+- `createCheckoutSession()` - Creates checkout session (recommended)
+- `getCheckoutSession()` - Gets session status
+- `createProduct()` - Creates product in Dodo
+- `getProduct()` - Gets product details
+- `verifyWebhookSignature()` - Verifies webhook signatures
+
+#### API Endpoints
+
+1. **POST /api/payment/dodo/subscription/initiate**
+   - Creates checkout session
+   - Returns payment URL for redirection
+
+2. **GET /api/payment/dodo/subscription/verify**
+   - Verifies subscription after user returns
+   - Processes payment success
+
+3. **POST /api/payment/dodo/webhook**
+   - Receives payment events from Dodo
+   - Processes through unified engines
+
+4. **POST /api/payment/dodo/subscription/cancel**
+   - Cancels active subscription
+   - Cleans up resources
+
+### Payment Flow
+
+1. User selects Dodo payment option
+2. Frontend calls `/api/payment/dodo/subscription/initiate`
+3. System creates/gets product in Dodo
+4. System creates checkout session
+5. User redirected to Dodo hosted checkout
+6. User completes payment with card
+7. User redirected to `/payment/success?gateway=dodo&...`
+8. Success page calls verify endpoint
+9. Payment Success Engine processes payment
+10. Webhooks handle recurring payments
+
+### Integration with Unified Engines
+
+Dodo Payments uses the same unified engines as other payment gateways:
+
+- **Payment Success Engine** (`lib/payment-success-engine.ts`)
+  - Updates transactions
+  - Calls subscription engine
+  - Syncs with Stream Chat
+
+- **Subscription Engine** (`lib/subscription-engine.ts`)
+  - Manages supporter records
+  - Handles tier access
+  - Updates channel memberships
+
+- **Unsubscribe Engine** (`lib/unsubscribe-engine.ts`)
+  - Handles cancellations
+  - Removes channel access
+  - Sends notifications
+
+### Testing
+
+Run the test script:
+```bash
+npx tsx scripts/test-dodo-payments.ts
+```
+
+Test cards are provided by Dodo Payments for testing in test mode.
+
+### Resources
+
+- **Full Documentation**: See [DODO-PAYMENTS-INTEGRATION.md](./DODO-PAYMENTS-INTEGRATION.md)
+- **Dodo Payments Docs**: https://docs.dodopayments.com
+- **API Reference**: https://docs.dodopayments.com/api-reference
+- **Test Script**: `scripts/test-dodo-payments.ts`
+
+---
+
+**Last Updated**: February 2025

@@ -89,9 +89,9 @@ export async function GET(request: NextRequest) {
       if (lookupData.status === 'Completed') {
         // Use unified payment success engine
         const gatewayData = {
-          khalti_transaction_id: lookupData.transaction_id,
-          verification_status: lookupData.status,
-          fee: lookupData.fee,
+              khalti_transaction_id: lookupData.transaction_id,
+              verification_status: lookupData.status,
+              fee: lookupData.fee,
         };
 
         const result = await processPaymentSuccess({
