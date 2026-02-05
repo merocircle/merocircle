@@ -28,7 +28,9 @@ const getApiUrl = (): string => {
 
 // Get base URL (matching the pattern from lib/config.ts)
 // Handles both localhost (development) and Vercel (production)
+// IMPORTANT: Prioritizes production domain over preview URLs to avoid SSO authentication issues
 const getBaseUrl = (): string => {
+  // First, check if explicitly set (highest priority - use this for production)
   if (process.env.DODO_PAYMENTS_RETURN_URL) {
     const returnUrl = process.env.DODO_PAYMENTS_RETURN_URL;
     try {
@@ -49,20 +51,35 @@ const getBaseUrl = (): string => {
     }
   }
   
+  // Use NEXT_PUBLIC_APP_URL if set (should be production domain)
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
   
-  if (process.env.VERCEL_URL) {
+  // In Vercel production, avoid preview URLs (they require SSO authentication)
+  if (process.env.VERCEL_ENV === 'production') {
+    // Only use VERCEL_URL if it's a production domain (no dashes in preview URLs)
+    if (process.env.VERCEL_URL && !process.env.VERCEL_URL.includes('-')) {
+      return `https://${process.env.VERCEL_URL}`;
+    }
+    // Fallback to production domain
+    return 'https://merocircle.app';
+  }
+  
+  // For preview deployments, warn but still use (not recommended for production payments)
+  if (process.env.VERCEL_URL && process.env.VERCEL_ENV === 'preview') {
+    console.warn('[Dodo Config] Using preview deployment URL - set DODO_PAYMENTS_RETURN_URL or NEXT_PUBLIC_APP_URL for production');
     return `https://${process.env.VERCEL_URL}`;
   }
   
+  // In local development, use localhost
   if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
     const port = process.env.PORT || '3000';
     return `http://localhost:${port}`;
   }
   
-  return 'http://localhost:3000';
+  // Production fallback
+  return 'https://merocircle.app';
 };
 
 export const dodoConfig = {
