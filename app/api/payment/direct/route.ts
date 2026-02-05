@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
     const result = await processPaymentSuccess({
       transactionId: transaction.id,
       gatewayData,
-      tierLevel,
-    });
+          tierLevel,
+        });
 
     if (!result.success) {
       logger.error('Payment success processing failed', 'DIRECT_PAYMENT', {

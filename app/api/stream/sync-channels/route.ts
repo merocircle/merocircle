@@ -43,15 +43,15 @@ export async function POST(request: Request) {
         });
 
         if (result.success) {
-          syncedChannels.push({
-            id: channel.id,
-            name: channel.name,
+        syncedChannels.push({
+          id: channel.id,
+          name: channel.name,
             streamChannelId: result.streamChannelId,
             memberCount: result.memberCount || 0
-          });
+        });
 
-          logger.info('Channel synced to Stream', 'STREAM_SYNC', {
-            channelId: channel.id,
+        logger.info('Channel synced to Stream', 'STREAM_SYNC', {
+          channelId: channel.id,
             streamChannelId: result.streamChannelId,
             memberCount: result.memberCount
           });
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
           logger.error('Failed to sync channel', 'STREAM_SYNC', {
             channelId: channel.id,
             error: result.error
-          });
+        });
         }
       } catch (err) {
         logger.error('Failed to sync channel', 'STREAM_SYNC', {

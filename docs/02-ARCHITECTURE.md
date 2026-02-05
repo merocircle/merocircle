@@ -226,12 +226,127 @@ Cache Invalidation → UI Update
 7. User authenticated
 ```
 
-## Payment Flow
+## Payment & Subscription Architecture
+
+### Unified Payment Flow (Gateway-Agnostic)
+
+```mermaid
+flowchart TD
+    User[User Initiates Payment] --> Gateway{Payment Gateway}
+    Gateway -->|eSewa| EsewaInit[eSewa Initiate API]
+    Gateway -->|Khalti| KhaltiInit[Khalti Initiate API]
+    Gateway -->|Direct| DirectPay[Direct Payment API]
+    
+    EsewaInit --> EsewaVerify[eSewa Verify API]
+    KhaltiInit --> KhaltiVerify[Khalti Verify API]
+    DirectPay --> PaymentEngine
+    EsewaVerify --> PaymentEngine
+    KhaltiVerify --> PaymentEngine
+    
+    PaymentEngine[Payment Success Engine] --> CheckTier{Check Tier Level}
+    CheckTier -->|Mismatch or New| SubEngine[Subscription Engine]
+    CheckTier -->|No Change| SkipUpdate[Skip Update]
+    
+    SubEngine --> UpdateSupporter[Update Supporter Record]
+    SubEngine --> UpdateChannels[Update Channel Access]
+    SubEngine --> SendEmails[Send Confirmation Emails]
+    SubEngine --> CreateNotifs[Create Notifications]
+    SubEngine --> LogActivity[Log Activity]
+    
+    UpdateChannels --> AddChannels[Add to Eligible Channels]
+    UpdateChannels --> RemoveChannels[Remove from Ineligible Channels]
+    
+    AddChannels --> StreamAdd[Add to Stream Chat]
+    RemoveChannels --> StreamRemove[Remove from Stream Chat]
+    
+    StreamAdd --> Frontend[Frontend Updates]
+    StreamRemove --> Frontend
+    SkipUpdate --> Frontend
+```
+
+### Subscription Tier Management
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Gateway as Payment Gateway
+    participant PayEngine as Payment Success Engine
+    participant SubEngine as Subscription Engine
+    participant DB as Database
+    participant Stream as Stream Chat
+    participant Frontend
+
+    User->>Gateway: Initiate Payment (tier_level)
+    Gateway->>PayEngine: Payment Completed
+    PayEngine->>DB: Check transaction.tier_level vs supporter.tier_level
+    
+    alt Tier Mismatch or New Supporter
+        PayEngine->>SubEngine: manageSubscription(new tier_level)
+        SubEngine->>DB: Update supporter.tier_level
+        SubEngine->>DB: Analyze channel access
+        
+        alt Tier Downgrade
+            SubEngine->>DB: Remove from ineligible channels
+            SubEngine->>Stream: Remove from higher-tier channels
+            SubEngine->>User: Send downgrade notification
+        else Tier Upgrade
+            SubEngine->>DB: Add to new eligible channels
+            SubEngine->>Stream: Add to higher-tier channels
+            SubEngine->>User: Send upgrade notification
+        end
+        
+        SubEngine->>DB: Send emails & create notifications
+    else No Tier Change
+        PayEngine->>DB: Ensure channel_members is synced
+        PayEngine->>Stream: Sync to Stream Chat
+    end
+    
+    PayEngine->>Frontend: Redirect to Success Page
+    Frontend->>DB: Fetch fresh data (no cache)
+    DB->>Frontend: Updated supporter status
+    Frontend->>User: Show correct tier & channel access
+```
+
+### Engine Responsibilities
+
+#### Payment Success Engine (`lib/payment-success-engine.ts`)
+- **Purpose**: Gateway-agnostic payment recording
+- **Responsibilities**:
+  - Record transaction as completed
+  - Extract `tier_level` from transaction (direct column)
+  - Detect tier mismatches
+  - Delegate to Subscription Engine for supporter updates
+  - Update creator supporter counts
+  - Sync to Stream Chat
+- **Called by**: eSewa verify, Khalti verify, Direct payment, any future gateway
+
+#### Subscription Engine (`lib/subscription-engine.ts`)
+- **Purpose**: Manage supporter relationships and tier levels
+- **Responsibilities**:
+  - Create/update supporter records
+  - Detect upgrades, downgrades, same-tier payments
+  - Update `channel_members` (add to eligible, remove from ineligible)
+  - Remove from Stream Chat on downgrade
+  - Send confirmation emails (upgrade/downgrade specific)
+  - Create notifications
+  - Log activities
+- **Called by**: Payment Success Engine, recurring subscription handlers, manual updates
+
+#### Unsubscribe Engine (`lib/unsubscribe-engine.ts`)
+- **Purpose**: Handle subscription cancellations
+- **Responsibilities**:
+  - Deactivate supporter record
+  - Cancel recurring subscriptions
+  - Remove from all channels
+  - Remove from Stream Chat
+  - Disable email notifications
+  - Update creator counts
+- **Called by**: User-initiated unsubscribe, email links, subscription webhooks
 
 ### eSewa Payment
 
 ```
-1. Supporter initiates payment
+1. Supporter initiates payment with tier_level
    ↓
 2. POST /api/payment/initiate
    ↓
@@ -239,7 +354,7 @@ Cache Invalidation → UI Update
    ↓
 4. Create eSewa signature
    ↓
-5. Store pending transaction in DB
+5. Store pending transaction in DB with tier_level
    ↓
 6. Return payment form data
    ↓
@@ -249,19 +364,21 @@ Cache Invalidation → UI Update
    ↓
 9. eSewa redirects to success/failure URL
    ↓
-10. POST /api/payment/verify
+10. GET /api/payment/verify
     ↓
 11. Verify signature with eSewa API
     ↓
-12. Update transaction status
+12. Call Payment Success Engine
     ↓
-13. Create/update supporter record
+13. Engine checks tier_level and calls Subscription Engine
+    ↓
+14. Subscription Engine updates supporter, channels, Stream Chat
 ```
 
 ### Khalti Payment
 
 ```
-1. Supporter initiates payment
+1. Supporter initiates payment with tier_level
    ↓
 2. POST /api/payment/khalti/initiate
    ↓
@@ -269,7 +386,7 @@ Cache Invalidation → UI Update
    ↓
 4. Call Khalti API to initiate payment
    ↓
-5. Store pending transaction
+5. Store pending transaction with tier_level
    ↓
 6. Redirect to Khalti payment page
    ↓
@@ -277,14 +394,63 @@ Cache Invalidation → UI Update
    ↓
 8. Khalti redirects to callback
    ↓
-9. POST /api/payment/khalti/verify
+9. GET /api/payment/khalti/verify
     ↓
 10. Verify with Khalti lookup API
     ↓
-11. Update transaction status
+11. Call Payment Success Engine
     ↓
-12. Create/update supporter record
+12. Engine checks tier_level and calls Subscription Engine
+    ↓
+13. Subscription Engine updates supporter, channels, Stream Chat
 ```
+
+### Direct Payment (Bypass Gateway)
+
+```
+1. Supporter initiates payment with tier_level
+   ↓
+2. POST /api/payment/direct
+   ↓
+3. Create transaction as completed with tier_level
+   ↓
+4. Call Payment Success Engine
+   ↓
+5. Engine checks tier_level and calls Subscription Engine
+   ↓
+6. Subscription Engine updates supporter, channels, Stream Chat
+   ↓
+7. Return success response
+```
+
+### Tier Change Handling
+
+**Key Features**:
+- `tier_level` stored as direct column in `supporter_transactions` (business logic, not gateway-specific)
+- Payment Success Engine detects tier mismatches
+- Subscription Engine handles both upgrades and downgrades
+- Channel access updated automatically (database + Stream Chat)
+- No caching on supporter status API (always fresh data)
+- Frontend auto-refreshes after payment
+
+**Upgrade Flow** (e.g., Tier 1 → Tier 2):
+1. New transaction created with `tier_level: 2`
+2. Payment Success Engine detects mismatch (supporter.tier_level: 1, transaction.tier_level: 2)
+3. Calls Subscription Engine
+4. Updates supporter record to tier 2
+5. Adds supporter to tier 2 channels (keeps tier 1 channels)
+6. Syncs to Stream Chat
+7. Sends upgrade emails
+
+**Downgrade Flow** (e.g., Tier 3 → Tier 2):
+1. New transaction created with `tier_level: 2`
+2. Payment Success Engine detects mismatch (supporter.tier_level: 3, transaction.tier_level: 2)
+3. Calls Subscription Engine
+4. Updates supporter record to tier 2
+5. Removes supporter from tier 3-only channels
+6. Removes from Stream Chat tier 3 channels
+7. Keeps access to tier 1 and tier 2 channels
+8. Sends downgrade notification
 
 ## Database Architecture
 

@@ -37,6 +37,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "dodopayments": "^2.18.0",
     "framer-motion": "^12.16.0",
     "gsap": "^3.14.2",
     "lucide-react": "^0.469.0",

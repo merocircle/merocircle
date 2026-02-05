@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     // Use unified Stream channel engine to sync supporter
     const result = await syncSupporterToChannels({
-      supporterId,
+          supporterId,
       creatorId,
       tierLevel: tierLevel || 1,
       sendSystemMessages: true,
@@ -33,9 +33,9 @@ export async function POST(request: Request) {
     if (!result.success) {
       logger.error('Failed to sync supporter to channels', 'STREAM_SYNC_SUPPORTER', {
         error: result.error,
-        supporterId,
+          supporterId,
         creatorId,
-      });
+        });
       return NextResponse.json({ error: result.error || 'Failed to sync supporter' }, { status: 500 });
     }
 

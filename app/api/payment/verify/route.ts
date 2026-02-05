@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     // Use unified payment success engine
     const gatewayData: Record<string, unknown> = {
-      status: 'COMPLETE',
+        status: 'COMPLETE',
     };
 
     if (config.esewa.testMode) {

@@ -28,7 +28,7 @@ export async function POST(
     if (!result.success) {
       if (result.error === 'Post not found') {
         return NextResponse.json({ error: result.error }, { status: 404 });
-      }
+    }
       if (result.action === 'already_liked') {
         return NextResponse.json(
           { error: 'Post already liked' },

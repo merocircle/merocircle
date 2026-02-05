@@ -244,7 +244,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     }
   }, [highlightedPostId, loading, recentPosts, activeTab, isWithinProvider]);
 
-  const handleGatewaySelection = useCallback(async (gateway: 'esewa' | 'khalti' | 'direct') => {
+  const handleGatewaySelection = useCallback(async (gateway: 'esewa' | 'khalti' | 'dodo' | 'direct') => {
     if (!pendingPayment || !user) return;
 
     if (gateway === 'direct') {
@@ -298,6 +298,30 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
     try {
       const { tierLevel, amount, message } = pendingPayment;
+
+      if (gateway === 'dodo') {
+        // Dodo Payments (Visa/Mastercard) - Monthly subscription
+        const response = await fetch('/api/payment/dodo/subscription/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            creatorId,
+            supporterId: user.id,
+            supporterMessage: message || '',
+            tier_level: tierLevel,
+          })
+        });
+
+        if (!response.ok) throw new Error('Dodo subscription initiation failed');
+
+        const result = await response.json();
+        if (result.success && result.payment_url) {
+          window.location.href = result.payment_url;
+          return;
+        }
+        throw new Error(result.error || 'Invalid Dodo response');
+      }
 
       if (gateway === 'khalti') {
         const response = await fetch('/api/payment/khalti/initiate', {

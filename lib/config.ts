@@ -31,6 +31,13 @@ export const config = {
     verificationUrl: process.env.ESEWA_VERIFICATION_URL || 'https://rc-epay.esewa.com.np/api/epay/transactions/status',
     testMode: process.env.ESEWA_TEST_MODE !== 'false',
   },
+  dodo: {
+    apiKey: process.env.DODO_PAYMENTS_API_KEY || '',
+    webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_KEY || '',
+    returnUrl: process.env.DODO_PAYMENTS_RETURN_URL || getBaseUrl(),
+    environment: process.env.DODO_PAYMENTS_ENVIRONMENT || 'test',
+    testMode: process.env.DODO_PAYMENTS_ENVIRONMENT !== 'production',
+  },
   upload: {
     allowedImageTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
     allowedVideoTypes: ['video/mp4', 'video/webm', 'video/ogg'],
