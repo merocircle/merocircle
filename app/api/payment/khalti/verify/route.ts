@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { khaltiConfig } from '@/lib/khalti/config';
 import { KhaltiLookupResponse } from '@/lib/khalti/types';
 import { logger } from '@/lib/logger';
-import { upsertSupporter, updateSupporterCount } from '@/lib/payment-utils';
+import { processPaymentSuccess } from '@/lib/payment-success-engine';
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,62 +87,31 @@ export async function GET(request: NextRequest) {
 
       // Check if payment is completed
       if (lookupData.status === 'Completed') {
-        // Update transaction as completed
-        const { error: updateError } = await supabase
-          .from('supporter_transactions')
-          .update({
-            status: 'completed',
-            esewa_data: {
-              ...(transaction.esewa_data as Record<string, unknown>),
-              khalti_transaction_id: lookupData.transaction_id,
-              verification_status: lookupData.status,
-              fee: lookupData.fee,
-              verified_at: new Date().toISOString(),
-            },
-          })
-          .eq('id', transaction.id);
+        // Use unified payment success engine
+        const gatewayData = {
+          khalti_transaction_id: lookupData.transaction_id,
+          verification_status: lookupData.status,
+          fee: lookupData.fee,
+        };
 
-        if (updateError) {
-          logger.error('Failed to update transaction', 'KHALTI_VERIFY', {
-            error: updateError.message
+        const result = await processPaymentSuccess({
+          transactionId: transaction.id,
+          gatewayData,
+        });
+
+        if (!result.success) {
+          logger.error('Payment success processing failed', 'KHALTI_VERIFY', {
+            transactionId: transaction.id,
+            error: result.error,
           });
+          // Still redirect to success page as payment was verified by Khalti
+          // The error will be logged for investigation
         } else {
-          logger.info('Khalti payment verified successfully', 'KHALTI_VERIFY', {
+          logger.info('Khalti payment verified and processed successfully', 'KHALTI_VERIFY', {
             pidx,
             transactionId: transaction.id,
             khaltiTransactionId: lookupData.transaction_id,
           });
-
-          // Create/update supporter record
-          const tierLevel = (transaction.esewa_data as any)?.tier_level || 1;
-          const transactionAmount = Number(transaction.amount);
-          await upsertSupporter(transaction.supporter_id, transaction.creator_id, transactionAmount, tierLevel);
-
-          // Update supporters_count in creator_profiles
-          await updateSupporterCount(transaction.creator_id);
-
-          // Sync supporter to Stream Chat channels
-          try {
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-            await fetch(`${baseUrl}/api/stream/sync-supporter`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                supporterId: transaction.supporter_id,
-                creatorId: transaction.creator_id,
-                tierLevel,
-              }),
-            });
-            logger.info('Supporter synced to Stream channels', 'KHALTI_VERIFY', {
-              supporterId: transaction.supporter_id,
-              creatorId: transaction.creator_id,
-              tierLevel,
-            });
-          } catch (streamError) {
-            logger.warn('Failed to sync supporter to Stream', 'KHALTI_VERIFY', {
-              error: streamError instanceof Error ? streamError.message : 'Unknown',
-            });
-          }
         }
 
         // Redirect to success page

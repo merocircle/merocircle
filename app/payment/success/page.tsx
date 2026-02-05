@@ -124,7 +124,12 @@ function PaymentSuccessContent() {
 
   const handleGoToCreator = () => {
     if (creatorId) {
-      router.push(`/creator/${creatorId}`);
+      // Force refresh to bypass cache and fetch updated supporter status
+      router.push(`/creator/${creatorId}?refresh=${Date.now()}`);
+      // Also trigger a hard reload after navigation to ensure all caches are cleared
+      setTimeout(() => {
+        router.refresh();
+      }, 100);
     } else if (isAuthenticated) {
       router.push('/home');
     } else {

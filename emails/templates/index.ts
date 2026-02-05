@@ -15,6 +15,8 @@ export { default as ChannelMentionNotification } from './notifications/ChannelMe
 export { default as WelcomeEmail } from './transactional/WelcomeEmail';
 export { default as PaymentSuccess } from './transactional/PaymentSuccess';
 export { default as PaymentFailed } from './transactional/PaymentFailed';
+export { default as SubscriptionConfirmation } from './transactional/SubscriptionConfirmation';
+export { default as NewSupporterNotification } from './transactional/NewSupporterNotification';
 
 // Types
 export type EmailTemplate =
@@ -22,7 +24,9 @@ export type EmailTemplate =
   | 'poll-notification'
   | 'welcome'
   | 'payment-success'
-  | 'payment-failed';
+  | 'payment-failed'
+  | 'subscription-confirmation'
+  | 'new-supporter-notification';
 
 export interface BaseEmailProps {
   appUrl?: string;

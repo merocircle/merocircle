@@ -138,13 +138,15 @@ export async function POST(request: NextRequest) {
       transaction_uuid: purchaseOrderId,
       esewa_product_code: null,
       esewa_signature: null,
+      // Store tier_level as direct column (business logic, not gateway-specific)
+      tier_level: tier_level || 1,
       esewa_data: {
         gateway: 'khalti',
         pidx: khaltiData.pidx,
         purchase_order_id: purchaseOrderId,
         amount_paisa: amountInPaisa,
         amount_npr: validation.validatedAmount,
-        tier_level: tier_level || 1,
+        // Note: tier_level is NOT stored here - it's business logic, not payment gateway data
         expires_at: khaltiData.expires_at,
         expires_in: khaltiData.expires_in,
       },

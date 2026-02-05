@@ -91,156 +91,30 @@ export async function POST(
     const { user, errorResponse } = await getAuthenticatedUser();
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const supabase = await createClient();
-
-    const { data: post } = await supabase
-      .from('posts')
-      .select('id')
-      .eq('id', postId)
-      .single();
-
-    if (!post) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
-    }
-
     const body = await request.json();
     const { content, parent_comment_id } = body;
 
-    if (!content || content.trim().length === 0) {
+    // Use unified comment creation engine
+    const { createComment } = await import('@/lib/comment-engine');
+    const result = await createComment({
+      userId: user.id,
+      postId,
+      content,
+      parentCommentId: parent_comment_id,
+      createNotifications: true,
+      logActivity: true,
+    });
+
+    if (!result.success) {
+      const statusCode = result.error === 'Post not found' || result.error === 'Parent comment not found' ? 404 : 
+                        result.error === 'Comment content is required' ? 400 : 500;
       return NextResponse.json(
-        { error: 'Comment content is required' },
-        { status: 400 }
+        { error: result.error || 'Failed to create comment' },
+        { status: statusCode }
       );
     }
 
-    // Get parent comment info if this is a reply
-    let parentCommentUserId: string | null = null;
-    if (parent_comment_id) {
-      const { data: parentComment } = await supabase
-        .from('post_comments')
-        .select('id, user_id')
-        .eq('id', parent_comment_id)
-        .eq('post_id', postId)
-        .single();
-
-      if (!parentComment) {
-        return NextResponse.json(
-          { error: 'Parent comment not found' },
-          { status: 404 }
-        );
-      }
-      parentCommentUserId = parentComment.user_id;
-    }
-
-    const { data: comment, error } = await supabase
-      .from('post_comments')
-      .insert({
-        post_id: postId,
-        user_id: user.id,
-        content: content.trim(),
-        parent_comment_id
-      })
-      .select(`
-        id,
-        content,
-        created_at,
-        updated_at,
-        parent_comment_id,
-        user:users(
-          id,
-          display_name,
-          photo_url
-        )
-      `)
-      .single();
-
-    if (error) {
-      logger.error('Error creating comment', 'COMMENTS_API', { 
-        error: error.message, 
-        errorCode: error.code,
-        errorDetails: error.details,
-        hint: error.hint,
-        postId, 
-        userId: user.id,
-        environment: process.env.VERCEL_ENV || 'local'
-      });
-      return NextResponse.json(
-        { error: 'Failed to create comment', details: error.message },
-        { status: 500 }
-      );
-    }
-
-    // Get the post creator to send notification
-    const { data: postData } = await supabase
-      .from('posts')
-      .select('creator_id')
-      .eq('id', postId)
-      .single();
-
-    // Get commenter's display name for notification message
-    const { data: commenterData } = await supabase
-      .from('users')
-      .select('display_name')
-      .eq('id', user.id)
-      .single();
-
-    const commenterName = commenterData?.display_name || 'Someone';
-
-    // Create notifications
-    const notificationsToCreate: Array<{
-      user_id: string;
-      type: string;
-      actor_id: string;
-      post_id: string;
-      comment_id: string;
-      metadata: { action: string };
-    }> = [];
-
-    // If this is a reply to a comment, notify the original commenter
-    if (parentCommentUserId && parentCommentUserId !== user.id) {
-      notificationsToCreate.push({
-        user_id: parentCommentUserId,
-        type: 'comment',
-        actor_id: user.id,
-        post_id: postId,
-        comment_id: comment.id,
-        metadata: { action: `${commenterName} replied to your comment` }
-      });
-    }
-
-    // Notify the post creator (if they're not the commenter and not already notified as parent commenter)
-    if (postData?.creator_id && postData.creator_id !== user.id && postData.creator_id !== parentCommentUserId) {
-      notificationsToCreate.push({
-        user_id: postData.creator_id,
-        type: 'comment',
-        actor_id: user.id,
-        post_id: postId,
-        comment_id: comment.id,
-        metadata: { action: `${commenterName} commented on your post` }
-      });
-    }
-
-    // Insert notifications
-    if (notificationsToCreate.length > 0) {
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .insert(notificationsToCreate);
-
-      if (notifError) {
-        logger.error('Error creating comment notifications', 'COMMENTS_API', { 
-          error: notifError.message,
-          errorCode: notifError.code,
-          errorDetails: notifError.details,
-          notificationCount: notificationsToCreate.length
-        });
-        // Don't fail the request, just log the error
-      }
-    }
-
-    return NextResponse.json(comment, { status: 201 });
+    return NextResponse.json(result.comment, { status: 201 });
 
   } catch (error) {
     logger.error('Unexpected error in POST /api/posts/[id]/comments', 'COMMENTS_API', {

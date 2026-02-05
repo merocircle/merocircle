@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "email:dev": "node scripts/email-dev.mjs",
-    "email:preview": "start http://localhost:3000/api/email-preview && npm run dev"
+    "email:preview": "start http://localhost:3000/api/email-preview && npm run dev",
+    "clear:stream": "npx tsx scripts/clear-stream-channels.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
