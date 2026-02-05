@@ -80,7 +80,14 @@ export const useCreatorDetails = (creatorId: string | null) => {
       setLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/creator/${id}`)
+      // Always fetch fresh data (no cache) to reflect recent payments/tier changes
+      const response = await fetch(`/api/creator/${id}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      })
       
       if (!response.ok) {
         const errorData = await response.json()

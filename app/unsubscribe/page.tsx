@@ -30,7 +30,10 @@ function UnsubscribeContent() {
       const response = await fetch('/api/supporter/unsubscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ 
+          token,
+          unsubscribeType: 'email-only' // Email unsubscribe links only disable email notifications
+        }),
       });
 
       const data = await response.json();

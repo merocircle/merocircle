@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { config } from '@/lib/config';
 import { logger } from '@/lib/logger';
-import { upsertSupporter, updateSupporterCount } from '@/lib/payment-utils';
+import { processPaymentSuccess } from '@/lib/payment-success-engine';
 import { handleApiError } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
@@ -51,107 +51,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (transaction.status === 'completed') {
-      return NextResponse.json({
-        success: true,
-        status: 'completed',
-        transaction: {
-          id: transaction.id,
-          amount: transaction.amount,
-          transaction_uuid: transaction.transaction_uuid,
-          created_at: transaction.created_at,
-        }
-      });
-    }
-
-    const updateData: {
-      status: string;
-      completed_at: string;
-      esewa_data: Record<string, unknown>;
-    } = {
-      status: 'completed',
-      completed_at: new Date().toISOString(),
-      esewa_data: {
-        ...transaction.esewa_data,
-        status: 'COMPLETE',
-        verified_at: new Date().toISOString(),
-      }
+    // Use unified payment success engine
+    const gatewayData: Record<string, unknown> = {
+      status: 'COMPLETE',
     };
 
     if (config.esewa.testMode) {
-      updateData.esewa_data.ref_id = `TEST-${Date.now()}`;
+      gatewayData.ref_id = `TEST-${Date.now()}`;
     }
 
-    const { error: updateError } = await supabase
-      .from('supporter_transactions')
-      .update(updateData)
-      .eq('id', transaction.id);
+    const result = await processPaymentSuccess({
+      transactionId: transaction.id,
+      gatewayData,
+    });
 
-    if (updateError) {
-      logger.error('Failed to update transaction status', 'PAYMENT_VERIFY', {
-        error: updateError.message,
-        transactionId: transaction.id
+    if (!result.success) {
+      logger.error('Payment success processing failed', 'PAYMENT_VERIFY', {
+        transactionId: transaction.id,
+        error: result.error,
       });
       return NextResponse.json(
-        { error: 'Failed to update transaction' },
+        { error: result.error || 'Failed to process payment success' },
         { status: 500 }
       );
     }
 
-    // Ensure supporter record exists
-    if (transaction.supporter_id && transaction.creator_id) {
-      // Get tier level from transaction metadata
-      const tierLevel = transaction.esewa_data?.tier_level || 1;
-      await upsertSupporter(transaction.supporter_id, transaction.creator_id, transactionAmount, tierLevel);
-
-      // Channel membership is now handled by database trigger
-      // Just sync the supporter to Stream Chat
-      try {
-        // Use internal API call to sync supporter to Stream channels
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        await fetch(`${baseUrl}/api/stream/sync-supporter`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            supporterId: transaction.supporter_id,
-            creatorId: transaction.creator_id,
-            tierLevel,
-          }),
-        });
-        logger.info('Supporter synced to Stream channels', 'PAYMENT_VERIFY', {
-          supporterId: transaction.supporter_id,
-          creatorId: transaction.creator_id,
-          tierLevel,
-        });
-      } catch (streamError) {
-        logger.warn('Failed to sync supporter to Stream', 'PAYMENT_VERIFY', {
-          error: streamError instanceof Error ? streamError.message : 'Unknown',
-        });
-        // Don't fail the payment if Stream sync fails
-      }
-    }
-
-    // Update supporters_count in creator_profiles
-    if (transaction.creator_id) {
-      await updateSupporterCount(transaction.creator_id);
-    }
-
-    logger.info('Transaction completed successfully', 'PAYMENT_VERIFY', {
-      transactionId: transaction.id,
-      creatorId: transaction.creator_id,
-      supporterId: transaction.supporter_id,
-      amount: transactionAmount
-    });
-
     return NextResponse.json({
       success: true,
       status: 'completed',
-      transaction: {
-        id: transaction.id,
-        amount: transaction.amount,
-        transaction_uuid: transaction.transaction_uuid,
-        created_at: transaction.created_at,
-      },
+      transaction: result.transaction,
       test_mode: config.esewa.testMode
     });
   } catch (error) {

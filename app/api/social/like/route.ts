@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthenticatedUser, getOptionalUser, handleApiError } from '@/lib/api-utils'
+import { toggleLike, getPostLikeStatus } from '@/lib/like-engine'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,61 +35,47 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (action === 'like') {
-      // Add like
-      const { error: likeError } = await supabase
-        .from('post_likes')
-        .insert({
-          user_id: user.id,
-          post_id: postId
-        })
+    // Use unified like engine
+    const result = await toggleLike({
+      userId: user.id,
+      postId,
+      createNotification: true,
+      logActivity: true,
+    })
 
-      if (likeError) {
-        // Check if already liked
-        if (likeError.code === '23505') {
-          return NextResponse.json(
-            { error: 'Post already liked' },
-            { status: 409 }
-          )
-        }
-        throw likeError
+    if (!result.success) {
+      if (result.error === 'Post not found') {
+        return NextResponse.json({ error: result.error }, { status: 404 })
       }
-
-      supabase
-        .from('user_activities')
-        .insert({
-          user_id: user.id,
-          activity_type: 'post_liked',
-          target_id: postId,
-          target_type: 'post',
-          metadata: { creator_id: post.creator_id }
-        })
-        .then()
-
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Post liked successfully',
-        action: 'liked'
-      })
-
-    } else if (action === 'unlike') {
-      // Remove like
-      const { error: unlikeError } = await supabase
-        .from('post_likes')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-
-      if (unlikeError) {
-        throw unlikeError
+      if (result.action === 'already_liked' && action === 'like') {
+        return NextResponse.json(
+          { error: 'Post already liked' },
+          { status: 409 }
+        )
       }
-
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Post unliked successfully',
-        action: 'unliked'
-      })
+      return NextResponse.json({ error: result.error || 'Failed to like/unlike post' }, { status: 500 })
     }
+
+    // If action doesn't match result (e.g., trying to like but already liked), return appropriate message
+    if (action === 'like' && result.action !== 'liked') {
+      return NextResponse.json(
+        { error: 'Post already liked' },
+        { status: 409 }
+      )
+    }
+    if (action === 'unlike' && result.action !== 'unliked') {
+      return NextResponse.json(
+        { error: 'Post not liked' },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: result.action === 'liked' ? 'Post liked successfully' : 'Post unliked successfully',
+      action: result.action,
+      likesCount: result.likesCount,
+    })
 
   } catch (error) {
     return handleApiError(error, 'SOCIAL_LIKE_API', 'Failed to like/unlike post');
@@ -108,38 +95,13 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await getOptionalUser()
-    const supabase = await createClient()
 
-    // Get like count
-    const { count: likesCount, error: countError } = await supabase
-      .from('post_likes')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId)
-
-    if (countError) {
-      throw countError
-    }
-
-    let userHasLiked = false
-    if (user) {
-      // Check if user has liked this post
-      const { data: userLike, error: likeError } = await supabase
-        .from('post_likes')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-        .single()
-
-      if (likeError && likeError.code !== 'PGRST116') {
-        throw likeError
-      }
-
-      userHasLiked = !!userLike
-    }
+    // Use unified like engine to get status
+    const status = await getPostLikeStatus(postId, user?.id)
 
     return NextResponse.json({ 
-      likesCount: likesCount || 0,
-      userHasLiked
+      likesCount: status.likesCount,
+      userHasLiked: status.userHasLiked
     })
 
   } catch (error) {

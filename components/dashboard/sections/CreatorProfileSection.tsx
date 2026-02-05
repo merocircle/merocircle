@@ -94,6 +94,14 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
   
+  // Refresh creator details when returning from payment
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('refresh') || urlParams.has('payment_complete')) {
+      refreshCreatorDetails();
+    }
+  }, [refreshCreatorDetails]);
+  
   // Ensure posts tab is active when there's a highlighted post
   useEffect(() => {
     if (highlightedPostId && !isWithinProvider && activeTab !== 'posts') {

@@ -66,12 +66,14 @@ export async function POST(request: NextRequest) {
       transaction_uuid: transactionUuid,
       esewa_product_code: config.esewa.merchantCode,
       esewa_signature: signature,
+      // Store tier_level as direct column (business logic, not gateway-specific)
+      tier_level: tier_level || 1,
       esewa_data: {
         transaction_uuid: transactionUuid,
         product_code: config.esewa.merchantCode,
         signature,
         test_mode: config.esewa.testMode,
-        tier_level: tier_level || 1
+        // Note: tier_level is NOT stored here - it's business logic, not payment gateway data
       }
     };
 

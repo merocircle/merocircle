@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { processUnsubscribe } from '@/lib/unsubscribe-engine';
+import { logger } from '@/lib/logger';
 
 // Secret key for HMAC verification
 const UNSUBSCRIBE_SECRET = process.env.UNSUBSCRIBE_SECRET || 'default-secret-change-in-production';
@@ -33,14 +31,16 @@ function verifyUnsubscribeToken(token: string): { supporterId: string; creatorId
       email: decoded.email,
     };
   } catch (error) {
-    console.error('Token verification error:', error);
+    logger.error('Token verification error', 'UNSUBSCRIBE_API', {
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
     return null;
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { token } = await request.json();
+    const { token, unsubscribeType } = await request.json();
 
     if (!token) {
       return NextResponse.json(
@@ -60,31 +60,44 @@ export async function POST(request: NextRequest) {
 
     const { supporterId, creatorId } = verified;
 
-    // Create Supabase admin client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Determine unsubscribe type: 'email-only' (from email link) or 'full' (from dashboard)
+    const isEmailOnly = unsubscribeType === 'email-only';
 
-    // Update email_notifications_enabled to false for this supporter-creator relationship
-    const { error } = await supabase
-      .from('supporter_transactions')
-      .update({ email_notifications_enabled: false })
-      .eq('supporter_id', supporterId)
-      .eq('creator_id', creatorId)
-      .eq('status', 'completed');
+    // Use unified unsubscribe engine
+    const result = await processUnsubscribe({
+      supporterId,
+      creatorId,
+      cancelSubscription: !isEmailOnly, // Only cancel subscription if full unsubscribe
+      removeFromChannels: !isEmailOnly, // Only remove from channels if full unsubscribe
+      disableEmailNotifications: true, // Always disable email notifications
+      reason: isEmailOnly ? 'email_unsubscribe' : 'user_requested',
+    });
 
-    if (error) {
-      console.error('Database error:', error);
+    if (!result.success) {
+      logger.error('Unsubscribe processing failed', 'UNSUBSCRIBE_API', {
+        error: result.error,
+        supporterId,
+        creatorId,
+      });
       return NextResponse.json(
-        { error: 'Failed to unsubscribe' },
+        { error: result.error || 'Failed to unsubscribe' },
         { status: 500 }
       );
     }
 
+    const message = isEmailOnly
+      ? 'Successfully unsubscribed from email notifications'
+      : 'Successfully unsubscribed from creator support';
+
     return NextResponse.json({
       success: true,
-      message: 'Successfully unsubscribed from email notifications',
+      message,
+      details: result,
     });
   } catch (error) {
-    console.error('Unsubscribe error:', error);
+    logger.error('Unsubscribe error', 'UNSUBSCRIBE_API', {
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

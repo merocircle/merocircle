@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { handleApiError, getOptionalUser } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -44,16 +45,37 @@ export async function GET(
       .eq('is_active', true);
 
     // Check supporter status if user is authenticated
-    const { data: supporterData } = user ? await supabase
+    const { data: supporterData, error: supporterQueryError } = user ? await supabase
       .from('supporters')
-      .select('tier_level')
+      .select('tier_level, is_active, supporter_id, creator_id')
       .eq('supporter_id', user.id)
       .eq('creator_id', creatorId)
       .eq('is_active', true)
-      .maybeSingle() : { data: null };
+      .maybeSingle() : { data: null, error: null };
+    
+    // Comprehensive logging for debugging
+    if (user) {
+      logger.info('Checking supporter status', 'CREATOR_API', {
+        userId: user.id,
+        creatorId,
+        supporterFound: !!supporterData,
+        supporterData: supporterData ? {
+          tier_level: supporterData.tier_level,
+          is_active: supporterData.is_active,
+        } : null,
+        queryError: supporterQueryError?.message,
+      });
+    }
     
     const isSupporter = !!supporterData;
     const supporterTierLevel = supporterData?.tier_level || 0;
+    
+    logger.info('Supporter status determined', 'CREATOR_API', {
+      userId: user?.id,
+      creatorId,
+      isSupporter,
+      supporterTierLevel,
+    });
 
     // Get subscription tiers for this creator
     const { data: tiers } = await supabase
@@ -147,7 +169,7 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       creatorDetails: {
         user_id: creatorProfile.user_id,
@@ -203,10 +225,25 @@ export async function GET(
         is_verified: m.is_verified
       })),
       posts: formattedPosts
-    }, {
+    };
+    
+    // Log response data for debugging
+    logger.info('Creator API response prepared', 'CREATOR_API', {
+      creatorId,
+      userId: user?.id,
+      isSupporter: responseData.creatorDetails.is_supporter,
+      supporterTierLevel: responseData.creatorDetails.supporter_tier_level,
+      postsCount: responseData.posts.length,
+      publicPostsCount: responseData.posts.filter((p: any) => !p.shouldHideContent).length,
+      hiddenPostsCount: responseData.posts.filter((p: any) => p.shouldHideContent).length,
+    });
+    
+    return NextResponse.json(responseData, {
       headers: {
-        // Private cache since response varies by user (supporter status)
-        'Cache-Control': 'private, max-age=30, stale-while-revalidate=120'
+        // No caching for supporter status - always fetch fresh to reflect recent payments/tier changes
+        'Cache-Control': 'no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     });
   } catch (error) {

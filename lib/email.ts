@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { logger } from './logger';
 import { render } from '@react-email/render';
-import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification } from '@/emails/templates';
+import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification } from '@/emails/templates';
 import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
 const createTransporter = () => {
@@ -540,4 +540,166 @@ export async function sendBulkChannelMentionEmails(
   }
 
   return { sent, failed };
+}
+
+interface SubscriptionConfirmationEmailData {
+  supporterEmail: string;
+  supporterName: string;
+  creatorName: string;
+  tierLevel: number;
+  tierName: string;
+  amount: number;
+  currency: string;
+  creatorProfileUrl: string;
+  chatUrl: string;
+}
+
+/**
+ * Sends subscription confirmation email to supporter
+ * Triggered when supporter successfully subscribes/supports a creator
+ */
+export async function sendSubscriptionConfirmationEmail(data: SubscriptionConfirmationEmailData): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping subscription confirmation email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const creatorProfileUrl = data.creatorProfileUrl || getCreatorProfileUrl(data.creatorName);
+    const chatUrl = data.chatUrl || `${appUrl}/chat`;
+
+    // Render subscription confirmation email template
+    const html = await render(
+      SubscriptionConfirmation({
+        supporterName: data.supporterName,
+        creatorName: data.creatorName,
+        tierLevel: data.tierLevel,
+        tierName: data.tierName,
+        amount: data.amount,
+        currency: data.currency,
+        creatorProfileUrl,
+        chatUrl,
+        settingsUrl: EMAIL_CONFIG.urls.settings,
+        helpUrl: EMAIL_CONFIG.urls.help,
+      })
+    );
+
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.supporterEmail.replace('@', '-at-')}@merocircle.app>`;
+
+    const mailOptions = {
+      from: {
+        name: EMAIL_CONFIG.from.name,
+        address: EMAIL_CONFIG.from.email,
+      },
+      to: data.supporterEmail,
+      subject: EMAIL_SUBJECTS.subscriptionConfirmation(data.creatorName),
+      html,
+      messageId,
+      headers: {
+        'Message-ID': messageId,
+        'X-Mailer': 'MeroCircle',
+        'X-Priority': '3',
+      },
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('Subscription confirmation email sent successfully', 'EMAIL', {
+      recipient: data.supporterEmail,
+      creatorName: data.creatorName,
+      tierLevel: data.tierLevel,
+      amount: data.amount,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send subscription confirmation email', 'EMAIL', {
+      error: error.message,
+      recipient: data.supporterEmail,
+    });
+    return false;
+  }
+}
+
+interface NewSupporterNotificationEmailData {
+  creatorEmail: string;
+  creatorName: string;
+  supporterName: string;
+  tierLevel: number;
+  tierName: string;
+  amount: number;
+  currency: string;
+  supporterMessage?: string | null;
+}
+
+/**
+ * Sends new supporter notification email to creator
+ * Triggered when creator receives new support/subscription
+ */
+export async function sendNewSupporterNotificationEmail(data: NewSupporterNotificationEmailData): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping new supporter notification email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const creatorStudioUrl = `${appUrl}/creator-studio`;
+    const supportersUrl = `${appUrl}/creator-studio?tab=supporters`;
+
+    // Render new supporter notification email template
+    const html = await render(
+      NewSupporterNotification({
+        creatorName: data.creatorName,
+        supporterName: data.supporterName,
+        tierLevel: data.tierLevel,
+        tierName: data.tierName,
+        amount: data.amount,
+        currency: data.currency,
+        supporterMessage: data.supporterMessage,
+        creatorStudioUrl,
+        supportersUrl,
+        settingsUrl: EMAIL_CONFIG.urls.settings,
+        helpUrl: EMAIL_CONFIG.urls.help,
+      })
+    );
+
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.creatorEmail.replace('@', '-at-')}@merocircle.app>`;
+
+    const mailOptions = {
+      from: {
+        name: EMAIL_CONFIG.from.name,
+        address: EMAIL_CONFIG.from.email,
+      },
+      to: data.creatorEmail,
+      subject: EMAIL_SUBJECTS.newSupporterNotification(data.supporterName, data.amount, data.currency),
+      html,
+      messageId,
+      headers: {
+        'Message-ID': messageId,
+        'X-Mailer': 'MeroCircle',
+        'X-Priority': '3',
+      },
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('New supporter notification email sent successfully', 'EMAIL', {
+      recipient: data.creatorEmail,
+      supporterName: data.supporterName,
+      tierLevel: data.tierLevel,
+      amount: data.amount,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send new supporter notification email', 'EMAIL', {
+      error: error.message,
+      recipient: data.creatorEmail,
+    });
+    return false;
+  }
 }

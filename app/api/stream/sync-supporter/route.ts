@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { serverStreamClient, upsertStreamUser } from '@/lib/stream-server';
+import { syncSupporterToChannels } from '@/lib/stream-channel-engine';
 import { logger } from '@/lib/logger';
 import { handleApiError } from '@/lib/api-utils';
 
@@ -22,87 +22,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing supporterId or creatorId' }, { status: 400 });
     }
 
-    // Get supporter's user info
-    const { data: supporterUser, error: supporterError } = await supabase
-      .from('users')
-      .select('id, display_name, photo_url')
-      .eq('id', supporterId)
-      .single();
+    // Use unified Stream channel engine to sync supporter
+    const result = await syncSupporterToChannels({
+      supporterId,
+      creatorId,
+      tierLevel: tierLevel || 1,
+      sendSystemMessages: true,
+    });
 
-    if (supporterError || !supporterUser) {
-      logger.error('Supporter not found', 'STREAM_SYNC_SUPPORTER', { supporterId });
-      return NextResponse.json({ error: 'Supporter not found' }, { status: 404 });
-    }
-
-    // Ensure supporter exists in Stream
-    await upsertStreamUser(supporterUser.id, supporterUser.display_name, supporterUser.photo_url);
-
-    // Get all channels the supporter should have access to based on their tier
-    const { data: channels, error: channelsError } = await supabase
-      .from('channels')
-      .select('id, name, stream_channel_id, min_tier_required')
-      .eq('creator_id', creatorId)
-      .lte('min_tier_required', tierLevel || 1);
-
-    if (channelsError) {
-      logger.error('Failed to fetch channels', 'STREAM_SYNC_SUPPORTER', { error: channelsError.message });
-      return NextResponse.json({ error: 'Failed to fetch channels' }, { status: 500 });
-    }
-
-    const addedToChannels = [];
-
-    for (const channel of channels || []) {
-      if (!channel.stream_channel_id) {
-        logger.warn('Channel not synced to Stream yet', 'STREAM_SYNC_SUPPORTER', { channelId: channel.id });
-        continue;
-      }
-
-      try {
-        logger.info('Adding supporter to Stream channel', 'STREAM_SYNC_SUPPORTER', {
-          supporterId,
-          streamChannelId: channel.stream_channel_id
-        });
-
-        const streamChannel = serverStreamClient.channel('messaging', channel.stream_channel_id);
-
-        // Query channel first to ensure it exists
-        await streamChannel.query({});
-
-        // Add the supporter as a member
-        await streamChannel.addMembers([supporterId]);
-
-        // Send system message that user has joined
-        await streamChannel.sendMessage({
-          text: `${supporterUser.display_name} has joined the channel`,
-          user_id: supporterId,
-          type: 'system',
-        });
-
-        addedToChannels.push({
-          id: channel.id,
-          name: channel.name,
-          streamChannelId: channel.stream_channel_id
-        });
-
-        logger.info('Supporter added to Stream channel successfully', 'STREAM_SYNC_SUPPORTER', {
-          supporterId,
-          channelId: channel.id,
-          streamChannelId: channel.stream_channel_id
-        });
-      } catch (err) {
-        logger.error('Failed to add supporter to Stream channel', 'STREAM_SYNC_SUPPORTER', {
-          supporterId,
-          channelId: channel.id,
-          streamChannelId: channel.stream_channel_id,
-          error: err instanceof Error ? err.message : 'Unknown'
-        });
-      }
+    if (!result.success) {
+      logger.error('Failed to sync supporter to channels', 'STREAM_SYNC_SUPPORTER', {
+        error: result.error,
+        supporterId,
+        creatorId,
+      });
+      return NextResponse.json({ error: result.error || 'Failed to sync supporter' }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      addedToChannels,
-      message: `Added supporter to ${addedToChannels.length} Stream channels`
+      addedToChannels: result.addedToChannels,
+      message: `Added supporter to ${result.addedToChannels.length} Stream channels`
     });
   } catch (error) {
     return handleApiError(error, 'STREAM_SYNC_SUPPORTER', 'Failed to sync supporter to channels');

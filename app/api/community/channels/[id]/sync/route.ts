@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-utils';
-import { syncChannelToStream } from '@/lib/stream-server-sync';
+import { syncChannelToStream } from '@/lib/stream-channel-engine';
 
 export const dynamic = 'force-dynamic';
 
