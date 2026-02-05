@@ -45,7 +45,7 @@ export function PaymentGatewaySelector({
     {
       id: 'dodo' as const,
       name: 'Visa/Mastercard',
-      logoPath: '/visa-mastercard.png',
+      logoPath: '/dodo.png',
       available: true,
       description: 'Monthly subscription',
       isSubscription: true,
@@ -106,33 +106,26 @@ export function PaymentGatewaySelector({
                       }
                     }}
                   >
-                    {gateway.id === 'dodo' ? (
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-base">{gateway.name}</span>
-                        <span className="text-xs text-muted-foreground">{(gateway as any).description}</span>
-                        {(gateway as any).isSubscription && (
-                          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
-                            🔄 Recurring monthly
-                          </span>
-                        )}
+                    <div className="flex flex-col">
+                      <div className="relative h-12 w-auto flex items-center">
+                        <Image
+                          src={gateway.logoPath}
+                          alt={gateway.name}
+                          width={140}
+                          height={48}
+                          className="object-contain max-h-12"
+                          unoptimized
+                        />
                       </div>
-                    ) : (
-                      <div className="flex flex-col">
-                        <div className="relative h-12 w-auto flex items-center">
-                          <Image
-                            src={gateway.logoPath}
-                            alt={gateway.name}
-                            width={140}
-                            height={48}
-                            className="object-contain max-h-12"
-                            unoptimized
-                          />
-                        </div>
-                        {(gateway as any).description && (
-                          <span className="text-xs text-muted-foreground mt-1">{(gateway as any).description}</span>
-                        )}
-                      </div>
-                    )}
+                      {(gateway as any).description && (
+                        <span className="text-xs text-muted-foreground mt-1">{(gateway as any).description}</span>
+                      )}
+                      {(gateway as any).isSubscription && (
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
+                          🔄 Recurring monthly
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Arrow indicator */}
