@@ -267,7 +267,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     }
 
     publishPost(body, {
-      onSuccess: () => {
+      onSuccess: (createdPost: any) => {
+        setHighlightedPostId(createdPost?.id);
         setNewPostContent('');
         setUploadedImages([]);
         setPollQuestion('');
