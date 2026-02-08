@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PaymentSuccessModal } from '@/components/payment/PaymentSuccessModal';
 import {
   ArrowLeft,
   ShoppingBag,
@@ -72,6 +73,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const highlightedPostId = isWithinProvider ? contextHighlightedPostId : localHighlightedPostId;
 
   const [activeTab, setActiveTab] = useState(defaultTab || 'posts');
+
+  const [paymentSuccess, setPaymentSuccess] = useState<{
+    transactionUuid: string;
+    totalAmount: number;
+    gateway: string;
+  } | null>(null);
 
   useEffect(() => {
     if (initialHighlightedPostId && !isWithinProvider) {
@@ -277,9 +284,17 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           // Redirect to payment success page with transaction details
           const transactionUuid = result.transaction.transaction_uuid;
           const totalAmount = result.transaction.amount;
-          router.push(
-            `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`
-          );
+          // router.push(
+          //   `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`
+          // );
+
+          setPaymentSuccess({
+            transactionUuid: result.transaction.transaction_uuid,
+            totalAmount: result.transaction.amount,
+            gateway: 'direct', // or 'Khalti', 'eSewa', etc.
+          });
+          setPaymentLoading(false);
+
         } else {
           throw new Error(result.error || 'Payment failed');
         }
@@ -316,11 +331,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         if (!response.ok) throw new Error('Dodo subscription initiation failed');
 
         const result = await response.json();
-        if (result.success && result.payment_url) {
-          window.location.href = result.payment_url;
-          return;
-        }
-        throw new Error(result.error || 'Invalid Dodo response');
+        // if (result.success && result.payment_url) {
+        //   window.location.href = result.payment_url;
+        //   return;
+        // }
+        // throw new Error(result.error || 'Invalid Dodo response');
+
+        if (result.success && result.transaction) {
+          setPaymentSuccess({
+            transactionUuid: result.transaction.transaction_uuid,
+            totalAmount: result.transaction.amount,
+            gateway: 'dodo',
+          });
+        } else throw new Error(result.error || 'Dodo payment failed');
       }
 
       if (gateway === 'khalti') {
@@ -339,11 +362,18 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         if (!response.ok) throw new Error('Khalti payment initiation failed');
 
         const result = await response.json();
-        if (result.success && result.payment_url) {
-          window.location.href = result.payment_url;
-          return;
-        }
-        throw new Error(result.error || 'Invalid Khalti response');
+        // if (result.success && result.payment_url) {
+        //   window.location.href = result.payment_url;
+        //   return;
+        // }
+        // throw new Error(result.error || 'Invalid Khalti response');
+        if (result.success && result.transaction) {
+          setPaymentSuccess({
+            transactionUuid: result.transaction.transaction_uuid,
+            totalAmount: result.transaction.amount,
+            gateway: 'khalti',
+          });
+        } else throw new Error(result.error || 'Khalti payment failed');
       }
 
       // eSewa payment
@@ -368,24 +398,32 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         return;
       }
 
-      if (result.success && result.esewaConfig) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = result.payment_url;
+      // if (result.success && result.esewaConfig) {
+      //   const form = document.createElement('form');
+      //   form.method = 'POST';
+      //   form.action = result.payment_url;
 
-        Object.entries(result.esewaConfig).forEach(([key, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = String(value);
-          form.appendChild(input);
+      //   Object.entries(result.esewaConfig).forEach(([key, value]) => {
+      //     const input = document.createElement('input');
+      //     input.type = 'hidden';
+      //     input.name = key;
+      //     input.value = String(value);
+      //     form.appendChild(input);
+      //   });
+
+      //   document.body.appendChild(form);
+      //   form.submit();
+      // } else {
+      //   throw new Error(result.error || 'Invalid payment response');
+      // }
+
+      if (result.success && result.transaction) {
+        setPaymentSuccess({
+          transactionUuid: result.transaction.transaction_uuid,
+          totalAmount: result.transaction.amount,
+          gateway: 'esewa',
         });
-
-        document.body.appendChild(form);
-        form.submit();
-      } else {
-        throw new Error(result.error || 'Invalid payment response');
-      }
+      } else throw new Error(result.error || 'eSewa payment failed');
     } catch (error: unknown) {
       console.error('[PAYMENT] Error:', error);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
@@ -1288,6 +1326,15 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           show={showSupportBanner}
         />
       )}
+    {paymentSuccess && (
+      <PaymentSuccessModal
+        open={!!paymentSuccess}
+        onClose={() => setPaymentSuccess(null)}
+        transactionUuid={paymentSuccess.transactionUuid}
+        totalAmount={paymentSuccess.totalAmount}
+      />
+    )}
     </div>
+    
   );
 }
