@@ -1052,17 +1052,17 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               </p>
                             </div>
                           </div>
-                          
+{/*                           
                           <Button
                             variant="outline"
                             onClick={() => setShowTiers(!showTiers)}
                             className="w-full"
                           >
                             {showTiers ? 'Hide' : 'View'} All Membership Tiers
-                          </Button>
+                          </Button> */}
                         </Card>
                         
-                        {showTiers && (
+                        {/* {showTiers && ( */}
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
@@ -1077,7 +1077,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               loading={paymentLoading}
                             />
                           </motion.div>
-                        )}
+                        {/* )} */}
                       </div>
                     ) : (
                       /* Non-Supporter View */
