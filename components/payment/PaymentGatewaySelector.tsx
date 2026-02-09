@@ -14,8 +14,10 @@ interface PaymentGatewaySelectorProps {
   amount: number;
   tierLevel: number;
   creatorId: string;
+  creatorName: string;
   supporterId: string;
   supporterMessage?: string;
+  onPaymentSuccess?: (tierLevel: number) => void;
 }
 
 export function PaymentGatewaySelector({
@@ -25,8 +27,10 @@ export function PaymentGatewaySelector({
   amount,
   tierLevel,
   creatorId,
+  creatorName,
   supporterId,
   supporterMessage,
+  onPaymentSuccess,
 }: PaymentGatewaySelectorProps) {
   const gateways = [
     {
@@ -154,6 +158,8 @@ export function PaymentGatewaySelector({
             className="w-full"
             onClick={async () => {
               try {
+                console.log("supporter message", supporterMessage);
+
                 const response = await fetch('/api/payment/direct', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -192,7 +198,6 @@ export function PaymentGatewaySelector({
                     totalAmount: result.transaction.amount,
                     gateway: 'direct',
                   });
-                  // onClose();
                 } else throw new Error(result.error || 'Direct payment failed');
               } catch (error) {
                 console.error('Direct payment error:', error);
@@ -208,9 +213,17 @@ export function PaymentGatewaySelector({
           {paymentSuccess && (
             <PaymentSuccessModal
               open={!!paymentSuccess}
-              onClose={() => setPaymentSuccess(null)}
+              onClose={() => {
+                setPaymentSuccess(null);
+                if (onPaymentSuccess && paymentSuccess) {
+                  onPaymentSuccess(tierLevel);
+                }
+                onClose();
+              }}
               transactionUuid={paymentSuccess.transactionUuid}
               totalAmount={paymentSuccess.totalAmount}
+              gateway={paymentSuccess.gateway}
+              creatorName={creatorName || ''}
             />
           )}
         </div>

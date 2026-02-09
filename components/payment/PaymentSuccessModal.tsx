@@ -11,7 +11,8 @@ interface PaymentSuccessModalProps {
   onClose: () => void;
   transactionUuid: string;
   totalAmount: number;
-  gateway?: string; // optional, can pass 'direct', 'esewa', 'khalti', etc.
+  gateway?: string;
+  creatorName?: string;
 }
 
 export const PaymentSuccessModal = ({
@@ -20,6 +21,7 @@ export const PaymentSuccessModal = ({
   transactionUuid,
   totalAmount,
   gateway = 'direct',
+  creatorName = "",
 }: PaymentSuccessModalProps) => {
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
@@ -78,13 +80,13 @@ export const PaymentSuccessModal = ({
                     Congratulations! 🎉
                   </DialogTitle>
                   <DialogDescription className="text-xl text-gray-600 dark:text-gray-400 mb-6">
-                    You have successfully supported this creator!
+                    You have successfully supported <span className="font-semibold">{creatorName}</span>!
                   </DialogDescription>
                 </DialogHeader>
 
                 {transaction && (
                   <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg p-6 mb-6">
-                    <p className="text-green-100 text-sm mb-1">Amount Paid</p>
+                    <p className="text-green-100 text-sm mb-1">Amount Paid via {gateway}</p>
                     <p className="text-3xl font-bold">NPR {transaction.amount}</p>
                   </div>
                 )}

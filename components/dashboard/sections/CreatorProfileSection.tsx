@@ -55,7 +55,6 @@ const PaymentGatewaySelector = dynamic(
   () => import('@/components/payment/PaymentGatewaySelector').then(mod => ({ default: mod.PaymentGatewaySelector })),
   { loading: () => null, ssr: false }
 );
-
 interface CreatorProfileSectionProps {
   creatorId: string;
   initialHighlightedPostId?: string | null;
@@ -70,6 +69,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   // Use either the context highlighted post (for dashboard) or the prop (for public page)
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
+  const [tempHighlightPostId, setTempHighlightPostId] = useState<string | null>(null);
   const highlightedPostId = isWithinProvider ? contextHighlightedPostId : localHighlightedPostId;
 
   const [activeTab, setActiveTab] = useState(defaultTab || 'posts');
@@ -93,13 +93,30 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     posts: recentPosts,
     loading,
     error,
-    refreshCreatorDetails
+    refreshCreatorDetails,
+    updateSupporterTier
   } = useCreatorDetails(creatorId);
 
   const { subscribe, unsubscribe } = useSubscription();
 
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
+
+  const handlePaymentSuccess = useCallback((tierLevel: number) => {
+    // Update tier based on successful payment
+    updateSupporterTier(tierLevel);
+    
+    setActiveTab('posts');
+    
+    setTimeout(() => {
+      if (recentPosts.length > 0) {
+        const firstPostId = String(recentPosts[0].id);
+        setTempHighlightPostId(firstPostId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => setTempHighlightPostId(null), 3000);
+      }
+    }, 100);
+  }, [updateSupporterTier, recentPosts]);
   
   // Refresh creator details when returning from payment
   useEffect(() => {
@@ -291,7 +308,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           setPaymentSuccess({
             transactionUuid: result.transaction.transaction_uuid,
             totalAmount: result.transaction.amount,
-            gateway: 'direct', // or 'Khalti', 'eSewa', etc.
+            gateway: 'direct',
           });
           setPaymentLoading(false);
 
@@ -1135,7 +1152,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     <>
                       {(recentPosts as Array<Record<string, unknown>>).map((post) => {
                         const postId = String(post.id);
-                        const isHighlighted = highlightedPostId === postId;
+                        const isHighlighted = highlightedPostId === postId || tempHighlightPostId === postId;
                         return (
                           <motion.div
                             key={postId}
@@ -1271,10 +1288,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             setShowGatewaySelector(false);
             setPendingPayment(null);
           }}
+          onPaymentSuccess={handlePaymentSuccess} 
           onSelectGateway={handleGatewaySelection}
           amount={pendingPayment.amount}
           tierLevel={pendingPayment.tierLevel}
           creatorId={creatorId}
+          creatorName={creatorDetails.display_name}
           supporterId={user.id}
           supporterMessage={pendingPayment.message}
         />
