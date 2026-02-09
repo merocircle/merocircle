@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-    "functions": {
+  "crons": [
+    {
+      "path": "/api/subscriptions/check-expiry",
+      "schedule": "0 2 * * *"
+    }
+  ],
+  "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 10
     }

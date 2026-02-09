@@ -22,6 +22,8 @@ export interface SubscriptionParams {
   isRecurring?: boolean;
   /** Optional: Whether to update amount cumulatively (default: false, replaces amount) */
   cumulativeAmount?: boolean;
+  /** Optional: Payment gateway used (esewa, khalti, dodo, direct) */
+  paymentGateway?: 'esewa' | 'khalti' | 'dodo' | 'direct';
 }
 
 export interface SubscriptionResult {
@@ -75,6 +77,7 @@ export async function manageSubscription(
     subscriptionId,
     isRecurring = false,
     cumulativeAmount = false,
+    paymentGateway = 'direct',
   } = params;
 
   try {
@@ -495,16 +498,19 @@ export async function manageSubscription(
       });
     }
 
-    // Step 7: Handle subscription record if this is recurring
-    if (isRecurring && subscriptionId) {
-      // Update or create subscription record
-      const { data: existingSubscription } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('id', subscriptionId)
-        .single();
+    // Step 7: Handle subscription record for eSewa/Khalti/Dodo (with expiry tracking)
+    // For eSewa/Khalti, we need to track expiry dates even though they're "one-time" payments
+    // For Dodo, subscription is managed externally but we track locally for consistency
+    if (paymentGateway === 'esewa' || paymentGateway === 'khalti' || paymentGateway === 'dodo' || (isRecurring && subscriptionId)) {
+      try {
+        // Check for existing subscription record by supporter + creator
+        const { data: existingSubscription } = await supabase
+          .from('subscriptions')
+          .select('id, tier_level, renewal_count, status')
+          .eq('supporter_id', supporterId)
+          .eq('creator_id', creatorId)
+          .maybeSingle();
 
-      if (!existingSubscription) {
         // Get tier_id from subscription_tiers
         const { data: tier } = await supabase
           .from('subscription_tiers')
@@ -514,32 +520,119 @@ export async function manageSubscription(
           .single();
 
         if (tier) {
-          const subscriptionData = {
-            id: subscriptionId,
+          const currentDate = new Date();
+          const periodEnd = new Date(currentDate);
+          periodEnd.setDate(periodEnd.getDate() + 30); // 30 days from now
+
+          const subscriptionData: any = {
             supporter_id: supporterId,
             creator_id: creatorId,
             tier_id: tier.id,
             tier_level: tierLevel,
             amount: amount,
-            payment_gateway: 'dodo', // Default, can be overridden
+            payment_gateway: paymentGateway,
             status: 'active',
             billing_cycle: 'monthly',
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            current_period_start: currentDate.toISOString(),
+            current_period_end: periodEnd.toISOString(),
           };
 
-          const { error: subError } = await supabase
-            .from('subscriptions')
-            .insert(subscriptionData);
+          if (existingSubscription) {
+            // Update existing subscription (tier change or renewal)
+            const isTierChange = existingSubscription.tier_level !== tierLevel;
+            const isRenewal = !isTierChange && (existingSubscription.status === 'expired' || existingSubscription.status === 'cancelled');
 
-          if (subError) {
-            logger.warn('Failed to create subscription record', 'SUBSCRIPTION_ENGINE', {
-              error: subError.message,
-              subscriptionId,
-            });
-            // Don't fail the whole operation if subscription record creation fails
+            // For eSewa/Khalti, reset reminder tracking and increment renewal count on renewals
+            if (paymentGateway === 'esewa' || paymentGateway === 'khalti') {
+              subscriptionData.reminder_sent_at = {}; // Reset reminders
+              if (isRenewal) {
+                subscriptionData.renewal_count = (existingSubscription.renewal_count || 0) + 1;
+              } else if (isTierChange) {
+                // Tier change: keep renewal count but reset reminders
+                subscriptionData.renewal_count = existingSubscription.renewal_count || 0;
+              }
+
+              logger.info('Updating eSewa/Khalti subscription with expiry tracking', 'SUBSCRIPTION_ENGINE', {
+                subscriptionId: existingSubscription.id,
+                paymentGateway,
+                previousTierLevel: existingSubscription.tier_level,
+                newTierLevel: tierLevel,
+                isTierChange,
+                isRenewal,
+                expiryDate: subscriptionData.current_period_end,
+                renewalCount: subscriptionData.renewal_count,
+              });
+            }
+
+            const { error: updateError } = await supabase
+              .from('subscriptions')
+              .update(subscriptionData)
+              .eq('id', existingSubscription.id);
+
+            if (updateError) {
+              logger.error('Failed to update subscription record', 'SUBSCRIPTION_ENGINE', {
+                error: updateError.message,
+                subscriptionId: existingSubscription.id,
+                paymentGateway,
+              });
+            } else {
+              logger.info('Subscription record updated successfully', 'SUBSCRIPTION_ENGINE', {
+                subscriptionId: existingSubscription.id,
+                tierLevel,
+                expiryDate: subscriptionData.current_period_end,
+              });
+            }
+          } else {
+            // Create new subscription
+            // For eSewa/Khalti, initialize reminder tracking
+            if (paymentGateway === 'esewa' || paymentGateway === 'khalti') {
+              subscriptionData.reminder_sent_at = {};
+              subscriptionData.renewal_count = 0;
+
+              logger.info('Creating eSewa/Khalti subscription with expiry tracking', 'SUBSCRIPTION_ENGINE', {
+                paymentGateway,
+                tierLevel,
+                expiryDate: subscriptionData.current_period_end,
+              });
+            }
+
+            // Use provided subscriptionId if available, otherwise let DB generate
+            if (subscriptionId) {
+              subscriptionData.id = subscriptionId;
+            }
+
+            const { error: insertError } = await supabase
+              .from('subscriptions')
+              .insert(subscriptionData);
+
+            if (insertError) {
+              logger.error('Failed to create subscription record', 'SUBSCRIPTION_ENGINE', {
+                error: insertError.message,
+                paymentGateway,
+                tierLevel,
+              });
+            } else {
+              logger.info('Subscription record created successfully', 'SUBSCRIPTION_ENGINE', {
+                paymentGateway,
+                tierLevel,
+                expiryDate: subscriptionData.current_period_end,
+              });
+            }
           }
+        } else {
+          logger.warn('Tier not found for subscription creation', 'SUBSCRIPTION_ENGINE', {
+            creatorId,
+            tierLevel,
+          });
         }
+      } catch (subError: any) {
+        logger.error('Error managing subscription record', 'SUBSCRIPTION_ENGINE', {
+          error: subError.message,
+          paymentGateway,
+          supporterId,
+          creatorId,
+        });
+        // Don't fail the whole operation if subscription record management fails
       }
     }
 

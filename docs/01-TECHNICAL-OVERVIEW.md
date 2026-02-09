@@ -157,9 +157,51 @@ creators-nepal/
 3. **Production**: `npm start`
 4. **Linting**: `npm run lint`
 
+## Documentation
+
+### Complete Documentation Set
+
+1. **[Technical Overview](01-TECHNICAL-OVERVIEW.md)** (this document)
+   - Technology stack
+   - Project structure
+   - Key features
+   - Development workflow
+
+2. **[Architecture Documentation](02-ARCHITECTURE.md)**
+   - System architecture
+   - Unified engines
+   - Data flow diagrams
+   - Integration patterns
+
+3. **[Third-Party Integrations](03-THIRD-PARTY-INTEGRATIONS.md)**
+   - Payment gateways (eSewa, Khalti, Dodo)
+   - Stream Chat integration
+   - Email service (Nodemailer)
+   - Supabase setup
+   - Environment variables
+
+4. **[Database Schema](07-DATABASE-SCHEMA.md)**
+   - Complete schema documentation
+   - Tables and relationships
+   - Indexes and constraints
+   - Migration history
+
+5. **[Subscription System](SUBSCRIPTION-SYSTEM.md)** ⭐ NEW
+   - Complete subscription lifecycle
+   - Tier changes (upgrades, downgrades, renewals)
+   - Expiry management for eSewa/Khalti
+   - User interface and APIs
+   - Testing and troubleshooting
+
+6. **[Dodo Payments Integration](DODO-PAYMENTS-INTEGRATION.md)**
+   - Visa/Mastercard payment setup
+   - Checkout sessions and webhooks
+   - Exchange rate conversion (NPR to USD)
+   - Integration with unified engines
+
 ## Environment Variables
 
-See `docs/03-THIRD-PARTY-INTEGRATIONS.md` for complete environment variable documentation.
+See [`docs/03-THIRD-PARTY-INTEGRATIONS.md`](03-THIRD-PARTY-INTEGRATIONS.md) for complete environment variable documentation.
 
 ## Browser Support
 
@@ -173,5 +215,5 @@ Private - All rights reserved
 
 ---
 
-**Last Updated**: January 2025
-**Version**: 0.1.0
+**Last Updated**: February 2026
+**Version**: 0.2.0

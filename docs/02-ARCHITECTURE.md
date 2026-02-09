@@ -565,4 +565,15 @@ See `docs/04-DEPLOYMENT.md` for detailed deployment information.
 
 ---
 
-**Last Updated**: January 2025
+## Related Documentation
+
+For detailed information on specific systems, see:
+
+- **[Subscription System](SUBSCRIPTION-SYSTEM.md)** - Complete guide to subscription management, tier changes, expiry tracking, and renewal flows
+- **[Dodo Payments Integration](DODO-PAYMENTS-INTEGRATION.md)** - Visa/Mastercard payments via Dodo
+- **[Third-Party Integrations](03-THIRD-PARTY-INTEGRATIONS.md)** - All external service integrations
+- **[Database Schema](07-DATABASE-SCHEMA.md)** - Complete database documentation
+
+---
+
+**Last Updated**: February 2026

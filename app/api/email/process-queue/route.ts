@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { sendWelcomeEmail } from '@/lib/email';
+import { sendWelcomeEmail, sendSubscriptionExpiringEmail, sendSubscriptionExpiredEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 
 /**
@@ -81,6 +81,29 @@ export async function POST(request: NextRequest) {
               userEmail: emailJob.payload.userEmail,
               userName: emailJob.payload.userName,
               userRole: emailJob.payload.userRole,
+            });
+            break;
+
+          case 'subscription_expiring_reminder':
+            success = await sendSubscriptionExpiringEmail({
+              supporterEmail: emailJob.recipient_email,
+              supporterName: emailJob.payload.supporterName,
+              creatorName: emailJob.payload.creatorName,
+              creatorId: emailJob.payload.creatorId,
+              tierLevel: emailJob.payload.tierLevel,
+              expiryDate: emailJob.payload.expiryDate,
+              daysUntilExpiry: emailJob.payload.daysUntilExpiry,
+              renewUrl: emailJob.payload.renewUrl,
+            });
+            break;
+
+          case 'subscription_expired':
+            success = await sendSubscriptionExpiredEmail({
+              supporterEmail: emailJob.recipient_email,
+              supporterName: emailJob.payload.supporterName,
+              creatorName: emailJob.payload.creatorName,
+              creatorId: emailJob.payload.creatorId,
+              renewUrl: emailJob.payload.renewUrl,
             });
             break;
 

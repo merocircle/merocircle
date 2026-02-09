@@ -56,6 +56,8 @@ export const EMAIL_SUBJECTS = {
   channelMention: (senderName: string, channelName: string) => `${senderName} mentioned everyone in ${channelName}`,
   subscriptionConfirmation: (creatorName: string) => `You're now supporting ${creatorName}! 🎉`,
   newSupporterNotification: (supporterName: string, amount: number, currency: string = 'NPR') => `${supporterName} just supported you with ${currency} ${amount}`,
+  subscriptionExpiring: (creatorName: string, days: number) => `Your ${creatorName} subscription expires in ${days} day${days > 1 ? 's' : ''}`,
+  subscriptionExpired: (creatorName: string) => `Your ${creatorName} subscription has expired`,
 } as const;
 
 // Helper function to get full URL

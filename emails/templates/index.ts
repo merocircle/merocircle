@@ -17,6 +17,8 @@ export { default as PaymentSuccess } from './transactional/PaymentSuccess';
 export { default as PaymentFailed } from './transactional/PaymentFailed';
 export { default as SubscriptionConfirmation } from './transactional/SubscriptionConfirmation';
 export { default as NewSupporterNotification } from './transactional/NewSupporterNotification';
+export { default as SubscriptionExpiringReminder } from './SubscriptionExpiringReminder';
+export { default as SubscriptionExpiredNotification } from './SubscriptionExpiredNotification';
 
 // Types
 export type EmailTemplate =
@@ -26,7 +28,9 @@ export type EmailTemplate =
   | 'payment-success'
   | 'payment-failed'
   | 'subscription-confirmation'
-  | 'new-supporter-notification';
+  | 'new-supporter-notification'
+  | 'subscription-expiring-reminder'
+  | 'subscription-expired';
 
 export interface BaseEmailProps {
   appUrl?: string;

@@ -4,7 +4,7 @@
 -- Create email queue table
 CREATE TABLE IF NOT EXISTS email_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email_type TEXT NOT NULL CHECK (email_type IN ('welcome', 'post_notification', 'poll_notification', 'payment_success', 'payment_failed')),
+  email_type TEXT NOT NULL CHECK (email_type IN ('welcome', 'post_notification', 'poll_notification', 'payment_success', 'payment_failed', 'subscription_expiring_reminder', 'subscription_expired')),
   recipient_email TEXT NOT NULL,
   payload JSONB NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'sent', 'failed')),

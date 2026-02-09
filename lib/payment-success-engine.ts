@@ -365,6 +365,7 @@ export async function processPaymentSuccess(
         transactionId: transaction.id,
         isRecurring: false, // One-time payments are not recurring
         cumulativeAmount: false, // Replace amount, don't add to existing
+        paymentGateway: paymentMethod as 'esewa' | 'khalti' | 'dodo' | 'direct',
       });
       
       logger.info('Subscription management completed', 'PAYMENT_SUCCESS_ENGINE', {

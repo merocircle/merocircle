@@ -11,8 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Camera, Save, Crown, LogOut } from 'lucide-react';
+import { User, Camera, Save, Crown, LogOut, CreditCard } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import SubscriptionsManagement from '@/components/settings/SubscriptionsManagement';
 
 const SettingsSection = memo(function SettingsSection() {
   const { user, userProfile, creatorProfile, isCreator, signOut } = useAuth();
@@ -128,6 +129,10 @@ const SettingsSection = memo(function SettingsSection() {
               <User className="w-4 h-4" />
               <span>Profile</span>
             </TabsTrigger>
+            <TabsTrigger value="subscriptions" className="gap-2">
+              <CreditCard className="w-4 h-4" />
+              <span>Subscriptions</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
@@ -240,6 +245,10 @@ const SettingsSection = memo(function SettingsSection() {
                 </Button>
               </div>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="subscriptions">
+            <SubscriptionsManagement />
           </TabsContent>
         </Tabs>
 

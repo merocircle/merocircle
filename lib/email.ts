@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { logger } from './logger';
 import { render } from '@react-email/render';
-import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification } from '@/emails/templates';
+import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification, SubscriptionExpiringReminder, SubscriptionExpiredNotification } from '@/emails/templates';
 import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
 const createTransporter = () => {
@@ -699,6 +699,143 @@ export async function sendNewSupporterNotificationEmail(data: NewSupporterNotifi
     logger.error('Failed to send new supporter notification email', 'EMAIL', {
       error: error.message,
       recipient: data.creatorEmail,
+    });
+    return false;
+  }
+}
+
+/**
+ * Send subscription expiring reminder email
+ */
+export async function sendSubscriptionExpiringEmail(data: {
+  supporterEmail: string;
+  supporterName: string;
+  creatorName: string;
+  creatorId: string;
+  tierLevel: number;
+  expiryDate: string;
+  daysUntilExpiry: number;
+  renewUrl: string;
+}): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+
+    const emailHtml = await render(
+      SubscriptionExpiringReminder({
+        supporterName: data.supporterName,
+        creatorName: data.creatorName,
+        daysUntilExpiry: data.daysUntilExpiry,
+        expiryDate: data.expiryDate,
+        tierLevel: data.tierLevel,
+        renewUrl: data.renewUrl,
+        creatorProfileUrl,
+        settingsUrl: EMAIL_CONFIG.urls.settings,
+      })
+    );
+
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-expiring-${data.supporterEmail.replace('@', '-at-')}@merocircle.app>`;
+
+    const mailOptions = {
+      from: {
+        name: EMAIL_CONFIG.from.name,
+        address: EMAIL_CONFIG.from.email,
+      },
+      to: data.supporterEmail,
+      subject: EMAIL_SUBJECTS.subscriptionExpiring(data.creatorName, data.daysUntilExpiry),
+      html: emailHtml,
+      messageId,
+      headers: {
+        'Message-ID': messageId,
+        'X-Mailer': 'MeroCircle',
+        'X-Priority': '1', // High priority
+      },
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('Subscription expiring reminder email sent', 'EMAIL', {
+      recipient: data.supporterEmail,
+      creatorName: data.creatorName,
+      daysUntilExpiry: data.daysUntilExpiry,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send subscription expiring email', 'EMAIL', {
+      error: error.message,
+      recipient: data.supporterEmail,
+    });
+    return false;
+  }
+}
+
+/**
+ * Send subscription expired notification email
+ */
+export async function sendSubscriptionExpiredEmail(data: {
+  supporterEmail: string;
+  supporterName: string;
+  creatorName: string;
+  creatorId: string;
+  renewUrl: string;
+}): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app;
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+
+    const emailHtml = await render(
+      SubscriptionExpiredNotification({
+        supporterName: data.supporterName,
+        creatorName: data.creatorName,
+        renewUrl: data.renewUrl,
+        creatorProfileUrl,
+        settingsUrl: EMAIL_CONFIG.urls.settings,
+      })
+    );
+
+    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-expired-${data.supporterEmail.replace('@', '-at-')}@merocircle.app>`;
+
+    const mailOptions = {
+      from: {
+        name: EMAIL_CONFIG.from.name,
+        address: EMAIL_CONFIG.from.email,
+      },
+      to: data.supporterEmail,
+      subject: EMAIL_SUBJECTS.subscriptionExpired(data.creatorName),
+      html: emailHtml,
+      messageId,
+      headers: {
+        'Message-ID': messageId,
+        'X-Mailer': 'MeroCircle',
+        'X-Priority': '3',
+      },
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('Subscription expired notification email sent', 'EMAIL', {
+      recipient: data.supporterEmail,
+      creatorName: data.creatorName,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send subscription expired email', 'EMAIL', {
+      error: error.message,
+      recipient: data.supporterEmail,
     });
     return false;
   }
