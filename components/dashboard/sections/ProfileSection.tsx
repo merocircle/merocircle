@@ -416,32 +416,6 @@ export default function ProfileSection() {
         </div>
       </motion.div>
 
-      {/* Stats (only for creators) */}
-      {stats && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-3 gap-4 mb-8"
-        >
-          <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
-            <FileText className="w-5 h-5 text-primary mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">{stats.posts}</p>
-            <p className="text-xs text-muted-foreground">Posts</p>
-          </Card>
-          <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
-            <Users className="w-5 h-5 text-primary mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">{stats.supporters}</p>
-            <p className="text-xs text-muted-foreground">Supporters</p>
-          </Card>
-          <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
-            <Heart className="w-5 h-5 text-primary mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">{stats.likes}</p>
-            <p className="text-xs text-muted-foreground">Likes</p>
-          </Card>
-        </motion.div>
-      )}
-
       {/* Edit Form */}
       <AnimatePresence>
         {isEditing && (
@@ -485,6 +459,32 @@ export default function ProfileSection() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Stats (only for creators) */}
+      {stats && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-3 gap-4 mb-8"
+        >
+          <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
+            <FileText className="w-5 h-5 text-primary mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.posts}</p>
+            <p className="text-xs text-muted-foreground">Posts</p>
+          </Card>
+          <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
+            <Users className="w-5 h-5 text-primary mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.supporters}</p>
+            <p className="text-xs text-muted-foreground">Supporters</p>
+          </Card>
+          <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
+            <Heart className="w-5 h-5 text-primary mx-auto mb-2" />
+            <p className="text-2xl font-bold text-foreground">{stats.likes}</p>
+            <p className="text-xs text-muted-foreground">Likes</p>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Tabs (only for creators) */}
       <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl w-fit mb-6">
