@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 /**
  * My Subscriptions API
@@ -16,18 +17,16 @@ import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      logger.warn('Unauthorized my-subscriptions request', 'MY_SUBSCRIPTIONS_API');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Get authenticated user via NextAuth session
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) {
+      logger.warn('Unauthorized my-subscriptions request', 'MY_SUBSCRIPTIONS_API', {
+        hasUser: !!user,
+      });
+      return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const supabase = await createClient();
 
     logger.info('Fetching subscriptions for user', 'MY_SUBSCRIPTIONS_API', {
       userId: user.id,
@@ -57,7 +56,7 @@ export async function GET(request: NextRequest) {
         creators:users!creator_id(
           id,
           display_name,
-          avatar_url
+          photo_url
         ),
         tiers:subscription_tiers(
           id,
@@ -107,7 +106,7 @@ export async function GET(request: NextRequest) {
         creator: {
           id: (sub.creators as any)?.id,
           displayName: (sub.creators as any)?.display_name || 'Unknown Creator',
-          avatarUrl: (sub.creators as any)?.avatar_url,
+          avatarUrl: (sub.creators as any)?.photo_url,
         },
         tier: {
           level: sub.tier_level,
@@ -144,18 +143,7 @@ export async function GET(request: NextRequest) {
       subscriptions: enrichedSubscriptions,
       count: enrichedSubscriptions.length,
     });
-  } catch (error: any) {
-    logger.error('Error in my-subscriptions API', 'MY_SUBSCRIPTIONS_API', {
-      error: error.message,
-      stack: error.stack,
-    });
-
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error.message,
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleApiError(error, 'MY_SUBSCRIPTIONS_API', 'Failed to fetch subscriptions');
   }
 }

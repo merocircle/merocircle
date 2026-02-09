@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { processUnsubscribe } from '@/lib/unsubscribe-engine';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 /**
  * Manual Unsubscribe API
@@ -16,18 +17,14 @@ import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    // Get authenticated user via NextAuth session
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) {
       logger.warn('Unauthorized unsubscribe request', 'UNSUBSCRIBE_API');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const supabase = await createClient();
 
     // Get request body
     const body = await request.json();
@@ -164,18 +161,7 @@ export async function POST(request: NextRequest) {
         channelsRemoved: result.channelsRemoved,
       },
     });
-  } catch (error: any) {
-    logger.error('Error in unsubscribe API', 'UNSUBSCRIBE_API', {
-      error: error.message,
-      stack: error.stack,
-    });
-
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error.message,
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleApiError(error, 'UNSUBSCRIBE_API', 'Failed to unsubscribe');
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 /**
  * Quick Renewal API
@@ -12,18 +13,14 @@ import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    // Get authenticated user via NextAuth session
+    const { user, errorResponse } = await getAuthenticatedUser();
+    if (errorResponse || !user) {
       logger.warn('Unauthorized quick-renew request', 'QUICK_RENEW_API');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const supabase = await createClient();
 
     // Get subscription_id from request body
     const body = await request.json();
@@ -144,18 +141,7 @@ export async function POST(request: NextRequest) {
       },
       message: 'Renewal parameters prepared. Redirect user to payment.',
     });
-  } catch (error: any) {
-    logger.error('Error in quick-renew API', 'QUICK_RENEW_API', {
-      error: error.message,
-      stack: error.stack,
-    });
-
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error.message,
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleApiError(error, 'QUICK_RENEW_API', 'Failed to process quick renewal');
   }
 }
