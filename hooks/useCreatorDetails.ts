@@ -130,6 +130,21 @@ export const useCreatorDetails = (creatorId: string | null) => {
     }
   }, [creatorId])
 
+  const updateSupporterTier = useCallback((tierLevel: number) => {
+    setProfile(prev => {
+      if (!prev || !prev.creatorDetails) return prev;
+      
+      return {
+        ...prev,
+        creatorDetails: {
+          ...prev.creatorDetails,
+          is_supporter: true,
+          supporter_tier_level: tierLevel
+        }
+      };
+    });
+  }, []);
+
   return {
     creatorDetails: profile?.creatorDetails || null,
     paymentMethods: profile?.paymentMethods || [],
@@ -137,7 +152,8 @@ export const useCreatorDetails = (creatorId: string | null) => {
     posts: profile?.posts || [],
     loading,
     error,
-    refreshCreatorDetails: refetch
+    refreshCreatorDetails: refetch,
+    updateSupporterTier
   }
 }
 
