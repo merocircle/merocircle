@@ -102,20 +102,27 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
 
-  const handlePaymentSuccess = useCallback((tierLevel: number) => {
-    // Update tier based on successful payment
+  const handlePaymentSuccess = useCallback((tierLevel: number, navigateToTab?: 'posts' | 'chat') => {
     updateSupporterTier(tierLevel);
     
-    setActiveTab('posts');
-    
-    setTimeout(() => {
-      if (recentPosts.length > 0) {
-        const firstPostId = String(recentPosts[0].id);
-        setTempHighlightPostId(firstPostId);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(() => setTempHighlightPostId(null), 3000);
+    if (navigateToTab) {
+      setActiveTab(navigateToTab);
+      
+      if (navigateToTab === 'posts') {
+        setTimeout(() => {
+          if (recentPosts.length > 0) {
+            const firstPostId = String(recentPosts[0].id);
+            setTempHighlightPostId(firstPostId);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => setTempHighlightPostId(null), 3000);
+          }
+        }, 100);
+      } else if (navigateToTab === 'chat') {
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
       }
-    }, 100);
+    }
   }, [updateSupporterTier, recentPosts]);
   
   // Refresh creator details when returning from payment

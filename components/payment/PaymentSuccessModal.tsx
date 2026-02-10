@@ -3,12 +3,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, MessageCircle, Sparkles } from 'lucide-react';
+import { Button } from '../ui/button';
 import { BalloonBurst } from '@/components/animations/BalloonBurst';
-
 interface PaymentSuccessModalProps {
   open: boolean;
   onClose: () => void;
+  onViewPosts: () => void;
+  onViewChat: () => void;
   transactionUuid: string;
   totalAmount: number;
   gateway?: string;
@@ -18,6 +20,8 @@ interface PaymentSuccessModalProps {
 export const PaymentSuccessModal = ({
   open,
   onClose,
+  onViewPosts,
+  onViewChat,
   transactionUuid,
   totalAmount,
   gateway = 'direct',
@@ -90,6 +94,28 @@ export const PaymentSuccessModal = ({
                     <p className="text-3xl font-bold">NPR {transaction.amount}</p>
                   </div>
                 )}
+
+                <div className="space-y-3 mt-6">
+                  <Button 
+                    onClick={onViewPosts}
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    View Posts by {creatorName}
+                  </Button>
+                  
+                  <Button 
+                    onClick={onViewChat}
+                    variant="outline"
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Open Chat
+                  </Button>
+              </div>
+
               </Card>
             </div>
           </>

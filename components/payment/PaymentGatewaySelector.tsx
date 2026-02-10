@@ -17,7 +17,7 @@ interface PaymentGatewaySelectorProps {
   creatorName: string;
   supporterId: string;
   supporterMessage?: string;
-  onPaymentSuccess?: (tierLevel: number) => void;
+  onPaymentSuccess?: (tierLevel: number, navigateToTab?: 'posts' | 'chat') => void;
 }
 
 export function PaymentGatewaySelector({
@@ -218,6 +218,20 @@ export function PaymentGatewaySelector({
                 if (onPaymentSuccess && paymentSuccess) {
                   onPaymentSuccess(tierLevel);
                 }
+                onClose();
+              }}
+              onViewPosts={() => {
+                if (onPaymentSuccess && paymentSuccess) {
+                  onPaymentSuccess(tierLevel, 'posts');
+                }
+                setPaymentSuccess(null);
+                onClose();
+              }}
+              onViewChat={() => {
+                if (onPaymentSuccess && paymentSuccess) {
+                  onPaymentSuccess(tierLevel, 'chat');
+                }
+                setPaymentSuccess(null);
                 onClose();
               }}
               transactionUuid={paymentSuccess.transactionUuid}
