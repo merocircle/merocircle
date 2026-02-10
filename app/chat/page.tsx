@@ -9,7 +9,7 @@ const StreamCommunitySection = lazy(() => import('@/components/dashboard/section
 
 function ChatLoadingSkeleton() {
   return (
-    <div className="flex h-[calc(100vh-80px)]">
+    <div className="flex h-[100vh]">
       <div className="w-80 border-r border-border/50 p-4 space-y-4">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="flex items-center gap-3 p-2">
@@ -47,7 +47,7 @@ function ChatPageContent() {
   const channelId = searchParams.get('channel');
 
   return (
-    <div className="h-[calc(100vh-80px)]">
+    <div className="h-[100vh]">
       <StreamCommunitySection channelId={channelId || undefined} />
     </div>
   );

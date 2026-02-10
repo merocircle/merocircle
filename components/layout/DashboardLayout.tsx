@@ -105,8 +105,8 @@ export function DashboardLayout({
           // Mobile: single column with header/bottom nav spacing
           shouldHideMobileHeader ? 'pt-4 pb-20' : 'pt-24 pb-20',
           // Desktop: 2 or 3 column grid
-          'md:grid-cols-[64px_1fr] md:pt-0 md:pb-0',
-          shouldShowRightPanel && 'lg:grid-cols-[64px_1fr_320px]'
+          'md:grid-cols-[64px_minmax(0,1fr)] md:pt-0 md:pb-0',
+          shouldShowRightPanel && 'lg:grid-cols-[64px_minmax(0,1fr)_320px]'
         )}
       >
         {/* Activity Bar - Desktop only */}
@@ -123,12 +123,12 @@ export function DashboardLayout({
 
         {/* Main Content Area */}
         <main className={cn(
-          'min-h-screen overflow-x-hidden',
+          'min-h-screen overflow-x-hidden min-w-screen',
           contextView === 'chat' && 'h-[100vh] md:h-screen overflow-hidden'
         )}>
           <div className={cn(
-            'h-full',
-            !isFullWidth && 'max-w-[630px] mx-auto w-full',
+            'h-full mx-auto',
+            !isFullWidth && 'max-w-[830px] w-full pl-4 pr-4',
             contextView === 'chat' && 'overflow-hidden max-w-none'
           )}>
             <AnimatePresence mode="wait">
@@ -150,11 +150,11 @@ export function DashboardLayout({
         </main>
 
         {/* Right Panel - LG screens and above */}
-        {shouldShowRightPanel && (
+        {/* {shouldShowRightPanel && (
           <aside className="hidden lg:block overflow-hidden">
             <RightPanel stories={stories} />
           </aside>
-        )}
+        )} */}
       </div>
 
       {/* Bottom Navigation - Mobile only */}
