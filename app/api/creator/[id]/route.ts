@@ -28,7 +28,7 @@ export async function GET(
         social_links,
         cover_image_url,
         onboarding_completed,
-        users!inner(id, display_name, email, photo_url, role)
+        users!inner(id, display_name, email, photo_url, role, username)
       `)
       .eq('user_id', creatorId)
       .single();
@@ -176,6 +176,7 @@ export async function GET(
         display_name: creatorProfile.users.display_name,
         email: creatorProfile.users.email,
         avatar_url: creatorProfile.users.photo_url,
+        username: creatorProfile.users.username ?? null,
         bio: creatorProfile.bio,
         category: creatorProfile.category,
         is_verified: creatorProfile.is_verified,

@@ -504,27 +504,24 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   const handleShare = useCallback(async () => {
     if (!creatorId || typeof window === 'undefined') return;
-    // Use creator ID instead of username slug to avoid conflicts with duplicate names
-    const url = `${window.location.origin}/creator/${creatorId}`;
+    // Prefer vanity URL for sharing: /creator/username (email prefix)
+    const path = creatorDetails?.username ? `/creator/${creatorDetails.username}` : `/creator/${creatorId}`;
+    const url = `${window.location.origin}${path}`;
     try {
-      // Always copy to clipboard
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
-      
-      // Also try native share if available
       if (navigator.share) {
         await navigator.share({
           title: `Support ${creatorDetails?.display_name || 'this creator'}`,
-          url
+          url,
         });
       }
     } catch {
-      // Ignore share errors, but still show copied state
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     }
-  }, [creatorId, creatorDetails?.display_name]);
+  }, [creatorId, creatorDetails?.display_name, creatorDetails?.username]);
 
   const handleBack = useCallback(() => {
     if (isWithinProvider) {

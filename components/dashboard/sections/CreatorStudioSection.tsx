@@ -155,27 +155,23 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
   const handleShareProfile = useCallback(async () => {
     if (!user?.id || typeof window === 'undefined') return;
-    // Use creator ID instead of username slug to avoid conflicts with duplicate names
-    const url = `${window.location.origin}/creator/${user.id}`;
+    const path = userProfile?.username ? `/creator/${userProfile.username}` : `/creator/${user.id}`;
+    const url = `${window.location.origin}${path}`;
     try {
-      // Always copy to clipboard
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
-      
-      // Also try native share if available
       if (navigator.share) {
         await navigator.share({
           title: `Support ${userProfile?.display_name || 'this creator'}`,
-          url
+          url,
         });
       }
     } catch {
-      // Ignore share errors, but still show copied state
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     }
-  }, [user?.id, userProfile?.display_name]);
+  }, [user?.id, userProfile?.display_name, userProfile?.username]);
 
   useEffect(() => {
     if (dashboardData) {

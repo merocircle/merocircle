@@ -10,6 +10,7 @@ interface UserProfile {
   display_name: string;
   photo_url: string | null;
   role: 'user' | 'creator';
+  username: string | null;
   created_at: string;
   updated_at: string;
 }

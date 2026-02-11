@@ -27,6 +27,7 @@ export interface SubscriptionTier {
 export interface CreatorDetails {
   user_id: string
   display_name: string
+  username: string | null
   bio: string | null
   avatar_url: string | null
   created_at: string
