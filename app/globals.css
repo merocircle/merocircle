@@ -48,123 +48,154 @@
    THEME VARIABLES
    =========================================== */
 :root {
+  /* Core surfaces (warm, human neutrals) */
+  --background: #faf6f4;
+  --muted: #f2ebe7;
+  --secondary: #f2ebe7;
   --card: #ffffff;
-  --ring: #f97316;
-  --input: #e5e7eb;
-  --muted: #f9fafb;
-  --accent: #fff7ed;
-  --border: #e5e7eb;
-  --radius: 0.5rem;
-  --chart-1: #f97316;
-  --chart-2: #ea580c;
-  --chart-3: #c2410c;
-  --chart-4: #9a3412;
-  --chart-5: #7c2d12;
   --popover: #ffffff;
-  --primary: #f97316;
-  --sidebar: #f9fafb;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --secondary: #f9fafb;
-  --background: #ffffff;
-  --font-serif: 'Merriweather', serif;
-  --foreground: #0f172a;
-  --destructive: #ef4444;
-  --sidebar-ring: #f97316;
-  --sidebar-accent: #fff7ed;
-  --sidebar-border: #e5e7eb;
-  --card-foreground: #0f172a;
-  --sidebar-primary: #f97316;
-  --muted-foreground: #64748b;
-  --accent-foreground: #1e293b;
-  --popover-foreground: #0f172a;
-  --primary-foreground: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --secondary-foreground: #475569;
-  --destructive-foreground: #ffffff;
-  --sidebar-accent-foreground: #1e293b;
-  --sidebar-primary-foreground: #ffffff;
+  --accent: #f7e3dc;
+  --sidebar: #f4ede9;
 
-  /* Social interaction colors */
-  --like-color: #ef4444;
-  --comment-color: #3b82f6;
-  --share-color: #22c55e;
-  --bookmark-color: #f59e0b;
+  /* Borders & inputs */
+  --border: #e2d6cf;
+  --input: #e2d6cf;
+  --ring: #d77a6a;
+
+  /* Typography */
+  --foreground: #2b1e1a;
+  --card-foreground: #2b1e1a;
+  --popover-foreground: #2b1e1a;
+  --muted-foreground: #7a5f57;
+  --secondary-foreground: #5e463f;
+  --accent-foreground: #2b1e1a;
+
+  /* Brand (peach-rose) */
+  --primary: #d77a6a;
+  --primary-foreground: #ffffff;
+
+  /* Destructive */
+  --destructive: #c24141;
+  --destructive-foreground: #ffffff;
+
+  /* Sidebar */
+  --sidebar-primary: #d77a6a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-foreground: #2b1e1a;
+  --sidebar-border: #e2d6cf;
+  --sidebar-ring: #d77a6a;
+  --sidebar-accent: #efd2c9;
+  --sidebar-accent-foreground: #2b1e1a;
+
+  /* Charts (same hue, stepped warmth) */
+  --chart-1: #d77a6a;
+  --chart-2: #c86c5d;
+  --chart-3: #b95f51;
+  --chart-4: #a95346;
+  --chart-5: #99473c;
+
+  /* Social interaction colors (community-friendly) */
+  --like-color: #d77a6a;
+  --comment-color: #7a9cc6;
+  --share-color: #7fb3a1;
+  --bookmark-color: #d1a24a;
 
   /* Status colors */
-  --online: #22c55e;
-  --away: #f59e0b;
-  --offline: #6b7280;
+  --online: #7fb3a1;
+  --away: #d1a24a;
+  --offline: #8b7a73;
 
   /* Bauhaus card variables */
-  --bauhaus-card-bg: #f0f4fb;
-  --bauhaus-card-separator: #d3dce8;
-  --bauhaus-card-accent: #156ef6;
+  --bauhaus-card-bg: #ffffff;
+  --bauhaus-card-separator: #e2d6cf;
+  --bauhaus-card-accent: #d77a6a;
   --bauhaus-card-radius: 2em;
   --bauhaus-card-border-width: 2px;
-  --bauhaus-card-inscription-top: #3b4252;
-  --bauhaus-card-inscription-main: #111014;
-  --bauhaus-card-inscription-sub: #5e6473;
-  --bauhaus-card-inscription-progress-label: #454f55;
-  --bauhaus-card-inscription-progress-value: #1c2541;
-  --bauhaus-card-progress-bar-bg: #e5e7eb;
-  --bauhaus-chronicle-bg: #151419;
-  --bauhaus-chronicle-fg: #fff;
-  --bauhaus-chronicle-hover-fg: #fff;
 
-  /* Rounded section variables */
+  --bauhaus-card-inscription-top: #5e463f;
+  --bauhaus-card-inscription-main: #2b1e1a;
+  --bauhaus-card-inscription-sub: #7a5f57;
+  --bauhaus-card-inscription-progress-label: #5e463f;
+  --bauhaus-card-inscription-progress-value: #2b1e1a;
+  --bauhaus-card-progress-bar-bg: #ede2dc;
+
+  --bauhaus-chronicle-bg: #2b1e1a;
+  --bauhaus-chronicle-fg: #faf6f4;
+  --bauhaus-chronicle-hover-fg: #ffffff;
+
+  /* Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Merriweather', serif;
+
+  /* Layout */
+  --radius: 0.5rem;
   --rounded-margin: 5rem;
   --section-margin: 7rem;
 }
 
 .dark {
-  --card: #0f172a;
-  --ring: #fb923c;
-  --input: #1e293b;
-  --muted: #1e293b;
-  --accent: #422006;
-  --border: #1e293b;
-  --radius: 0.5rem;
-  --chart-1: #fb923c;
-  --chart-2: #f97316;
-  --chart-3: #ea580c;
-  --chart-4: #c2410c;
-  --chart-5: #9a3412;
-  --popover: #0f172a;
-  --primary: #f97316;
-  --sidebar: #1e293b;
-  --secondary: #1e293b;
-  --background: #020617;
-  --foreground: #f1f5f9;
-  --destructive: #ef4444;
-  --sidebar-ring: #fb923c;
-  --sidebar-accent: #422006;
-  --sidebar-border: #1e293b;
-  --card-foreground: #f1f5f9;
-  --sidebar-primary: #f97316;
-  --muted-foreground: #94a3b8;
-  --accent-foreground: #e2e8f0;
-  --popover-foreground: #f1f5f9;
-  --primary-foreground: #ffffff;
-  --sidebar-foreground: #f1f5f9;
-  --secondary-foreground: #cbd5e1;
-  --destructive-foreground: #ffffff;
-  --sidebar-accent-foreground: #e2e8f0;
-  --sidebar-primary-foreground: #ffffff;
+  /* Core surfaces (warm dark, not gray) */
+  --background: #14100e;
+  --muted: #1f1916;
+  --secondary: #1f1916;
+  --card: #191311;
+  --popover: #191311;
+  --accent: #3a2320;
+  --sidebar: #1f1916;
 
-  /* Bauhaus card variables - dark mode */
-  --bauhaus-card-bg: #151419;
-  --bauhaus-card-separator: #2F2B2A;
-  --bauhaus-card-accent: #156ef6;
-  --bauhaus-card-inscription-top: #bfc7d5;
-  --bauhaus-card-inscription-main: #f0f0f1;
-  --bauhaus-card-inscription-sub: #a0a1b3;
-  --bauhaus-card-inscription-progress-label: #b5b6c4;
-  --bauhaus-card-inscription-progress-value: #e7e7f7;
-  --bauhaus-card-progress-bar-bg: #363636;
-  --bauhaus-chronicle-bg: #fff;
-  --bauhaus-chronicle-fg: #151419;
-  --bauhaus-chronicle-hover-fg: #fff;
+  /* Borders & inputs */
+  --border: #3a2a26;
+  --input: #3a2a26;
+  --ring: #d77a6a;
+
+  /* Typography */
+  --foreground: #f7ebe6;
+  --card-foreground: #f7ebe6;
+  --popover-foreground: #f7ebe6;
+  --muted-foreground: #c2a79f;
+  --secondary-foreground: #e0cfc9;
+  --accent-foreground: #f7ebe6;
+
+  /* Brand */
+  --primary: #d77a6a;
+  --primary-foreground: #ffffff;
+
+  /* Destructive */
+  --destructive: #c24141;
+  --destructive-foreground: #ffffff;
+
+  /* Sidebar */
+  --sidebar-primary: #d77a6a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-foreground: #f7ebe6;
+  --sidebar-border: #3a2a26;
+  --sidebar-ring: #d77a6a;
+  --sidebar-accent: #3a2320;
+  --sidebar-accent-foreground: #f7ebe6;
+
+  /* Charts */
+  --chart-1: #d77a6a;
+  --chart-2: #c86c5d;
+  --chart-3: #b95f51;
+  --chart-4: #a95346;
+  --chart-5: #99473c;
+
+  /* Bauhaus card variables */
+  --bauhaus-card-bg: #191311;
+  --bauhaus-card-separator: #3a2a26;
+  --bauhaus-card-accent: #d77a6a;
+
+  --bauhaus-card-inscription-top: #e0cfc9;
+  --bauhaus-card-inscription-main: #f7ebe6;
+  --bauhaus-card-inscription-sub: #c2a79f;
+  --bauhaus-card-inscription-progress-label: #e0cfc9;
+  --bauhaus-card-inscription-progress-value: #ffffff;
+  --bauhaus-card-progress-bar-bg: #3a2a26;
+
+  --bauhaus-chronicle-bg: #faf6f4;
+  --bauhaus-chronicle-fg: #2b1e1a;
+  --bauhaus-chronicle-hover-fg: #ffffff;
 }
 
 @media (max-width: 768px) {
