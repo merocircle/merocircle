@@ -527,19 +527,20 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   }, [creatorId, creatorDetails?.display_name]);
 
   const handleBack = useCallback(() => {
-    if (isWithinProvider) {
-      closeCreatorProfile();
-      return;
-    }
-    if (user) {
-      router.push('/home');
-      return;
-    }
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push('/');
+    // if (isWithinProvider) {
+    //   closeCreatorProfile();
+    //   return;
+    // }
+    // if (user) {
+    //   router.push('/home');
+    //   return;
+    // }
+    // if (typeof window !== 'undefined' && window.history.length > 1) {
+    //   router.back();
+    //   return;
+    // }
+    // router.push('/');
+    router.back();
   }, [closeCreatorProfile, isWithinProvider, router, user]);
 
   // Transform posts for EnhancedPostCard
@@ -825,7 +826,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             transition={{ duration: 0.5 }}
             className="relative -mt-20"
           >
-            <div className="bg-background/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl p-8">
+            <div className="bg-card backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl p-8">
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Avatar */}
                 <motion.div
@@ -862,20 +863,11 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                         <h1 className="text-3xl md:text-4xl font-bold text-foreground truncate">
                           {creatorDetails.display_name}
                         </h1>
-                        {isSupporter ? (
-                          <Badge className="gap-2 px-3 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Supported
+                        {creatorDetails.category && (
+                          <Badge variant="outline" className="gap-2 px-4 py-2 text-sm">
+                            <Star className="w-4 h-4 text-amber-500" />
+                            {creatorDetails.category}
                           </Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => setActiveTab('membership')}
-                            className="gap-2"
-                          >
-                            <Heart className="w-4 h-4" />
-                            Support Him
-                          </Button>
                         )}
                       </div>
 
@@ -884,7 +876,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                           {creatorDetails.bio}
                         </p>
                       )}
-
                       {/* Stats */}
                       <div className="flex flex-wrap items-center gap-6">
                         <motion.div
@@ -916,31 +907,26 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                             <p className="text-xs text-muted-foreground">Posts</p>
                           </div>
                         </motion.div>
-
-                        {creatorDetails.category && (
-                          <Badge variant="outline" className="gap-2 px-4 py-2 text-sm">
-                            <Star className="w-4 h-4 text-amber-500" />
-                            {creatorDetails.category}
-                          </Badge>
-                        )}
                       </div>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-3">
-                      {isSupporter && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", delay: 0.2 }}
+                      {isSupporter ? (
+                        <Badge className="gap-2 px-4 py-2.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Supported
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => setActiveTab('membership')}
+                          className="gap-2"
                         >
-                          <Badge className="gap-2 px-4 py-2 bg-gradient-to-r from-primary to-pink-500">
-                            <Heart className="w-4 h-4 fill-current" />
-                            Supporter
-                          </Badge>
-                        </motion.div>
+                          <Heart className="w-4 h-4" />
+                          Support Him
+                        </Button>
                       )}
-
                       <Button
                         variant={shareCopied ? "default" : "outline"}
                         size="icon"
@@ -954,9 +940,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                           <Share2 className="w-4 h-4" />
                         )}
                       </Button>
-
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={handleBack}
                         className="gap-2"

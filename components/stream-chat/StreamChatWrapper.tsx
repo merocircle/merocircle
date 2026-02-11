@@ -749,7 +749,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           </div>
 
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden pr-16">
             {activeChannel ? (
               <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
                 <Window>
