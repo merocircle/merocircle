@@ -285,4 +285,81 @@ export function useRealtimeComments(postId: string | null) {
   }, [postId, queryClient]);
 }
 
+/**
+ * Subscribe to like/comment changes for a set of post IDs and call onPostActivity when any of them change.
+ * Use this on the creator profile page so likes/comments are reflected without leaving the page.
+ */
+export function useRealtimeCreatorPosts(
+  postIds: string[],
+  onPostActivity: () => void
+) {
+  const likesChannelRef = useRef<RealtimeChannel | null>(null);
+  const commentsChannelRef = useRef<RealtimeChannel | null>(null);
+  const postIdSetRef = useRef<Set<string>>(new Set());
+  const onPostActivityRef = useRef(onPostActivity);
+
+  postIdSetRef.current = new Set(postIds);
+  onPostActivityRef.current = onPostActivity;
+
+  useEffect(() => {
+    if (postIds.length === 0) return;
+
+    const notifyIfRelevant = (postId: string | undefined) => {
+      if (postId && postIdSetRef.current.has(postId)) {
+        onPostActivityRef.current();
+      }
+    };
+
+    if (likesChannelRef.current) {
+      supabase.removeChannel(likesChannelRef.current);
+      likesChannelRef.current = null;
+    }
+    if (commentsChannelRef.current) {
+      supabase.removeChannel(commentsChannelRef.current);
+      commentsChannelRef.current = null;
+    }
+
+    const likesChannel = supabase
+      .channel('creator-posts-likes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_likes' },
+        (payload: any) => notifyIfRelevant(payload.new?.post_id)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_likes' },
+        (payload: any) => notifyIfRelevant(payload.old?.post_id)
+      )
+      .subscribe();
+    likesChannelRef.current = likesChannel;
+
+    const commentsChannel = supabase
+      .channel('creator-posts-comments')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'post_comments' },
+        (payload: any) => notifyIfRelevant(payload.new?.post_id)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'post_comments' },
+        (payload: any) => notifyIfRelevant(payload.old?.post_id)
+      )
+      .subscribe();
+    commentsChannelRef.current = commentsChannel;
+
+    return () => {
+      if (likesChannelRef.current) {
+        supabase.removeChannel(likesChannelRef.current);
+        likesChannelRef.current = null;
+      }
+      if (commentsChannelRef.current) {
+        supabase.removeChannel(commentsChannelRef.current);
+        commentsChannelRef.current = null;
+      }
+    };
+  }, [postIds.join(',')]); // stable when same IDs
+}
+
 export default useRealtimeFeed;

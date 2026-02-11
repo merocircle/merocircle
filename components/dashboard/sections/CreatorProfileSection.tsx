@@ -36,6 +36,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
+import { useRealtimeCreatorPosts } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TierSelection } from '@/components/creator/TierSelection';
 import { fadeInUp, staggerContainer } from '@/components/animations/variants';
@@ -96,6 +97,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     refreshCreatorDetails,
     updateSupporterTier
   } = useCreatorDetails(creatorId);
+
+  // Refetch creator details when likes/comments change on any of this creator's posts
+  const creatorPostIds = useMemo(() => recentPosts.map((p) => String(p.id)), [recentPosts]);
+  useRealtimeCreatorPosts(creatorPostIds, refreshCreatorDetails);
 
   const { subscribe, unsubscribe } = useSubscription();
 
