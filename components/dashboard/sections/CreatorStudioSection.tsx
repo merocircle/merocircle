@@ -189,6 +189,50 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     setTimeout(() => setShowErrorMessage(null), 3000);
   }, []);
 
+  const prepareFileForUpload = useCallback(async (file: File): Promise<File> => {
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const isHeic = fileExt === 'heic' || fileExt === 'heif' || 
+                   file.type?.toLowerCase().includes('heic') || 
+                   file.type?.toLowerCase().includes('heif');
+    
+    if (!isHeic) {
+      return file;
+    }
+
+    try {
+      const heic2anyModule = await import('heic2any');
+      const heic2any = heic2anyModule.default || heic2anyModule;
+      
+      if (!heic2any) {
+        throw new Error('heic2any library not available');
+      }
+      
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.95,
+      });
+
+      const jpegBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      
+      if (!jpegBlob) {
+        throw new Error('Conversion returned no blob');
+      }
+      
+      const typedBlob = jpegBlob instanceof Blob ? jpegBlob : new Blob([jpegBlob], { type: 'image/jpeg' });
+      const jpegFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+      const jpegFile = new File([typedBlob], jpegFileName, {
+        type: 'image/jpeg',
+        lastModified: file.lastModified,
+      });
+      
+      return jpegFile;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to convert HEIC image: ${errorMessage}. Please convert it to JPEG or PNG before uploading.`);
+    }
+  }, []);
+
   const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -198,17 +242,32 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       return;
     }
 
+    const maxSize = 50 * 1024 * 1024;
+    const oversizedFiles = Array.from(files).filter(file => file.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      showError(`Some files are too large. Maximum file size is 50MB.`);
+      return;
+    }
+
     setIsUploadingImage(true);
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
+        const fileToUpload = await prepareFileForUpload(file);
+        
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToUpload, fileToUpload.name);
         formData.append('folder', 'posts');
 
         const response = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
+
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({ error: 'Upload failed' }));
+          const errorMsg = result.error || `Upload failed with status ${response.status}`;
+          throw new Error(errorMsg);
+        }
 
         const result = await response.json();
         if (result.success) {
@@ -222,12 +281,13 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       setUploadedImages(prev => [...prev, ...newUrls]);
     } catch (error) {
       console.error('Upload error:', error);
-      showError('File upload failed.');
+      const errorMessage = error instanceof Error ? error.message : 'File upload failed.';
+      showError(errorMessage);
     } finally {
       setIsUploadingImage(false);
       event.target.value = '';
     }
-  }, [uploadedImages.length, showError]);
+  }, [uploadedImages.length, showError, prepareFileForUpload]);
 
   const handlePublishPost = useCallback(() => {
     if (postType === 'poll') {

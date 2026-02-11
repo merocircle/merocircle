@@ -54,9 +54,9 @@ export const config = {
     testMode: process.env.DODO_PAYMENTS_ENVIRONMENT !== 'production',
   },
   upload: {
-    allowedImageTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
+    allowedImageTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'],
     allowedVideoTypes: ['video/mp4', 'video/webm', 'video/ogg'],
-    maxFileSize: 10 * 1024 * 1024, // 10MB
+    maxFileSize: 50 * 1024 * 1024, // 50MB - increased for high-resolution photos
   },
 };
 
