@@ -388,56 +388,53 @@ export function PostDetailModal({
               </motion.button>
             </div>
 
-            {/* Right Side - Content, Caption, Comments */}
+            {/* Right Side - Content, Description, Comments */}
             <div className="w-[30%] flex flex-col bg-background overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <Link href={creatorProfileLink}>
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
-                        {post.creator.display_name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <div>
-                    <Link href={creatorProfileLink} className="text-sm font-semibold text-foreground hover:text-primary">
-                      {post.creator.display_name}
+              {/* Header with Title */}
+              <div className="flex flex-col px-6 py-4 border-b border-border flex-shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <Link href={creatorProfileLink}>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
+                          {post.creator.display_name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                     </Link>
-                    {post.creator_profile?.is_verified && (
-                      <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-blue-500/10 text-blue-500 border-0 ml-1">
-                        ✓
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Caption - Fixed */}
-              <div className="px-4 py-3 border-b border-border flex-shrink-0">
-                <div className="flex items-start gap-3">
-                  <Link href={creatorProfileLink}>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white text-xs">
-                        {post.creator.display_name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div>
                       <Link href={creatorProfileLink} className="text-sm font-semibold text-foreground hover:text-primary">
                         {post.creator.display_name}
                       </Link>
-                      <span className="text-sm text-foreground whitespace-pre-wrap">{post.content}</span>
+                      {post.creator_profile?.is_verified && (
+                        <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-blue-500/10 text-blue-500 border-0 ml-1">
+                          ✓
+                        </Badge>
+                      )}
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                    </span>
                   </div>
                 </div>
+                {/* Title - Big, Bold */}
+                {post.title && post.post_type !== 'poll' && (
+                  <h1 className="text-2xl font-bold text-foreground leading-tight mb-2">
+                    {post.title}
+                  </h1>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                </span>
               </div>
+
+              {/* Description - Article-like format */}
+              {post.content && post.post_type !== 'poll' && (
+                <div className="px-6 py-4 border-b border-border flex-shrink-0 overflow-y-auto max-h-[40vh]">
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap">
+                      {post.content}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Comments Section - Scrollable */}
               <div className="flex-1 overflow-y-auto px-4 py-3">

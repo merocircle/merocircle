@@ -200,6 +200,7 @@ export function EnhancedPostCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   // Get all images (support both image_url and image_urls)
   const allImages = useMemo(() => {
@@ -479,6 +480,15 @@ export function EnhancedPostCard({
           </div>
         </div>
 
+        {/* Title Section - Show before image */}
+        {post.title && post.post_type !== 'poll' && (
+          <div className="px-4 py-3 border-b border-border/50">
+            <h2 className="text-lg font-bold text-foreground leading-tight">
+              {post.title}
+            </h2>
+          </div>
+        )}
+
         {/* Media Section */}
         <div className="relative">
           {shouldBlur ? (
@@ -721,13 +731,25 @@ export function EnhancedPostCard({
               {likesCount.toLocaleString()} {likesCount === 1 ? 'like' : 'likes'}
             </p>
 
-            {/* Caption - Show after image (Instagram style) */}
-            {(post.content || post.title) && (
-              <div className="mt-1">
-                <p className="text-xs text-foreground leading-relaxed">
-                  <span className="font-semibold">{post.creator.display_name}</span>{' '}
-                  {post.content || post.title}
+            {/* Description - Show after image with "See more" functionality */}
+            {post.content && post.post_type !== 'poll' && (
+              <div className="mt-2">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                  {showFullDescription || post.content.length <= 300
+                    ? post.content
+                    : `${post.content.slice(0, 300)}...`}
                 </p>
+                {post.content.length > 300 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowFullDescription(!showFullDescription);
+                    }}
+                    className="text-sm text-primary hover:text-primary/80 font-medium mt-1"
+                  >
+                    {showFullDescription ? 'See less' : 'See more'}
+                  </button>
+                )}
               </div>
             )}
 

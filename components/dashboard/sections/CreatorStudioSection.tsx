@@ -46,7 +46,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const highlightedPostRef = useRef<HTMLDivElement | null>(null);
   const scrollAttemptedRef = useRef(false);
 
-  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostDescription, setNewPostDescription] = useState('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [postVisibility, setPostVisibility] = useState('public');
@@ -301,15 +302,19 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         return;
       }
     } else {
-      if (!newPostContent.trim()) {
-        showError('Caption is required.');
+      if (!newPostTitle.trim()) {
+        showError('Title is required.');
+        return;
+      }
+      if (!newPostDescription.trim()) {
+        showError('Description is required.');
         return;
       }
     }
 
     const body: any = {
-      title: postType === 'poll' ? pollQuestion.trim() : newPostContent.trim().slice(0, 100),
-      content: postType === 'poll' ? pollQuestion.trim() : newPostContent.trim(),
+      title: postType === 'poll' ? pollQuestion.trim() : newPostTitle.trim(),
+      content: postType === 'poll' ? pollQuestion.trim() : newPostDescription.trim(),
       image_urls: uploadedImages.length > 0 ? uploadedImages : [],
       is_public: postVisibility === 'public',
       tier_required: postVisibility === 'public' ? 'free' : postVisibility,
@@ -329,7 +334,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     publishPost(body, {
       onSuccess: (createdPost: any) => {
         setHighlightedPostId(createdPost?.id);
-        setNewPostContent('');
+        setNewPostTitle('');
+        setNewPostDescription('');
         setUploadedImages([]);
         setPollQuestion('');
         setPollOptions(['', '']);
@@ -345,12 +351,13 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         showError(error.message || 'Failed to publish.');
       }
     });
-  }, [postType, newPostContent, uploadedImages, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, publishPost, showError]);
+  }, [postType, newPostTitle, newPostDescription, uploadedImages, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, publishPost, showError]);
 
   const handlePostTypeChange = useCallback((type: 'post' | 'poll') => {
     setPostType(type);
     if (type === 'poll') {
-      setNewPostContent('');
+      setNewPostTitle('');
+      setNewPostDescription('');
     } else {
       setPollQuestion('');
       setPollOptions(['', '']);
@@ -543,7 +550,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
           <div className="px-6 pb-6">
             <PostCreationForm
               postType={postType}
-              newPostContent={newPostContent}
+              postTitle={newPostTitle}
+              postDescription={newPostDescription}
               uploadedImages={uploadedImages}
               isUploadingImage={isUploadingImage}
               postVisibility={postVisibility}
@@ -552,7 +560,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               onboardingCompleted={onboardingCompleted}
               isPublishing={isPublishing}
               onPostTypeChange={handlePostTypeChange}
-              onContentChange={setNewPostContent}
+              onTitleChange={setNewPostTitle}
+              onDescriptionChange={setNewPostDescription}
               onVisibilityChange={setPostVisibility}
               onPollQuestionChange={setPollQuestion}
               onPollOptionChange={updatePollOption}
