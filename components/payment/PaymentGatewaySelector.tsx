@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { PaymentSuccessModal } from './PaymentSuccessModal';
 
 interface PaymentGatewaySelectorProps {
   open: boolean;
@@ -13,8 +14,10 @@ interface PaymentGatewaySelectorProps {
   amount: number;
   tierLevel: number;
   creatorId: string;
+  creatorName: string;
   supporterId: string;
   supporterMessage?: string;
+  onPaymentSuccess?: (tierLevel: number, navigateToTab?: 'posts' | 'chat') => void;
 }
 
 export function PaymentGatewaySelector({
@@ -24,8 +27,10 @@ export function PaymentGatewaySelector({
   amount,
   tierLevel,
   creatorId,
+  creatorName,
   supporterId,
   supporterMessage,
+  onPaymentSuccess,
 }: PaymentGatewaySelectorProps) {
   const gateways = [
     {
@@ -58,6 +63,12 @@ export function PaymentGatewaySelector({
       description: 'Coming soon',
     },
   ];
+
+  const [paymentSuccess, setPaymentSuccess] = useState<{
+    transactionUuid: string;
+    totalAmount: number;
+    gateway: string;
+  } | null>(null);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -147,6 +158,8 @@ export function PaymentGatewaySelector({
             className="w-full"
             onClick={async () => {
               try {
+                console.log("supporter message", supporterMessage);
+
                 const response = await fetch('/api/payment/direct', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -166,18 +179,26 @@ export function PaymentGatewaySelector({
 
                 const result = await response.json();
                 
-                if (result.success && result.transaction) {
-                  // Close modal first
-                  onClose();
-                  // Redirect to payment success page with transaction details
-                  const transactionUuid = result.transaction.transaction_uuid;
-                  const totalAmount = result.transaction.amount;
+                // if (result.success && result.transaction) {
+                //   // Close modal first
+                //   onClose();
+                //   // Redirect to payment success page with transaction details
+                //   const transactionUuid = result.transaction.transaction_uuid;
+                //   const totalAmount = result.transaction.amount;
                   
-                  // Use window.location to ensure full page navigation (creatorId is from props)
-                  window.location.href = `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`;
-                } else {
-                  throw new Error(result.error || 'Payment failed');
-                }
+                //   // Use window.location to ensure full page navigation (creatorId is from props)
+                //   window.location.href = `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`;
+                // } else {
+                //   throw new Error(result.error || 'Payment failed');
+                // }
+
+                if (result.success && result.transaction) {
+                  setPaymentSuccess({
+                    transactionUuid: result.transaction.transaction_uuid,
+                    totalAmount: result.transaction.amount,
+                    gateway: 'direct',
+                  });
+                } else throw new Error(result.error || 'Direct payment failed');
               } catch (error) {
                 console.error('Direct payment error:', error);
                 alert(error instanceof Error ? error.message : 'Failed to register support. Please try again.');
@@ -189,6 +210,36 @@ export function PaymentGatewaySelector({
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
             This will register your support without going through a payment gateway
           </p>
+          {paymentSuccess && (
+            <PaymentSuccessModal
+              open={!!paymentSuccess}
+              onClose={() => {
+                setPaymentSuccess(null);
+                if (onPaymentSuccess && paymentSuccess) {
+                  onPaymentSuccess(tierLevel);
+                }
+                onClose();
+              }}
+              onViewPosts={() => {
+                if (onPaymentSuccess && paymentSuccess) {
+                  onPaymentSuccess(tierLevel, 'posts');
+                }
+                setPaymentSuccess(null);
+                onClose();
+              }}
+              onViewChat={() => {
+                if (onPaymentSuccess && paymentSuccess) {
+                  onPaymentSuccess(tierLevel, 'chat');
+                }
+                setPaymentSuccess(null);
+                onClose();
+              }}
+              transactionUuid={paymentSuccess.transactionUuid}
+              totalAmount={paymentSuccess.totalAmount}
+              gateway={paymentSuccess.gateway}
+              creatorName={creatorName || ''}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

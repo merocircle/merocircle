@@ -443,9 +443,6 @@ function CreatorListCard({ creator, creatorId }: { creator: Creator; creatorId: 
             {creator.bio || `${creator.creator_profile?.category || 'Creator'} · ${formatCount(creator.supporter_count)} supporters`}
           </p>
         </div>
-        <Button size="sm" className="h-8 px-4 rounded-full">
-          Follow
-        </Button>
       </div>
     </Card>
     </Link>
