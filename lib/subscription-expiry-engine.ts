@@ -331,12 +331,11 @@ export async function checkSubscriptionExpiry(): Promise<ExpiryCheckResult> {
             daysOverdue: Math.abs(daysUntilExpiry),
           });
 
-          // Call unsubscribe engine to revoke access
+          // Call unsubscribe engine to revoke access (keeps supporter + subscription in sync)
           const unsubResult = await processUnsubscribe({
             supporterId: subscription.supporter_id,
             creatorId: subscription.creator_id,
             reason: 'expired',
-            sendEmail: false, // We'll send our own expired notification
           });
 
           if (unsubResult.success) {

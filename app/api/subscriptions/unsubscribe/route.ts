@@ -26,118 +26,151 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Get request body
+    // Get request body: either subscription_id (recurring) or creator_id (support-only membership)
     const body = await request.json();
-    const { subscription_id, feedback } = body;
+    const { subscription_id, creator_id, feedback } = body;
 
-    if (!subscription_id) {
+    if (!subscription_id && !creator_id) {
       return NextResponse.json(
-        { error: 'subscription_id is required' },
+        { error: 'subscription_id or creator_id is required' },
         { status: 400 }
       );
     }
 
-    logger.info('Processing manual unsubscribe', 'UNSUBSCRIBE_API', {
-      userId: user.id,
-      subscriptionId: subscription_id,
-      hasFeedback: !!feedback,
-    });
+    let supporterId: string;
+    let creatorId: string;
+    let paymentGateway: string | null = null;
+    let externalSubscriptionId: string | null = null;
 
-    // Fetch subscription to verify ownership and get details
-    const { data: subscription, error: fetchError } = await supabase
-      .from('subscriptions')
-      .select('id, supporter_id, creator_id, status, payment_gateway, external_subscription_id')
-      .eq('id', subscription_id)
-      .single();
+    if (creator_id) {
+      // Support-only membership: no subscription row, cancel by creator_id
+      const { data: supporter, error: supError } = await supabase
+        .from('supporters')
+        .select('id, supporter_id, creator_id')
+        .eq('supporter_id', user.id)
+        .eq('creator_id', creator_id)
+        .eq('is_active', true)
+        .maybeSingle();
 
-    if (fetchError || !subscription) {
-      logger.error('Subscription not found', 'UNSUBSCRIBE_API', {
-        error: fetchError?.message,
-        subscriptionId: subscription_id,
+      if (supError || !supporter) {
+        logger.error('Support membership not found', 'UNSUBSCRIBE_API', {
+          error: supError?.message,
+          creatorId: creator_id,
+          userId: user.id,
+        });
+        return NextResponse.json(
+          { error: 'Membership not found' },
+          { status: 404 }
+        );
+      }
+      supporterId = supporter.supporter_id;
+      creatorId = supporter.creator_id;
+      logger.info('Processing support-only unsubscribe', 'UNSUBSCRIBE_API', {
+        userId: user.id,
+        creatorId,
+        hasFeedback: !!feedback,
       });
-      return NextResponse.json(
-        { error: 'Subscription not found' },
-        { status: 404 }
-      );
-    }
+    } else {
+      // Recurring subscription
+      const { data: subscription, error: fetchError } = await supabase
+        .from('subscriptions')
+        .select('id, supporter_id, creator_id, status, payment_gateway, external_subscription_id')
+        .eq('id', subscription_id)
+        .single();
 
-    // Verify user owns this subscription
-    if (subscription.supporter_id !== user.id) {
-      logger.warn('User attempted to unsubscribe another users subscription', 'UNSUBSCRIBE_API', {
+      if (fetchError || !subscription) {
+        logger.error('Subscription not found', 'UNSUBSCRIBE_API', {
+          error: fetchError?.message,
+          subscriptionId: subscription_id,
+        });
+        return NextResponse.json(
+          { error: 'Subscription not found' },
+          { status: 404 }
+        );
+      }
+
+      if (subscription.supporter_id !== user.id) {
+        logger.warn('User attempted to unsubscribe another users subscription', 'UNSUBSCRIBE_API', {
+          userId: user.id,
+          subscriptionId: subscription_id,
+          ownerId: subscription.supporter_id,
+        });
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+      }
+
+      if (subscription.status === 'cancelled' || subscription.status === 'expired') {
+        logger.info('Subscription already cancelled or expired', 'UNSUBSCRIBE_API', {
+          subscriptionId: subscription_id,
+          status: subscription.status,
+        });
+        return NextResponse.json({
+          success: true,
+          message: 'Subscription already cancelled or expired',
+          alreadyCancelled: true,
+        });
+      }
+
+      supporterId = subscription.supporter_id;
+      creatorId = subscription.creator_id;
+      paymentGateway = subscription.payment_gateway;
+      externalSubscriptionId = subscription.external_subscription_id || null;
+
+      logger.info('Processing manual unsubscribe', 'UNSUBSCRIBE_API', {
         userId: user.id,
         subscriptionId: subscription_id,
-        ownerId: subscription.supporter_id,
+        hasFeedback: !!feedback,
       });
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    }
 
-    // Check if already cancelled
-    if (subscription.status === 'cancelled' || subscription.status === 'expired') {
-      logger.info('Subscription already cancelled or expired', 'UNSUBSCRIBE_API', {
-        subscriptionId: subscription_id,
-        status: subscription.status,
-      });
-      return NextResponse.json({
-        success: true,
-        message: 'Subscription already cancelled or expired',
-        alreadyCancelled: true,
-      });
-    }
-
-    // For Dodo subscriptions, cancel via Dodo API first
-    if (subscription.payment_gateway === 'dodo' && subscription.external_subscription_id) {
-      try {
-        logger.info('Cancelling Dodo subscription', 'UNSUBSCRIBE_API', {
-          subscriptionId: subscription_id,
-          externalSubscriptionId: subscription.external_subscription_id,
-        });
-
-        const dodoResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app'}/api/payment/dodo/subscription/cancel`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              subscription_id: subscription_id,
-              creator_id: subscription.creator_id,
-            }),
-          }
-        );
-
-        if (!dodoResponse.ok) {
-          const errorData = await dodoResponse.json().catch(() => ({}));
-          logger.error('Failed to cancel Dodo subscription', 'UNSUBSCRIBE_API', {
-            error: errorData.error || 'Unknown error',
+      // For Dodo subscriptions, cancel via Dodo API first
+      if (paymentGateway === 'dodo' && externalSubscriptionId) {
+        try {
+          logger.info('Cancelling Dodo subscription', 'UNSUBSCRIBE_API', {
             subscriptionId: subscription_id,
+            externalSubscriptionId,
           });
-          // Continue with local cancellation even if Dodo cancellation fails
-        } else {
-          logger.info('Dodo subscription cancelled successfully', 'UNSUBSCRIBE_API', {
+          const dodoResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app'}/api/payment/dodo/subscription/cancel`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                subscription_id: subscription_id,
+                creator_id: subscription.creator_id,
+              }),
+            }
+          );
+          if (!dodoResponse.ok) {
+            const errorData = await dodoResponse.json().catch(() => ({}));
+            logger.error('Failed to cancel Dodo subscription', 'UNSUBSCRIBE_API', {
+              error: errorData.error || 'Unknown error',
+              subscriptionId: subscription_id,
+            });
+          } else {
+            logger.info('Dodo subscription cancelled successfully', 'UNSUBSCRIBE_API', {
+              subscriptionId: subscription_id,
+            });
+          }
+        } catch (dodoError: any) {
+          logger.error('Error calling Dodo cancel API', 'UNSUBSCRIBE_API', {
+            error: dodoError.message,
             subscriptionId: subscription_id,
           });
         }
-      } catch (dodoError: any) {
-        logger.error('Error calling Dodo cancel API', 'UNSUBSCRIBE_API', {
-          error: dodoError.message,
-          subscriptionId: subscription_id,
-        });
-        // Continue with local cancellation
       }
     }
 
     // Call unsubscribe engine to handle cleanup
     const result = await processUnsubscribe({
-      supporterId: subscription.supporter_id,
-      creatorId: subscription.creator_id,
+      supporterId,
+      creatorId,
       reason: 'user_cancelled',
-      sendEmail: true, // Send unsubscribe confirmation email
-      feedback: feedback || undefined,
+      disableEmailNotifications: true,
     });
 
     if (!result.success) {
       logger.error('Failed to process unsubscribe', 'UNSUBSCRIBE_API', {
         error: result.error,
-        subscriptionId: subscription_id,
+        subscriptionId: subscription_id ?? creator_id,
       });
       return NextResponse.json(
         { error: result.error || 'Failed to unsubscribe' },
@@ -147,9 +180,9 @@ export async function POST(request: NextRequest) {
 
     logger.info('Manual unsubscribe completed successfully', 'UNSUBSCRIBE_API', {
       userId: user.id,
-      subscriptionId: subscription_id,
-      supporterId: subscription.supporter_id,
-      creatorId: subscription.creator_id,
+      subscriptionId: subscription_id ?? null,
+      supporterId,
+      creatorId,
     });
 
     return NextResponse.json({

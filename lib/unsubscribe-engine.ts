@@ -44,22 +44,23 @@ export interface UnsubscribeResult {
 
 /**
  * Unified unsubscribe engine
- * 
- * Handles all unsubscription-related operations:
+ *
+ * Sync rule: supporter and subscription stay in sync at the application level.
+ * - Grant access: only through manageSubscription in subscription-engine.ts.
+ * - Revoke access: only through this engine (deactivate supporter + cancel subscription).
+ *
+ * Data model:
+ * - supporters: current membership (is_active = true). Used for access, "Your circle", creator page.
+ * - subscriptions: recurring billing only. Optional; direct one-time payments have supporter
+ *   row but no subscription row. This engine deactivates supporter and cancels subscription when present.
+ *
+ * This engine:
  * 1. Deactivates supporter record (sets is_active = false)
  * 2. Cancels recurring subscriptions if applicable
  * 3. Removes supporter from Stream Chat channels
  * 4. Disables email notifications for this creator
  * 5. Updates supporter count in creator_profiles
- * 6. Ensures data consistency
- * 
- * This engine is gateway-agnostic and can be called from:
- * - User-initiated unsubscribe (from dashboard)
- * - Email unsubscribe links
- * - Subscription cancellation webhooks
- * - Admin actions
- * - Any other unsubscription scenario
- * 
+ *
  * @param params Unsubscribe parameters
  * @returns Unsubscribe result with details of what was changed
  */

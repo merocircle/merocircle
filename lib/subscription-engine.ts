@@ -48,20 +48,18 @@ export interface SubscriptionResult {
 
 /**
  * Unified subscription management engine
- * 
- * Handles all subscription-related operations:
+ *
+ * Sync rule: supporter and subscription stay in sync at the application level.
+ * - Grant access: only through this engine (creates/updates supporters + subscriptions).
+ * - Revoke access: only through processUnsubscribe in unsubscribe-engine.ts.
+ *
+ * This engine:
  * 1. Determines tier level from payment amount (if not explicitly provided)
- * 2. Creates or updates supporter record (prevents duplicates via unique constraint)
+ * 2. Creates or updates supporter record (is_active = true)
  * 3. Handles tier upgrades/downgrades
- * 4. Updates subscription records if applicable
+ * 4. Creates or updates subscription record when applicable; links supporter.subscription_id
  * 5. Ensures data consistency
- * 
- * This engine is gateway-agnostic and can be called from:
- * - Payment success handlers
- * - Subscription renewal handlers
- * - Manual subscription updates
- * - Any other subscription management scenario
- * 
+ *
  * @param params Subscription parameters
  * @returns Subscription result with supporter and tier details
  */
@@ -601,9 +599,11 @@ export async function manageSubscription(
               subscriptionData.id = subscriptionId;
             }
 
-            const { error: insertError } = await supabase
+            const { data: newSubscription, error: insertError } = await supabase
               .from('subscriptions')
-              .insert(subscriptionData);
+              .insert(subscriptionData)
+              .select('id')
+              .single();
 
             if (insertError) {
               logger.error('Failed to create subscription record', 'SUBSCRIPTION_ENGINE', {
@@ -613,10 +613,28 @@ export async function manageSubscription(
               });
             } else {
               logger.info('Subscription record created successfully', 'SUBSCRIPTION_ENGINE', {
+                subscriptionId: newSubscription?.id,
                 paymentGateway,
                 tierLevel,
                 expiryDate: subscriptionData.current_period_end,
               });
+              // Keep supporter and subscription in sync: link supporter.subscription_id
+              if (newSubscription?.id && supporterRecord?.id) {
+                const { error: linkError } = await supabase
+                  .from('supporters')
+                  .update({
+                    subscription_id: newSubscription.id,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', supporterRecord.id);
+                if (linkError) {
+                  logger.warn('Failed to link supporter to new subscription', 'SUBSCRIPTION_ENGINE', {
+                    supporterRecordId: supporterRecord.id,
+                    subscriptionId: newSubscription.id,
+                    error: linkError.message,
+                  });
+                }
+              }
             }
           }
         } else {
