@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
+import { signIn } from 'next-auth/react';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { useRealtimeCreatorPosts } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
@@ -64,7 +65,7 @@ interface CreatorProfileSectionProps {
 
 export default function CreatorProfileSection({ creatorId, initialHighlightedPostId, defaultTab }: CreatorProfileSectionProps) {
   const router = useRouter();
-  const { user, signInWithGoogle } = useAuth();
+  const { user } = useAuth();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
   const highlightedPostRef = useRef<HTMLDivElement>(null);
 
@@ -485,16 +486,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     try {
       setAuthLoading(true);
       setAuthError(null);
-      const { error } = await signInWithGoogle();
-      if (error) {
-        setAuthError(error.message || 'Failed to sign in with Google');
+      // Use NextAuth signIn - redirect back to current page after sign-in
+      const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/home';
+      const result = await signIn('google', { callbackUrl });
+      if (result?.error) {
+        setAuthError(result.error || 'Failed to sign in with Google');
+        setAuthLoading(false);
       }
+      // If successful, redirect will happen automatically
     } catch (error: unknown) {
       setAuthError(error instanceof Error ? error.message : 'Failed to sign in');
-    } finally {
       setAuthLoading(false);
     }
-  }, [signInWithGoogle]);
+  }, []);
 
   const handleAuthModalChange = useCallback((open: boolean) => {
     setShowAuthModal(open);
