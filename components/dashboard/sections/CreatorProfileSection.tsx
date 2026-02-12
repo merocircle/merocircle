@@ -61,9 +61,11 @@ interface CreatorProfileSectionProps {
   creatorId: string;
   initialHighlightedPostId?: string | null;
   defaultTab?: 'posts' | 'membership' | 'shop' | 'about' | 'chat';
+  renewFromUrl?: boolean;
+  subscriptionIdFromUrl?: string | null;
 }
 
-export default function CreatorProfileSection({ creatorId, initialHighlightedPostId, defaultTab }: CreatorProfileSectionProps) {
+export default function CreatorProfileSection({ creatorId, initialHighlightedPostId, defaultTab, renewFromUrl, subscriptionIdFromUrl }: CreatorProfileSectionProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
@@ -81,6 +83,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     totalAmount: number;
     gateway: string;
   } | null>(null);
+
+  const [showRenewAlreadyActiveDialog, setShowRenewAlreadyActiveDialog] = useState(false);
 
   useEffect(() => {
     if (initialHighlightedPostId && !isWithinProvider) {
@@ -102,6 +106,167 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   // Refetch creator details when likes/comments change on any of this creator's posts
   const creatorPostIds = useMemo(() => recentPosts.map((p) => String(p.id)), [recentPosts]);
   useRealtimeCreatorPosts(creatorPostIds, refreshCreatorDetails);
+
+  // When landing with ?renew=true, fetch previous payment method and send user to that gateway (or direct renew)
+  const renewHandledRef = useRef(false);
+  useEffect(() => {
+    if (!renewFromUrl || !user || !creatorId || renewHandledRef.current) return;
+
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const subId = subscriptionIdFromUrl ?? params.get('subscription_id') ?? '';
+
+    (async () => {
+      renewHandledRef.current = true;
+      try {
+        const res = await fetch(
+          `/api/subscriptions/renewal-info?creatorId=${encodeURIComponent(creatorId)}${subId ? `&subscription_id=${encodeURIComponent(subId)}` : ''}`
+        );
+        if (!res.ok) {
+          if (res.status === 404) return;
+          throw new Error('Failed to get renewal info');
+        }
+        const data = await res.json();
+        if (!data.success) return;
+
+        const cleanUrl = () => {
+          const u = new URL(window.location.href);
+          u.searchParams.delete('renew');
+          u.searchParams.delete('subscription_id');
+          window.history.replaceState({}, '', u.pathname + u.search);
+        };
+
+        if (data.alreadyActive) {
+          cleanUrl();
+          setShowRenewAlreadyActiveDialog(true);
+          return;
+        }
+
+        if (!data.renewal) return;
+
+        const { gateway, tierLevel, amount } = data.renewal;
+        const cleanUrlForPayment = () => {
+          const u = new URL(window.location.href);
+          u.searchParams.delete('renew');
+          u.searchParams.delete('subscription_id');
+          window.history.replaceState({}, '', u.pathname + u.search);
+        };
+
+        if (gateway === 'direct') {
+          const payRes = await fetch('/api/payment/direct', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount,
+              creatorId,
+              supporterId: user.id,
+              supporterMessage: '',
+              tier_level: tierLevel ?? 1,
+            }),
+          });
+          const payData = await payRes.json();
+          cleanUrlForPayment();
+          if (payRes.ok && payData.success && payData.transaction) {
+            setPaymentSuccess({
+              transactionUuid: payData.transaction.transaction_uuid,
+              totalAmount: payData.transaction.amount,
+              gateway: 'direct',
+            });
+            refreshCreatorDetails();
+          } else {
+            setActiveTab('membership');
+          }
+          return;
+        }
+
+        if (gateway === 'esewa') {
+          const payRes = await fetch('/api/payment/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount,
+              creatorId,
+              supporterId: user.id,
+              supporterMessage: '',
+              tier_level: tierLevel ?? 1,
+            }),
+          });
+          const payData = await payRes.json();
+          cleanUrlForPayment();
+          if (payRes.ok && payData.redirect_url) {
+            window.location.href = payData.redirect_url;
+            return;
+          }
+          if (payRes.ok && payData.payment_url && payData.esewaConfig) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = payData.payment_url;
+            Object.entries(payData.esewaConfig).forEach(([k, v]) => {
+              const input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = k;
+              input.value = String(v);
+              form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+            return;
+          }
+          setActiveTab('membership');
+          return;
+        }
+
+        if (gateway === 'khalti') {
+          const payRes = await fetch('/api/payment/khalti/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount,
+              creatorId,
+              supporterId: user.id,
+              supporterMessage: '',
+              tier_level: tierLevel ?? 1,
+            }),
+          });
+          const payData = await payRes.json();
+          cleanUrlForPayment();
+          if (payRes.ok && payData.payment_url) {
+            window.location.href = payData.payment_url;
+            return;
+          }
+          setActiveTab('membership');
+          return;
+        }
+
+        if (gateway === 'dodo') {
+          const payRes = await fetch('/api/payment/dodo/subscription/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount,
+              creatorId,
+              supporterId: user.id,
+              supporterMessage: '',
+              tier_level: tierLevel ?? 1,
+            }),
+          });
+          const payData = await payRes.json();
+          cleanUrlForPayment();
+          const redirectUrl = payData.payment_url || payData.checkout_url;
+          if (payRes.ok && redirectUrl) {
+            window.location.href = redirectUrl;
+            return;
+          }
+          setActiveTab('membership');
+          return;
+        }
+
+        setActiveTab('membership');
+      } catch {
+        renewHandledRef.current = false;
+        setActiveTab('membership');
+      }
+    })();
+  }, [renewFromUrl, subscriptionIdFromUrl, user, creatorId, refreshCreatorDetails]);
 
   const { subscribe, unsubscribe } = useSubscription();
 
@@ -1366,6 +1531,21 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         totalAmount={paymentSuccess.totalAmount}
       />
     )}
+
+      {/* Renew link but subscription already active */}
+      <Dialog open={showRenewAlreadyActiveDialog} onOpenChange={setShowRenewAlreadyActiveDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Subscription active</DialogTitle>
+            <DialogDescription>
+              Your subscription is still active. No need to renew right now.
+            </DialogDescription>
+          </DialogHeader>
+          <Button onClick={() => setShowRenewAlreadyActiveDialog(false)} className="w-full">
+            OK
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
     
   );

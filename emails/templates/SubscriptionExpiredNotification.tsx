@@ -73,16 +73,6 @@ export default function SubscriptionExpiredNotification({
               </Button>
             </Section>
 
-            <Text style={paragraph}>
-              Or visit {creatorName}'s profile to explore different tiers:
-            </Text>
-
-            <Section style={linkContainer}>
-              <Link href={creatorProfileUrl} style={link}>
-                {creatorProfileUrl}
-              </Link>
-            </Section>
-
             <Text style={thankYouText}>
               Thank you for being part of the MeroCircle community and for supporting 
               {' '}{creatorName}. We hope to see you again soon!
@@ -199,17 +189,6 @@ const button = {
   textAlign: 'center' as const,
   display: 'inline-block',
   padding: '12px 32px',
-};
-
-const linkContainer = {
-  textAlign: 'center' as const,
-  marginBottom: '24px',
-};
-
-const link = {
-  color: '#8b5cf6',
-  fontSize: '14px',
-  textDecoration: 'underline',
 };
 
 const thankYouText = {

@@ -17,6 +17,8 @@ function CreatorProfileContent() {
   const router = useRouter();
   const slug = params.slug as string;
   const postId = searchParams.get('post');
+  const renewFromUrl = searchParams.get('renew') === 'true';
+  const subscriptionIdFromUrl = searchParams.get('subscription_id');
   const [creatorId, setCreatorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [invalid, setInvalid] = useState(false);
@@ -145,7 +147,13 @@ function CreatorProfileContent() {
         transition={{ duration: 0.5 }}
         className="min-h-screen"
       >
-        <CreatorProfileSection creatorId={creatorId} initialHighlightedPostId={postId} defaultTab="posts" />
+        <CreatorProfileSection
+          creatorId={creatorId}
+          initialHighlightedPostId={postId}
+          defaultTab="posts"
+          renewFromUrl={renewFromUrl}
+          subscriptionIdFromUrl={subscriptionIdFromUrl}
+        />
       </motion.div>
     </PageLayout>
   );

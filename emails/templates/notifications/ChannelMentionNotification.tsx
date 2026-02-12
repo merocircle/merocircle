@@ -20,12 +20,14 @@ interface ChannelMentionNotificationProps {
   creatorProfileUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  /** 'you' = specific @username mention; 'everyone' = @everyone mention */
+  mentionType?: 'you' | 'everyone';
 }
 
 /**
- * Email sent when someone mentions @everyone in a channel
- * Triggers: User sends message with @everyone in a Stream Chat channel
- * Recipients: All channel members
+ * Email sent when someone is mentioned in a channel.
+ * - mentionType 'you': specific user @mentioned → "X mentioned you in Channel"
+ * - mentionType 'everyone': @everyone used → "X mentioned everyone in Channel"
  */
 export default function ChannelMentionNotification({
   memberName = 'Alex',
@@ -37,12 +39,16 @@ export default function ChannelMentionNotification({
   creatorProfileUrl = 'https://merocircle.app/sarahchen',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  mentionType = 'everyone',
 }: ChannelMentionNotificationProps) {
   const preview = messageText.length > 160 ? messageText.substring(0, 160) + '…' : messageText;
+  const isMentionYou = mentionType === 'you';
+  const mentionLabel = isMentionYou ? `${senderName} mentioned you` : `${senderName} mentioned everyone`;
+  const previewText = isMentionYou ? `${senderName} mentioned you in ${channelName}` : `${senderName} mentioned everyone in ${channelName}`;
 
   return (
     <EmailLayout
-      preview={`${senderName} mentioned everyone in ${channelName}`}
+      preview={previewText}
       creatorName={creatorName}
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
@@ -51,7 +57,7 @@ export default function ChannelMentionNotification({
       <Section style={contentSection}>
         <Text style={greeting}>Hi {memberName},</Text>
         
-        <Text style={label}>{senderName} mentioned everyone</Text>
+        <Text style={label}>{mentionLabel}</Text>
         
         <Heading style={title}>New message in {channelName}</Heading>
 
