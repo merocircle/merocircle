@@ -35,7 +35,7 @@ const tabs = [
 ];
 
 const CreatorStudioSection = memo(function CreatorStudioSection() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, creatorProfile } = useAuth();
   const { highlightedPostId, setHighlightedPostId } = useDashboardViewSafe();
   const [activeTab, setActiveTab] = useState('overview');
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
@@ -155,7 +155,9 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
   const handleShareProfile = useCallback(async () => {
     if (!user?.id || typeof window === 'undefined') return;
-    const path = userProfile?.username ? `/creator/${userProfile.username}` : `/creator/${user.id}`;
+    // Prefer vanity URL: creator_profiles.vanity_username, else users.username (email prefix), else id
+    const slug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user.id;
+    const path = `/creator/${slug}`;
     const url = `${window.location.origin}${path}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -171,7 +173,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     }
-  }, [user?.id, userProfile?.display_name, userProfile?.username]);
+  }, [user?.id, userProfile?.display_name, userProfile?.username, creatorProfile?.vanity_username]);
 
   useEffect(() => {
     if (dashboardData) {
@@ -515,6 +517,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 currentUserId={user?.id}
                 onboardingCompleted={onboardingCompleted}
                 highlightedPostRef={highlightedPostRef}
+                creatorSlug={creatorProfile?.vanity_username?.trim() || userProfile?.username || undefined}
               />
             </div>
           </motion.div>

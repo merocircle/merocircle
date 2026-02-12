@@ -5,8 +5,9 @@ import { handleApiError } from '@/lib/api-utils';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Resolve vanity username (email prefix) to creator id.
- * Username = part before @ in email, sanitized (lowercase, alphanumeric + underscore).
+ * Resolve vanity slug to creator id.
+ * 1) Try creator_profiles.vanity_username (creator-chosen).
+ * 2) Fallback: users.username (email prefix) for creators without vanity_username.
  */
 export async function GET(
   _request: Request,
@@ -26,6 +27,33 @@ export async function GET(
     }
 
     const supabase = await createClient();
+
+    // 1) Resolve by creator_profiles.vanity_username
+    const { data: byVanity, error: vanityError } = await supabase
+      .from('creator_profiles')
+      .select('user_id, vanity_username')
+      .not('vanity_username', 'is', null);
+
+    if (!vanityError && byVanity?.length) {
+      const match = byVanity.find(
+        (row: { vanity_username?: string | null; user_id: string }) =>
+          row.vanity_username != null && row.vanity_username.trim().toLowerCase() === decoded
+      );
+      if (match) {
+        const { data: u } = await supabase
+          .from('users')
+          .select('display_name')
+          .eq('id', match.user_id)
+          .single();
+        return NextResponse.json({
+          creatorId: match.user_id,
+          displayName: u?.display_name ?? '',
+          username: decoded,
+        });
+      }
+    }
+
+    // 2) Fallback: users.username (email prefix)
     const { data: user, error } = await supabase
       .from('users')
       .select('id, display_name')

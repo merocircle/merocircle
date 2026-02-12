@@ -678,8 +678,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   const handleShare = useCallback(async () => {
     if (!creatorId || typeof window === 'undefined') return;
-    // Prefer vanity URL for sharing: /creator/username (email prefix)
-    const path = creatorDetails?.username ? `/creator/${creatorDetails.username}` : `/creator/${creatorId}`;
+    // Copy vanity URL: /creator/username (creator_profiles.vanity_username or users.username fallback)
+    const slug = creatorDetails?.username || creatorId;
+    const path = `/creator/${slug}`;
     const url = `${window.location.origin}${path}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -785,6 +786,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     currentUserId={user?.id}
                     showActions={true}
                     isSupporter={isSupporter}
+                    creatorSlug={creatorDetails?.username ?? undefined}
                   />
                 </motion.div>
               ))}
@@ -822,6 +824,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     currentUserId={user?.id}
                     showActions={true}
                     isSupporter={isSupporter}
+                    creatorSlug={creatorDetails?.username ?? undefined}
                   />
                 </motion.div>
               );
@@ -1349,6 +1352,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               showActions={true}
                               isSupporter={isSupporter}
                               onNavigateToMembership={() => setActiveTab('membership')}
+                              creatorSlug={creatorDetails?.username ?? undefined}
                             />
                           </motion.div>
                         );

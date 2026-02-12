@@ -17,6 +17,8 @@ interface RecentPostsListProps {
   currentUserId?: string;
   onboardingCompleted: boolean;
   highlightedPostRef?: React.RefObject<HTMLDivElement | null>;
+  /** Vanity slug for share URL when sharing a post */
+  creatorSlug?: string;
 }
 
 export function RecentPostsList({
@@ -25,6 +27,7 @@ export function RecentPostsList({
   currentUserId,
   onboardingCompleted,
   highlightedPostRef,
+  creatorSlug,
 }: RecentPostsListProps) {
   if (posts.length === 0) {
     return (
@@ -73,7 +76,7 @@ export function RecentPostsList({
                 isHighlighted && 'ring-2 ring-red-500 ring-offset-4 ring-offset-background bg-red-50/10'
               )}
             >
-              <EnhancedPostCard post={post} currentUserId={currentUserId} showActions={onboardingCompleted} />
+              <EnhancedPostCard post={post} currentUserId={currentUserId} showActions={onboardingCompleted} creatorSlug={creatorSlug} />
             </motion.div>
           );
         })}

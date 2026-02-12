@@ -40,7 +40,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   updateUserRole: (role: 'user' | 'creator') => Promise<{ error: any }>;
-  createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>) => Promise<{ error: any }>;
+  createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>, vanityUsername?: string) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -226,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  const createCreatorProfile = async (bio: string, category: string, socialLinks?: Record<string, string>) => {
+  const createCreatorProfile = async (bio: string, category: string, socialLinks?: Record<string, string>, vanityUsername?: string) => {
     if (!user) return { error: new Error('Not authenticated') };
 
     console.log('[createCreatorProfile] Starting for user:', user.id);
@@ -299,14 +299,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Step 4: Create creator profile - trigger will auto-create channels
       console.log('[createCreatorProfile] Creating creator profile');
+      const payload: { user_id: string; bio: string; category: string; social_links: Record<string, string>; vanity_username?: string | null } = {
+        user_id: user.id,
+        bio,
+        category,
+        social_links: socialLinks || {},
+      };
+      const trimmed = vanityUsername?.trim().toLowerCase();
+      if (trimmed) payload.vanity_username = trimmed;
       const { error: profileError } = await supabase
         .from('creator_profiles')
-        .insert({
-          user_id: user.id,
-          bio,
-          category,
-          social_links: socialLinks || {},
-        });
+        .insert(payload);
 
       if (profileError) {
         console.error('[createCreatorProfile] Failed to create creator profile:', profileError);

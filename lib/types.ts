@@ -11,6 +11,7 @@ export interface User {
 export interface CreatorProfile {
   id: string;
   user_id: string;
+  vanity_username: string | null;
   bio: string | null;
   category: string | null;
   is_verified: boolean;

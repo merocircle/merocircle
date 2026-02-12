@@ -50,10 +50,13 @@ export default function CreatorSignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'signup' | 'creator-details' | 'tier-pricing' | 'complete'>('signup');
   const [creatorData, setCreatorData] = useState({
+    username: '',
     bio: '',
     category: '',
     socialLinks: {} as Record<string, string>
   });
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameChecking, setUsernameChecking] = useState(false);
   const [tierPrices, setTierPrices] = useState({
     tier1: '500',
     tier2: '2000',
@@ -75,6 +78,37 @@ export default function CreatorSignupPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { user, userProfile, createCreatorProfile } = useAuth();
+
+  /** Vanity username: 3–30 chars, lowercase letters, numbers, underscores only */
+  const USERNAME_REGEX = /^[a-z0-9_]{3,30}$/;
+  const validateUsernameFormat = (value: string): boolean =>
+    value.trim().length >= 3 && value.trim().length <= 30 && USERNAME_REGEX.test(value.trim().toLowerCase());
+
+  const checkUsernameAvailability = async (value: string): Promise<boolean> => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed || !USERNAME_REGEX.test(trimmed)) return false;
+    setUsernameChecking(true);
+    setUsernameError(null);
+    try {
+      const res = await fetch(`/api/creator/check-username?username=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setUsernameError(data.error || 'Invalid username');
+        return false;
+      }
+      if (!data.available) {
+        setUsernameError('Choose a new username. This one is already taken.');
+        return false;
+      }
+      setUsernameError(null);
+      return true;
+    } catch {
+      setUsernameError('Could not check availability');
+      return false;
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
 
   // Validate URL format
   const validateUrl = (url: string): boolean => {
@@ -246,6 +280,22 @@ export default function CreatorSignupPage() {
   const handleCreatorSetup = async () => {
     if (!user || !creatorData.category) return;
 
+    const trimmedUsername = creatorData.username.trim().toLowerCase();
+    if (!trimmedUsername) {
+      setError('Please choose a username for your creator page');
+      return;
+    }
+    if (!validateUsernameFormat(creatorData.username)) {
+      setUsernameError('3–30 characters, only letters, numbers, and underscores');
+      setError('Please enter a valid username');
+      return;
+    }
+    const available = await checkUsernameAvailability(creatorData.username);
+    if (!available) {
+      setError('Choose a new username. This one is already taken.');
+      return;
+    }
+
     // Validate all social links before proceeding
     const hasInvalidLinks = Object.entries(creatorData.socialLinks).some(([platformId, url]) => {
       if (url.trim() === '') return false; // Empty is fine
@@ -275,8 +325,9 @@ export default function CreatorSignupPage() {
         Object.entries(creatorData.socialLinks).filter(([_, url]) => url.trim() !== '')
       );
 
-      // Create creator profile
-      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks);
+      // Create creator profile (vanity username for /creator/[slug])
+      const vanityUsername = creatorData.username.trim().toLowerCase() || undefined;
+      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks, vanityUsername);
 
       if (error) {
         console.error('Creator profile creation failed:', error);
@@ -521,42 +572,49 @@ export default function CreatorSignupPage() {
               </div>
 
               <Card className="p-8">
-                {/* User Profile Preview */}
-                {user && (
-                  <div className="flex items-center space-x-4 p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl mb-8 border border-purple-100 dark:border-purple-800">
-                    <div className="relative">
-                      {user.photo_url ? (
-                        <img
-                          src={user.photo_url}
-                          alt="Profile"
-                          className="w-16 h-16 rounded-full object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center ring-4 ring-white dark:ring-gray-800 shadow-lg">
-                          <User className="w-8 h-8 text-white" />
-                        </div>
-                      )}
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-                        <Crown className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                        {user.display_name || user.email?.split('@')[0] || 'Creator'}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        {user.email}
-                      </p>
-                      <Badge className="mt-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-                        <Crown className="w-3 h-3 mr-1" />
-                        Creator Account
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
+                {/* First line: Creator page URL (username), then Category, Bio, Social */}
                 <div className="space-y-6">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">1. Creator page URL (username)</p>
+                    <Label htmlFor="username" className="text-sm font-medium">
+                      Username *
+                    </Label>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 mb-2">
+                      Your creator page URL: /creator/{creatorData.username || 'your_username'}. Must be unique.
+                    </p>
+                    <input
+                      id="username"
+                      autoComplete="off"
+                      type="text"
+                      value={creatorData.username}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().slice(0, 30);
+                        setCreatorData({ ...creatorData, username: v });
+                        setUsernameError(null);
+                      }}
+                      onBlur={async () => {
+                        if (!creatorData.username.trim()) return;
+                        if (!validateUsernameFormat(creatorData.username)) {
+                          setUsernameError('3–30 characters, only letters, numbers, and underscores');
+                          return;
+                        }
+                        await checkUsernameAvailability(creatorData.username);
+                      }}
+                      placeholder="your_username"
+                      className={`mt-1 w-full rounded-lg border ${
+                        usernameError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none`}
+                      maxLength={30}
+                      required
+                    />
+                    {usernameChecking && (
+                      <p className="text-xs text-gray-500 mt-1">Checking availability...</p>
+                    )}
+                    {usernameError && (
+                      <p className="text-xs text-red-500 mt-1">{usernameError}</p>
+                    )}
+                  </div>
+
                   <div>
                     <Label htmlFor="category" className="text-sm font-medium">
                       Category *

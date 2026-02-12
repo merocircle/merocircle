@@ -44,6 +44,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          vanity_username: string | null;
           bio: string | null;
           category: string | null;
           is_verified: boolean;
@@ -58,6 +59,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          vanity_username?: string | null;
           bio?: string | null;
           category?: string | null;
           is_verified?: boolean;
@@ -72,6 +74,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          vanity_username?: string | null;
           bio?: string | null;
           category?: string | null;
           is_verified?: boolean;

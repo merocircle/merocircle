@@ -72,6 +72,8 @@ interface EnhancedPostCardProps {
   showActions?: boolean;
   isSupporter?: boolean; // Whether the current user is a supporter of this creator
   onNavigateToMembership?: () => void; // Callback to navigate to membership tab
+  /** Vanity slug for share URL: /creator/slug?post=... */
+  creatorSlug?: string;
 }
 
 interface Comment {
@@ -173,7 +175,8 @@ export function EnhancedPostCard({
   onShare,
   showActions = true,
   isSupporter = false,
-  onNavigateToMembership
+  onNavigateToMembership,
+  creatorSlug,
 }: EnhancedPostCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -857,6 +860,7 @@ export function EnhancedPostCard({
         postId={post.id}
         postTitle={post.title}
         postContent={post.content}
+        creatorSlug={creatorSlug}
         creatorId={post.creator.id}
       />
 
@@ -867,6 +871,7 @@ export function EnhancedPostCard({
         post={post}
         currentUserId={currentUserId}
         isSupporter={isSupporter}
+        creatorSlug={creatorSlug}
       />
     </motion.div>
   );

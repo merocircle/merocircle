@@ -16,6 +16,7 @@ export async function GET(
       .from('creator_profiles')
       .select(`
         user_id,
+        vanity_username,
         bio,
         category,
         is_verified,
@@ -36,6 +37,10 @@ export async function GET(
     if (profileError || !creatorProfile) {
       return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
     }
+
+    const creatorUser = Array.isArray(creatorProfile.users)
+      ? creatorProfile.users[0]
+      : (creatorProfile.users as { id: string; display_name: string; email: string; photo_url: string | null; role: string; username: string | null } | undefined);
 
     // Check if current user is a supporter and their tier level
     const { data: paymentMethods } = await supabase
@@ -152,8 +157,8 @@ export async function GET(
         creator_id: post.creator_id,
         creator: {
           id: post.users?.id || creatorId,
-          display_name: post.users?.display_name || creatorProfile.users.display_name,
-          photo_url: post.users?.photo_url || creatorProfile.users.photo_url,
+          display_name: post.users?.display_name || creatorUser?.display_name,
+          photo_url: post.users?.photo_url ?? creatorUser?.photo_url,
           role: post.users?.role || 'creator'
         },
         creator_profile: {
@@ -173,10 +178,10 @@ export async function GET(
       success: true,
       creatorDetails: {
         user_id: creatorProfile.user_id,
-        display_name: creatorProfile.users.display_name,
-        email: creatorProfile.users.email,
-        avatar_url: creatorProfile.users.photo_url,
-        username: creatorProfile.users.username ?? null,
+        display_name: creatorUser?.display_name ?? '',
+        email: creatorUser?.email ?? '',
+        avatar_url: creatorUser?.photo_url ?? null,
+        username: (creatorProfile.vanity_username?.trim() || creatorUser?.username) ?? null,
         bio: creatorProfile.bio,
         category: creatorProfile.category,
         is_verified: creatorProfile.is_verified,

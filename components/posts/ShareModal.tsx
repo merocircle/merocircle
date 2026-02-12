@@ -22,7 +22,8 @@ interface ShareModalProps {
   postId: string;
   postTitle: string;
   postContent: string;
-  creatorUsername?: string;
+  /** Vanity slug for /creator/[slug]; when set, share URL uses /creator/slug?post=... */
+  creatorSlug?: string;
   creatorId: string;
 }
 
@@ -32,14 +33,14 @@ export function ShareModal({
   postId,
   postTitle,
   postContent,
-  creatorUsername,
+  creatorSlug,
   creatorId,
 }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
 
-  // Generate share URL - prefer username, fallback to creator ID
-  const shareUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/${creatorUsername || `creator/${creatorId}`}?post=${postId}`
+  // Copy vanity URL when possible: /creator/slug?post=id
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/creator/${creatorSlug || creatorId}?post=${postId}`
     : '';
 
   const shareText = `${postTitle}\n\n${postContent.substring(0, 100)}${postContent.length > 100 ? '...' : ''}`;

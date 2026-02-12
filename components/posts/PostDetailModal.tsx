@@ -66,6 +66,8 @@ interface PostDetailModalProps {
   post: Post | null;
   currentUserId?: string;
   isSupporter?: boolean;
+  /** Vanity slug for share URL: /creator/slug?post=... */
+  creatorSlug?: string;
 }
 
 interface Comment {
@@ -86,6 +88,7 @@ export function PostDetailModal({
   post,
   currentUserId,
   isSupporter = false,
+  creatorSlug,
 }: PostDetailModalProps) {
   const router = useRouter();
   const likeMutation = useLikePost();
@@ -559,6 +562,7 @@ export function PostDetailModal({
         postId={post.id}
         postTitle={post.title}
         postContent={post.content}
+        creatorSlug={creatorSlug}
         creatorId={post.creator.id}
       />
     </>
