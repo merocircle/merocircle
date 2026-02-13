@@ -21,6 +21,8 @@ interface EmailLayoutProps {
   hideCreatorInfo?: boolean;
   /** App base URL for logo and links (e.g. https://merocircle.app). If provided, logo is shown. */
   appUrl?: string;
+  /** Logo image src (URL or data URL). When set, used instead of appUrl/logo/logo-light.png so image displays in email. */
+  logoSrc?: string;
 }
 
 /**
@@ -35,8 +37,10 @@ export default function EmailLayout({
   helpUrl,
   hideCreatorInfo = false,
   appUrl,
+  logoSrc,
 }: EmailLayoutProps) {
   const baseUrl = appUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
+  const logoUrl = logoSrc || `${baseUrl}/logo/logo-light.png`;
 
   return (
     <Html>
@@ -47,11 +51,11 @@ export default function EmailLayout({
           {/* Warm brand accent bar */}
           <Section style={brandBar} />
 
-          {/* Logo — light theme for email clients */}
+          {/* Logo — light theme for email clients (use logoSrc when embedded for reliable display) */}
           <Section style={logoSection}>
             <Link href={baseUrl} style={logoLink}>
               <Img
-                src={`${baseUrl}/logo/logo-light.png`}
+                src={logoUrl}
                 alt="MeroCircle"
                 width={140}
                 height={48}

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import path from 'path';
 import crypto from 'crypto';
 import { logger } from './logger';
 import { render } from '@react-email/render';
@@ -367,7 +368,13 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     const settingsUrl = EMAIL_CONFIG.urls.settings;
     const helpUrl = EMAIL_CONFIG.urls.help;
 
-    // Render welcome email template
+    // Embed images via Content-ID (CID) so they display in email clients that block external URLs
+    const cidLogo = 'logo@merocircle.app';
+    const cidTeam = 'team@merocircle.app';
+    const publicDir = path.join(process.cwd(), 'public');
+    const logoPath = path.join(publicDir, 'logo', 'logo-light.png');
+    const teamPath = path.join(publicDir, 'team.jpg');
+
     const html = await render(
       WelcomeEmail({
         userName: data.userName,
@@ -376,6 +383,9 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
         exploreUrl,
         settingsUrl,
         helpUrl,
+        appUrl,
+        logoSrc: `cid:${cidLogo}`,
+        teamImageSrc: `cid:${cidTeam}`,
       })
     );
 
@@ -387,6 +397,10 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
       subject: EMAIL_SUBJECTS.welcome(data.userName),
       html,
       messageId,
+      attachments: [
+        { filename: 'logo-light.png', path: logoPath, cid: cidLogo },
+        { filename: 'team.jpg', path: teamPath, cid: cidTeam },
+      ],
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',

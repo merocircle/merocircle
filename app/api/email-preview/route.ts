@@ -105,6 +105,7 @@ export async function GET(request: NextRequest) {
             exploreUrl: `${appUrl}/explore`,
             settingsUrl: `${appUrl}/settings`,
             helpUrl: `${appUrl}/help`,
+            appUrl,
           })
         );
         break;
@@ -118,6 +119,7 @@ export async function GET(request: NextRequest) {
             exploreUrl: `${appUrl}/explore`,
             settingsUrl: `${appUrl}/settings`,
             helpUrl: `${appUrl}/help`,
+            appUrl,
           })
         );
         break;

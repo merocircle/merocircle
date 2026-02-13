@@ -1,13 +1,14 @@
 import {
   Heading,
   Hr,
+  Img,
   Link,
   Section,
   Text,
 } from '@react-email/components';
 import * as React from 'react';
 import EmailLayout from '../../components/shared/EmailLayout';
-import { primaryButton, secondaryButton, body, divider } from '../../components/shared/styles';
+import { primaryButton, divider } from '../../components/shared/styles';
 
 interface WelcomeEmailProps {
   userName: string;
@@ -16,6 +17,11 @@ interface WelcomeEmailProps {
   exploreUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  /** Logo src (URL or base64 data URL) so it displays in email */
+  logoSrc?: string;
+  /** Team image src (URL or base64 data URL) so it displays in email */
+  teamImageSrc?: string;
 }
 
 export default function WelcomeEmail({
@@ -25,8 +31,12 @@ export default function WelcomeEmail({
   exploreUrl = 'https://merocircle.app/explore',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl = 'https://merocircle.app',
+  logoSrc,
+  teamImageSrc,
 }: WelcomeEmailProps) {
   const isCreator = userRole === 'creator';
+  const teamImageUrl = teamImageSrc || `${appUrl}/team.jpg`;
 
   return (
     <EmailLayout
@@ -34,6 +44,8 @@ export default function WelcomeEmail({
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
       hideCreatorInfo
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Heading style={title}>
@@ -41,7 +53,7 @@ export default function WelcomeEmail({
         </Heading>
 
         <Text style={subtitle}>
-          {isCreator 
+          {isCreator
             ? "Your circle starts here. A space where your people gather, your work lives, and real connections grow."
             : "You just joined something personal. MeroCircle is where you get closer to the creators you love — no noise, no algorithms."}
         </Text>
@@ -82,7 +94,7 @@ export default function WelcomeEmail({
           </>
         ) : (
           <>
-            <Text style={body}>
+            <Text style={bodyBlock}>
               Explore creators, join their circles, and unlock posts, chats, and content made just for their closest supporters.
             </Text>
             <Section style={ctaWrapper}>
@@ -92,6 +104,21 @@ export default function WelcomeEmail({
             </Section>
           </>
         )}
+      </Section>
+
+      <Hr style={divider} />
+
+      <Section style={teamSection}>
+        <Img
+          src={teamImageUrl}
+          alt="The MeroCircle team"
+          width={480}
+          height={320}
+          style={teamImage}
+        />
+        <Text style={teamGreeting}>
+          Greetings from the team. We&apos;re here to help.
+        </Text>
       </Section>
 
       <Hr style={divider} />
@@ -106,11 +133,11 @@ export default function WelcomeEmail({
 }
 
 const contentSection = {
-  padding: '32px 32px 0',
+  padding: '32px 32px 24px',
 };
 
 const title = {
-  margin: '0 0 10px',
+  margin: '0 0 16px',
   fontSize: '26px',
   lineHeight: '34px',
   fontWeight: '700',
@@ -120,10 +147,18 @@ const title = {
 };
 
 const subtitle = {
-  margin: '0 0 24px',
+  margin: '0 0 20px',
   fontSize: '15px',
   lineHeight: '24px',
   color: '#78716c',
+  textAlign: 'center' as const,
+};
+
+const bodyBlock = {
+  margin: '0 0 24px',
+  fontSize: '15px',
+  lineHeight: '24px',
+  color: '#44403c',
   textAlign: 'center' as const,
 };
 
@@ -162,6 +197,28 @@ const featureDescription = {
 
 const ctaWrapper = {
   margin: '24px 0 32px',
+  textAlign: 'center' as const,
+};
+
+const teamSection = {
+  padding: '24px 32px',
+  textAlign: 'center' as const,
+};
+
+const teamImage = {
+  display: 'block',
+  width: '100%',
+  maxWidth: '480px',
+  height: 'auto',
+  margin: '0 auto 16px',
+  borderRadius: '12px',
+};
+
+const teamGreeting = {
+  margin: '0',
+  fontSize: '14px',
+  lineHeight: '22px',
+  color: '#78716c',
   textAlign: 'center' as const,
 };
 
