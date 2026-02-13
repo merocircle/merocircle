@@ -1,10 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronRight, Users } from "lucide-react";
 
@@ -42,29 +39,67 @@ export function CreatorCard({
   const creatorId = creator.user_id || creator.id || "";
   const isCompact = variant === "compact";
 
+  if (isCompact) {
+    return (
+      <Link href={`/creator/${creatorId}`}>
+        <div
+          className={cn(
+            "group flex items-center gap-3 p-2.5 rounded-xl transition-all",
+            "hover:bg-muted/50",
+            className,
+          )}
+        >
+          <div className="relative flex-shrink-0">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={creator.avatar_url || undefined} alt={creator.display_name} />
+              <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                {(creator.display_name || "CR").slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {creator.creator_profile?.is_verified && (
+              <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full flex items-center justify-center text-white border-2 border-card">
+                <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-foreground truncate">{creator.display_name || "Creator"}</p>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span>{formatCount(creator.supporter_count)} supporters</span>
+              {creator.creator_profile?.category && (
+                <>
+                  <span className="text-border">·</span>
+                  <span>{creator.creator_profile.category}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 group-hover:text-primary transition-colors" />
+        </div>
+      </Link>
+    );
+  }
+
+  // Full card variant
   return (
     <Link href={`/creator/${creatorId}`}>
-      <motion.div
-        whileHover={{ y: -1 }}
-        whileTap={{ scale: 0.99 }}
+      <div
         className={cn(
-          "group overflow-hidden rounded-xl border border-border/50 bg-card transition-all duration-200",
-          "hover:border-primary/20 hover:shadow-md hover:shadow-primary/5",
-          isCompact ? "p-3" : "p-4",
+          "group overflow-hidden rounded-xl border border-border/40 bg-card transition-all",
+          "hover:border-primary/20 hover:shadow-sm",
+          "p-3.5",
           className,
         )}
       >
-        <div className={cn("flex gap-3", isCompact ? "items-center" : "flex-col items-center text-center")}>
-          {/* Avatar with rank badge */}
-          <div className="relative flex-shrink-0">
-            <Avatar
-              className={cn(
-                "transition-all",
-                isCompact ? "h-11 w-11" : "h-16 w-16 ring-2 ring-border/30",
-              )}
-            >
+        <div className="flex flex-col items-center text-center gap-2">
+          <div className="relative">
+            <Avatar className="h-14 w-14 ring-2 ring-background">
               <AvatarImage src={creator.avatar_url || undefined} alt={creator.display_name} />
-              <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {(creator.display_name || "CR").slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -81,42 +116,32 @@ export function CreatorCard({
               </span>
             )}
             {creator.creator_profile?.is_verified && (
-              <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-[8px] shadow-sm border-2 border-card">
-                ✓
+              <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full flex items-center justify-center text-white border-2 border-card">
+                <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </span>
             )}
           </div>
 
-          {/* Info */}
-          <div className={cn("flex-1 min-w-0", isCompact && "text-left")}>
-            <p className="font-semibold text-foreground truncate text-sm">
-              {creator.display_name || "Creator"}
+          <div className="min-w-0 w-full">
+            <p className="text-[13px] font-semibold text-foreground truncate">{creator.display_name || "Creator"}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1 justify-center">
+              <Users className="w-3 h-3" />
+              {formatCount(creator.supporter_count)}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 justify-center">
-              {isCompact ? null : <Users className="w-3 h-3" />}
-              {formatCount(creator.supporter_count)} supporters
-            </p>
-            {!isCompact && creator.creator_profile?.category && (
-              <Badge variant="outline" className="mt-2 text-[10px] px-2 py-0 border-border/40 text-muted-foreground">
+            {creator.creator_profile?.category && (
+              <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                 {creator.creator_profile.category}
-              </Badge>
-            )}
-            {isCompact && creator.bio && (
-              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{creator.bio}</p>
+              </span>
             )}
           </div>
 
-          {isCompact && (
-            <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 group-hover:text-primary transition-colors" />
-          )}
-
-          {!isCompact && (
-            <Button size="sm" variant="outline" className="w-full rounded-full mt-2 text-xs group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
-              View Profile
-            </Button>
-          )}
+          <button className="w-full mt-1 py-1.5 text-xs font-medium rounded-full border border-border/50 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
+            View
+          </button>
         </div>
-      </motion.div>
+      </div>
     </Link>
   );
 }

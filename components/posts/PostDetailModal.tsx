@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { X, Heart, MessageCircle, Share2, Bookmark, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, Bookmark, ChevronLeft, ChevronRight, Loader2, Lock, ArrowLeft, Clock, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +21,8 @@ import dynamic from 'next/dynamic';
 
 const PollCard = dynamic(() => import('./PollCard').then(mod => ({ default: mod.PollCard })), {
   loading: () => (
-    <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48 flex items-center justify-center">
-      <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+    <div className="animate-pulse bg-muted rounded-lg h-48 flex items-center justify-center">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
     </div>
   ),
   ssr: false,
@@ -49,15 +49,11 @@ interface Post {
     category?: string;
     is_verified?: boolean;
   };
-  likes?: Array<{
-    id: string;
-    user_id: string;
-  }>;
+  likes?: Array<{ id: string; user_id: string }>;
   likes_count?: number;
   comments_count?: number;
-  poll?: {
-    id: string;
-  };
+  is_liked?: boolean;
+  poll?: { id: string } | Array<{ id: string }>;
 }
 
 interface PostDetailModalProps {
@@ -66,7 +62,6 @@ interface PostDetailModalProps {
   post: Post | null;
   currentUserId?: string;
   isSupporter?: boolean;
-  /** Vanity slug for share URL: /creator/slug?post=... */
   creatorSlug?: string;
 }
 
@@ -75,11 +70,7 @@ interface Comment {
   content: string;
   created_at: string;
   parent_comment_id: string | null;
-  user: {
-    id: string;
-    display_name: string;
-    photo_url?: string;
-  };
+  user: { id: string; display_name: string; photo_url?: string };
 }
 
 export function PostDetailModal({
@@ -98,61 +89,50 @@ export function PostDetailModal({
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
-  const [showComments, setShowComments] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [showHeartParticles, setShowHeartParticles] = useState(false);
 
-  // Get all images
   const allImages = useMemo(() => {
     if (!post) return [];
-    if (post.image_urls && post.image_urls.length > 0) {
-      return post.image_urls;
-    }
-    if (post.image_url) {
-      return [post.image_url];
-    }
+    if (post.image_urls?.length) return post.image_urls;
+    if (post.image_url) return [post.image_url];
     return [];
   }, [post]);
 
-  // Detect YouTube video
   const youtubeVideoId = useMemo(() => {
     if (!post) return null;
     return extractVideoIdFromContent(post.content);
   }, [post]);
 
-  // Check if post should be blurred
+  const hasMedia = allImages.length > 0 || youtubeVideoId;
+
   const shouldBlur = useMemo(() => {
     if (!post) return false;
-    const isPublicAndFree = (post.is_public === true || post.is_public === undefined) && 
-                            (post.tier_required === 'free' || !post.tier_required);
+    const isPublicAndFree = (post.is_public === true || post.is_public === undefined) &&
+      (post.tier_required === 'free' || !post.tier_required);
     if (isPublicAndFree) return false;
-    
     const isSupporterOnly = post.is_public === false || (post.tier_required && post.tier_required !== 'free');
     if (!isSupporterOnly) return false;
-    if (isSupporter) return false;
-    if (currentUserId === post.creator.id) return false;
+    if (isSupporter || currentUserId === post.creator.id) return false;
     return true;
   }, [post, isSupporter, currentUserId]);
 
-  // Initialize state from post
   useEffect(() => {
     if (post) {
-      const initialIsLiked = currentUserId
-        ? (post.likes?.some((like: { user_id: string }) => like.user_id === currentUserId) || false)
-        : false;
+      const initialIsLiked = post.is_liked
+        ?? (currentUserId ? (post.likes?.some(like => like.user_id === currentUserId) || false) : false);
       setIsLiked(initialIsLiked);
       setLikesCount(post.likes_count || post.likes?.length || 0);
       setCommentsCount(post.comments_count || 0);
+      setCurrentImageIndex(0);
     }
   }, [post, currentUserId]);
 
-  // Fetch comments
   useEffect(() => {
-    if (open && post && showComments) {
+    if (open && post) {
       const fetchComments = async () => {
         setLoadingComments(true);
         try {
@@ -161,72 +141,27 @@ export function PostDetailModal({
             const data = await response.json();
             setComments(data.comments || []);
           }
-        } catch (error) {
-          console.error('Failed to fetch comments:', error);
-        } finally {
-          setLoadingComments(false);
-        }
+        } catch { /* ignore */ } finally { setLoadingComments(false); }
       };
       fetchComments();
     }
-  }, [open, post, showComments]);
+  }, [open, post]);
 
-  // Handle ESC key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && open) {
-        onClose();
-      }
-    };
-
-    if (open) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [open, onClose]);
-
-  const creatorProfileLink = currentUserId === post?.creator.id 
-    ? '/profile' 
+  const creatorProfileLink = currentUserId === post?.creator.id
+    ? '/profile'
     : `/creator/${post?.creator.id}`;
 
   const handleLike = useCallback(() => {
-    if (!currentUserId || !post) {
-      router.push('/auth');
-      return;
-    }
-
+    if (!currentUserId || !post) { router.push('/auth'); return; }
     const action = isLiked ? 'unlike' : 'like';
-    if (!isLiked) {
-      setShowHeartParticles(true);
-      setTimeout(() => setShowHeartParticles(false), 500);
-    }
-
     setIsLiked(!isLiked);
     setLikesCount(prev => isLiked ? Math.max(0, prev - 1) : prev + 1);
     likeMutation.mutate({ postId: post.id, action });
   }, [currentUserId, isLiked, router, post, likeMutation]);
 
-  const handleCommentClick = () => {
-    if (!currentUserId) {
-      router.push('/auth');
-      return;
-    }
-    setShowComments(!showComments);
-  };
-
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || commentMutation.isPending || !post) return;
-    if (!currentUserId) {
-      router.push('/auth');
-      return;
-    }
-
+    if (!newComment.trim() || commentMutation.isPending || !post || !currentUserId) return;
     commentMutation.mutate(
       { postId: post.id, content: newComment.trim() },
       {
@@ -240,19 +175,13 @@ export function PostDetailModal({
   };
 
   const handleAddComment = async (content: string, parentCommentId?: string) => {
-    if (!currentUserId || !post) {
-      router.push('/auth');
-      return;
-    }
-
+    if (!currentUserId || !post) { router.push('/auth'); return; }
     commentMutation.mutate(
       { postId: post.id, content, parentCommentId },
       {
         onSuccess: (newCommentData) => {
           setComments(prev => [...prev, { ...newCommentData, parent_comment_id: parentCommentId || null }]);
-          if (!parentCommentId) {
-            setCommentsCount(prev => prev + 1);
-          }
+          if (!parentCommentId) setCommentsCount(prev => prev + 1);
         },
       }
     );
@@ -263,299 +192,388 @@ export function PostDetailModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent 
-          className="!max-w-[98vw] !w-[98vw] h-[90vh] p-0 bg-background border-0 shadow-2xl overflow-hidden rounded-none sm:!max-w-[98vw]"
+        <DialogContent
+          className={cn(
+            "p-0 bg-background border-0 shadow-2xl overflow-hidden gap-0",
+            // Mobile: full screen sheet
+            "!max-w-full !w-full h-[100dvh] rounded-none sm:rounded-2xl",
+            // Desktop: centered modal
+            "sm:!max-w-5xl sm:!w-[95vw] sm:h-[88vh]"
+          )}
           onPointerDownOutside={onClose}
         >
           <DialogTitle className="sr-only">Post by {post.creator.display_name}</DialogTitle>
-          <div className="flex h-full">
-            {/* Left Side - Full Resolution Image */}
-            <div className="relative w-[70%] bg-black flex items-center justify-center overflow-hidden">
-              {shouldBlur ? (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <div className="text-center p-6 max-w-sm space-y-4">
-                    <div className="p-4 bg-background/90 backdrop-blur-md rounded-2xl shadow-xl border border-primary/20">
-                      <Lock className="w-8 h-8 text-primary mx-auto" />
-                    </div>
-                    <h3 className="text-lg font-bold text-foreground">Exclusive Content</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Get access to exclusive content by supporting this creator
-                    </p>
-                    <Button asChild className="w-full">
-                      <Link href={creatorProfileLink}>Support {post.creator.display_name}</Link>
-                    </Button>
-                  </div>
+
+          {/* ── Mobile Layout: Stacked ── */}
+          <div className="flex flex-col sm:hidden h-full">
+            {/* Mobile header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card/80 backdrop-blur-lg sticky top-0 z-20">
+              <button onClick={onClose} className="p-1 -ml-1 rounded-full hover:bg-muted transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <Link href={creatorProfileLink} className="flex items-center gap-2.5 flex-1 min-w-0">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={post.creator.photo_url} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                    {post.creator.display_name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{post.creator.display_name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                  </p>
                 </div>
-              ) : (
-                <>
-                  {/* Poll */}
-                  {post.post_type === 'poll' && post.poll?.id && (
-                    <div className="w-full p-6">
-                      <PollCard pollId={post.poll.id} currentUserId={currentUserId} />
+              </Link>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              {/* Title */}
+              {post.title && post.post_type !== 'poll' && (
+                <div className="px-4 pt-4 pb-2">
+                  <h1 className="text-xl font-bold leading-tight">{post.title}</h1>
+                </div>
+              )}
+
+              {/* Media */}
+              {!shouldBlur && hasMedia && (
+                <div className="relative">
+                  {youtubeVideoId && (
+                    <div className="relative w-full aspect-video bg-black">
+                      <iframe src={getYouTubeEmbedUrl(youtubeVideoId)} title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="absolute inset-0 w-full h-full" />
                     </div>
                   )}
-
-                  {/* YouTube Video */}
-                  {post.post_type !== 'poll' && youtubeVideoId && (
-                    <div className="relative w-full h-full">
-                      <iframe
-                        src={getYouTubeEmbedUrl(youtubeVideoId)}
-                        title="YouTube video player"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        className="absolute inset-0 w-full h-full"
-                      />
-                    </div>
-                  )}
-
-                  {/* Images */}
-                  {post.post_type !== 'poll' && allImages.length > 0 && (
-                    <div className="relative w-full h-full">
+                  {allImages.length > 0 && !youtubeVideoId && (
+                    <div className="relative w-full bg-black/5 dark:bg-white/5">
                       <Image
                         src={allImages[currentImageIndex]}
-                        alt={`${post.title} - Image ${currentImageIndex + 1}`}
-                        fill
-                        className="object-contain"
-                        sizes="50vw"
+                        alt={post.title || 'Post image'}
+                        width={800}
+                        height={600}
+                        className="w-full object-contain max-h-[50vh]"
+                        sizes="100vw"
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
                         priority
-                        quality={100}
                       />
-
-                      {/* Carousel Navigation */}
                       {allImages.length > 1 && (
                         <>
                           {currentImageIndex > 0 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCurrentImageIndex(prev => prev - 1);
-                              }}
-                              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-10"
-                            >
-                              <ChevronLeft className="w-6 h-6" />
+                            <button onClick={() => setCurrentImageIndex(i => i - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-card/80 shadow-lg backdrop-blur-sm z-10">
+                              <ChevronLeft className="w-5 h-5" />
                             </button>
                           )}
-
                           {currentImageIndex < allImages.length - 1 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCurrentImageIndex(prev => prev + 1);
-                              }}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-10"
-                            >
-                              <ChevronRight className="w-6 h-6" />
+                            <button onClick={() => setCurrentImageIndex(i => i + 1)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-card/80 shadow-lg backdrop-blur-sm z-10">
+                              <ChevronRight className="w-5 h-5" />
                             </button>
                           )}
-
-                          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/60 text-white text-sm font-medium z-10">
-                            {currentImageIndex + 1}/{allImages.length}
-                          </div>
-
-                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                            {allImages.map((_, index) => (
-                              <button
-                                key={index}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCurrentImageIndex(index);
-                                }}
-                                className={cn(
-                                  "w-2 h-2 rounded-full transition-all",
-                                  index === currentImageIndex
-                                    ? "bg-white w-3"
-                                    : "bg-white/50 hover:bg-white/70"
-                                )}
-                              />
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                            {allImages.map((_, idx) => (
+                              <div key={idx} className={cn("h-1.5 rounded-full transition-all", idx === currentImageIndex ? "bg-primary w-4" : "bg-foreground/30 w-1.5")} />
                             ))}
                           </div>
                         </>
                       )}
                     </div>
                   )}
+                </div>
+              )}
+
+              {shouldBlur && (
+                <div className={cn(
+                  "relative w-full flex items-center justify-center bg-muted/50",
+                  hasMedia ? "aspect-[4/3]" : "py-10"
+                )}>
+                  <div className="text-center p-6 space-y-3">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-card border border-border shadow">
+                      <Lock className="w-5 h-5 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium">Circle-only</p>
+                    <p className="text-xs text-muted-foreground mb-1">Join the inner circle to see this</p>
+                    <Button size="sm" className="rounded-full shadow-md shadow-primary/15" asChild>
+                      <Link href={creatorProfileLink}>Join Circle</Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Poll */}
+              {post.post_type === 'poll' && (() => {
+                const poll = Array.isArray(post.poll) ? post.poll[0] : post.poll;
+                return poll?.id ? (
+                  <div className="px-4 py-3">
+                    <PollCard pollId={poll.id} currentUserId={currentUserId} />
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Content */}
+              {post.content && post.post_type !== 'poll' && (
+                <div className="px-4 py-3">
+                  <p className="text-[15px] text-foreground/90 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="px-4 py-2 border-t border-b border-border/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <motion.button onClick={handleLike} disabled={!currentUserId || likeMutation.isPending} whileTap={{ scale: 0.85 }}
+                      className={cn("flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors", isLiked ? "text-rose-500" : "text-muted-foreground")}>
+                      <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
+                      <span>{likesCount > 0 ? likesCount.toLocaleString() : ''}</span>
+                    </motion.button>
+                    <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground">
+                      <MessageCircle className="w-5 h-5" />
+                      <span>{commentsCount > 0 ? commentsCount : ''}</span>
+                    </button>
+                    <motion.button onClick={() => setShowShareModal(true)} whileTap={{ scale: 0.9 }} className="p-2 rounded-lg text-muted-foreground hover:text-foreground">
+                      <Share2 className="w-5 h-5" />
+                    </motion.button>
+                  </div>
+                  <motion.button onClick={() => setIsBookmarked(!isBookmarked)} whileTap={{ scale: 0.85 }} className={cn("p-2 rounded-lg", isBookmarked ? "text-primary" : "text-muted-foreground")}>
+                    <Bookmark className={cn("w-5 h-5", isBookmarked && "fill-current")} />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div className="px-4 py-3">
+                {loadingComments ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <ThreadedComments postId={post.id} comments={comments} currentUserId={currentUserId} onAddComment={handleAddComment} isSubmitting={commentMutation.isPending} />
+                )}
+              </div>
+            </div>
+
+            {/* Fixed comment input at bottom */}
+            <div className="border-t border-border/40 px-4 py-3 bg-card/80 backdrop-blur-lg safe-area-bottom">
+              {currentUserId ? (
+                <form onSubmit={handleSubmitComment} className="flex items-center gap-2.5">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">{currentUserId.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={e => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="flex-1 bg-muted/50 border border-border/40 rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim() || commentMutation.isPending}
+                    className={cn(
+                      "p-2.5 rounded-full transition-all",
+                      newComment.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {commentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </button>
+                </form>
+              ) : (
+                <Link href="/auth" className="block text-center py-2">
+                  <span className="text-sm text-muted-foreground hover:text-primary">Sign in to comment</span>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* ── Desktop Layout: Side by side ── */}
+          <div className="hidden sm:flex h-full">
+            {/* Left - Media */}
+            <div className="relative flex-1 bg-black/5 dark:bg-white/5 flex items-center justify-center overflow-hidden min-w-0">
+              {shouldBlur ? (
+                <div className="flex items-center justify-center w-full h-full">
+                  <div className="text-center p-8 max-w-sm space-y-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card border border-border shadow-lg">
+                      <Lock className="w-7 h-7 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-bold">Exclusive Content</h3>
+                    <p className="text-sm text-muted-foreground">Support this creator to unlock</p>
+                    <Button asChild className="rounded-full">
+                      <Link href={creatorProfileLink}>Support {post.creator.display_name}</Link>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {post.post_type === 'poll' && (() => {
+                    const poll = Array.isArray(post.poll) ? post.poll[0] : post.poll;
+                    return poll?.id ? (
+                      <div className="w-full p-6"><PollCard pollId={poll.id} currentUserId={currentUserId} /></div>
+                    ) : null;
+                  })()}
+                  {post.post_type !== 'poll' && youtubeVideoId && (
+                    <div className="relative w-full h-full">
+                      <iframe src={getYouTubeEmbedUrl(youtubeVideoId)} title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className="absolute inset-0 w-full h-full" />
+                    </div>
+                  )}
+                  {post.post_type !== 'poll' && allImages.length > 0 && !youtubeVideoId && (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <Image
+                        src={allImages[currentImageIndex]}
+                        alt={post.title || 'Post image'}
+                        fill
+                        className="object-contain"
+                        sizes="60vw"
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
+                        priority
+                        quality={90}
+                      />
+                      {allImages.length > 1 && (
+                        <>
+                          {currentImageIndex > 0 && (
+                            <button onClick={() => setCurrentImageIndex(i => i - 1)} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 shadow-lg backdrop-blur-sm z-10 hover:bg-card transition-colors">
+                              <ChevronLeft className="w-5 h-5" />
+                            </button>
+                          )}
+                          {currentImageIndex < allImages.length - 1 && (
+                            <button onClick={() => setCurrentImageIndex(i => i + 1)} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 shadow-lg backdrop-blur-sm z-10 hover:bg-card transition-colors">
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          )}
+                          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-card/80 text-sm font-medium z-10 backdrop-blur-sm">
+                            {currentImageIndex + 1}/{allImages.length}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {/* No media - show content in left panel */}
+                  {!hasMedia && post.post_type !== 'poll' && (
+                    <div className="w-full h-full flex items-center justify-center p-8">
+                      <div className="max-w-lg">
+                        {post.title && <h1 className="text-3xl font-bold mb-4 leading-tight">{post.title}</h1>}
+                        <p className="text-lg text-foreground/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
-              {/* Close Button */}
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                className="absolute top-4 left-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors backdrop-blur-sm"
-              >
+              {/* Close */}
+              <button onClick={onClose} className="absolute top-4 left-4 z-50 p-2 rounded-full bg-card/80 hover:bg-card text-foreground shadow-lg backdrop-blur-sm transition-colors">
                 <X className="w-5 h-5" />
-              </motion.button>
+              </button>
             </div>
 
-            {/* Right Side - Content, Description, Comments */}
-            <div className="w-[30%] flex flex-col bg-background overflow-hidden">
-              {/* Header with Title */}
-              <div className="flex flex-col px-6 py-4 border-b border-border flex-shrink-0">
+            {/* Right - Details & Comments */}
+            <div className="w-[380px] xl:w-[420px] flex flex-col bg-card border-l border-border/40 overflow-hidden flex-shrink-0">
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-border/40 flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <Link href={creatorProfileLink}>
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
-                          {post.creator.display_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Link>
+                  <Link href={creatorProfileLink} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={post.creator.photo_url} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {post.creator.display_name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
-                      <Link href={creatorProfileLink} className="text-sm font-semibold text-foreground hover:text-primary">
-                        {post.creator.display_name}
-                      </Link>
-                      {post.creator_profile?.is_verified && (
-                        <Badge variant="secondary" className="h-4 px-1 text-[10px] bg-blue-500/10 text-blue-500 border-0 ml-1">
-                          ✓
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold">{post.creator.display_name}</span>
+                        {post.creator_profile?.is_verified && (
+                          <svg className="w-4 h-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                      </p>
                     </div>
-                  </div>
+                  </Link>
                 </div>
-                {/* Title - Big, Bold */}
-                {post.title && post.post_type !== 'poll' && (
-                  <h1 className="text-2xl font-bold text-foreground leading-tight mb-2">
-                    {post.title}
-                  </h1>
+                {post.title && hasMedia && post.post_type !== 'poll' && (
+                  <h1 className="text-xl font-bold leading-tight">{post.title}</h1>
                 )}
-                <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                </span>
               </div>
 
-              {/* Description - Article-like format */}
-              {post.content && post.post_type !== 'poll' && (
-                <div className="px-6 py-4 border-b border-border flex-shrink-0 overflow-y-auto max-h-[40vh]">
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap">
-                      {post.content}
-                    </p>
-                  </div>
+              {/* Content description */}
+              {post.content && hasMedia && post.post_type !== 'poll' && (
+                <div className="px-5 py-4 border-b border-border/40 flex-shrink-0 overflow-y-auto max-h-[30vh]">
+                  <p className="text-[15px] text-foreground/85 leading-relaxed whitespace-pre-wrap">{post.content}</p>
                 </div>
               )}
 
-              {/* Comments Section - Scrollable */}
-              <div className="flex-1 overflow-y-auto px-4 py-3">
-                <div className="space-y-4">
-                  {loadingComments ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : (
-                    <ThreadedComments
-                      postId={post.id}
-                      comments={comments}
-                      currentUserId={currentUserId}
-                      onAddComment={handleAddComment}
-                      isSubmitting={commentMutation.isPending}
-                    />
-                  )}
+              {/* Actions */}
+              <div className="px-5 py-3 border-b border-border/40 flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 -ml-2">
+                    <motion.button onClick={handleLike} disabled={!currentUserId || likeMutation.isPending} whileTap={{ scale: 0.85 }}
+                      className={cn("flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors", isLiked ? "text-rose-500" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                      <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
+                      {likesCount > 0 && <span>{likesCount.toLocaleString()}</span>}
+                    </motion.button>
+                    <span className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-muted-foreground">
+                      <MessageCircle className="w-5 h-5" />
+                      {commentsCount > 0 && <span>{commentsCount}</span>}
+                    </span>
+                    <motion.button onClick={() => setShowShareModal(true)} whileTap={{ scale: 0.9 }} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                      <Share2 className="w-5 h-5" />
+                    </motion.button>
+                  </div>
+                  <motion.button onClick={() => setIsBookmarked(!isBookmarked)} whileTap={{ scale: 0.85 }} className={cn("p-2 rounded-lg transition-colors", isBookmarked ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                    <Bookmark className={cn("w-5 h-5", isBookmarked && "fill-current")} />
+                  </motion.button>
                 </div>
               </div>
 
-              {/* Actions - Fixed at bottom */}
-              <div className="px-4 py-3 border-t border-border space-y-2 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <motion.button
-                      onClick={handleLike}
-                      disabled={!currentUserId || likeMutation.isPending}
-                      whileTap={{ scale: 0.8 }}
-                      className="p-1"
-                    >
-                      <Heart
-                        className={cn(
-                          'w-6 h-6 transition-colors',
-                          isLiked ? 'text-rose-500 fill-rose-500' : 'text-foreground'
-                        )}
-                      />
-                    </motion.button>
-                    <motion.button
-                      onClick={handleCommentClick}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-1"
-                    >
-                      <MessageCircle className="w-6 h-6 text-foreground" />
-                    </motion.button>
-                    <motion.button
-                      onClick={() => setShowShareModal(true)}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-1"
-                    >
-                      <Share2 className="w-6 h-6 text-foreground" />
-                    </motion.button>
+              {/* Comments - scrollable */}
+              <div className="flex-1 overflow-y-auto px-5 py-3 min-h-0">
+                {loadingComments ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
-                  <motion.button
-                    onClick={() => setIsBookmarked(!isBookmarked)}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-1"
-                  >
-                    <Bookmark
-                      className={cn(
-                        'w-6 h-6 transition-colors',
-                        isBookmarked ? 'text-foreground fill-foreground' : 'text-foreground'
-                      )}
+                ) : (
+                  <ThreadedComments postId={post.id} comments={comments} currentUserId={currentUserId} onAddComment={handleAddComment} isSubmitting={commentMutation.isPending} />
+                )}
+              </div>
+
+              {/* Comment input */}
+              <div className="px-5 py-3 border-t border-border/40 flex-shrink-0 bg-card">
+                {currentUserId ? (
+                  <form onSubmit={handleSubmitComment} className="flex items-center gap-2.5">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{currentUserId.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={e => setNewComment(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="flex-1 bg-muted/40 border border-border/40 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 placeholder:text-muted-foreground transition-all"
                     />
-                  </motion.button>
-                </div>
-
-                <p className="text-sm font-semibold text-foreground">
-                  {likesCount.toLocaleString()} {likesCount === 1 ? 'like' : 'likes'}
-                </p>
-
-                {/* Add Comment Input */}
-                <form onSubmit={handleSubmitComment} className="flex items-center gap-3 pt-2 border-t border-border">
-                  {currentUserId ? (
-                    <>
-                      <Avatar className="h-7 w-7 flex-shrink-0">
-                        <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-primary/60 text-white">
-                          {currentUserId.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <input
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newComment.trim() || commentMutation.isPending}
-                        className={cn(
-                          "text-sm font-semibold transition-colors",
-                          newComment.trim()
-                            ? "text-primary hover:text-primary/80"
-                            : "text-primary/50 cursor-not-allowed"
-                        )}
-                      >
-                        {commentMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          'Post'
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <Link href="/auth" className="block text-center w-full">
-                      <span className="text-sm text-muted-foreground hover:text-foreground">
-                        Log in to comment
-                      </span>
-                    </Link>
-                  )}
-                </form>
+                    <button
+                      type="submit"
+                      disabled={!newComment.trim() || commentMutation.isPending}
+                      className={cn(
+                        "p-2 rounded-full transition-all",
+                        newComment.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {commentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </button>
+                  </form>
+                ) : (
+                  <Link href="/auth" className="block text-center py-2">
+                    <span className="text-sm text-muted-foreground hover:text-primary transition-colors">Sign in to comment</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Share Modal */}
       <ShareModal
         open={showShareModal}
         onClose={() => setShowShareModal(false)}

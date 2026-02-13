@@ -77,16 +77,16 @@ export function SupportBanner({
                   
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
-                      Support {creatorName}
+                      Join {creatorName}&apos;s Circle
                     </p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="truncate">Unlock exclusive content and benefits</span>
+                      <span className="truncate">Get closer access to exclusive content</span>
                       {supporterCount > 0 && (
                         <>
-                          <span className="hidden sm:inline">•</span>
+                          <span className="hidden sm:inline">·</span>
                           <span className="hidden sm:flex items-center gap-1">
                             <Users className="w-3 h-3" />
-                            {supporterCount} supporters
+                            {supporterCount} in the circle
                           </span>
                         </>
                       )}
@@ -101,10 +101,10 @@ export function SupportBanner({
                       e.stopPropagation();
                       onJoinClick();
                     }}
-                    className="gap-2 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 shadow-lg"
+                    className="gap-2 rounded-full shadow-lg shadow-primary/20 px-5"
                   >
                     <Sparkles className="w-4 h-4" />
-                    <span className="hidden sm:inline">Join Now</span>
+                    <span className="hidden sm:inline">Join Circle</span>
                     <span className="sm:hidden">Join</span>
                   </Button>
                   

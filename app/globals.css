@@ -48,79 +48,84 @@
    THEME VARIABLES
    =========================================== */
 :root {
-  /* Core surfaces (warm, human neutrals) */
-  --background: #faf6f4;
-  --muted: #f2ebe7;
-  --secondary: #f2ebe7;
+  /* ── Nepal-inspired warm minimal palette ──
+     Crimson (#DC143C) is Nepal's national color.
+     We pair it with warm stone neutrals for a grounded,
+     addictive, and distinctly Nepali feel. */
+  
+  /* Core surfaces (warm stone) */
+  --background: #faf8f6;
+  --muted: #f0ece9;
+  --secondary: #f0ece9;
   --card: #ffffff;
   --popover: #ffffff;
-  --accent: #f7e3dc;
-  --sidebar: #f4ede9;
+  --accent: #fce8e4;
+  --sidebar: #f5f1ee;
 
   /* Borders & inputs */
-  --border: #e2d6cf;
-  --input: #e2d6cf;
-  --ring: #d77a6a;
+  --border: #e5ddd8;
+  --input: #e5ddd8;
+  --ring: #c4382a;
 
   /* Typography */
-  --foreground: #2b1e1a;
-  --card-foreground: #2b1e1a;
-  --popover-foreground: #2b1e1a;
-  --muted-foreground: #7a5f57;
-  --secondary-foreground: #5e463f;
-  --accent-foreground: #2b1e1a;
+  --foreground: #1a1210;
+  --card-foreground: #1a1210;
+  --popover-foreground: #1a1210;
+  --muted-foreground: #78706b;
+  --secondary-foreground: #544b46;
+  --accent-foreground: #1a1210;
 
-  /* Brand (peach-rose) */
-  --primary: #d77a6a;
+  /* Brand (Nepal crimson) */
+  --primary: #c4382a;
   --primary-foreground: #ffffff;
 
   /* Destructive */
-  --destructive: #c24141;
+  --destructive: #b91c1c;
   --destructive-foreground: #ffffff;
 
   /* Sidebar */
-  --sidebar-primary: #d77a6a;
+  --sidebar-primary: #c4382a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-foreground: #2b1e1a;
-  --sidebar-border: #e2d6cf;
-  --sidebar-ring: #d77a6a;
-  --sidebar-accent: #efd2c9;
-  --sidebar-accent-foreground: #2b1e1a;
+  --sidebar-foreground: #1a1210;
+  --sidebar-border: #e5ddd8;
+  --sidebar-ring: #c4382a;
+  --sidebar-accent: #fce8e4;
+  --sidebar-accent-foreground: #1a1210;
 
-  /* Charts (same hue, stepped warmth) */
-  --chart-1: #d77a6a;
-  --chart-2: #c86c5d;
-  --chart-3: #b95f51;
-  --chart-4: #a95346;
-  --chart-5: #99473c;
+  /* Charts (crimson gradient) */
+  --chart-1: #c4382a;
+  --chart-2: #b33025;
+  --chart-3: #a12820;
+  --chart-4: #8f201b;
+  --chart-5: #7d1916;
 
-  /* Social interaction colors (community-friendly) */
-  --like-color: #d77a6a;
-  --comment-color: #7a9cc6;
-  --share-color: #7fb3a1;
-  --bookmark-color: #d1a24a;
+  /* Social interaction colors */
+  --like-color: #e04848;
+  --comment-color: #3b82f6;
+  --share-color: #10b981;
+  --bookmark-color: #f59e0b;
 
   /* Status colors */
-  --online: #7fb3a1;
-  --away: #d1a24a;
-  --offline: #8b7a73;
+  --online: #22c55e;
+  --away: #eab308;
+  --offline: #9ca3af;
 
   /* Bauhaus card variables */
   --bauhaus-card-bg: #ffffff;
-  --bauhaus-card-separator: #e2d6cf;
-  --bauhaus-card-accent: #d77a6a;
-  --bauhaus-card-radius: 2em;
-  --bauhaus-card-border-width: 2px;
+  --bauhaus-card-separator: #e5ddd8;
+  --bauhaus-card-accent: #c4382a;
+  --bauhaus-card-radius: 1.25rem;
+  --bauhaus-card-border-width: 1px;
 
-  --bauhaus-card-inscription-top: #5e463f;
-  --bauhaus-card-inscription-main: #2b1e1a;
-  --bauhaus-card-inscription-sub: #7a5f57;
-  --bauhaus-card-inscription-progress-label: #5e463f;
-  --bauhaus-card-inscription-progress-value: #2b1e1a;
-  --bauhaus-card-progress-bar-bg: #ede2dc;
+  --bauhaus-card-inscription-top: #544b46;
+  --bauhaus-card-inscription-main: #1a1210;
+  --bauhaus-card-inscription-sub: #78706b;
+  --bauhaus-card-inscription-progress-label: #544b46;
+  --bauhaus-card-inscription-progress-value: #1a1210;
+  --bauhaus-card-progress-bar-bg: #ede6e0;
 
-  --bauhaus-chronicle-bg: #2b1e1a;
-  --bauhaus-chronicle-fg: #faf6f4;
+  --bauhaus-chronicle-bg: #1a1210;
+  --bauhaus-chronicle-fg: #faf8f6;
   --bauhaus-chronicle-hover-fg: #ffffff;
 
   /* Fonts */
@@ -129,72 +134,72 @@
   --font-serif: 'Merriweather', serif;
 
   /* Layout */
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --rounded-margin: 5rem;
   --section-margin: 7rem;
 }
 
 .dark {
-  /* Core surfaces (warm dark, not gray) */
-  --background: #14100e;
-  --muted: #1f1916;
-  --secondary: #1f1916;
-  --card: #191311;
-  --popover: #191311;
-  --accent: #3a2320;
-  --sidebar: #1f1916;
+  /* Core surfaces (warm dark) */
+  --background: #0f0d0c;
+  --muted: #1c1917;
+  --secondary: #1c1917;
+  --card: #161412;
+  --popover: #161412;
+  --accent: #2a1714;
+  --sidebar: #1c1917;
 
   /* Borders & inputs */
-  --border: #3a2a26;
-  --input: #3a2a26;
-  --ring: #d77a6a;
+  --border: #2e2723;
+  --input: #2e2723;
+  --ring: #e04848;
 
   /* Typography */
-  --foreground: #f7ebe6;
-  --card-foreground: #f7ebe6;
-  --popover-foreground: #f7ebe6;
-  --muted-foreground: #c2a79f;
-  --secondary-foreground: #e0cfc9;
-  --accent-foreground: #f7ebe6;
+  --foreground: #f5ede8;
+  --card-foreground: #f5ede8;
+  --popover-foreground: #f5ede8;
+  --muted-foreground: #a8998f;
+  --secondary-foreground: #d4c5bb;
+  --accent-foreground: #f5ede8;
 
   /* Brand */
-  --primary: #d77a6a;
+  --primary: #e04848;
   --primary-foreground: #ffffff;
 
   /* Destructive */
-  --destructive: #c24141;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
   /* Sidebar */
-  --sidebar-primary: #d77a6a;
+  --sidebar-primary: #e04848;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-foreground: #f7ebe6;
-  --sidebar-border: #3a2a26;
-  --sidebar-ring: #d77a6a;
-  --sidebar-accent: #3a2320;
-  --sidebar-accent-foreground: #f7ebe6;
+  --sidebar-foreground: #f5ede8;
+  --sidebar-border: #2e2723;
+  --sidebar-ring: #e04848;
+  --sidebar-accent: #2a1714;
+  --sidebar-accent-foreground: #f5ede8;
 
   /* Charts */
-  --chart-1: #d77a6a;
-  --chart-2: #c86c5d;
-  --chart-3: #b95f51;
-  --chart-4: #a95346;
-  --chart-5: #99473c;
+  --chart-1: #e04848;
+  --chart-2: #d03e3e;
+  --chart-3: #c03434;
+  --chart-4: #b02a2a;
+  --chart-5: #a02020;
 
   /* Bauhaus card variables */
-  --bauhaus-card-bg: #191311;
-  --bauhaus-card-separator: #3a2a26;
-  --bauhaus-card-accent: #d77a6a;
+  --bauhaus-card-bg: #161412;
+  --bauhaus-card-separator: #2e2723;
+  --bauhaus-card-accent: #e04848;
 
-  --bauhaus-card-inscription-top: #e0cfc9;
-  --bauhaus-card-inscription-main: #f7ebe6;
-  --bauhaus-card-inscription-sub: #c2a79f;
-  --bauhaus-card-inscription-progress-label: #e0cfc9;
+  --bauhaus-card-inscription-top: #d4c5bb;
+  --bauhaus-card-inscription-main: #f5ede8;
+  --bauhaus-card-inscription-sub: #a8998f;
+  --bauhaus-card-inscription-progress-label: #d4c5bb;
   --bauhaus-card-inscription-progress-value: #ffffff;
-  --bauhaus-card-progress-bar-bg: #3a2a26;
+  --bauhaus-card-progress-bar-bg: #2e2723;
 
-  --bauhaus-chronicle-bg: #faf6f4;
-  --bauhaus-chronicle-fg: #2b1e1a;
+  --bauhaus-chronicle-bg: #faf8f6;
+  --bauhaus-chronicle-fg: #1a1210;
   --bauhaus-chronicle-hover-fg: #ffffff;
 }
 
@@ -751,6 +756,57 @@ a:not([disabled]),
 [disabled],
 [aria-disabled="true"] {
   cursor: not-allowed !important;
+}
+
+/* ===========================================
+   TIMELINE & FEED
+   =========================================== */
+.timeline-dot {
+  @apply w-3 h-3 rounded-full border-2 border-primary/40 bg-card;
+}
+.timeline-dot-active {
+  @apply border-primary bg-primary shadow-lg shadow-primary/20;
+}
+
+/* ===========================================
+   SAFE AREA SUPPORT (iOS notch, home indicator)
+   =========================================== */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ===========================================
+   MOBILE-FIRST TOUCH TARGETS
+   =========================================== */
+@media (pointer: coarse) {
+  /* Larger touch targets on touch devices */
+  button:not(.btn-sm):not([data-compact]),
+  [role="button"]:not(.btn-sm):not([data-compact]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Prevent text selection during swipe/scroll on mobile */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Smooth momentum scrolling */
+.scroll-smooth-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 /* ===========================================

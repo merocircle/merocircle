@@ -305,7 +305,10 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
     setChannelError(null);
     try {
       const streamChannel = chatClient.channel('messaging', channel.stream_channel_id);
-      await streamChannel.watch();
+      // Only call watch() if not already initialized to avoid "subscribe called multiple times"
+      if (!streamChannel.initialized) {
+        await streamChannel.watch();
+      }
       setActiveChannel(streamChannel);
       setMobileView('chat');
       await streamChannel.markRead();
@@ -335,7 +338,9 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
   const selectDMChannel = useCallback(async (dmChannel: DMChannel) => {
     try {
-      await dmChannel.channel.watch();
+      if (!dmChannel.channel.initialized) {
+        await dmChannel.channel.watch();
+      }
       setActiveChannel(dmChannel.channel);
       setMobileView('chat');
       await dmChannel.channel.markRead();
@@ -439,7 +444,9 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         (async () => {
           try {
             const streamChannel = chatClient.channel('messaging', urlChannelId);
-            await streamChannel.watch();
+            if (!streamChannel.initialized) {
+              await streamChannel.watch();
+            }
             setActiveChannel(streamChannel);
             setMobileView('chat');
             await streamChannel.markRead();
@@ -499,7 +506,9 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         members: [user.id, userId],
       });
       await channel.create();
-      await channel.watch();
+      if (!channel.initialized) {
+        await channel.watch();
+      }
       setActiveChannel(channel);
       setSelectedUser(null);
       setMobileView('chat');
@@ -669,9 +678,9 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
       <Chat client={chatClient} theme={streamTheme}>
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full overflow-hidden">
-          <div className="w-72 border-r border-border flex-shrink-0 bg-muted/50 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-border bg-card flex-shrink-0">
-              <h2 className="text-lg font-semibold text-foreground">Community</h2>
+          <div className="w-72 border-r border-border/40 flex-shrink-0 bg-card flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/40 flex-shrink-0">
+              <h2 className="text-lg font-bold text-foreground">Messages</h2>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 min-h-0">
@@ -783,8 +792,8 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         <div className="md:hidden h-full flex flex-col overflow-hidden">
           {mobileView === 'servers' && (
             <div className="h-full flex flex-col bg-background overflow-hidden">
-              <div className="p-4 border-b border-border bg-card flex-shrink-0">
-                <h2 className="text-lg font-semibold text-foreground">Community</h2>
+              <div className="px-4 py-3 border-b border-border/40 bg-card/80 backdrop-blur-lg flex-shrink-0 safe-area-top">
+                <h2 className="text-lg font-bold text-foreground">Messages</h2>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 min-h-0">
@@ -870,22 +879,22 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
           {mobileView === 'channels' && selectedServer && (
             <div className="h-full flex flex-col bg-background overflow-hidden">
-              <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0">
+              <div className="px-4 py-3 border-b border-border/40 bg-card/80 backdrop-blur-lg flex items-center gap-3 flex-shrink-0 safe-area-top">
                 <button
                   onClick={goBackToServers}
-                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+                  className="p-1.5 -ml-1 rounded-full hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="h-5 w-5 text-foreground" />
                 </button>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                     {selectedServer.image ? (
                       <img src={selectedServer.image} alt={selectedServer.name} className="w-full h-full object-cover" />
                     ) : (
                       <Users className="h-4 w-4 text-primary" />
                     )}
                   </div>
-                  <h2 className="text-lg font-semibold text-foreground truncate">{selectedServer.name}</h2>
+                  <h2 className="text-base font-semibold text-foreground truncate">{selectedServer.name}</h2>
                 </div>
               </div>
 
@@ -920,10 +929,10 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
             <div className="h-full flex flex-col overflow-hidden">
               <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
                 <Window>
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-card/80 backdrop-blur-lg flex-shrink-0 safe-area-top">
                     <button
                       onClick={goBackToChannels}
-                      className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+                      className="p-1.5 -ml-1 rounded-full hover:bg-muted transition-colors"
                     >
                       <ArrowLeft className="h-5 w-5 text-foreground" />
                     </button>
@@ -976,155 +985,297 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         />
       )}
 
-      {/* Styles */}
+      {/* Signal-inspired styles */}
       <style jsx global>{`
+        /* ── Signal-style chat theme ── */
         .stream-chat-wrapper {
-          --str-chat__primary-color: #9333ea;
-          --str-chat__active-primary-color: #7e22ce;
+          --str-chat__primary-color: var(--primary);
+          --str-chat__active-primary-color: var(--primary);
           --str-chat__border-radius-circle: 9999px;
-          --str-chat__border-radius-sm: 0.5rem;
-          --str-chat__border-radius-md: 0.75rem;
-          --str-chat__border-radius-lg: 1rem;
-          --str-chat__font-family: var(--font-space-grotesk), system-ui, sans-serif;
+          --str-chat__border-radius-sm: 0.625rem;
+          --str-chat__border-radius-md: 0.875rem;
+          --str-chat__border-radius-lg: 1.125rem;
+          --str-chat__font-family: var(--font-sans);
         }
 
+        /* ── Sidebar / Channel list ── */
         .str-chat__channel-list {
           background: transparent !important;
         }
-
+        .str-chat__channel-list,
+        .str-chat__channel-preview-messenger {
+          overflow: hidden !important;
+        }
+        .str-chat__channel-preview-messenger--last-message {
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+          max-width: 100% !important;
+        }
         .str-chat__channel-preview-messenger--active {
-          background: rgba(147, 51, 234, 0.1) !important;
-          border-left: 3px solid #9333ea !important;
+          background: var(--primary)/8 !important;
+          border-left: 2px solid var(--primary) !important;
+          border-radius: 0 0.5rem 0.5rem 0 !important;
         }
-
         .str-chat__channel-preview-messenger:hover {
-          background: rgba(147, 51, 234, 0.05) !important;
-        }
-
-        .str-chat__message-simple--me .str-chat__message-bubble {
-          background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%) !important;
-          color: white !important;
-        }
-
-        .str-chat__message-input {
-          border-top: 1px solid var(--border) !important;
-        }
-
-        .str-chat__send-button {
-          background: #9333ea !important;
-        }
-
-        .str-chat__send-button:hover {
-          background: #7e22ce !important;
-        }
-
-        .str-chat__channel-search-input {
+          background: var(--muted) !important;
           border-radius: 0.5rem !important;
         }
 
-        .str-chat__thread {
-          border-left: 1px solid var(--border);
+        /* ── Message bubbles (Signal-style — tighter, more compact) ── */
+        .str-chat__message-simple--me .str-chat__message-bubble {
+          background: var(--primary) !important;
+          color: var(--primary-foreground) !important;
+          border-radius: 1.125rem 1.125rem 0.25rem 1.125rem !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+          max-width: 75% !important;
+        }
+        .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
+          background: var(--card) !important;
+          color: var(--foreground) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 1.125rem 1.125rem 1.125rem 0.25rem !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+          max-width: 75% !important;
         }
 
+        /* ── Message text — fix overflow ── */
+        .str-chat__message-text p,
+        .str-chat__message-text {
+          font-size: 0.875rem !important;
+          line-height: 1.5 !important;
+          color: inherit !important;
+          word-break: break-word !important;
+          overflow-wrap: break-word !important;
+          hyphens: auto !important;
+        }
+        .str-chat__message-bubble {
+          min-width: 0 !important;
+          overflow: hidden !important;
+          word-break: break-word !important;
+        }
+        .str-chat__message-text-inner {
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+          white-space: pre-wrap !important;
+          min-width: 0 !important;
+        }
+
+        /* ── Message timestamp ── */
+        .str-chat__message-data {
+          font-size: 0.6875rem !important;
+          color: var(--muted-foreground) !important;
+        }
+
+        /* ── Message list ── */
+        .str-chat__message-list,
+        .str-chat__main-panel,
+        .str-chat__channel,
+        .str-chat__container {
+          background: var(--background) !important;
+        }
+        .str-chat__list {
+          padding: 0.5rem !important;
+        }
+
+        /* ── Input bar (compact, Signal-style) ── */
+        .str-chat__message-input {
+          border-top: 1px solid var(--border) !important;
+          background: var(--card) !important;
+          padding: 0.5rem 0.75rem !important;
+        }
+        .str-chat__input-flat {
+          background: var(--muted) !important;
+          border-radius: 1.25rem !important;
+          border: 1px solid transparent !important;
+          padding: 0.375rem 0.875rem !important;
+          transition: border-color 0.2s, box-shadow 0.2s !important;
+        }
+        .str-chat__input-flat:focus-within {
+          border-color: var(--primary) !important;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent) !important;
+        }
+        .str-chat__input-flat textarea {
+          font-size: 0.875rem !important;
+          line-height: 1.4 !important;
+        }
+        .str-chat__send-button {
+          background: var(--primary) !important;
+          border-radius: 9999px !important;
+          width: 2.25rem !important;
+          height: 2.25rem !important;
+          min-width: 2.25rem !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          transition: background 0.15s, transform 0.1s !important;
+        }
+        .str-chat__send-button:hover {
+          background: color-mix(in srgb, var(--primary) 85%, black) !important;
+          transform: scale(1.05) !important;
+        }
+        .str-chat__send-button svg {
+          width: 16px !important;
+          height: 16px !important;
+        }
+
+        /* ── Thread content ── */
+        .str-chat__thread {
+          background: var(--card) !important;
+          height: 100% !important;
+        }
+        .str-chat__thread .str-chat__message-list {
+          background: var(--background) !important;
+        }
+        .str-chat__thread .str-chat__message-input {
+          border-top: 1px solid var(--border) !important;
+          background: var(--card) !important;
+        }
+        .str-chat__thread-start {
+          font-size: 0.75rem !important;
+          color: var(--muted-foreground) !important;
+          text-align: center !important;
+          padding: 8px 16px !important;
+        }
+        .str-chat__parent-message-li {
+          border-bottom: 1px solid var(--border) !important;
+          padding-bottom: 12px !important;
+          margin-bottom: 8px !important;
+        }
+
+        /* ── Channel search ── */
+        .str-chat__channel-search-input {
+          border-radius: 1.5rem !important;
+        }
+
+        /* ── Avatars ── */
         .str-chat__avatar {
           cursor: pointer;
-          transition: opacity 0.2s;
+          transition: opacity 0.2s, transform 0.15s;
         }
-
         .str-chat__avatar:hover {
-          opacity: 0.8;
+          opacity: 0.85;
+          transform: scale(1.05);
         }
 
-        .dark .stream-chat-wrapper .str-chat__theme-dark {
-          --str-chat__background-color: var(--background);
-          --str-chat__secondary-background-color: var(--card);
-          --str-chat__primary-surface-color: var(--muted);
-          --str-chat__text-color: var(--foreground);
-          --str-chat__secondary-text-color: var(--muted-foreground);
-          --str-chat__border-color: var(--border);
-        }
-
-        .dark .str-chat__main-panel,
-        .dark .str-chat__channel,
-        .dark .str-chat__container {
-          background: var(--background) !important;
-        }
-
-        .dark .str-chat__message-list {
-          background: var(--background) !important;
-        }
-
-        .dark .str-chat__message-input {
-          background: var(--card) !important;
-          border-top-color: var(--border) !important;
-        }
-
-        .dark .str-chat__input-flat {
-          background: var(--muted) !important;
-        }
-
-        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
-          background: var(--muted) !important;
-          color: var(--foreground) !important;
-        }
-
-        .dark .str-chat__thread {
-          background: var(--card) !important;
-          border-left-color: var(--border) !important;
-        }
-
-        .dark .str-chat__message-text p,
-        .dark .str-chat__message-text {
-          color: inherit !important;
-        }
-
+        /* ── System messages ── */
         .str-chat__message--system {
           text-align: center;
           padding: 8px 16px;
           margin: 8px 0;
         }
-
         .str-chat__message--system .str-chat__message-text {
           font-size: 0.75rem;
           color: var(--muted-foreground) !important;
           background: transparent !important;
           padding: 0;
         }
-
         .str-chat__message--system .str-chat__message-text p {
           color: var(--muted-foreground) !important;
         }
-
         .str-chat__message--system .str-chat__avatar,
         .str-chat__message--system .str-chat__message-data,
         .str-chat__message--system .str-chat__message-inner > div:not(.str-chat__message-text) {
           display: none !important;
         }
-
         .str-chat__system-message {
           text-align: center;
           padding: 12px 16px;
         }
-
         .str-chat__system-message__text {
           font-size: 0.8rem;
           color: var(--muted-foreground);
           background: var(--muted);
-          padding: 6px 12px;
+          padding: 6px 14px;
           border-radius: 9999px;
           display: inline-block;
         }
 
-        .str-chat__quoted-message-preview .str-chat__avatar,
-        .str-chat__thread-header .str-chat__avatar,
-        .str-chat__parent-message-li .str-chat__avatar {
+        /* ── Quoted / threaded ── */
+        /* Fix: preserve grid layout when hiding avatars in thread context */
+        .str-chat__quoted-message-preview {
+          grid-template-columns: 1fr !important;
+        }
+        .str-chat__quoted-message-preview .str-chat__avatar {
           display: none !important;
         }
-
         .str-chat__quoted-message-preview .str-chat__message-inner {
           margin-left: 0 !important;
+          grid-column: 1 / -1 !important;
+        }
+        /* Quoted message bubble in replies - Signal-style */
+        .str-chat__quoted-message-bubble {
+          background: var(--muted) !important;
+          border-radius: 0.75rem !important;
+          border-left: 3px solid var(--primary) !important;
+          padding: 8px 12px !important;
+          margin-bottom: 4px !important;
+        }
+        .str-chat__quoted-message-text-value {
+          font-size: 0.8125rem !important;
+          color: var(--muted-foreground) !important;
         }
 
+        /* ── Thread panel layout ── */
+        .str-chat__container {
+          display: flex !important;
+          min-width: 0 !important;
+        }
+        .str-chat__main-panel {
+          flex: 1 !important;
+          min-width: 0 !important;
+        }
+        .str-chat__main-panel--thread-open {
+          flex: 1 !important;
+          min-width: 0 !important;
+        }
+        .str-chat__thread-container {
+          flex: 0 0 380px !important;
+          min-width: 320px !important;
+          border-left: 1px solid var(--border) !important;
+          background: var(--card) !important;
+        }
+        .str-chat__thread-header {
+          padding: 12px 16px !important;
+          border-bottom: 1px solid var(--border) !important;
+          background: var(--card) !important;
+        }
+        .str-chat__thread-header-details {
+          font-weight: 600 !important;
+        }
+        .str-chat__close-thread-button {
+          border-radius: 9999px !important;
+          padding: 6px !important;
+          transition: background 0.15s !important;
+        }
+        .str-chat__close-thread-button:hover {
+          background: var(--muted) !important;
+        }
+        /* Mobile: thread as full-screen overlay */
+        @media (max-width: 768px) {
+          .str-chat__thread-container {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 60 !important;
+            flex: none !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            border-left: none !important;
+          }
+          .str-chat__thread-header {
+            padding-top: env(safe-area-inset-top, 12px) !important;
+          }
+        }
+
+        /* ── Message actions popup ── */
+        .str-chat__message-actions-box {
+          background: var(--card) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 0.75rem !important;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
+          overflow: hidden !important;
+          padding: 4px !important;
+        }
         .str-chat__message-actions-list-item {
           display: flex;
           align-items: center;
@@ -1133,28 +1284,116 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           border: none;
           background: transparent;
           color: var(--foreground);
-          font-size: 14px;
-          transition: all 0.2s;
+          font-size: 13px;
+          transition: all 0.12s;
           width: 100%;
           text-align: left;
+          border-radius: 0.5rem;
+          gap: 8px;
         }
-
         .str-chat__message-actions-list-item:hover {
           background: var(--muted);
           color: var(--primary);
         }
-
         .str-chat__message-actions-list-item svg {
           flex-shrink: 0;
+          width: 16px;
+          height: 16px;
         }
 
-        .dark .str-chat__message-actions-list-item {
-          color: var(--foreground);
+        /* ── Reply / quoted message inline ── */
+        .str-chat__quoted-message-preview-header {
+          font-size: 0.75rem !important;
+          color: var(--muted-foreground) !important;
+          padding: 6px 12px 2px !important;
+        }
+        .str-chat__quoted-message-remove {
+          background: var(--muted) !important;
+          border-radius: 9999px !important;
+          width: 20px !important;
+          height: 20px !important;
         }
 
-        .dark .str-chat__message-actions-list-item:hover {
-          background: var(--muted);
-          color: var(--primary);
+        /* ── Dark theme overrides ── */
+        .dark .stream-chat-wrapper .str-chat__theme-dark {
+          --str-chat__background-color: var(--background);
+          --str-chat__secondary-background-color: var(--card);
+          --str-chat__primary-surface-color: var(--muted);
+          --str-chat__text-color: var(--foreground);
+          --str-chat__secondary-text-color: var(--muted-foreground);
+          --str-chat__border-color: var(--border);
+        }
+        /* Dark mode: received messages get subtle bg instead of border */
+        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
+          background: var(--muted) !important;
+          border-color: transparent !important;
+        }
+
+        /* ── Date separators ── */
+        .str-chat__date-separator {
+          padding: 0.75rem 0 !important;
+        }
+        .str-chat__date-separator-date {
+          font-size: 0.6875rem !important;
+          font-weight: 500 !important;
+          color: var(--muted-foreground) !important;
+          background: var(--muted) !important;
+          padding: 3px 10px !important;
+          border-radius: 9999px !important;
+          border: none !important;
+        }
+
+        /* ── Reactions ── */
+        .str-chat__message-reactions-list {
+          border-radius: 0.75rem !important;
+          background: var(--card) !important;
+          border: 1px solid var(--border) !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+        }
+        .str-chat__message-reactions-list-item {
+          padding: 2px 6px !important;
+          border-radius: 0.5rem !important;
+        }
+        .str-chat__message-reactions-list-item--selected {
+          background: var(--primary)/10 !important;
+        }
+
+        /* ── Unread count badge ── */
+        .str-chat__message-notification {
+          background: var(--primary) !important;
+          border-radius: 9999px !important;
+          font-size: 0.75rem !important;
+          padding: 4px 12px !important;
+          border: none !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        }
+
+        /* ── Emoji picker ── */
+        .str-chat__emoji-picker {
+          border-radius: 0.75rem !important;
+          border: 1px solid var(--border) !important;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
+        }
+
+        /* ── Mobile-specific ── */
+        @media (max-width: 768px) {
+          .str-chat__message-input {
+            padding: 0.375rem 0.5rem !important;
+            padding-bottom: max(0.375rem, env(safe-area-inset-bottom, 0.375rem)) !important;
+          }
+          .str-chat__input-flat {
+            font-size: 16px !important; /* Prevent iOS zoom */
+          }
+          .str-chat__input-flat textarea {
+            font-size: 16px !important;
+          }
+          .str-chat__message-simple--me .str-chat__message-bubble,
+          .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
+            max-width: 85% !important;
+          }
+          .str-chat__list {
+            padding: 0.25rem !important;
+          }
         }
       `}</style>
     </div>

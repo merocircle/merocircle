@@ -19,11 +19,6 @@ interface WelcomeEmailProps {
   helpUrl: string;
 }
 
-/**
- * Welcome email sent to new users
- * Triggers: User completes signup
- * Recipients: New users (both creators and supporters)
- */
 export default function WelcomeEmail({
   userName = 'Alex',
   userRole = 'supporter',
@@ -37,7 +32,7 @@ export default function WelcomeEmail({
 
   return (
     <EmailLayout
-      preview={`Welcome to MeroCircle, ${userName}`}
+      preview={`Welcome to your circle, ${userName}`}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
       hideCreatorInfo
@@ -48,62 +43,62 @@ export default function WelcomeEmail({
             src={`${appUrl}/logo/logo.png`}
             alt="MeroCircle"
             style={logo}
-            width="120"
+            width="100"
           />
         </Section>
 
         <Heading style={title}>
-          Welcome to MeroCircle
+          {isCreator ? `Welcome home, ${userName}` : `Hey ${userName}, you're in`}
         </Heading>
 
         <Text style={subtitle}>
           {isCreator 
-            ? `${userName}, you're now part of a platform where creators thrive.`
-            : `${userName}, you're now part of a community that empowers creators.`}
-        </Text>
-
-        <Text style={body}>
-          {isCreator 
-            ? "MeroCircle is where meaningful connections happen. Share your work, engage with supporters, and build a sustainable creative practice."
-            : "Your support makes a real difference. Connect with creators you love and be part of their journey."}
+            ? "Your circle starts here. A space where your people gather, your work lives, and real connections grow."
+            : "You just joined something personal. MeroCircle is where you get closer to the creators you love — no noise, no algorithms."}
         </Text>
 
         {isCreator ? (
           <>
             <Section style={featureGrid}>
               <Section style={feature}>
-                <Text style={featureTitle}>Share your best work</Text>
+                <Text style={featureIcon}>✍️</Text>
+                <Text style={featureTitle}>Share with your circle</Text>
                 <Text style={featureDescription}>
-                  Post updates, polls, and exclusive content. Your supporters will be notified instantly.
+                  Post updates, polls, photos, and exclusive content. Only the people who matter will see it.
                 </Text>
               </Section>
 
               <Section style={feature}>
-                <Text style={featureTitle}>Build real connections</Text>
+                <Text style={featureIcon}>💬</Text>
+                <Text style={featureTitle}>Talk directly</Text>
                 <Text style={featureDescription}>
-                  Engage directly with people who believe in what you create. No algorithms, just community.
+                  Private channels, DMs, and real-time chat with the people who support your work.
                 </Text>
               </Section>
 
               <Section style={feature}>
-                <Text style={featureTitle}>Earn sustainably</Text>
+                <Text style={featureIcon}>🤝</Text>
+                <Text style={featureTitle}>Earn on your terms</Text>
                 <Text style={featureDescription}>
-                  Get paid for your work. Track earnings and grow your creative business on your terms.
+                  Multiple tiers, local payment options, and full control over your creative practice.
                 </Text>
               </Section>
             </Section>
 
             <Section style={ctaWrapper}>
               <Link href={profileUrl} style={primaryButton}>
-                Set up your profile
+                Set up your circle
               </Link>
             </Section>
           </>
         ) : (
           <>
+            <Text style={body}>
+              Explore creators, join their circles, and unlock posts, chats, and content made just for their closest supporters.
+            </Text>
             <Section style={ctaWrapper}>
               <Link href={exploreUrl} style={primaryButton}>
-                Discover creators
+                Find your people
               </Link>
             </Section>
           </>
@@ -114,25 +109,20 @@ export default function WelcomeEmail({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          Need help getting started? Visit our{' '}
-          <Link href={helpUrl} style={inlineLink}>
-            help center
-          </Link>
-          {' '}or reply to this email.
+          Questions? Just reply to this email — a real person will get back to you.
         </Text>
       </Section>
     </EmailLayout>
   );
 }
 
-// Component-specific styles
 const contentSection = {
-  padding: '0 40px',
+  padding: '32px 32px 0',
 };
 
 const logoSection = {
   textAlign: 'center' as const,
-  margin: '0 0 32px',
+  margin: '0 0 24px',
 };
 
 const logo = {
@@ -140,65 +130,69 @@ const logo = {
 };
 
 const title = {
-  margin: '0 0 12px',
-  fontSize: '32px',
-  lineHeight: '40px',
+  margin: '0 0 10px',
+  fontSize: '26px',
+  lineHeight: '34px',
   fontWeight: '700',
-  color: '#111827',
-  letterSpacing: '-0.8px',
+  color: '#1c1917',
+  letterSpacing: '-0.5px',
   textAlign: 'center' as const,
 };
 
 const subtitle = {
   margin: '0 0 24px',
-  fontSize: '17px',
-  lineHeight: '26px',
-  color: '#6B7280',
+  fontSize: '15px',
+  lineHeight: '24px',
+  color: '#78716c',
   textAlign: 'center' as const,
 };
 
 const featureGrid = {
-  margin: '40px 0',
+  margin: '28px 0',
 };
 
 const feature = {
-  marginBottom: '28px',
+  marginBottom: '24px',
+  textAlign: 'center' as const,
+};
+
+const featureIcon = {
+  margin: '0 0 4px',
+  fontSize: '20px',
+  lineHeight: '24px',
+  textAlign: 'center' as const,
 };
 
 const featureTitle = {
-  margin: '0 0 6px',
-  fontSize: '16px',
+  margin: '0 0 4px',
+  fontSize: '15px',
   fontWeight: '600',
-  color: '#111827',
-  lineHeight: '24px',
+  color: '#1c1917',
+  lineHeight: '22px',
+  textAlign: 'center' as const,
 };
 
 const featureDescription = {
   margin: '0',
-  fontSize: '15px',
-  lineHeight: '24px',
-  color: '#6B7280',
+  fontSize: '14px',
+  lineHeight: '22px',
+  color: '#78716c',
+  textAlign: 'center' as const,
 };
 
 const ctaWrapper = {
-  margin: '32px 0 48px',
+  margin: '24px 0 32px',
   textAlign: 'center' as const,
 };
 
 const messageSection = {
-  padding: '0 40px 48px',
+  padding: '0 32px 32px',
 };
 
 const messageText = {
   margin: '0',
-  fontSize: '14px',
-  lineHeight: '22px',
-  color: '#6B7280',
+  fontSize: '13px',
+  lineHeight: '20px',
+  color: '#a8a29e',
   textAlign: 'center' as const,
-  letterSpacing: '-0.1px',
-};
-
-const inlineLink = {
-  color: '#4f46e5',
-  textDecoration: 'none',
 };

@@ -39,6 +39,7 @@ import { signIn } from 'next-auth/react';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { useRealtimeCreatorPosts } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
+import { TimelineFeed, withTimeline } from '@/components/posts/TimelineFeed';
 import { TierSelection } from '@/components/creator/TierSelection';
 import { fadeInUp, staggerContainer } from '@/components/animations/variants';
 import { slugifyDisplayName } from '@/lib/utils';
@@ -974,7 +975,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       {/* Professional Hero Section */}
       <div className="relative">
         {/* Cover Image */}
-        <div className="relative h-80 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+        <div className="relative h-52 sm:h-64 md:h-72 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
           {creatorDetails.cover_image_url && (
             <>
               <Image
@@ -1000,8 +1001,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             transition={{ duration: 0.5 }}
             className="relative -mt-20"
           >
-            <div className="bg-card backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl p-8">
-              <div className="flex flex-col md:flex-row gap-8">
+            <div className="bg-card backdrop-blur-xl rounded-2xl border border-border/50 shadow-xl p-5 sm:p-6 md:p-8">
+              <div className="flex flex-col md:flex-row gap-5 md:gap-8">
                 {/* Avatar */}
                 <motion.div
                   initial={{ scale: 0.8 }}
@@ -1010,9 +1011,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   className="flex-shrink-0"
                 >
                   <div className="relative">
-                    <Avatar className="w-32 h-32 border-4 border-background shadow-xl ring-4 ring-muted/20">
+                    <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 border-4 border-background shadow-xl ring-2 ring-muted/20">
                       <AvatarImage src={creatorDetails.avatar_url} alt={creatorDetails.display_name} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-4xl font-bold">
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-2xl sm:text-3xl font-bold">
                         {creatorDetails.display_name?.[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -1033,80 +1034,74 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3 flex-wrap">
-                        <h1 className="text-3xl md:text-4xl font-bold text-foreground truncate">
+                      <div className="flex items-center gap-2.5 mb-2 flex-wrap">
+                        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground truncate">
                           {creatorDetails.display_name}
                         </h1>
                         {creatorDetails.category && (
-                          <Badge variant="outline" className="gap-2 px-4 py-2 text-sm">
-                            <Star className="w-4 h-4 text-amber-500" />
+                          <Badge variant="outline" className="gap-1.5 px-2.5 py-1 text-xs">
+                            <Star className="w-3 h-3 text-amber-500" />
                             {creatorDetails.category}
                           </Badge>
                         )}
                       </div>
 
                       {creatorDetails.bio && (
-                        <p className="text-muted-foreground text-lg leading-relaxed mb-4">
+                        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-3 line-clamp-3">
                           {creatorDetails.bio}
                         </p>
                       )}
                       {/* Stats */}
-                      <div className="flex flex-wrap items-center gap-6">
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          className="flex items-center gap-2"
-                        >
-                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                            <Users className="w-5 h-5 text-primary" />
+                      <div className="flex flex-wrap items-center gap-5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                            <Users className="w-4 h-4 text-primary" />
                           </div>
                           <div>
-                            <p className="text-2xl font-bold text-foreground">
+                            <p className="text-base font-bold text-foreground leading-tight">
                               {creatorDetails.supporter_count || 0}
                             </p>
-                            <p className="text-xs text-muted-foreground">Supporters</p>
+                            <p className="text-[10px] text-muted-foreground">in the circle</p>
                           </div>
-                        </motion.div>
+                        </div>
 
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          className="flex items-center gap-2"
-                        >
-                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-pink-500/10">
-                            <FileText className="w-5 h-5 text-pink-500" />
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-pink-500/10">
+                            <FileText className="w-4 h-4 text-pink-500" />
                           </div>
                           <div>
-                            <p className="text-2xl font-bold text-foreground">
+                            <p className="text-base font-bold text-foreground leading-tight">
                               {creatorDetails.posts_count || 0}
                             </p>
-                            <p className="text-xs text-muted-foreground">Posts</p>
+                            <p className="text-[10px] text-muted-foreground">posts</p>
                           </div>
-                        </motion.div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 flex-shrink-0">
                       {isSupporter ? (
-                        <Badge className="gap-2 px-4 py-2.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                        <Badge className="gap-2 px-4 py-2 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-sm">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          Supported
+                          In the Circle
                         </Badge>
                       ) : (
                         <Button
-                          size="sm"
+                          size="lg"
                           onClick={() => setActiveTab('membership')}
-                          className="gap-2"
+                          className="gap-2 rounded-full px-6 shadow-lg shadow-primary/20 text-sm font-semibold"
                         >
                           <Heart className="w-4 h-4" />
-                          Support Him
+                          Join Circle
                         </Button>
                       )}
                       <Button
                         variant={shareCopied ? "default" : "outline"}
                         size="icon"
                         onClick={handleShare}
-                        className="hover:bg-muted/50 transition-colors"
-                        title={shareCopied ? "Link copied!" : "Share creator profile"}
+                        className="h-9 w-9 rounded-full hover:bg-muted/50 transition-colors"
+                        title={shareCopied ? "Link copied!" : "Share"}
                       >
                         {shareCopied ? (
                           <CheckCircle2 className="w-4 h-4" />
@@ -1115,13 +1110,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                         )}
                       </Button>
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="icon"
                         onClick={handleBack}
-                        className="gap-2"
+                        className="h-9 w-9 rounded-full"
                       >
                         <ArrowLeft className="w-4 h-4" />
-                        Back
                       </Button>
                     </div>
                   </div>
@@ -1142,7 +1136,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               transition={{ delay: 0.3 }}
             >
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid h-12 bg-muted/50">
+                <TabsList className="sticky top-0 z-20 grid w-full grid-cols-5 lg:w-auto lg:inline-grid h-12 bg-card/95 backdrop-blur-lg border-b border-border/30 shadow-sm">
                   <TabsTrigger value="posts" className="gap-2">
                     <FileText className="w-4 h-4" />
                     Posts
@@ -1199,35 +1193,35 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                   </div>
                                   
                                   <div>
-                                    <h3 className="text-2xl font-bold text-foreground mb-2">
-                                      Chat Access Locked
+                                    <h3 className="text-xl font-bold text-foreground mb-1.5">
+                                      This is for the inner circle
                                     </h3>
-                                    <p className="text-muted-foreground">
-                                      Upgrade to Inner Circle or Core Member tier to access exclusive chat with {creatorDetails.display_name}
+                                    <p className="text-sm text-muted-foreground">
+                                      Join {creatorDetails.display_name}&apos;s circle to chat directly and connect
                                     </p>
                                   </div>
                                   
-                                  <div className="flex flex-col gap-2 text-xs text-muted-foreground">
+                                  <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
                                     <div className="flex items-center justify-center gap-2">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                      <span>Direct messages with creator</span>
+                                      <div className="w-1 h-1 rounded-full bg-primary" />
+                                      <span>Private conversations</span>
                                     </div>
                                     <div className="flex items-center justify-center gap-2">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                      <span>Private community channels</span>
+                                      <div className="w-1 h-1 rounded-full bg-primary" />
+                                      <span>Circle-only channels</span>
                                     </div>
                                     <div className="flex items-center justify-center gap-2">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                      <span>Priority support</span>
+                                      <div className="w-1 h-1 rounded-full bg-primary" />
+                                      <span>Direct access to the creator</span>
                                     </div>
                                   </div>
                                   
                                   <Button 
                                     size="lg" 
-                                    className="w-full shadow-lg" 
+                                    className="w-full shadow-lg shadow-primary/20 rounded-full" 
                                     onClick={() => setActiveTab('membership')}
                                   >
-                                    <span>View Membership Tiers</span>
+                                    <span>Join the Circle</span>
                                   </Button>
                                 </div>
                               </div>
@@ -1242,16 +1236,16 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 <TabsContent value="membership" className="mt-6">
                   <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold text-foreground mb-3">
-                        Support {creatorDetails.display_name}
+                      <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                        Join {creatorDetails.display_name}&apos;s Circle
                       </h2>
-                      <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                        {creatorDetails.bio || `Join ${creatorDetails.supporter_count || 0} supporters and get exclusive content, early access, and more.`}
+                      <p className="text-muted-foreground text-base max-w-xl mx-auto">
+                        {creatorDetails.bio || `Be part of an inner circle of ${creatorDetails.supporter_count || 0} people who get closer access, exclusive content, and a direct line.`}
                       </p>
                       {creatorDetails.supporter_count > 0 && (
-                        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <div className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
                           <Users className="w-4 h-4" />
-                          <span><span className="font-semibold text-foreground">{creatorDetails.supporter_count}</span> supporters</span>
+                          <span><span className="font-semibold text-foreground">{creatorDetails.supporter_count}</span> in the circle</span>
                         </div>
                       )}
                     </div>
@@ -1313,35 +1307,38 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   </div>
                 </TabsContent>
 
-                <TabsContent value="posts" className="mt-6 space-y-6">
+                <TabsContent value="posts" className="mt-6">
                   {recentPosts.length > 0 ? (
                     <>
-                      {(recentPosts as Array<Record<string, unknown>>).map((post) => {
-                        const postId = String(post.id);
-                        const isHighlighted = highlightedPostId === postId || tempHighlightPostId === postId;
-                        return (
-                          <motion.div
-                            key={postId}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            ref={isHighlighted ? highlightedPostRef : undefined}
-                            data-post-id={postId}
-                            className={cn(
-                              'transition-all duration-500',
-                              isHighlighted && 'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
-                            )}
-                          >
-                            <EnhancedPostCard
-                              post={transformPost(post)}
-                              currentUserId={user?.id}
-                              showActions={true}
-                              isSupporter={isSupporter}
-                              onNavigateToMembership={() => setActiveTab('membership')}
-                              creatorSlug={creatorDetails?.username ?? undefined}
-                            />
-                          </motion.div>
-                        );
-                      })}
+                      <TimelineFeed
+                        emptyMessage="This creator hasn't shared any content yet. Check back soon!"
+                        onRefresh={refreshCreatorDetails}
+                      >
+                        {withTimeline(
+                          recentPosts as Array<Record<string, unknown> & { created_at: string; id: string }>,
+                          (post) => (
+                            <div
+                              ref={(highlightedPostId === String(post.id) || tempHighlightPostId === String(post.id)) ? highlightedPostRef : undefined}
+                              data-post-id={String(post.id)}
+                              className={cn(
+                                'transition-all duration-500',
+                                (highlightedPostId === String(post.id) || tempHighlightPostId === String(post.id)) &&
+                                  'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
+                              )}
+                            >
+                              <EnhancedPostCard
+                                post={transformPost(post)}
+                                currentUserId={user?.id}
+                                showActions={true}
+                                isSupporter={isSupporter}
+                                onNavigateToMembership={() => setActiveTab('membership')}
+                                creatorSlug={creatorDetails?.username ?? undefined}
+                              />
+                            </div>
+                          ),
+                          highlightedPostId || tempHighlightPostId
+                        )}
+                      </TimelineFeed>
                       {/* Bottom padding when banner is visible */}
                       {showSupportBanner && <div className="h-24" />}
                     </>

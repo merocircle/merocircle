@@ -1,5 +1,4 @@
 import {
-  Container,
   Heading,
   Hr,
   Link,
@@ -22,9 +21,9 @@ interface PollNotificationProps {
 }
 
 /**
- * Email sent when a creator creates a poll
+ * Email sent when a creator wants input from their circle
  * Triggers: Creator creates a poll
- * Recipients: All active supporters
+ * Recipients: All circle members
  */
 export default function PollNotification({
   supporterName = 'Alex',
@@ -40,7 +39,7 @@ export default function PollNotification({
 
   return (
     <EmailLayout
-      preview={`${creatorName} wants to hear from you`}
+      preview={`${creatorName} wants your voice — ${pollQuestion}`}
       creatorName={creatorName}
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
@@ -48,16 +47,16 @@ export default function PollNotification({
     >
       <Section style={contentSection}>
         <Text style={greeting}>Hi {supporterName},</Text>
-        
-        <Text style={label}>{creatorName} asked a question</Text>
-        
+
+        <Text style={label}>{creatorName} wants your voice</Text>
+
         <Heading style={title}>{pollQuestion}</Heading>
 
         <Text style={contentPreview}>{preview}</Text>
 
         <Section style={ctaWrapper}>
           <Link href={pollUrl} style={primaryButton}>
-            Cast your vote
+            Share your input
           </Link>
         </Section>
       </Section>
@@ -66,7 +65,7 @@ export default function PollNotification({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          Your opinion matters. Help shape what {creatorName} creates next.
+          Your opinion matters — help shape what {creatorName} creates next.
         </Text>
         <Text style={messageSubtext}>
           <Link href={settingsUrl} style={inlineLink}>Manage your preferences</Link>
@@ -85,7 +84,7 @@ const greeting = {
   margin: '0 0 4px',
   fontSize: '15px',
   lineHeight: '24px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const label = {
@@ -93,7 +92,7 @@ const label = {
   fontSize: '13px',
   lineHeight: '20px',
   fontWeight: '500',
-  color: '#6B7280',
+  color: '#78716c',
   letterSpacing: '0.3px',
   textTransform: 'uppercase' as const,
 };
@@ -103,7 +102,7 @@ const title = {
   fontSize: '30px',
   lineHeight: '38px',
   fontWeight: '700',
-  color: '#111827',
+  color: '#1c1917',
   letterSpacing: '-0.8px',
 };
 
@@ -111,7 +110,7 @@ const contentPreview = {
   margin: '0 0 32px',
   fontSize: '16px',
   lineHeight: '26px',
-  color: '#4B5563',
+  color: '#44403c',
   letterSpacing: '-0.2px',
 };
 
@@ -129,17 +128,17 @@ const messageText = {
   margin: '0 0 8px',
   fontSize: '14px',
   lineHeight: '20px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const messageSubtext = {
   margin: '0',
   fontSize: '13px',
   lineHeight: '20px',
-  color: '#9CA3AF',
+  color: '#a8a29e',
 };
 
 const inlineLink = {
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
 };

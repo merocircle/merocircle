@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, CornerDownRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, CornerDownRight, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRealtimeComments } from '@/hooks/useRealtimeFeed';
 
@@ -31,22 +31,14 @@ interface ThreadedCommentsProps {
   isSubmitting: boolean;
 }
 
-// Build comment tree from flat array
 function buildCommentTree(comments: Comment[]): Map<string | null, Comment[]> {
   const tree = new Map<string | null, Comment[]>();
-
-  // Initialize with null key for top-level comments
   tree.set(null, []);
-
-  // Group comments by parent_comment_id
   comments.forEach((comment) => {
     const parentId = comment.parent_comment_id;
-    if (!tree.has(parentId)) {
-      tree.set(parentId, []);
-    }
+    if (!tree.has(parentId)) tree.set(parentId, []);
     tree.get(parentId)!.push(comment);
   });
-
   return tree;
 }
 
@@ -61,76 +53,67 @@ export function ThreadedComments({
   const [replyContent, setReplyContent] = useState('');
   const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(new Set());
 
-  // Enable real-time updates for this post's comments
   useRealtimeComments(postId);
 
-  // Build comment tree
   const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
 
-  // Get replies for a comment
   const getReplies = useCallback(
     (commentId: string) => commentTree.get(commentId) || [],
-    [commentTree]
+    [commentTree],
   );
 
-  // Toggle thread collapse
   const toggleThread = (commentId: string) => {
     setCollapsedThreads((prev) => {
       const next = new Set(prev);
-      if (next.has(commentId)) {
-        next.delete(commentId);
-      } else {
-        next.add(commentId);
-      }
+      if (next.has(commentId)) next.delete(commentId);
+      else next.add(commentId);
       return next;
     });
   };
 
-  // Handle reply submit
   const handleReplySubmit = async (e: React.FormEvent, parentId: string) => {
     e.preventDefault();
     if (!replyContent.trim() || isSubmitting) return;
-
     await onAddComment(replyContent.trim(), parentId);
     setReplyContent('');
     setReplyingTo(null);
   };
 
-  // Render a single comment with its replies
   const renderComment = (comment: Comment, depth: number = 0) => {
     const replies = getReplies(comment.id);
     const hasReplies = replies.length > 0;
     const isCollapsed = collapsedThreads.has(comment.id);
-    const maxDepth = 3; // Max nesting level
+    const maxDepth = 3;
     const isMaxDepth = depth >= maxDepth;
 
     return (
-      <div key={comment.id} className={cn('relative', depth > 0 && 'ml-6 mt-2')}>
-        {/* Thread line for nested comments */}
+      <div key={comment.id} className={cn('relative', depth > 0 && 'ml-8 mt-2')}>
+        {/* Thread connector line */}
         {depth > 0 && (
-          <div className="absolute left-[-12px] top-0 bottom-0 w-[2px] bg-border" />
+          <div className="absolute left-[-16px] top-0 bottom-0 w-px bg-border/60" />
         )}
 
-        <div className="flex gap-2">
-          <Avatar className="h-7 w-7 flex-shrink-0">
+        <div className="flex gap-2.5">
+          <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
             <AvatarImage src={comment.user.photo_url} />
-            <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-primary/60 text-white">
+            <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
               {comment.user.display_name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="bg-muted/50 rounded-lg px-3 py-2">
-              <p className="text-sm">
+            {/* Comment bubble */}
+            <div className="bg-muted/40 rounded-2xl rounded-tl-md px-3.5 py-2">
+              <p className="text-[13px] leading-relaxed">
                 <span className="font-semibold text-foreground">
                   {comment.user.display_name}
                 </span>{' '}
-                <span className="text-foreground">{comment.content}</span>
+                <span className="text-foreground/90">{comment.content}</span>
               </p>
             </div>
 
-            {/* Comment actions */}
-            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+            {/* Actions row */}
+            <div className="flex items-center gap-3 mt-1 ml-1 text-[11px] text-muted-foreground">
               <span>
                 {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
               </span>
@@ -138,7 +121,7 @@ export function ThreadedComments({
               {currentUserId && !isMaxDepth && (
                 <button
                   onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                  className="font-medium hover:text-foreground transition-colors"
+                  className="font-semibold hover:text-primary transition-colors"
                 >
                   Reply
                 </button>
@@ -147,17 +130,17 @@ export function ThreadedComments({
               {hasReplies && (
                 <button
                   onClick={() => toggleThread(comment.id)}
-                  className="flex items-center gap-1 font-medium hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 font-semibold hover:text-primary transition-colors"
                 >
                   {isCollapsed ? (
                     <>
                       <ChevronDown className="h-3 w-3" />
-                      Show {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+                      {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
                     </>
                   ) : (
                     <>
                       <ChevronUp className="h-3 w-3" />
-                      Hide replies
+                      Hide
                     </>
                   )}
                 </button>
@@ -174,36 +157,29 @@ export function ThreadedComments({
                   onSubmit={(e) => handleReplySubmit(e, comment.id)}
                   className="mt-2 flex items-center gap-2"
                 >
-                  <CornerDownRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                   <input
                     type="text"
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder={`Reply to ${comment.user.display_name}...`}
-                    className="flex-1 bg-muted/50 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/50"
+                    className="flex-1 bg-muted/40 text-sm rounded-full px-3.5 py-1.5 outline-none focus:ring-2 focus:ring-primary/30 border border-border/40 placeholder:text-muted-foreground"
                     autoFocus
                   />
                   <Button
                     type="submit"
                     size="sm"
                     disabled={!replyContent.trim() || isSubmitting}
-                    className="h-7 px-3"
+                    className="h-7 px-3 rounded-full text-xs"
                   >
-                    {isSubmitting ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      'Reply'
-                    )}
+                    {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Reply'}
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      setReplyingTo(null);
-                      setReplyContent('');
-                    }}
-                    className="h-7 px-2"
+                    onClick={() => { setReplyingTo(null); setReplyContent(''); }}
+                    className="h-7 px-2 text-xs text-muted-foreground"
                   >
                     Cancel
                   </Button>
@@ -230,14 +206,16 @@ export function ThreadedComments({
     );
   };
 
-  // Get top-level comments
   const topLevelComments = commentTree.get(null) || [];
 
   if (comments.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-4">
-        No comments yet. Be the first!
-      </p>
+      <div className="flex flex-col items-center justify-center py-6 text-center">
+        <MessageCircle className="w-8 h-8 text-muted-foreground/40 mb-2" />
+        <p className="text-sm text-muted-foreground">
+          No comments yet. Be the first!
+        </p>
+      </div>
     );
   }
 

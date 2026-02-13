@@ -39,7 +39,7 @@ export default function PaymentFailed({
 }: PaymentFailedProps) {
   return (
     <EmailLayout
-      preview="Payment issue - Action required"
+      preview="We ran into a snag - Quick fix available"
       creatorName={creatorName}
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
@@ -48,14 +48,14 @@ export default function PaymentFailed({
       <Section style={contentSection}>
         <Text style={errorIcon}>!</Text>
         
-        <Heading style={title}>Payment didn't go through</Heading>
+        <Heading style={title}>We ran into a snag</Heading>
 
         <Text style={subtitle}>
           Hi {supporterName}
         </Text>
 
         <Text style={body}>
-          We couldn't process your payment of {currency} {amount.toLocaleString()} to support {creatorName}.
+          We weren't able to process your payment of {currency} {amount.toLocaleString()} to support {creatorName}. No worries—this happens sometimes, and we're here to help.
         </Text>
 
         <Section style={errorCard}>
@@ -63,12 +63,12 @@ export default function PaymentFailed({
         </Section>
 
         <Text style={reasonsTitle}>
-          Common reasons:
+          Common reasons (easy to fix):
         </Text>
 
         <Section style={reasonsList}>
           <Text style={reason}>• Insufficient funds</Text>
-          <Text style={reason}>• Card expired or requires verification</Text>
+          <Text style={reason}>• Card expired or needs verification</Text>
           <Text style={reason}>• Bank declined the transaction</Text>
         </Section>
 
@@ -89,7 +89,7 @@ export default function PaymentFailed({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          Our support team is here to help. Reply to this email or visit our help center.
+          Our support team is here to help—reply to this email or visit our help center anytime.
         </Text>
       </Section>
     </EmailLayout>
@@ -120,7 +120,7 @@ const title = {
   fontSize: '28px',
   lineHeight: '36px',
   fontWeight: '700',
-  color: '#111827',
+  color: '#1c1917',
   letterSpacing: '-0.6px',
 };
 
@@ -128,7 +128,7 @@ const subtitle = {
   margin: '0 0 20px',
   fontSize: '17px',
   lineHeight: '26px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const errorCard = {
@@ -152,7 +152,7 @@ const reasonsTitle = {
   fontSize: '14px',
   lineHeight: '20px',
   fontWeight: '500',
-  color: '#6B7280',
+  color: '#78716c',
   textAlign: 'left' as const,
 };
 
@@ -164,7 +164,7 @@ const reasonsList = {
 const reason = {
   margin: '0 0 8px',
   fontSize: '14px',
-  color: '#6B7280',
+  color: '#78716c',
   lineHeight: '20px',
 };
 
@@ -179,7 +179,7 @@ const secondaryCtaWrapper = {
 };
 
 const secondaryLink = {
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
   fontSize: '15px',
   fontWeight: '500',
@@ -194,5 +194,5 @@ const messageText = {
   margin: '0',
   fontSize: '14px',
   lineHeight: '20px',
-  color: '#6B7280',
+  color: '#78716c',
 };

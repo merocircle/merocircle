@@ -39,7 +39,7 @@ export default function PaymentSuccess({
 }: PaymentSuccessProps) {
   return (
     <EmailLayout
-      preview={`Payment confirmed - Supporting ${creatorName}`}
+      preview={`Your support just landed - Supporting ${creatorName}`}
       creatorName={creatorName}
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
@@ -48,14 +48,14 @@ export default function PaymentSuccess({
       <Section style={contentSection}>
         <Text style={successIcon}>✓</Text>
         
-        <Heading style={title}>Payment confirmed</Heading>
+        <Heading style={title}>Your support just landed</Heading>
 
         <Text style={subtitle}>
-          Thank you, {supporterName}
+          Thanks, {supporterName}
         </Text>
 
         <Text style={body}>
-          Your support means everything to {creatorName}. You're helping them create and share their work with the world.
+          Your support means the world to {creatorName}. You're helping them create and share their work with their circle.
         </Text>
 
         <Section style={detailsCard}>
@@ -88,7 +88,7 @@ export default function PaymentSuccess({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          You now have access to all of {creatorName}'s posts and exclusive content.
+          You now have access to all of {creatorName}'s posts and exclusive content in their circle.
         </Text>
         <Text style={messageSubtext}>
           Questions? <Link href={helpUrl} style={inlineLink}>Contact support</Link>
@@ -121,7 +121,7 @@ const title = {
   fontSize: '28px',
   lineHeight: '36px',
   fontWeight: '700',
-  color: '#111827',
+  color: '#1c1917',
   letterSpacing: '-0.6px',
 };
 
@@ -129,13 +129,13 @@ const subtitle = {
   margin: '0 0 20px',
   fontSize: '17px',
   lineHeight: '26px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const detailsCard = {
   margin: '32px 0',
   padding: '24px',
-  backgroundColor: '#F9FAFB',
+  backgroundColor: '#fafaf9',
   borderRadius: '12px',
   textAlign: 'left' as const,
 };
@@ -149,14 +149,14 @@ const detailRow = {
 const detailLabel = {
   margin: '0',
   fontSize: '14px',
-  color: '#6B7280',
+  color: '#78716c',
   fontWeight: '500',
 };
 
 const detailValue = {
   margin: '0',
   fontSize: '14px',
-  color: '#111827',
+  color: '#1c1917',
   fontWeight: '600',
 };
 
@@ -173,17 +173,17 @@ const messageText = {
   margin: '0 0 8px',
   fontSize: '14px',
   lineHeight: '20px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const messageSubtext = {
   margin: '0',
   fontSize: '13px',
   lineHeight: '20px',
-  color: '#9CA3AF',
+  color: '#a8a29e',
 };
 
 const inlineLink = {
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
 };

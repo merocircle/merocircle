@@ -1,16 +1,13 @@
 import {
-  Body,
-  Container,
-  Head,
   Heading,
-  Html,
+  Hr,
   Link,
-  Preview,
   Section,
   Text,
-  Button,
 } from '@react-email/components';
 import * as React from 'react';
+import EmailLayout from '../components/shared/EmailLayout';
+import { primaryButton, body, divider } from '../components/shared/styles';
 
 interface SubscriptionExpiringReminderProps {
   supporterName: string;
@@ -21,17 +18,19 @@ interface SubscriptionExpiringReminderProps {
   renewUrl: string;
   creatorProfileUrl: string;
   settingsUrl: string;
+  helpUrl?: string;
 }
 
 export default function SubscriptionExpiringReminder({
-  supporterName = 'Supporter',
-  creatorName = 'Creator',
+  supporterName = 'Alex',
+  creatorName = 'Sarah Chen',
   daysUntilExpiry = 2,
   expiryDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
   tierLevel = 1,
   renewUrl = 'https://merocircle.app',
   creatorProfileUrl = 'https://merocircle.app',
   settingsUrl = 'https://merocircle.app/settings',
+  helpUrl = 'https://merocircle.app/help',
 }: SubscriptionExpiringReminderProps) {
   const formattedDate = new Date(expiryDate).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -39,194 +38,134 @@ export default function SubscriptionExpiringReminder({
     day: 'numeric',
   });
 
-  const tierNames = ['', 'One Star Supporter', 'Two Star Supporter', 'Three Star Supporter'];
+  const tierNames = ['', 'One Star', 'Two Star', 'Three Star'];
   const tierName = tierNames[tierLevel] || `Tier ${tierLevel}`;
 
-  const urgencyMessage = daysUntilExpiry === 1 
-    ? 'Your subscription expires tomorrow!' 
-    : `Your subscription expires in ${daysUntilExpiry} days`;
+  const renewalMessage =
+    daysUntilExpiry === 1
+      ? 'Your place in the circle comes up for renewal tomorrow'
+      : `Your place in the circle comes up for renewal in ${daysUntilExpiry} days`;
 
   return (
-    <Html>
-      <Head />
-      <Preview>{`${urgencyMessage} - Renew your support for ${creatorName}`}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={header}>
-            <Heading style={h1}>MeroCircle</Heading>
-          </Section>
+    <EmailLayout
+      preview={`${renewalMessage} — renew your place in ${creatorName}'s circle`}
+      creatorName={creatorName}
+      creatorProfileUrl={creatorProfileUrl}
+      settingsUrl={settingsUrl}
+      helpUrl={helpUrl}
+    >
+      <Section style={contentSection}>
+        <Heading style={title}>Hi {supporterName},</Heading>
 
-          <Section style={content}>
-            <Heading style={h2}>Hi {supporterName},</Heading>
+        <Text style={body}>
+          Your time in <strong>{creatorName}&apos;s circle</strong> is coming up for renewal. You&apos;ve been part of their inner circle as a <strong>{tierName}</strong> member — we wanted to give you a gentle heads up.
+        </Text>
 
-            <Text style={paragraph}>
-              This is a friendly reminder that your <strong>{tierName}</strong> subscription 
-              to <strong>{creatorName}</strong> is expiring soon.
-            </Text>
+        <Section style={infoCard}>
+          <Text style={infoText}>{renewalMessage}</Text>
+          <Text style={expiryDateText}>Renewal date: {formattedDate}</Text>
+        </Section>
 
-            <Section style={alertBox}>
-              <Text style={alertText}>
-                {urgencyMessage}
-              </Text>
-              <Text style={expiryDateText}>
-                Expiry Date: {formattedDate}
-              </Text>
-            </Section>
+        <Text style={body}>
+          To keep enjoying everything {creatorName} shares with their circle — exclusive posts, community chat, and more — you can renew your place whenever you&apos;re ready.
+        </Text>
 
-            <Text style={paragraph}>
-              To continue enjoying exclusive content and access to {creatorName}'s community, 
-              please renew your subscription before it expires.
-            </Text>
+        <Section style={ctaWrapper}>
+          <Link href={renewUrl} style={primaryButton}>
+            Renew your place in the circle
+          </Link>
+        </Section>
 
-            <Section style={buttonContainer}>
-              <Button style={button} href={renewUrl}>
-                Renew Subscription Now
-              </Button>
-            </Section>
+        <Text style={smallText}>
+          After renewal, you&apos;ll continue to have access to:
+        </Text>
+        <Text style={listItem}>• Exclusive posts and content</Text>
+        <Text style={listItem}>• Community chat (if applicable)</Text>
+        <Text style={listItem}>• Special perks from {creatorName}</Text>
+      </Section>
 
-            <Text style={smallText}>
-              After your subscription expires, you will lose access to:
-            </Text>
-            <Text style={listItem}>• Exclusive posts and content</Text>
-            <Text style={listItem}>• Community chat access (if applicable)</Text>
-            <Text style={listItem}>• Special perks from the creator</Text>
-          </Section>
+      <Hr style={divider} />
 
-          <Section style={footer}>
-            <Text style={footerText}>
-              Manage your subscriptions anytime from your{' '}
-              <Link href={settingsUrl} style={footerLink}>
-                settings page
-              </Link>
-              .
-            </Text>
-            <Text style={footerText}>
-              MeroCircle - Empowering Nepali Creators
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
+      <Section style={messageSection}>
+        <Text style={messageText}>
+          Manage your circle memberships anytime from your{' '}
+          <Link href={settingsUrl} style={inlineLink}>
+            preferences
+          </Link>
+          .
+        </Text>
+      </Section>
+    </EmailLayout>
   );
 }
 
-// Styles
-const main = {
-  backgroundColor: '#f6f9fc',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+// Component-specific styles
+const contentSection = {
+  padding: '48px 40px 40px',
 };
 
-const container = {
-  backgroundColor: '#ffffff',
-  margin: '0 auto',
-  padding: '20px 0 48px',
-  marginBottom: '64px',
-  maxWidth: '600px',
-};
-
-const header = {
-  padding: '32px 20px',
-  backgroundColor: '#8b5cf6',
-  textAlign: 'center' as const,
-};
-
-const h1 = {
-  color: '#ffffff',
-  fontSize: '32px',
-  fontWeight: 'bold',
-  margin: '0',
-  padding: '0',
-};
-
-const h2 = {
-  color: '#333',
+const title = {
+  margin: '0 0 20px',
   fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '30px 0',
+  lineHeight: '32px',
+  fontWeight: '700',
+  color: '#1c1917',
+  letterSpacing: '-0.5px',
 };
 
-const content = {
-  padding: '0 40px',
-};
-
-const paragraph = {
-  color: '#525f7f',
-  fontSize: '16px',
-  lineHeight: '24px',
-  textAlign: 'left' as const,
-  marginBottom: '16px',
-};
-
-const alertBox = {
-  backgroundColor: '#fff3cd',
-  border: '2px solid #ffc107',
-  borderRadius: '8px',
-  padding: '20px',
+const infoCard = {
   margin: '24px 0',
-  textAlign: 'center' as const,
+  padding: '20px',
+  backgroundColor: '#fef7f5',
+  borderRadius: '12px',
+  borderLeft: '4px solid #c4382a',
+  textAlign: 'left' as const,
 };
 
-const alertText = {
-  color: '#856404',
-  fontSize: '20px',
-  fontWeight: 'bold',
-  margin: '0 0 8px 0',
+const infoText = {
+  margin: '0 0 8px',
+  fontSize: '17px',
+  fontWeight: '600',
+  color: '#1c1917',
 };
 
 const expiryDateText = {
-  color: '#856404',
-  fontSize: '16px',
   margin: '0',
+  fontSize: '14px',
+  color: '#78716c',
 };
 
-const buttonContainer = {
-  textAlign: 'center' as const,
-  margin: '32px 0',
-};
-
-const button = {
-  backgroundColor: '#8b5cf6',
-  borderRadius: '8px',
-  color: '#fff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 32px',
+const ctaWrapper = {
+  margin: '32px 0 24px',
 };
 
 const smallText = {
-  color: '#525f7f',
+  margin: '0 0 8px',
   fontSize: '14px',
   lineHeight: '20px',
-  marginTop: '24px',
-  marginBottom: '8px',
+  color: '#78716c',
 };
 
 const listItem = {
-  color: '#525f7f',
+  margin: '4px 0 4px 16px',
   fontSize: '14px',
   lineHeight: '20px',
-  margin: '4px 0 4px 16px',
+  color: '#44403c',
 };
 
-const footer = {
-  borderTop: '1px solid #e6ebf1',
-  marginTop: '32px',
-  padding: '20px 40px',
+const messageSection = {
+  padding: '32px 40px 48px',
   textAlign: 'center' as const,
 };
 
-const footerText = {
-  color: '#8898aa',
-  fontSize: '12px',
-  lineHeight: '16px',
-  marginBottom: '8px',
+const messageText = {
+  margin: '0',
+  fontSize: '14px',
+  lineHeight: '20px',
+  color: '#78716c',
 };
 
-const footerLink = {
-  color: '#8b5cf6',
-  textDecoration: 'underline',
+const inlineLink = {
+  color: '#c4382a',
+  textDecoration: 'none',
 };

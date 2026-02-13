@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
+import { useState, useEffect, useMemo, useCallback, useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, Bookmark, Send, Loader2, Lock, MoreHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Loader2, Lock, MoreHorizontal, ChevronLeft, ChevronRight, BarChart3, ImageIcon, PlayCircle, FileText, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -14,21 +14,18 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from '@/lib/youtube';
 import { getBlurDataURL, imageSizes } from '@/lib/image-utils';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLikePost, useAddComment } from '@/hooks/useQueries';
-import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import ThreadedComments from './ThreadedComments';
 import { ShareModal } from './ShareModal';
 import { PostDetailModal } from './PostDetailModal';
 
-// Lazy load PollCard component (only loads when needed for poll posts)
 const PollCard = dynamic(() => import('./PollCard').then(mod => ({ default: mod.PollCard })), {
   loading: () => (
-    <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-48 flex items-center justify-center">
-      <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+    <div className="animate-pulse bg-muted rounded-lg h-48 flex items-center justify-center">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
     </div>
   ),
-  ssr: false, // Polls are interactive, no need for SSR
+  ssr: false,
 });
 
 interface Post {
@@ -52,15 +49,11 @@ interface Post {
     category?: string;
     is_verified?: boolean;
   };
-  likes?: Array<{
-    id: string;
-    user_id: string;
-  }>;
+  likes?: Array<{ id: string; user_id: string }>;
   likes_count?: number;
   comments_count?: number;
-  poll?: {
-    id: string;
-  };
+  is_liked?: boolean;
+  poll?: { id: string };
 }
 
 interface EnhancedPostCardProps {
@@ -70,9 +63,8 @@ interface EnhancedPostCardProps {
   onComment?: (postId: string) => void;
   onShare?: (postId: string) => void;
   showActions?: boolean;
-  isSupporter?: boolean; // Whether the current user is a supporter of this creator
-  onNavigateToMembership?: () => void; // Callback to navigate to membership tab
-  /** Vanity slug for share URL: /creator/slug?post=... */
+  isSupporter?: boolean;
+  onNavigateToMembership?: () => void;
   creatorSlug?: string;
 }
 
@@ -81,90 +73,7 @@ interface Comment {
   content: string;
   created_at: string;
   parent_comment_id: string | null;
-  user: {
-    id: string;
-    display_name: string;
-    photo_url?: string;
-  };
-}
-
-// Heart particles burst effect
-function HeartParticles({ show }: { show: boolean }) {
-  const particles = Array.from({ length: 6 }, (_, i) => ({
-    id: i,
-    angle: (i * 60) * (Math.PI / 180),
-  }));
-
-  return (
-    <AnimatePresence>
-      {show && (
-        <>
-          {particles.map((particle) => (
-            <motion.div
-              key={particle.id}
-              className="absolute pointer-events-none"
-              style={{ left: '50%', top: '50%' }}
-              initial={{
-                scale: 0,
-                opacity: 0,
-                x: 0,
-                y: 0
-              }}
-              animate={{
-                scale: [0, 1, 0.5],
-                opacity: [0, 1, 0],
-                x: Math.cos(particle.angle) * 30,
-                y: Math.sin(particle.angle) * 30 - 20,
-              }}
-              transition={{
-                duration: 0.5,
-                delay: particle.id * 0.04,
-                ease: "easeOut"
-              }}
-            >
-              <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-            </motion.div>
-          ))}
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// Post Image Modal Component
-function PostImageModal({ imageUrl, title, children }: { imageUrl: string; title: string; children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <>
-      <div onClick={() => setIsOpen(true)}>
-        {children}
-      </div>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-5xl w-full p-0 bg-black/95">
-          <div className="relative w-full h-[80vh] flex items-center justify-center">
-            <Image
-              src={imageUrl}
-              alt={title}
-              fill
-              className="object-contain"
-              sizes="100vw"
-              placeholder="blur"
-              blurDataURL={getBlurDataURL()}
-              priority
-              quality={100}
-            />
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+  user: { id: string; display_name: string; photo_url?: string };
 }
 
 export function EnhancedPostCard({
@@ -179,16 +88,12 @@ export function EnhancedPostCard({
   creatorSlug,
 }: EnhancedPostCardProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  
-  // Optimistic mutations
+  const [, startTransition] = useTransition();
   const likeMutation = useLikePost();
   const commentMutation = useAddComment();
 
-  // Check if current user has liked the post from the likes array
-  const initialIsLiked = currentUserId
-    ? (post.likes?.some((like: { user_id: string }) => like.user_id === currentUserId) || false)
-    : false;
+  const initialIsLiked = post.is_liked
+    ?? (currentUserId ? (post.likes?.some(like => like.user_id === currentUserId) || false) : false);
 
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -198,127 +103,72 @@ export function EnhancedPostCard({
   const [comments, setComments] = useState<Comment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [showHeartParticles, setShowHeartParticles] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
-  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [showFullContent, setShowFullContent] = useState(false);
 
-  // Get all images (support both image_url and image_urls)
   const allImages = useMemo(() => {
-    if (post.image_urls && post.image_urls.length > 0) {
-      return post.image_urls;
-    }
-    if (post.image_url) {
-      return [post.image_url];
-    }
+    if (post.image_urls && post.image_urls.length > 0) return post.image_urls;
+    if (post.image_url) return [post.image_url];
     return [];
   }, [post.image_urls, post.image_url]);
 
-  // Detect YouTube video in content
-  const youtubeVideoId = useMemo(() => {
-    return extractVideoIdFromContent(post.content);
-  }, [post.content]);
+  const youtubeVideoId = useMemo(() => extractVideoIdFromContent(post.content), [post.content]);
 
-  // Handle poll data
   const pollData = useMemo(() => {
-    if (post.post_type === 'poll') {
-      return post.poll;
-    }
-    return null;
+    if (post.post_type !== 'poll') return null;
+    const raw = post.poll;
+    // Handle both array (from Supabase join) and object formats
+    if (Array.isArray(raw)) return raw[0] || null;
+    return raw || null;
   }, [post]);
 
-  // Check if post should be blurred (supporter-only content for non-supporters)
   const shouldBlur = useMemo(() => {
-    // If post is public and free tier, never blur
-    const isPublicAndFree = (post.is_public === true || post.is_public === undefined) && 
-                            (post.tier_required === 'free' || !post.tier_required);
-    if (isPublicAndFree) {
-      return false;
-    }
-    
-    // If post is not public OR requires a tier (supporter-only), check if user has access
+    const isPublicAndFree = (post.is_public === true || post.is_public === undefined) &&
+      (post.tier_required === 'free' || !post.tier_required);
+    if (isPublicAndFree) return false;
     const isSupporterOnly = post.is_public === false || (post.tier_required && post.tier_required !== 'free');
-    
-    if (!isSupporterOnly) {
-      return false;
-    }
-    
-    // If user is a supporter, don't blur
-    if (isSupporter) {
-      return false;
-    }
-    
-    // If user is the creator, don't blur
-    if (currentUserId === post.creator.id) {
-      return false;
-    }
-    
-    // Otherwise, blur supporter-only content
+    if (!isSupporterOnly) return false;
+    if (isSupporter || currentUserId === post.creator.id) return false;
     return true;
   }, [post.is_public, post.tier_required, isSupporter, currentUserId, post.creator.id]);
 
-  // Determine creator profile link
-  const creatorProfileLink = currentUserId === post.creator.id 
-    ? '/profile' 
-    : `/creator/${post.creator.id}`;
+  const creatorProfileLink = currentUserId === post.creator.id ? '/profile' : `/creator/${post.creator.id}`;
 
-  // Prefetch creator profile on hover/focus for instant navigation
   const handlePrefetch = useCallback(() => {
     router.prefetch(creatorProfileLink);
   }, [router, creatorProfileLink]);
 
-  // Optimistic navigation - no waiting
   const handleCreatorClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    startTransition(() => {
-      router.push(creatorProfileLink);
-    });
+    e.stopPropagation();
+    startTransition(() => { router.push(creatorProfileLink); });
   }, [router, creatorProfileLink, startTransition]);
 
   const handleLike = useCallback(() => {
-    if (!currentUserId) {
-      router.push('/auth');
-      return;
-    }
-
+    if (!currentUserId) { router.push('/auth'); return; }
     const action = isLiked ? 'unlike' : 'like';
-
-    // Show particle effect on like
-    if (!isLiked) {
-      setShowHeartParticles(true);
-      setTimeout(() => setShowHeartParticles(false), 500);
-    }
-
-    // Optimistic UI update (local state)
     setIsLiked(!isLiked);
     setLikesCount(prev => isLiked ? Math.max(0, prev - 1) : prev + 1);
-
-    // Trigger mutation with optimistic cache updates
     likeMutation.mutate({ postId: post.id, action });
     onLike?.(post.id);
   }, [currentUserId, isLiked, router, post.id, likeMutation, onLike]);
 
-  // Handle post click to open modal
-  const handlePostClick = useCallback(() => {
-    setShowPostModal(true);
-  }, []);
+  const handlePostClick = useCallback(() => { setShowPostModal(true); }, []);
 
   const handleShare = () => {
     setShowShareModal(true);
     onShare?.(post.id);
   };
 
-  // Update isLiked when post.likes or currentUserId changes
   useEffect(() => {
-    if (currentUserId && post.likes) {
-      const userLiked = post.likes.some((like: { user_id: string }) => like.user_id === currentUserId);
-      setIsLiked(userLiked);
-    } else {
-      setIsLiked(false);
+    if (post.is_liked !== undefined) {
+      setIsLiked(post.is_liked);
+    } else if (currentUserId && post.likes) {
+      setIsLiked(post.likes.some(like => like.user_id === currentUserId));
     }
-  }, [post.likes, currentUserId]);
+  }, [post.is_liked, post.likes, currentUserId]);
 
   useEffect(() => {
     if (showComments) {
@@ -330,45 +180,26 @@ export function EnhancedPostCard({
             const data = await response.json();
             setComments(data.comments || []);
           }
-        } catch (error) {
-          console.error('Failed to fetch comments:', error);
-        } finally {
-          setLoadingComments(false);
-        }
+        } catch { /* ignore */ } finally { setLoadingComments(false); }
       };
       fetchComments();
     }
   }, [showComments, post.id]);
 
   const handleCommentClick = (e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    if (!currentUserId) {
-      router.push('/auth');
-      return;
-    }
+    if (e) { e.stopPropagation(); e.preventDefault(); }
+    if (!currentUserId) { router.push('/auth'); return; }
     setShowComments(!showComments);
     onComment?.(post.id);
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || commentMutation.isPending) return;
-    if (!currentUserId) {
-      router.push('/auth');
-      return;
-    }
-
-    const commentContent = newComment.trim();
-
-    // Trigger optimistic mutation
+    if (!newComment.trim() || commentMutation.isPending || !currentUserId) return;
     commentMutation.mutate(
-      { postId: post.id, content: commentContent },
+      { postId: post.id, content: newComment.trim() },
       {
         onSuccess: (newCommentData) => {
-          // Update local comments list
           setComments(prev => [...prev, { ...newCommentData, parent_comment_id: null }]);
           setCommentsCount(prev => prev + 1);
           setNewComment('');
@@ -378,416 +209,350 @@ export function EnhancedPostCard({
     );
   };
 
-  // Handle adding a comment with optional parent (for replies)
   const handleAddComment = async (content: string, parentCommentId?: string) => {
-    if (!currentUserId) {
-      router.push('/auth');
-      return;
-    }
-
+    if (!currentUserId) { router.push('/auth'); return; }
     commentMutation.mutate(
       { postId: post.id, content, parentCommentId },
       {
         onSuccess: (newCommentData) => {
           setComments(prev => [...prev, { ...newCommentData, parent_comment_id: parentCommentId || null }]);
-          if (!parentCommentId) {
-            setCommentsCount(prev => prev + 1);
-          }
+          if (!parentCommentId) setCommentsCount(prev => prev + 1);
           onComment?.(post.id);
         },
       }
     );
   };
 
+  const isSupporterOnly = post.tier_required && post.tier_required !== 'free';
+  const hasMedia = allImages.length > 0 || youtubeVideoId;
+  const contentLength = post.content?.length || 0;
+  const CONTENT_PREVIEW_LENGTH = 280;
+
+  // Detect post content type for icon display
+  // Priority: poll > video > image > link > text
+  const postContentType = useMemo(() => {
+    if (post.post_type === 'poll') return 'poll';
+    if (youtubeVideoId) return 'video';
+    if (allImages.length > 0) return 'image';
+    // Only classify as "link" if the post content is primarily a URL (not just contains one)
+    if (post.content) {
+      const trimmed = post.content.trim();
+      const urlPattern = /^https?:\/\/[^\s]+$/;
+      // Entire content is a URL, or content starts with URL and rest is short
+      if (urlPattern.test(trimmed)) return 'link';
+    }
+    return 'text';
+  }, [post.post_type, youtubeVideoId, allImages.length, post.content]);
+
+  const postTypeConfig = useMemo(() => {
+    switch (postContentType) {
+      case 'poll': return { icon: BarChart3, label: 'Poll', color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-950/30' };
+      case 'video': return { icon: PlayCircle, label: 'Video', color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-950/30' };
+      case 'image': return { icon: ImageIcon, label: 'Photo', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/30' };
+      case 'link': return { icon: FileText, label: 'Link', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/30' };
+      default: return { icon: FileText, label: 'Post', color: 'text-muted-foreground', bg: 'bg-muted/50' };
+    }
+  }, [postContentType]);
+
+  const PostTypeIcon = postTypeConfig.icon;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="w-full"
-    >
-      <div 
-        className="overflow-hidden bg-card rounded-xl border border-border cursor-pointer"
-        onClick={(e) => {
-          // Don't open modal if clicking on comments section, action buttons, or blurred content
-          const target = e.target as HTMLElement;
-          const isClickOnComments = target.closest('[data-comments-section]') !== null;
-          const isClickOnActions = target.closest('[data-actions-section]') !== null;
-          const isClickOnBlurred = shouldBlur && target.closest('[data-blurred-section]') !== null;
-          if (!isClickOnComments && !isClickOnActions && !isClickOnBlurred) {
-            handlePostClick();
-          }
-        }}
-      >
-        {/* Header - Instagram style */}
-        <div className="flex items-center justify-between px-2.5 py-2" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-2.5">
-            <Link 
-              href={creatorProfileLink} 
-              className="cursor-pointer"
+    <article className="w-full">
+      <div className="bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-300 hover:border-border/80 hover:shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
+        {/* ── Header ────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-2" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-3">
+            <Link
+              href={creatorProfileLink}
               onMouseEnter={handlePrefetch}
               onFocus={handlePrefetch}
               onClick={handleCreatorClick}
+              className="relative"
             >
-              <Avatar className="h-8 w-8 ring-2 ring-background hover:ring-primary/50 transition-all">
+              <Avatar className="h-10 w-10 sm:h-11 sm:w-11 ring-2 ring-background hover:ring-primary/30 transition-all">
                 <AvatarImage src={post.creator.photo_url} alt={post.creator.display_name} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white font-semibold">
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                   {post.creator.display_name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
+              {/* Post type indicator on avatar */}
+              <span className={cn(
+                "absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center border-2 border-card",
+                postTypeConfig.bg
+              )}>
+                <PostTypeIcon className={cn("w-2.5 h-2.5", postTypeConfig.color)} />
+              </span>
             </Link>
-            <div className="flex flex-col">
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <Link
                   href={creatorProfileLink}
-                  className="text-xs font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+                  className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate"
                   onMouseEnter={handlePrefetch}
-                  onFocus={handlePrefetch}
                   onClick={handleCreatorClick}
                 >
                   {post.creator.display_name}
                 </Link>
                 {post.creator_profile?.is_verified && (
-                  <Badge variant="secondary" className="h-3 px-1 text-[9px] bg-blue-500/10 text-blue-500 border-0">
-                    ✓
-                  </Badge>
+                  <svg className="w-3.5 h-3.5 text-primary flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                 <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                <span className="text-border">·</span>
+                <span className={cn("flex items-center gap-1", postTypeConfig.color)}>
+                  <PostTypeIcon className="w-3 h-3" />
+                  {postTypeConfig.label}
+                </span>
                 {post.creator_profile?.category && (
                   <>
-                    <span>·</span>
-                    <span>{post.creator_profile.category}</span>
-                  </>
-                )}
-                {/* Social Proof: Show supporter count */}
-                {(post as any).creator_supporter_count > 0 && (
-                  <>
-                    <span>·</span>
-                    <span className="text-primary font-medium">{(post as any).creator_supporter_count} supporters</span>
+                    <span className="text-border">·</span>
+                    <span className="truncate">{post.creator_profile.category}</span>
                   </>
                 )}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            {post.tier_required !== 'free' && (
-              <Badge variant="secondary" className="text-[9px] px-1.5 py-0.5">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {isSupporterOnly && (
+              <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-primary/30 text-primary bg-primary/5">
+                <Lock className="w-2.5 h-2.5 mr-1" />
                 {post.tier_required}
               </Badge>
             )}
-            <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
+            <button className="p-1.5 rounded-full hover:bg-muted transition-colors" onClick={e => e.stopPropagation()}>
               <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
         </div>
 
-        {/* Title Section - Show before image */}
+        {/* ── Title ──────────────────────────────────────── */}
         {post.title && post.post_type !== 'poll' && (
-          <div className="px-4 py-3 border-b border-border/50">
-            <h2 className="text-lg font-bold text-foreground leading-tight">
+          <div
+            className="px-4 sm:px-5 pt-1 pb-1 cursor-pointer"
+            onClick={handlePostClick}
+          >
+            <h2 className="text-base sm:text-lg font-bold text-foreground leading-snug">
               {post.title}
             </h2>
           </div>
         )}
 
-        {/* Media Section */}
-        <div className="relative">
-          {shouldBlur ? (
-            /* Blurred content with simple overlay */
-            <div
-              className="relative w-full aspect-square max-w-[480px] mx-auto bg-gradient-to-br from-muted to-muted/50 overflow-hidden"
-              data-blurred-section
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Subtle preview of content (blurred) */}
-              {allImages.length > 0 && (
-                <Image
-                  src={allImages[0]}
-                  alt="Preview"
-                  fill
-                  className="object-cover opacity-20 blur-2xl"
-                  sizes="630px"
-                />
-              )}
-              
-              {/* Simple overlay */}
-              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
-                <div className="text-center p-6 max-w-sm space-y-4" onClick={(e) => e.stopPropagation()}>
-                  {/* Lock icon */}
-                  <div className="flex justify-center mb-2">
-                    <div className="p-3 bg-background/90 backdrop-blur-md rounded-xl shadow-lg border border-primary/20">
-                      <Lock className="w-6 h-6 text-primary" />
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Get access to this exclusive content
-                  </p>
-                  
-                  {onNavigateToMembership ? (
-                    <Button 
-                      size="sm" 
-                      className="w-full" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        onNavigateToMembership();
-                      }}
-                    >
-                      View Membership
-                    </Button>
-                  ) : (
-                    <Button 
-                      size="sm" 
-                      className="w-full" 
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Link href={creatorProfileLink} onClick={(e) => e.stopPropagation()}>
-                        View Membership
-                      </Link>
-                    </Button>
-                  )}
+        {/* ── Blurred overlay for supporter-only content ── */}
+        {shouldBlur ? (
+          <div
+            className={cn(
+              "relative w-full overflow-hidden",
+              hasMedia ? "aspect-[4/3] bg-gradient-to-br from-muted to-muted/50" : "py-8 bg-muted/30"
+            )}
+            data-blurred-section
+            onClick={e => e.stopPropagation()}
+          >
+            {allImages.length > 0 && (
+              <Image src={allImages[0]} alt="Preview" fill className="object-cover opacity-15 blur-2xl scale-110" sizes="630px" />
+            )}
+            <div className={cn(
+              "flex items-center justify-center",
+              hasMedia ? "absolute inset-0" : "relative"
+            )}>
+              <div className="text-center p-6 max-w-xs space-y-3">
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-card/90 border border-border shadow-lg">
+                  <Lock className="w-4.5 h-4.5 text-primary" />
                 </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground mb-0.5">Circle-only</p>
+                  <p className="text-xs text-muted-foreground">Join the inner circle to see this</p>
+                </div>
+                {onNavigateToMembership ? (
+                  <Button size="sm" className="rounded-full px-5 shadow-md shadow-primary/15" onClick={e => { e.stopPropagation(); onNavigateToMembership(); }}>
+                    Join Circle
+                  </Button>
+                ) : (
+                  <Button size="sm" className="rounded-full px-5 shadow-md shadow-primary/15" asChild>
+                    <Link href={creatorProfileLink} onClick={e => e.stopPropagation()}>Join Circle</Link>
+                  </Button>
+                )}
               </div>
             </div>
-          ) : (
-            /* Unlocked content - Instagram style */
-            <>
-              {/* Poll */}
-              {post.post_type === 'poll' && pollData && pollData.id && (
-                <div className="px-4 pb-4">
-                  <PollCard pollId={pollData.id} currentUserId={currentUserId} />
-                </div>
-              )}
-
-              {/* YouTube Video Embed */}
-              {post.post_type !== 'poll' && youtubeVideoId && (
-                <div className="relative w-full aspect-video bg-black">
-                  <iframe
-                    src={getYouTubeEmbedUrl(youtubeVideoId)}
-                    title="YouTube video player"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    className="absolute inset-0 w-full h-full"
-                  />
-                </div>
-              )}
-
-              {/* Post Images - Instagram style carousel */}
-              {post.post_type !== 'poll' && allImages.length > 0 && (
-                <div
-                  className="relative w-full aspect-square max-w-[480px] mx-auto bg-muted select-none"
-                >
-                  <Image
-                    src={allImages[currentImageIndex]}
-                    alt={`${post.title} - Image ${currentImageIndex + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes={imageSizes.post}
-                    placeholder="blur"
-                    blurDataURL={getBlurDataURL()}
-                    priority={false}
-                    loading="lazy"
-                    draggable={false}
-                  />
-
-                  {/* Carousel Navigation - Only show if multiple images */}
-                  {allImages.length > 1 && (
-                    <>
-                      {/* Left Arrow */}
-                      {currentImageIndex > 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentImageIndex(prev => prev - 1);
-                          }}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-10"
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </button>
-                      )}
-
-                      {/* Right Arrow */}
-                      {currentImageIndex < allImages.length - 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentImageIndex(prev => prev + 1);
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors z-10"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
-                      )}
-
-                      {/* Image Counter */}
-                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 text-white text-xs font-medium z-10">
-                        {currentImageIndex + 1}/{allImages.length}
-                      </div>
-
-                      {/* Dot Indicators */}
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                        {allImages.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCurrentImageIndex(index);
-                            }}
-                            className={cn(
-                              "w-1.5 h-1.5 rounded-full transition-all",
-                              index === currentImageIndex
-                                ? "bg-white w-2.5"
-                                : "bg-white/50 hover:bg-white/70"
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Actions Row - Instagram style */}
-        {showActions && (
-          <div className="px-2.5 py-2" data-actions-section onClick={(e) => e.stopPropagation()}>
-            {/* Action buttons */}
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-3">
-                {/* Like button with particles */}
-                <div className="relative">
-                  <motion.button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLike();
-                    }}
-                    disabled={!currentUserId || likeMutation.isPending}
-                    whileTap={{ scale: 0.8 }}
-                    className="p-1"
-                  >
-                    <motion.div
-                      animate={isLiked ? {
-                        scale: [1, 1.3, 0.9, 1.1, 1],
-                      } : {}}
-                      transition={{ duration: 0.4, ease: "easeInOut" }}
-                    >
-                      <Heart
-                        className={cn(
-                          'w-5 h-5 transition-colors',
-                          isLiked ? 'text-rose-500 fill-rose-500' : 'text-foreground'
-                        )}
-                      />
-                    </motion.div>
-                  </motion.button>
-                  <HeartParticles show={showHeartParticles} />
-                </div>
-                {/* Comment button */}
-                <motion.button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    handleCommentClick(e);
-                  }}
-                  whileTap={{ scale: 0.9 }}
-                  className="p-1"
-                >
-                  <MessageCircle className="w-5 h-5 text-foreground" />
-                </motion.button>
-                {/* Share button */}
-                <motion.button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShare();
-                  }}
-                  whileTap={{ scale: 0.9 }}
-                  className="p-1"
-                >
-                  <Share2 className="w-5 h-5 text-foreground" />
-                </motion.button>
-              </div>
-              {/* Bookmark button */}
-              <motion.button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsBookmarked(!isBookmarked);
-                }}
-                whileTap={{ scale: 0.9 }}
-                className="p-1"
-              >
-                <Bookmark
-                  className={cn(
-                    'w-5 h-5 transition-colors',
-                    isBookmarked ? 'text-foreground fill-foreground' : 'text-foreground'
-                  )}
-                />
-              </motion.button>
-            </div>
-
-            {/* Likes count */}
-            <p className="text-xs font-semibold text-foreground">
-              {likesCount.toLocaleString()} {likesCount === 1 ? 'like' : 'likes'}
-            </p>
-
-            {/* Description - Show after image with "See more" functionality */}
+          </div>
+        ) : (
+          <>
+            {/* ── Content text (always shown above media when present) ── */}
             {post.content && post.post_type !== 'poll' && (
-              <div className="mt-2">
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                  {showFullDescription || post.content.length <= 300
+              <div className="px-4 sm:px-5 pt-1 pb-2 cursor-pointer" onClick={handlePostClick}>
+                <p className={cn(
+                  "text-foreground/90 leading-relaxed whitespace-pre-wrap",
+                  hasMedia ? "text-sm" : "text-[15px] sm:text-base"
+                )}>
+                  {showFullContent || contentLength <= CONTENT_PREVIEW_LENGTH
                     ? post.content
-                    : `${post.content.slice(0, 300)}...`}
+                    : `${post.content.slice(0, CONTENT_PREVIEW_LENGTH)}...`}
                 </p>
-                {post.content.length > 300 && (
+                {contentLength > CONTENT_PREVIEW_LENGTH && (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowFullDescription(!showFullDescription);
-                    }}
-                    className="text-sm text-primary hover:text-primary/80 font-medium mt-1"
+                    onClick={e => { e.stopPropagation(); setShowFullContent(!showFullContent); }}
+                    className="text-sm text-primary font-medium hover:underline mt-1"
                   >
-                    {showFullDescription ? 'See less' : 'See more'}
+                    {showFullContent ? 'Show less' : 'Show more'}
                   </button>
                 )}
               </div>
             )}
 
-            {/* View comments link */}
-            {commentsCount > 0 && !showComments && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  handleCommentClick(e);
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground mt-1"
-              >
-                View all {commentsCount} comments
-              </button>
+            {/* ── Poll ── */}
+            {post.post_type === 'poll' && pollData?.id && (
+              <div className="px-4 sm:px-5 pb-3">
+                <PollCard pollId={pollData.id} currentUserId={currentUserId} />
+              </div>
             )}
+
+            {/* ── Video embed ── */}
+            {post.post_type !== 'poll' && youtubeVideoId && (
+              <div className="relative w-full aspect-video bg-black" onClick={e => e.stopPropagation()}>
+                <iframe
+                  src={getYouTubeEmbedUrl(youtubeVideoId)}
+                  title="YouTube video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                />
+              </div>
+            )}
+
+            {/* ── Images ── */}
+            {post.post_type !== 'poll' && allImages.length > 0 && (
+              <div
+                className="relative w-full bg-muted/30 select-none cursor-pointer"
+                onClick={handlePostClick}
+              >
+                <div className="relative w-full" style={{ maxHeight: '520px' }}>
+                  <Image
+                    src={allImages[currentImageIndex]}
+                    alt={`${post.title || 'Post'} - Image ${currentImageIndex + 1}`}
+                    width={800}
+                    height={600}
+                    className="object-cover w-full"
+                    style={{ maxHeight: '520px' }}
+                    sizes={imageSizes.post}
+                    placeholder="blur"
+                    blurDataURL={getBlurDataURL()}
+                    loading="lazy"
+                    draggable={false}
+                  />
+                </div>
+
+                {allImages.length > 1 && (
+                  <>
+                    {currentImageIndex > 0 && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setCurrentImageIndex(i => i - 1); }}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 hover:bg-card text-foreground shadow-lg transition-all z-10 backdrop-blur-sm"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                    )}
+                    {currentImageIndex < allImages.length - 1 && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setCurrentImageIndex(i => i + 1); }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 hover:bg-card text-foreground shadow-lg transition-all z-10 backdrop-blur-sm"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    )}
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-card/80 text-foreground text-xs font-medium z-10 backdrop-blur-sm shadow-sm">
+                      {currentImageIndex + 1}/{allImages.length}
+                    </div>
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                      {allImages.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={e => { e.stopPropagation(); setCurrentImageIndex(idx); }}
+                          className={cn(
+                            "h-1.5 rounded-full transition-all",
+                            idx === currentImageIndex ? "bg-primary w-4" : "bg-foreground/30 w-1.5 hover:bg-foreground/50"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Actions — compact, understated ── */}
+        {showActions && (
+          <div className="px-3 sm:px-4 py-1.5 mt-0.5" data-actions-section onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-0">
+                {/* Like */}
+                <motion.button
+                  onClick={handleLike}
+                  disabled={!currentUserId || likeMutation.isPending}
+                  whileTap={{ scale: 0.85 }}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all",
+                    isLiked
+                      ? "text-[var(--like-color)]"
+                      : "text-muted-foreground hover:text-[var(--like-color)] hover:bg-[var(--like-color)]/5"
+                  )}
+                >
+                  <Heart className={cn("w-4 h-4 transition-transform", isLiked && "fill-current scale-110")} />
+                  {likesCount > 0 && <span>{likesCount}</span>}
+                </motion.button>
+                {/* Comment */}
+                <motion.button
+                  onClick={handleCommentClick}
+                  whileTap={{ scale: 0.9 }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-[var(--comment-color)] hover:bg-[var(--comment-color)]/5 transition-all"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  {commentsCount > 0 && <span>{commentsCount}</span>}
+                </motion.button>
+                {/* Share */}
+                <motion.button
+                  onClick={e => { e.stopPropagation(); handleShare(); }}
+                  whileTap={{ scale: 0.9 }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-[var(--share-color)] hover:bg-[var(--share-color)]/5 transition-all"
+                >
+                  <Send className="w-4 h-4" />
+                </motion.button>
+              </div>
+              {/* Bookmark */}
+              <motion.button
+                onClick={e => { e.stopPropagation(); setIsBookmarked(!isBookmarked); }}
+                whileTap={{ scale: 0.85 }}
+                className={cn(
+                  "p-1.5 rounded-full transition-all",
+                  isBookmarked
+                    ? "text-[var(--bookmark-color)]"
+                    : "text-muted-foreground hover:text-[var(--bookmark-color)] hover:bg-[var(--bookmark-color)]/5"
+                )}
+              >
+                <Bookmark className={cn("w-4 h-4", isBookmarked && "fill-current")} />
+              </motion.button>
+            </div>
           </div>
         )}
 
-        {/* Comments Section */}
+        {/* ── Comments ── */}
         <AnimatePresence>
           {showComments && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden border-t border-border"
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden border-t border-border/40"
               data-comments-section
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
-              <div className="px-2.5 py-2 max-h-96 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                {/* Threaded Comments */}
+              <div className="px-4 sm:px-5 py-3 max-h-80 overflow-y-auto">
                 {loadingComments ? (
-                  <div className="flex items-center justify-center py-4">
+                  <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
@@ -801,49 +566,42 @@ export function EnhancedPostCard({
                 )}
               </div>
 
-              {/* Add Comment Input - Instagram style inline */}
-              <div className="px-3 py-2.5 border-t border-border" onClick={(e) => e.stopPropagation()}>
+              {/* Comment input */}
+              <div className="px-4 sm:px-5 py-3 border-t border-border/40 bg-muted/20" onClick={e => e.stopPropagation()}>
                 {currentUserId ? (
-                  <form 
-                    onSubmit={handleSubmitComment} 
-                    className="flex items-center gap-3"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Avatar className="h-7 w-7 flex-shrink-0">
-                      <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-primary/60 text-white">
+                  <form onSubmit={handleSubmitComment} className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
                         {currentUserId.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <input
-                      type="text"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Add a comment..."
-                      className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={newComment}
+                        onChange={e => setNewComment(e.target.value)}
+                        placeholder="Write a comment..."
+                        className="w-full bg-card border border-border/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </div>
                     <button
                       type="submit"
                       disabled={!newComment.trim() || commentMutation.isPending}
                       className={cn(
-                        "text-sm font-semibold transition-colors",
+                        "text-sm font-semibold px-3 py-2 rounded-full transition-all",
                         newComment.trim()
-                          ? "text-primary hover:text-primary/80"
-                          : "text-primary/50 cursor-not-allowed"
+                          ? "text-primary-foreground bg-primary hover:bg-primary/90"
+                          : "text-muted-foreground bg-muted cursor-not-allowed"
                       )}
-                      onClick={(e) => e.stopPropagation()}
                     >
-                      {commentMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Post'
-                      )}
+                      {commentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Post'}
                     </button>
                   </form>
                 ) : (
-                  <Link href="/auth" className="block text-center" onClick={(e) => e.stopPropagation()}>
-                    <span className="text-xs text-muted-foreground hover:text-foreground">
-                      Log in to comment
+                  <Link href="/auth" className="block text-center py-2">
+                    <span className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Sign in to comment
                     </span>
                   </Link>
                 )}
@@ -853,7 +611,6 @@ export function EnhancedPostCard({
         </AnimatePresence>
       </div>
 
-      {/* Share Modal */}
       <ShareModal
         open={showShareModal}
         onClose={() => setShowShareModal(false)}
@@ -864,7 +621,6 @@ export function EnhancedPostCard({
         creatorId={post.creator.id}
       />
 
-      {/* Post Detail Modal */}
       <PostDetailModal
         open={showPostModal}
         onClose={() => setShowPostModal(false)}
@@ -873,6 +629,6 @@ export function EnhancedPostCard({
         isSupporter={isSupporter}
         creatorSlug={creatorSlug}
       />
-    </motion.div>
+    </article>
   );
 }

@@ -2,11 +2,23 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { createClient } from "@/lib/supabase/server";
 
+// Validate required env vars at load time
+const requiredEnvVars = [
+  "NEXTAUTH_URL",
+  "NEXTAUTH_SECRET",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+] as const;
+const missing = requiredEnvVars.filter((key) => !process.env[key]?.trim());
+if (missing.length > 0) {
+  console.error("[NextAuth] Missing required env vars:", missing.join(", "));
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
   ],
   pages: {

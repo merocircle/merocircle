@@ -54,7 +54,14 @@ function AuthPageContent() {
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam) {
-      setError(errorParam);
+      // Map NextAuth error codes to user-friendly messages
+      const errorMessages: Record<string, string> = {
+        Configuration: 'Authentication is not configured correctly. Please ensure NEXTAUTH_URL, NEXTAUTH_SECRET, GOOGLE_CLIENT_ID, and GOOGLE_CLIENT_SECRET are set in .env.local.',
+        AccessDenied: 'Access denied. You do not have permission to sign in.',
+        Verification: 'The sign-in link has expired or has already been used.',
+        Default: 'An error occurred during sign in. Please try again.',
+      };
+      setError(errorMessages[errorParam] || errorParam);
       router.replace('/auth', { scroll: false });
     }
   }, [searchParams, router]);
