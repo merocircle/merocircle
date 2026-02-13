@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { PaymentSuccessModal } from './PaymentSuccessModal';
 
 interface PaymentGatewaySelectorProps {
   open: boolean;
@@ -37,19 +35,22 @@ export function PaymentGatewaySelector({
       id: 'esewa' as const,
       name: 'eSewa',
       logoPath: '/esewa.png',
-      available: true,
+      available: false,
+      description: 'Coming soon',
     },
     {
       id: 'khalti' as const,
       name: 'Khalti',
       logoPath: '/khalti.png',
-      available: true,
+      available: false,
+      description: 'Coming soon',
     },
     {
       id: 'dodo' as const,
       name: 'Visa/Mastercard',
       logoPath: '/dodo.png',
-      available: true,
+      available: false,
+      description: 'Coming soon',
       isSubscription: true,
     },
     {
@@ -60,12 +61,6 @@ export function PaymentGatewaySelector({
       description: 'Coming soon',
     },
   ];
-
-  const [paymentSuccess, setPaymentSuccess] = useState<{
-    transactionUuid: string;
-    totalAmount: number;
-    gateway: string;
-  } | null>(null);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -141,97 +136,6 @@ export function PaymentGatewaySelector({
               </Card>
             );
           })}
-        </div>
-
-        {/* Direct Payment Button */}
-        <div className="mt-4 pt-4 border-t">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={async () => {
-              try {
-                console.log("supporter message", supporterMessage);
-
-                const response = await fetch('/api/payment/direct', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    amount,
-                    creatorId,
-                    supporterId,
-                    supporterMessage: supporterMessage || '',
-                    tier_level: tierLevel,
-                  }),
-                });
-
-                if (!response.ok) {
-                  const errorData = await response.json().catch(() => ({}));
-                  throw new Error(errorData.error || 'Direct payment failed');
-                }
-
-                const result = await response.json();
-                
-                // if (result.success && result.transaction) {
-                //   // Close modal first
-                //   onClose();
-                //   // Redirect to payment success page with transaction details
-                //   const transactionUuid = result.transaction.transaction_uuid;
-                //   const totalAmount = result.transaction.amount;
-                  
-                //   // Use window.location to ensure full page navigation (creatorId is from props)
-                //   window.location.href = `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`;
-                // } else {
-                //   throw new Error(result.error || 'Payment failed');
-                // }
-
-                if (result.success && result.transaction) {
-                  setPaymentSuccess({
-                    transactionUuid: result.transaction.transaction_uuid,
-                    totalAmount: result.transaction.amount,
-                    gateway: 'direct',
-                  });
-                } else throw new Error(result.error || 'Direct payment failed');
-              } catch (error) {
-                console.error('Direct payment error:', error);
-                alert(error instanceof Error ? error.message : 'Failed to register support. Please try again.');
-              }
-            }}
-          >
-            Skip Payment Gateway & Register Support
-          </Button>
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-            This will register your support without going through a payment gateway
-          </p>
-          {paymentSuccess && (
-            <PaymentSuccessModal
-              open={!!paymentSuccess}
-              onClose={() => {
-                setPaymentSuccess(null);
-                if (onPaymentSuccess && paymentSuccess) {
-                  onPaymentSuccess(tierLevel);
-                }
-                onClose();
-              }}
-              onViewPosts={() => {
-                if (onPaymentSuccess && paymentSuccess) {
-                  onPaymentSuccess(tierLevel, 'posts');
-                }
-                setPaymentSuccess(null);
-                onClose();
-              }}
-              onViewChat={() => {
-                if (onPaymentSuccess && paymentSuccess) {
-                  onPaymentSuccess(tierLevel, 'chat');
-                }
-                setPaymentSuccess(null);
-                onClose();
-              }}
-              transactionUuid={paymentSuccess.transactionUuid}
-              totalAmount={paymentSuccess.totalAmount}
-              gateway={paymentSuccess.gateway}
-              creatorName={creatorName || ''}
-            />
-          )}
         </div>
       </DialogContent>
     </Dialog>

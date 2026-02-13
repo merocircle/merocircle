@@ -318,6 +318,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     amount: number;
     message?: string;
   } | null>(null);
+  const [showConfirmFreeSupport, setShowConfirmFreeSupport] = useState<{ message?: string } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [showTiers, setShowTiers] = useState(false);
   const [showSupportBanner, setShowSupportBanner] = useState(false);
@@ -365,6 +366,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       return;
     }
 
+    // Free tier (Supporter): confirm modal then direct payment with amount 0
+    if (tierLevel === 1 && amount === 0) {
+      setShowConfirmFreeSupport({ message });
+      return;
+    }
+
     setPendingPayment({ tierLevel, amount, message });
     setShowGatewaySelector(true);
   }, [user, creatorId, isWithinProvider]);
@@ -376,12 +383,16 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     try {
       const pending = JSON.parse(raw);
       if (pending.creatorId === creatorId) {
-        setPendingPayment({
-          tierLevel: pending.tierLevel,
-          amount: pending.amount,
-          message: pending.message
-        });
-        setShowGatewaySelector(true);
+        if (pending.tierLevel === 1 && pending.amount === 0) {
+          setShowConfirmFreeSupport({ message: pending.message });
+        } else {
+          setPendingPayment({
+            tierLevel: pending.tierLevel,
+            amount: pending.amount,
+            message: pending.message
+          });
+          setShowGatewaySelector(true);
+        }
       }
     } catch {
     } finally {
@@ -621,6 +632,46 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       setPendingPayment(null);
     }
   }, [pendingPayment, user, creatorId, refreshCreatorDetails]);
+
+  const handleConfirmFreeSupport = useCallback(async () => {
+    if (!user || !showConfirmFreeSupport) return;
+    setPaymentLoading(true);
+    try {
+      const response = await fetch('/api/payment/direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: 0,
+          creatorId,
+          supporterId: user.id,
+          supporterMessage: showConfirmFreeSupport.message || '',
+          tier_level: 1,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to join as supporter');
+      }
+      const result = await response.json();
+      if (result.success && result.transaction) {
+        updateSupporterTier(1);
+        refreshCreatorDetails();
+        setPaymentSuccess({
+          transactionUuid: result.transaction.transaction_uuid,
+          totalAmount: Number(result.transaction.amount ?? 0),
+          gateway: 'direct',
+        });
+        setShowConfirmFreeSupport(null);
+      } else {
+        throw new Error(result.error || 'Failed to join');
+      }
+    } catch (error) {
+      console.error('Free support error:', error);
+      alert(error instanceof Error ? error.message : 'Could not join as supporter. Please try again.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, [user, creatorId, showConfirmFreeSupport, refreshCreatorDetails, updateSupporterTier]);
 
   const handleSubscription = useCallback(async (tierId: string) => {
     if (!user) {
@@ -1234,7 +1285,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
               <TabsContent value="chat" className="mt-6">
                 <div className="relative">
-                  {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 ? (
+                  {isSupporter ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
                       <div className="h-[600px]">
                         <StreamCommunitySection creatorId={creatorId} />
@@ -1495,6 +1546,25 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         />
       )}
 
+      <Dialog open={!!showConfirmFreeSupport} onOpenChange={(open) => !open && setShowConfirmFreeSupport(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Join as Supporter (Free)</DialogTitle>
+            <DialogDescription>
+              You&apos;ll get access to community chat and posts. No payment required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-4">
+            <Button variant="outline" className="flex-1" onClick={() => setShowConfirmFreeSupport(null)} disabled={paymentLoading}>
+              Cancel
+            </Button>
+            <Button className="flex-1" onClick={handleConfirmFreeSupport} disabled={paymentLoading}>
+              {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showAuthModal} onOpenChange={handleAuthModalChange}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -1544,8 +1614,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         <PaymentSuccessModal
           open={!!paymentSuccess}
           onClose={() => setPaymentSuccess(null)}
+          onViewPosts={() => {
+            refreshCreatorDetails();
+            setActiveTab('posts');
+            setPaymentSuccess(null);
+          }}
+          onViewChat={() => {
+            refreshCreatorDetails();
+            setActiveTab('chat');
+            setPaymentSuccess(null);
+          }}
           transactionUuid={paymentSuccess.transactionUuid}
           totalAmount={paymentSuccess.totalAmount}
+          creatorName={creatorDetails?.display_name ?? ''}
         />
       )}
 

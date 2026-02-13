@@ -155,10 +155,10 @@ export function TierSelection({
                       </h3>
                       <div className="mt-3">
                         <div className="text-4xl font-bold text-foreground">
-                          NPR {tier.price}
+                          {tier.price === 0 ? 'Free' : `NPR ${tier.price}`}
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">
-                          per month
+                          {tier.price === 0 ? 'no payment required' : 'per month'}
                         </div>
                       </div>
                     </div>
@@ -210,7 +210,11 @@ export function TierSelection({
                           disabled={loading}
                           className="w-full py-3 px-4 rounded-md font-medium text-center bg-foreground text-background hover:opacity-90 active:opacity-80 transition-all duration-200 disabled:opacity-50"
                         >
-                          {currentTierLevel !== 0 && tier.tier_level > currentTierLevel ? 'Upgrade' : 'Select'} {getTierDisplayName(tier.tier_level)}
+                          {tier.price === 0 && tier.tier_level === 1
+                            ? 'Join as Supporter'
+                            : currentTierLevel !== 0 && tier.tier_level > currentTierLevel
+                              ? `Upgrade to ${getTierDisplayName(tier.tier_level)}`
+                              : `Select ${getTierDisplayName(tier.tier_level)}`}
                         </button>
                       )}
                     </div>

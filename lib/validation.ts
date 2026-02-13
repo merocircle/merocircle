@@ -30,6 +30,23 @@ export function validateAmount(amount: string | number): ValidationResult {
 }
 
 /**
+ * Validate payment amount, allowing zero (for free tier / direct zero payment).
+ */
+export function validateAmountAllowZero(amount: string | number): ValidationResult {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+
+  if (isNaN(numAmount) || numAmount < 0) {
+    return { valid: false, error: 'Amount must be zero or a positive number' };
+  }
+
+  if (numAmount > 1000000) {
+    return { valid: false, error: 'Maximum amount is NPR 1,000,000' };
+  }
+
+  return { valid: true, value: numAmount };
+}
+
+/**
  * Validate UUID format
  */
 export function validateUUID(uuid: string): boolean {
