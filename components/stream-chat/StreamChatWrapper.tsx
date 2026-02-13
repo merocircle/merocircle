@@ -7,13 +7,14 @@ import {
   Window,
   MessageList,
   MessageInput,
-  Thread,
 } from 'stream-chat-react';
 import type { Channel as StreamChannelType } from 'stream-chat';
 import { useStreamChat } from '@/contexts/stream-chat-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
+import { CustomQuotedMessage } from './CustomQuotedMessage';
+import { CustomMessageOptions } from './CustomMessageOptions';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send
@@ -509,6 +510,10 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
     }
   }, [chatClient, user, fetchDMChannels]);
 
+  // Hide thread UI (we only use quote reply, not threads)
+  const NoOpMessageRepliesCountButton = useCallback(() => null, []);
+  const NoOpThread = useCallback(() => null, []);
+
   // Custom message actions
   const CustomMessageActionsList = useMemo(() => {
     if (!isCreator) return undefined;
@@ -751,13 +756,19 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {activeChannel ? (
-              <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
+              <Channel 
+                channel={activeChannel} 
+                CustomMessageActionsList={CustomMessageActionsList}
+                QuotedMessage={CustomQuotedMessage}
+                MessageOptions={CustomMessageOptions}
+                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+              >
                 <Window>
                   <CustomChannelHeader />
                   <MessageList />
                   <MessageInput focus />
                 </Window>
-                <Thread />
+                <NoOpThread />
               </Channel>
             ) : channelError ? (
               <div className="flex items-center justify-center h-full bg-muted/50">
@@ -918,7 +929,13 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
           {mobileView === 'chat' && activeChannel && (
             <div className="h-full flex flex-col overflow-hidden">
-              <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
+              <Channel 
+                channel={activeChannel} 
+                CustomMessageActionsList={CustomMessageActionsList}
+                QuotedMessage={CustomQuotedMessage}
+                MessageOptions={CustomMessageOptions}
+                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+              >
                 <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
                     <button
@@ -932,7 +949,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                   <MessageList />
                   <MessageInput focus />
                 </Window>
-                <Thread />
+                <NoOpThread />
               </Channel>
             </div>
           )}
@@ -1123,6 +1140,100 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
         .str-chat__quoted-message-preview .str-chat__message-inner {
           margin-left: 0 !important;
+        }
+
+        /* Reaction emoji below the bubble; options and reply stay beside the bubble */
+        .str-chat__message--other .str-chat__message-inner {
+          grid-template-areas:
+            'message-bubble options'
+            'reactions reactions' !important;
+        }
+        .str-chat__message--me .str-chat__message-inner {
+          grid-template-areas:
+            'reminder reminder'
+            'options message-bubble'
+            'reactions reactions' !important;
+        }
+
+        /* Scroll-to-message highlight when clicking a quoted reply */
+        .str-chat__message--highlighted {
+          animation: reply-scroll-highlight 2s ease-out;
+        }
+
+        @keyframes reply-scroll-highlight {
+          0% {
+            background-color: rgba(147, 51, 234, 0.25);
+          }
+          100% {
+            background-color: transparent;
+          }
+        }
+
+        /* Custom WhatsApp-style reply box */
+        .custom-reply-box {
+          transition: all 0.2s ease;
+        }
+
+        .custom-reply-box:hover {
+          opacity: 0.95;
+          transform: translateY(-1px);
+        }
+
+        .custom-reply-box:active {
+          transform: translateY(0);
+        }
+
+        /* Light mode - received messages (grey bubbles) - OTHER PEOPLE'S MESSAGES */
+        .custom-reply-box-other .reply-box-sender-name,
+        .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-sender-name {
+          color: #9333ea !important;
+        }
+
+        .custom-reply-box-other .reply-box-message-text,
+        .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-message-text {
+          color: #1a1a1a !important;
+          opacity: 0.75 !important;
+        }
+
+        /* Light mode - sent messages (purple bubbles) - MY MESSAGES */
+        .custom-reply-box--me .reply-box-sender-name,
+        .str-chat__message-simple--me .custom-reply-box .reply-box-sender-name {
+          color: #ffffff !important;
+        }
+
+        .custom-reply-box--me .reply-box-message-text,
+        .str-chat__message-simple--me .custom-reply-box .reply-box-message-text {
+          color: #ffffff !important;
+          opacity: 0.9 !important;
+        }
+
+        /* Dark mode styling - received messages */
+        .dark .custom-reply-box-other,
+        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box {
+          background: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .dark .custom-reply-box-other .reply-box-sender-name,
+        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-sender-name {
+          color: #a855f7 !important;
+        }
+
+        .dark .custom-reply-box-other .reply-box-message-text,
+        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-message-text {
+          color: rgba(255, 255, 255, 0.85) !important;
+          opacity: 1 !important;
+        }
+
+        /* Dark mode - sent messages */
+        .dark .custom-reply-box--me .reply-box-sender-name,
+        .dark .str-chat__message-simple--me .custom-reply-box .reply-box-sender-name {
+          color: #ffffff !important;
+        }
+
+        .dark .custom-reply-box--me .reply-box-message-text,
+        .dark .str-chat__message-simple--me .custom-reply-box .reply-box-message-text {
+          color: #ffffff !important;
+          opacity: 0.9 !important;
         }
 
         .str-chat__message-actions-list-item {
