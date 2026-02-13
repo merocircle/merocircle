@@ -272,6 +272,15 @@ const ExploreSection = memo(function ExploreSection() {
                                 {creator.creator_profile.category}
                               </Badge>
                             )}
+                            <Button 
+                              size="sm" 
+                              className="w-full rounded-full"
+                              onClick={() => {
+                                router.push(`/creator/${creator.user_id}`);
+                              }}
+                            >
+                              Enter Circle
+                            </Button>
                           </div>
                         </Card>
                       </motion.div>
