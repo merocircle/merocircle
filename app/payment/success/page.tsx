@@ -48,6 +48,8 @@ function PaymentSuccessContent() {
       const ref_id = searchParams.get('refId');
       const subscription_id = searchParams.get('subscription_id');
       const transaction_id = searchParams.get('transaction_id');
+      const pidx = searchParams.get('pidx');
+      const amountParam = searchParams.get('amount'); // Khalti sends amount in paisa
 
       // eSewa redirects to success_url with response in Base64 "data" param (developer.esewa.com.np)
       const dataParam = searchParams.get('data');
@@ -78,6 +80,8 @@ function PaymentSuccessContent() {
         ref_id,
         subscription_id,
         transaction_id,
+        pidx,
+        amountParam,
       });
 
       if (gateway === 'dodo') {
@@ -105,7 +109,21 @@ function PaymentSuccessContent() {
         return;
       }
 
-      // Handle other payment gateways (eSewa, Khalti, Direct). Params may come from URL or eSewa's Base64 "data".
+      // Khalti: server already verified in /api/payment/khalti/verify and redirected here with pidx, amount (paisa), gateway=khalti
+      if (gateway === 'khalti' && pidx) {
+        const amountNpr = amountParam ? Number(amountParam) / 100 : undefined;
+        setVerified(true);
+        setTransaction({
+          id: transaction_id || pidx,
+          amount: amountNpr,
+          status: 'completed',
+          created_at: new Date().toISOString(),
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Handle other payment gateways (eSewa, Direct). Params may come from URL or eSewa's Base64 "data".
       if (!transaction_uuid || !total_amount) {
         console.error('[SUCCESS] Missing parameters (transaction_uuid/total_amount or eSewa data param)');
         setIsVerifying(false);
@@ -181,7 +199,7 @@ function PaymentSuccessContent() {
             Payment redirect issue
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            We couldn’t confirm your payment from this page. If you already paid via eSewa, your support may still have gone through. Go back to the creator page or home to check.
+            We couldn’t confirm your payment from this page. If you already paid via eSewa or Khalti, your support may still have gone through. Go back to the creator page or home to check.
           </p>
           <div className="space-y-3">
             {creatorId && (
