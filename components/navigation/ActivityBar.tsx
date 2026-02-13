@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Home,
+  Compass,
   MessageCircle,
   Bell,
   BarChart3,
@@ -100,6 +101,7 @@ export function ActivityBar({
   // Main navigation items
   const navItems: NavItem[] = [
     { id: 'home', icon: Home, label: 'Home', view: 'home' },
+    { id: 'explore', icon: Compass, label: 'Explore', view: 'explore' },
     { id: 'messages', icon: MessageCircle, label: 'Messages', view: 'chat', badge: unreadMessages },
     { id: 'notifications', icon: Bell, label: 'Notifications', view: 'notifications', badge: unreadNotifications },
   ];

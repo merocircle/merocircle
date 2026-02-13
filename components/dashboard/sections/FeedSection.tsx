@@ -1,23 +1,19 @@
 'use client';
 
-import { memo, useState, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Users, TrendingUp, Rss, BarChart3, ImageIcon, PlayCircle, Plus } from 'lucide-react';
+import { Users, Compass, Plus, RefreshCw } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUnifiedDashboard } from '@/hooks/useQueries';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
-import { EmptyStateCard } from '@/components/common/EmptyStateCard';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TimelineFeed, withTimeline } from '@/components/posts/TimelineFeed';
-import { PostSkeleton } from '@/components/feed/PostSkeleton';
 import { cn } from '@/lib/utils';
 
-// Note: individual post animation is handled by TimelinePost (fadeInUp)
-// and EnhancedPostCard's own motion.article. No extra wrapper needed.
-
-// ── Circles Strip (supported creators) ──
+// ── Circles strip — followed creators at the top ──
 function CirclesStrip() {
   const router = useRouter();
   const { data: supportedCreatorsData, isLoading } = useSupportedCreators();
@@ -33,29 +29,46 @@ function CirclesStrip() {
 
   if (isLoading) {
     return (
-      <div className="flex gap-3 px-1 py-3 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-3.5 px-1 py-4 overflow-x-auto scrollbar-hide">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <div className="w-14 h-14 rounded-full bg-muted animate-pulse" />
-            <div className="w-10 h-2 bg-muted rounded animate-pulse" />
+            <div className="w-[52px] h-[52px] rounded-full bg-muted animate-pulse" />
+            <div className="w-9 h-2 bg-muted rounded animate-pulse" />
           </div>
         ))}
       </div>
     );
   }
 
-  if (creators.length === 0) return null;
-
-  return (
-    <div className="py-3 border-b border-border/20">
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide px-1 scroll-smooth-touch">
-        {/* Explore / add more */}
+  if (creators.length === 0) {
+    return (
+      <div className="py-4 px-1">
         <button
           onClick={() => router.push('/explore')}
-          className="flex flex-col items-center gap-1.5 flex-shrink-0 w-16"
+          className="flex items-center gap-3 w-full p-3 rounded-xl border border-dashed border-border/60 hover:border-primary/30 hover:bg-muted/30 transition-all group"
         >
-          <div className="w-14 h-14 rounded-full border-2 border-dashed border-border/60 flex items-center justify-center bg-muted/30">
-            <Plus className="w-5 h-5 text-muted-foreground" />
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/15 transition-colors">
+            <Compass className="w-5 h-5 text-primary" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-medium text-foreground">Find creators to follow</p>
+            <p className="text-xs text-muted-foreground">Explore and join circles you love</p>
+          </div>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-3 border-b border-border/15">
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide px-1 scroll-smooth-touch">
+        {/* Explore button */}
+        <button
+          onClick={() => router.push('/explore')}
+          className="flex flex-col items-center gap-1 flex-shrink-0 w-[60px]"
+        >
+          <div className="w-[52px] h-[52px] rounded-full border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20 hover:bg-muted/40 transition-colors">
+            <Plus className="w-4.5 h-4.5 text-muted-foreground" />
           </div>
           <span className="text-[10px] font-medium text-muted-foreground">Explore</span>
         </button>
@@ -64,23 +77,24 @@ function CirclesStrip() {
           <button
             key={creator.id}
             onClick={() => router.push(`/creator/${creator.id}`)}
-            className="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 group"
+            className="flex flex-col items-center gap-1 flex-shrink-0 w-[60px] group"
           >
             <div className={cn(
-              "w-14 h-14 rounded-full overflow-hidden transition-all",
+              "w-[52px] h-[52px] rounded-full overflow-hidden transition-all",
               creator.hasNew
                 ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                : "ring-2 ring-border/30 ring-offset-1 ring-offset-background group-hover:ring-primary/40"
+                : "ring-1.5 ring-border/30 ring-offset-1 ring-offset-background group-hover:ring-primary/40"
             )}>
               {creator.photo ? (
                 <img
                   src={creator.photo}
                   alt={creator.name}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                  <span className="text-base font-semibold text-primary">
+                  <span className="text-sm font-semibold text-primary">
                     {creator.name.charAt(0)}
                   </span>
                 </div>
@@ -96,191 +110,187 @@ function CirclesStrip() {
   );
 }
 
-// ── Main Feed Section ──
+// ── Skeleton for loading state ──
+function FeedSkeleton() {
+  return (
+    <div className="space-y-5 pt-4">
+      {[...Array(3)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: i * 0.08 }}
+          className="bg-card rounded-xl border border-border/50 overflow-hidden"
+        >
+          {/* Header skeleton */}
+          <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+            <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+            <div className="flex-1 space-y-1.5">
+              <div className="w-28 h-3.5 bg-muted rounded animate-pulse" />
+              <div className="w-20 h-2.5 bg-muted/70 rounded animate-pulse" />
+            </div>
+          </div>
+          {/* Content skeleton */}
+          <div className="px-4 py-2 space-y-2">
+            <div className="w-full h-3 bg-muted/60 rounded animate-pulse" />
+            <div className="w-3/4 h-3 bg-muted/60 rounded animate-pulse" />
+          </div>
+          {/* Media skeleton (random — some have it, some don't) */}
+          {i !== 1 && (
+            <div className="w-full h-48 bg-muted/40 animate-pulse mt-1" />
+          )}
+          {/* Actions skeleton */}
+          <div className="flex items-center gap-4 px-4 py-3">
+            <div className="w-12 h-6 bg-muted/50 rounded-full animate-pulse" />
+            <div className="w-12 h-6 bg-muted/50 rounded-full animate-pulse" />
+            <div className="w-8 h-6 bg-muted/50 rounded-full animate-pulse" />
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// ── Main Feed ──
 const FeedSection = memo(function FeedSection() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
-  const { data: feedData, isLoading } = useUnifiedDashboard();
-  const [feedFilter, setFeedFilter] = useState<'for-you' | 'circles' | 'trending'>('for-you');
-  const [contentTypeFilter, setContentTypeFilter] = useState<'all' | 'poll' | 'image' | 'video'>('all');
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: feedData, isLoading, isFetching } = useUnifiedDashboard();
 
   useRealtimeFeed();
 
+  const posts = feedData?.posts || [];
+  const hasFollowing = feedData?.has_following || false;
   const showSkeleton = isLoading && !feedData;
 
-  const filters = [
-    { id: 'for-you', label: 'For You', icon: Sparkles },
-    { id: 'circles', label: 'My Circles', icon: Users },
-    { id: 'trending', label: 'Trending', icon: TrendingUp },
-  ] as const;
-
-  const contentTypes = [
-    { id: 'all', label: 'All', icon: Rss },
-    { id: 'poll', label: 'Polls', icon: BarChart3, color: 'text-violet-500' },
-    { id: 'image', label: 'Photos', icon: ImageIcon, color: 'text-blue-500' },
-    { id: 'video', label: 'Videos', icon: PlayCircle, color: 'text-rose-500' },
-  ] as const;
-
-  const filteredPosts = useMemo(() => {
-    if (!feedData?.posts) return [];
-    let posts = feedData.posts;
-
-    // Feed filter
-    switch (feedFilter) {
-      case 'circles':
-        posts = posts.filter((post: any) => post.is_supporter === true);
-        break;
-      case 'trending':
-        posts = [...posts].sort((a: any, b: any) => {
-          const aScore = (a.likes_count || 0) + (a.comments_count || 0) * 2;
-          const bScore = (b.likes_count || 0) + (b.comments_count || 0) * 2;
-          return bScore - aScore;
-        });
-        break;
-    }
-
-    // Content type filter
-    if (contentTypeFilter !== 'all') {
-      posts = posts.filter((post: any) => {
-        switch (contentTypeFilter) {
-          case 'poll':
-            return post.post_type === 'poll';
-          case 'image':
-            return (post.image_url || (post.image_urls && post.image_urls.length > 0)) && post.post_type !== 'poll';
-          case 'video': {
-            const ytPattern = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-            return ytPattern.test(post.content || '') || !!post.media_url;
-          }
-          default:
-            return true;
-        }
-      });
-    }
-
-    return posts;
-  }, [feedData?.posts, feedFilter, contentTypeFilter]);
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard', 'unified'] });
+  };
 
   return (
-    <AnimatePresence mode="wait">
-      {showSkeleton ? (
-        <motion.div
-          key="skeleton"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.2 } }}
-          className="space-y-4 pt-4"
-        >
-          <PostSkeleton count={3} />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="content"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          {/* ── Circles strip (supported creators) ── */}
-          <CirclesStrip />
+    <div>
+      {/* Circles strip — always visible */}
+      <CirclesStrip />
 
-          {/* ── Feed header ── */}
-          <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-0 border-b border-border/20">
-            {/* Main filter tabs */}
-            <div className="flex gap-0.5">
-              {filters.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setFeedFilter(id)}
-                  className={cn(
-                    'relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors rounded-t-lg',
-                    feedFilter === id
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/30',
-                  )}
+      {/* Refresh indicator */}
+      <AnimatePresence>
+        {isFetching && !isLoading && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+              <RefreshCw className="w-3 h-3 animate-spin" />
+              <span>Refreshing...</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Feed content */}
+      <AnimatePresence mode="wait">
+        {showSkeleton ? (
+          <motion.div
+            key="skeleton"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+          >
+            {/* Skeleton circles strip */}
+            <FeedSkeleton />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            {posts.length > 0 ? (
+              <div className="pt-3">
+                <TimelineFeed
+                  onRefresh={handleRefresh}
+                  emptyMessage="No new posts from your circles yet."
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{label}</span>
-                  {feedFilter === id && (
-                    <motion.div
-                      layoutId="feed-tab-indicator"
-                      className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
+                  {withTimeline(
+                    posts,
+                    (post: any) => (
+                      <EnhancedPostCard
+                        post={post}
+                        currentUserId={userId}
+                        showActions={true}
+                        isSupporter={post.is_supporter || false}
+                      />
+                    ),
                   )}
-                </button>
-              ))}
-            </div>
-
-            {/* Content type pills */}
-            <div className="flex gap-1.5 pb-2.5 pt-2 overflow-x-auto scrollbar-hide">
-              {contentTypes.map(({ id, label, icon: Icon, ...rest }) => {
-                const color = 'color' in rest ? rest.color : undefined;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setContentTypeFilter(id)}
-                    className={cn(
-                      'flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap border',
-                      contentTypeFilter === id
-                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                        : 'bg-card text-muted-foreground border-border/50 hover:border-primary/30 hover:text-foreground'
-                    )}
-                  >
-                    <Icon className={cn("w-3 h-3", contentTypeFilter === id ? '' : color)} />
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── Posts ── */}
-          <div className="pt-4">
-            {filteredPosts.length > 0 ? (
-              <TimelineFeed key={`${feedFilter}-${contentTypeFilter}`}>
-                {withTimeline(
-                  filteredPosts,
-                  (post: any) => (
-                    <EnhancedPostCard
-                      post={post}
-                      currentUserId={userId}
-                      showActions={true}
-                      isSupporter={post.is_supporter || false}
-                    />
-                  ),
-                )}
-              </TimelineFeed>
-            ) : (
+                </TimelineFeed>
+              </div>
+            ) : hasFollowing ? (
+              /* Following creators but no posts yet */
               <motion.div
-                key={`${feedFilter}-${contentTypeFilter}`}
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="pt-8"
+                className="pt-12 pb-8"
               >
-                <EmptyStateCard
-                  icon={feedFilter === 'circles' ? Users : (
-                    contentTypeFilter !== 'all'
-                      ? contentTypes.find(c => c.id === contentTypeFilter)?.icon || Rss
-                      : Rss
-                  )}
-                  title={
-                    feedFilter === 'circles'
-                      ? 'No posts from your circles'
-                      : contentTypeFilter !== 'all'
-                        ? `No ${contentTypes.find(c => c.id === contentTypeFilter)?.label?.toLowerCase() || 'posts'} yet`
-                        : 'No posts yet'
-                  }
-                  description={
-                    feedFilter === 'circles'
-                      ? 'Support some creators to build your circle and see their exclusive content here.'
-                      : 'Follow some creators to see their content here, or explore trending posts.'
-                  }
-                />
+                <div className="text-center space-y-4 max-w-sm mx-auto px-4">
+                  <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                    <Users className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground mb-1">
+                      Your feed is quiet
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      The creators you follow haven&apos;t posted recently. Check back soon or explore new circles.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/explore')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors"
+                  >
+                    <Compass className="w-4 h-4" />
+                    Explore creators
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              /* Not following anyone */
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="pt-12 pb-8"
+              >
+                <div className="text-center space-y-4 max-w-sm mx-auto px-4">
+                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Compass className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground mb-1">
+                      Start building your circle
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Follow creators to see their posts here. Your feed is personal — only from people you care about.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/explore')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors"
+                  >
+                    <Compass className="w-4 h-4" />
+                    Find your people
+                  </button>
+                </div>
               </motion.div>
             )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 });
 
