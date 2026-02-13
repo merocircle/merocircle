@@ -348,8 +348,8 @@ interface WelcomeEmailData {
 }
 
 /**
- * Sends a welcome email to a new user
- * Triggered by database webhook when a new user signs up
+ * Sends a personalized welcome letter to a new user
+ * Triggered on account creation — a warm note from the team
  */
 export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
   try {
@@ -360,19 +360,17 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const profileUrl = data.userRole === 'creator' 
-      ? `${appUrl}/creator-studio` 
-      : `${appUrl}/profile`;
     const exploreUrl = `${appUrl}/explore`;
     const settingsUrl = EMAIL_CONFIG.urls.settings;
     const helpUrl = EMAIL_CONFIG.urls.help;
 
+    // Extract first name for personalization
+    const firstName = data.userName.split(' ')[0] || data.userName;
+
     // Render welcome email template
     const html = await render(
       WelcomeEmail({
-        userName: data.userName,
-        userRole: data.userRole,
-        profileUrl,
+        firstName,
         exploreUrl,
         settingsUrl,
         helpUrl,
@@ -384,7 +382,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     const mailOptions = {
       from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
       to: data.userEmail,
-      subject: EMAIL_SUBJECTS.welcome(data.userName),
+      subject: EMAIL_SUBJECTS.welcome(firstName),
       html,
       messageId,
       headers: {
@@ -398,8 +396,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
 
     logger.info('Welcome email sent successfully', 'EMAIL', {
       recipient: data.userEmail,
-      userName: data.userName,
-      userRole: data.userRole,
+      firstName,
     });
 
     return true;
