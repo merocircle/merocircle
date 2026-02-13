@@ -290,7 +290,8 @@ export function PostDetailModal({
 
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-card/90 hover:bg-card text-foreground shadow-lg backdrop-blur-sm transition-colors border border-border/50"
+            className="absolute z-50 p-2.5 rounded-full bg-card/90 hover:bg-card text-foreground shadow-lg backdrop-blur-sm transition-colors border border-border/50 top-[calc(1rem+env(safe-area-inset-top))] right-4 sm:top-4"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>

@@ -92,7 +92,7 @@ const ExploreSection = memo(function ExploreSection() {
   return (
     <div className="space-y-6 pb-8">
       {/* ── Search + Categories sticky header ── */}
-      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-0 border-b border-border/20">
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-0 border-b border-border/20 safe-area-top">
         <div className="relative mb-3">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -108,7 +108,7 @@ const ExploreSection = memo(function ExploreSection() {
         </div>
 
         {/* Category pills */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2.5 -mx-1 px-1 scroll-smooth-touch">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2.5 -mx-1 px-1 scroll-smooth-touch no-select">
           {categories.map((category) => {
             const Icon = category.icon;
             const isSelected = selectedCategory === category.id;
@@ -246,7 +246,7 @@ const ExploreSection = memo(function ExploreSection() {
                 </div>
 
                 {trendingCreators.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     {trendingCreators.slice(0, 4).map((creator: any, index: number) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <CreatorCard
@@ -314,7 +314,7 @@ const ExploreSection = memo(function ExploreSection() {
                   <h3 className="text-sm font-semibold text-foreground">Categories</h3>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
                   {categories.slice(1).map((category) => {
                     const Icon = category.icon;
                     const isSelected = selectedCategory === category.id;

@@ -40,14 +40,34 @@ function PaymentSuccessContent() {
   const verifyPayment = async () => {
     try {
       // Get parameters from payment callback (eSewa, Khalti, Direct, or Dodo)
-      const transaction_uuid = searchParams.get('transaction_uuid');
-      const total_amount = searchParams.get('total_amount');
-      const product_code = searchParams.get('product_code') || 'EPAYTEST';
+      let transaction_uuid = searchParams.get('transaction_uuid');
+      let total_amount = searchParams.get('total_amount');
+      let product_code = searchParams.get('product_code') || 'EPAYTEST';
       const gateway = searchParams.get('gateway'); // 'esewa', 'khalti', 'direct', or 'dodo'
       const creator_id = searchParams.get('creator_id');
       const ref_id = searchParams.get('refId');
       const subscription_id = searchParams.get('subscription_id');
       const transaction_id = searchParams.get('transaction_id');
+
+      // eSewa redirects to success_url with response in Base64 "data" param (developer.esewa.com.np)
+      const dataParam = searchParams.get('data');
+      if (dataParam && typeof window !== 'undefined') {
+        try {
+          const decoded = JSON.parse(atob(dataParam)) as {
+            status?: string;
+            transaction_uuid?: string;
+            total_amount?: number | string;
+            product_code?: string;
+          };
+          if (decoded.status === 'COMPLETE' && decoded.transaction_uuid != null) {
+            transaction_uuid = decoded.transaction_uuid;
+            total_amount = String(decoded.total_amount ?? '');
+            if (decoded.product_code) product_code = decoded.product_code;
+          }
+        } catch (e) {
+          console.warn('[SUCCESS] Could not parse eSewa data param', e);
+        }
+      }
 
       console.log('[SUCCESS] Verifying payment:', {
         transaction_uuid,
@@ -85,9 +105,9 @@ function PaymentSuccessContent() {
         return;
       }
 
-      // Handle other payment gateways (eSewa, Khalti, Direct)
+      // Handle other payment gateways (eSewa, Khalti, Direct). Params may come from URL or eSewa's Base64 "data".
       if (!transaction_uuid || !total_amount) {
-        console.error('[SUCCESS] Missing parameters');
+        console.error('[SUCCESS] Missing parameters (transaction_uuid/total_amount or eSewa data param)');
         setIsVerifying(false);
         return;
       }
@@ -151,6 +171,32 @@ function PaymentSuccessContent() {
   }
 
   const creatorId = searchParams.get('creator_id');
+
+  // No valid callback params or verification failed – e.g. stuck on eSewa then opened our URL without params
+  if (!verified && !isVerifying) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
+        <Card className="p-8 max-w-md w-full text-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Payment redirect issue
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            We couldn’t confirm your payment from this page. If you already paid via eSewa, your support may still have gone through. Go back to the creator page or home to check.
+          </p>
+          <div className="space-y-3">
+            {creatorId && (
+              <Button asChild className="w-full" size="lg">
+                <Link href={`/creator/${creatorId}`}>Back to creator</Link>
+              </Button>
+            )}
+            <Button asChild variant="outline" className="w-full" size="lg">
+              <Link href="/">Home</Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const handleGoToCreator = () => {
     if (creatorId) {

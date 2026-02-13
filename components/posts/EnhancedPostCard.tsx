@@ -372,7 +372,7 @@ export function EnhancedPostCard({
       : `${post.content.slice(0, DESCRIPTION_PREVIEW_LENGTH)}...`;
 
   return (
-    <article className="w-full">
+    <article className="w-full min-w-0">
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-300 hover:border-border/80 hover:shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
         {showAuthor && (
           <div className="px-4 sm:px-5 pt-4 sm:pt-5">

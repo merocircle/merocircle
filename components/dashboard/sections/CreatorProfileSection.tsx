@@ -556,16 +556,18 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           })
         });
 
-        if (!response.ok) throw new Error('Khalti payment initiation failed');
+        if (!response.ok) {
+          const errBody = await response.json().catch(() => ({}));
+          throw new Error(errBody.error || 'Khalti payment initiation failed');
+        }
 
         const result = await response.json();
-        if (result.success && result.transaction) {
-          setPaymentSuccess({
-            transactionUuid: result.transaction.transaction_uuid,
-            totalAmount: result.transaction.amount,
-            gateway: 'khalti',
-          });
-        } else throw new Error(result.error || 'Khalti payment failed');
+        // Khalti API returns payment_url – redirect user to Khalti to complete payment
+        if (result.success && result.payment_url) {
+          window.location.href = result.payment_url;
+          return;
+        }
+        throw new Error(result.error || 'Khalti payment failed');
       }
 
       const response = await fetch('/api/payment/initiate', {
@@ -580,22 +582,38 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         })
       });
 
-      if (!response.ok) throw new Error('Payment initiation failed');
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Payment initiation failed');
+      }
 
       const result = await response.json();
 
+      // eSewa: redirect via URL if provided (e.g. test mode)
       if (result.test_mode && result.redirect_url) {
         window.location.href = result.redirect_url;
         return;
       }
 
-      if (result.success && result.transaction) {
-        setPaymentSuccess({
-          transactionUuid: result.transaction.transaction_uuid,
-          totalAmount: result.transaction.amount,
-          gateway: 'esewa',
+      // eSewa: API returns payment_url + esewaConfig — submit form to redirect user to eSewa
+      if (result.success && result.payment_url && result.esewaConfig) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = result.payment_url;
+        Object.entries(result.esewaConfig).forEach(([k, v]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = k;
+          input.value = String(v);
+          form.appendChild(input);
         });
-      } else throw new Error(result.error || 'eSewa payment failed');
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+
+      // Unexpected response shape
+      throw new Error(result.error || 'eSewa payment failed');
     } catch (error: unknown) {
       console.error('[PAYMENT] Error:', error);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');

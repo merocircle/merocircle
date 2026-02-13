@@ -52,8 +52,8 @@ function CirclesStrip() {
   if (creators.length === 0) return null;
 
   return (
-    <div className="py-4 border-b border-border/20">
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide px-1 scroll-smooth-touch">
+    <div className="py-4 border-b border-border/20 overflow-hidden">
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide px-1 scroll-smooth-touch no-select">
         {creators.map((creator: any) => (
           <button
             key={creator.id}
@@ -285,6 +285,7 @@ const FeedSection = memo(function FeedSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
+          className="min-w-0 pb-4 sm:pb-8"
         >
           {/* ── Circles strip (supported creators) ── */}
           <CirclesStrip />
@@ -292,8 +293,8 @@ const FeedSection = memo(function FeedSection() {
           {/* ── Separator ── */}
           <div className="h-px bg-border/20 my-2" />
 
-          {/* ── Posts feed (My Circles only) ── */}
-          <div className="pt-2">
+          {/* ── Posts feed ── */}
+          <div className="pt-2 min-w-0">
             {filteredPosts.length > 0 ? (
               <TimelineFeed>{renderTimelinePosts}</TimelineFeed>
             ) : (

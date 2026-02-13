@@ -38,24 +38,24 @@ const SettingsSection = memo(function SettingsSection() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-w-0">
         <Tabs defaultValue="notifications" className="space-y-6">
-          <TabsList className="bg-muted/50 p-1 w-full flex flex-wrap h-auto gap-1">
-            <TabsTrigger value="notifications" className="gap-2">
-              <Mail className="w-4 h-4" />
-              <span>Email & Notifications</span>
+          <TabsList className="bg-muted/50 p-1.5 w-full h-auto flex flex-col sm:flex-row flex-wrap gap-1.5 rounded-lg">
+            <TabsTrigger value="notifications" className="gap-2 w-full sm:flex-1 sm:min-w-0 justify-start sm:justify-center">
+              <Mail className="w-4 h-4 shrink-0" />
+              <span className="truncate">Email & Notifications</span>
             </TabsTrigger>
-            <TabsTrigger value="memberships" className="gap-2">
-              <Users className="w-4 h-4" />
-              <span>Manage Memberships</span>
+            <TabsTrigger value="memberships" className="gap-2 w-full sm:flex-1 sm:min-w-0 justify-start sm:justify-center">
+              <Users className="w-4 h-4 shrink-0" />
+              <span className="truncate">Manage Memberships</span>
             </TabsTrigger>
-            <TabsTrigger value="billing" className="gap-2">
-              <Receipt className="w-4 h-4" />
-              <span>Billing History</span>
+            <TabsTrigger value="billing" className="gap-2 w-full sm:flex-1 sm:min-w-0 justify-start sm:justify-center">
+              <Receipt className="w-4 h-4 shrink-0" />
+              <span className="truncate">Billing History</span>
             </TabsTrigger>
-            <TabsTrigger value="payment-methods" className="gap-2">
-              <CreditCard className="w-4 h-4" />
-              <span>Payment Methods</span>
+            <TabsTrigger value="payment-methods" className="gap-2 w-full sm:flex-1 sm:min-w-0 justify-start sm:justify-center">
+              <CreditCard className="w-4 h-4 shrink-0" />
+              <span className="truncate">Payment Methods</span>
             </TabsTrigger>
           </TabsList>
 
