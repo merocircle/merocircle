@@ -36,23 +36,20 @@ export function PaymentGatewaySelector({
     {
       id: 'esewa' as const,
       name: 'eSewa',
-      logoPath: '/esewa.jpg',
+      logoPath: '/esewa.png',
       available: true,
-      description: 'One-time payment',
     },
     {
       id: 'khalti' as const,
       name: 'Khalti',
       logoPath: '/khalti.png',
       available: true,
-      description: 'One-time payment',
     },
     {
       id: 'dodo' as const,
       name: 'Visa/Mastercard',
       logoPath: '/dodo.png',
       available: true,
-      description: 'Monthly subscription',
       isSubscription: true,
     },
     {
@@ -130,11 +127,6 @@ export function PaymentGatewaySelector({
                       </div>
                       {(gateway as any).description && (
                         <span className="text-xs text-muted-foreground mt-1">{(gateway as any).description}</span>
-                      )}
-                      {(gateway as any).isSubscription && (
-                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
-                          🔄 Recurring monthly
-                        </span>
                       )}
                     </div>
                   </div>
