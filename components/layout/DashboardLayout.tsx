@@ -101,12 +101,12 @@ export function DashboardLayout({
       {/* Desktop Grid Layout: [ActivityBar | Content | RightPanel?] */}
       <div 
         className={cn(
-          'grid min-h-screen',
+          'grid min-h-screen h-[calc(100vh-80px)] md:h-[100vh]',
           // Mobile: single column with header/bottom nav spacing
-          shouldHideMobileHeader ? 'pt-4 pb-20' : 'pt-24 pb-20',
+          shouldHideMobileHeader ? 'pb-20' : 'pb-20',
           // Desktop: 2 or 3 column grid
-          'md:grid-cols-[64px_1fr] md:pt-0 md:pb-0',
-          shouldShowRightPanel && 'lg:grid-cols-[64px_1fr_320px]'
+          'md:grid-cols-[64px_minmax(0,1fr)] md:pt-0 md:pb-0',
+          // shouldShowRightPanel && 'xl:grid-cols-[64px_minmax(0,1fr)_150px]'
         )}
       >
         {/* Activity Bar - Desktop only */}
@@ -123,12 +123,12 @@ export function DashboardLayout({
 
         {/* Main Content Area */}
         <main className={cn(
-          'min-h-screen overflow-x-hidden',
-          contextView === 'chat' && 'h-[100vh] md:h-screen overflow-hidden'
+          'min-h-screen overflow-x-hidden w-full',
+          contextView === 'chat' && 'h-[calc(100vh - 80px)] md:h-screen overflow-hidden'
         )}>
           <div className={cn(
-            'h-full',
-            !isFullWidth && 'max-w-[630px] mx-auto w-full',
+            'h-full mx-auto',
+            !isFullWidth && 'max-w-[830px] w-full pl-4 pr-4',
             contextView === 'chat' && 'overflow-hidden max-w-none'
           )}>
             <AnimatePresence mode="wait">
@@ -140,7 +140,6 @@ export function DashboardLayout({
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 className={cn(
                   'h-full',
-                  contextView !== 'chat' && 'py-4'
                 )}
               >
                 {children}
@@ -150,11 +149,11 @@ export function DashboardLayout({
         </main>
 
         {/* Right Panel - LG screens and above */}
-        {shouldShowRightPanel && (
+        {/* {shouldShowRightPanel && (
           <aside className="hidden lg:block overflow-hidden">
             <RightPanel stories={stories} />
           </aside>
-        )}
+        )} */}
       </div>
 
       {/* Bottom Navigation - Mobile only */}

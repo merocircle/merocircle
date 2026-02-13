@@ -1,6 +1,10 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
+
+// check for the theme mode and set the CSS accordingly
+const theme = localStorage.getItem('merocircle-theme');
+
 const Separator = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div"> & {
@@ -17,7 +21,7 @@ const Separator = React.forwardRef<
       data-orientation={orientation}
       {...props}
       className={cn(
-        "shrink-0 bg-gray-200",
+        "shrink-0 bg-gray-200 dark:bg-gray-800",
         orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
         className
       )}

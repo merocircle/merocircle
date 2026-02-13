@@ -236,7 +236,7 @@ const ExploreSection = memo(function ExploreSection() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Your Circle</h2>
+                    <h2 className="text-lg font-semibold">Your Circles</h2>
                   </div>
                 </div>
 
@@ -247,8 +247,13 @@ const ExploreSection = memo(function ExploreSection() {
                 ) : supportedCreators.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
                     {supportedCreators.map((creator) => (
-                      <motion.div key={creator.user_id} variants={itemVariants}>
-                        <Card className="p-4 border-2 border-gray-300 dark:border-border shadow-lg hover:border-primary dark:hover:border-primary/60 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 bg-card hover:scale-[1.02] hover:-translate-y-1">
+                      <motion.div 
+                        key={creator.user_id} 
+                        variants={itemVariants} 
+                        onClick={() => {
+                          router.push(`/creator/${creator.user_id}`);
+                        }}>
+                        <Card className="p-4 border-2 border-gray-300 dark:border-border shadow-lg hover:border-primary dark:hover:border-primary/60 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 bg-card hover:scale-[1.02] hover:-translate-y-1 cursor-pointer">
                           <div className="flex flex-col items-center text-center">
                             <div className="relative mb-3">
                               <Avatar className="h-16 w-16 ring-2 ring-primary/20">
