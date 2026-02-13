@@ -1,92 +1,92 @@
 /**
  * Shared styles for email components
- * Ensures consistency across all email templates
+ * Warm, personal, inner-circle aesthetic
  */
 
 // Typography
 export const body = {
-  margin: '0 0 24px',
-  fontSize: '16px',
+  margin: '0 0 20px',
+  fontSize: '15px',
   lineHeight: '26px',
-  color: '#374151',
-  letterSpacing: '-0.2px',
+  color: '#44403c',
+  letterSpacing: '-0.1px',
 };
 
 export const heading1 = {
-  margin: '0 0 24px',
-  fontSize: '32px',
-  lineHeight: '40px',
+  margin: '0 0 20px',
+  fontSize: '28px',
+  lineHeight: '36px',
   fontWeight: '600',
-  color: '#111827',
-  letterSpacing: '-0.6px',
+  color: '#1c1917',
+  letterSpacing: '-0.5px',
 };
 
 export const heading2 = {
-  margin: '0 0 16px',
-  fontSize: '24px',
-  lineHeight: '32px',
+  margin: '0 0 14px',
+  fontSize: '22px',
+  lineHeight: '30px',
   fontWeight: '600',
-  color: '#111827',
-  letterSpacing: '-0.4px',
+  color: '#1c1917',
+  letterSpacing: '-0.3px',
 };
 
 export const heading3 = {
-  margin: '0 0 12px',
-  fontSize: '18px',
-  lineHeight: '28px',
+  margin: '0 0 10px',
+  fontSize: '17px',
+  lineHeight: '26px',
   fontWeight: '600',
-  color: '#111827',
-  letterSpacing: '-0.2px',
+  color: '#1c1917',
+  letterSpacing: '-0.15px',
 };
 
 export const caption = {
   margin: '0',
-  fontSize: '14px',
+  fontSize: '13px',
   lineHeight: '20px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 export const label = {
   margin: '0',
-  fontSize: '13px',
-  lineHeight: '20px',
-  fontWeight: '500',
-  color: '#6B7280',
-  letterSpacing: '0.3px',
+  fontSize: '11px',
+  lineHeight: '18px',
+  fontWeight: '600',
+  color: '#a8a29e',
+  letterSpacing: '0.5px',
   textTransform: 'uppercase' as const,
 };
 
 // Buttons
 export const primaryButton = {
   display: 'inline-block',
-  padding: '14px 32px',
-  backgroundColor: '#4f46e5',
+  padding: '12px 28px',
+  backgroundColor: '#c4382a',
   color: '#ffffff',
-  fontSize: '15px',
-  fontWeight: '500',
+  fontSize: '14px',
+  fontWeight: '600',
   lineHeight: '20px',
   textDecoration: 'none',
-  borderRadius: '8px',
+  borderRadius: '24px',
   letterSpacing: '-0.1px',
 };
 
 export const secondaryButton = {
   display: 'inline-block',
-  padding: '14px 32px',
-  backgroundColor: '#EFF6FF',
-  color: '#4f46e5',
-  fontSize: '15px',
-  fontWeight: '500',
+  padding: '12px 28px',
+  backgroundColor: '#fef7f5',
+  color: '#c4382a',
+  fontSize: '14px',
+  fontWeight: '600',
   lineHeight: '20px',
   textDecoration: 'none',
-  borderRadius: '8px',
+  borderRadius: '24px',
   letterSpacing: '-0.1px',
-  border: '1px solid #C7D2FE',
+  border: '1px solid #fecaca',
 };
 
 export const linkButton = {
-  color: '#4f46e5',
-  fontSize: '15px',
+  color: '#c4382a',
+  fontSize: '14px',
   fontWeight: '500',
   textDecoration: 'none',
   letterSpacing: '-0.1px',
@@ -94,77 +94,81 @@ export const linkButton = {
 
 // Layout
 export const section = {
-  padding: '0 40px',
+  padding: '0 32px',
 };
 
 export const divider = {
-  margin: '48px 40px',
+  margin: '32px 32px',
   border: 'none',
-  borderTop: '1px solid #E5E7EB',
+  borderTop: '1px solid #f5f0eb',
 };
 
 export const spacer = {
-  height: '24px',
+  height: '20px',
 };
 
 // Cards & Containers
 export const card = {
-  padding: '24px',
-  backgroundColor: '#F9FAFB',
+  padding: '20px',
+  backgroundColor: '#fafaf9',
   borderRadius: '12px',
-  border: '1px solid #E5E7EB',
+  border: '1px solid #f5f0eb',
 };
 
 export const infoCard = {
-  padding: '20px',
-  backgroundColor: '#EFF6FF',
-  borderRadius: '8px',
-  borderLeft: '4px solid #3B82F6',
+  padding: '16px 20px',
+  backgroundColor: '#fef7f5',
+  borderRadius: '10px',
+  borderLeft: '3px solid #c4382a',
 };
 
 export const warningCard = {
-  padding: '20px',
-  backgroundColor: '#FEF3C7',
-  borderRadius: '8px',
-  borderLeft: '4px solid #F59E0B',
+  padding: '16px 20px',
+  backgroundColor: '#fffbeb',
+  borderRadius: '10px',
+  borderLeft: '3px solid #f59e0b',
 };
 
 export const errorCard = {
-  padding: '20px',
-  backgroundColor: '#FEF2F2',
-  borderRadius: '8px',
-  borderLeft: '4px solid #EF4444',
+  padding: '16px 20px',
+  backgroundColor: '#fef2f2',
+  borderRadius: '10px',
+  borderLeft: '3px solid #ef4444',
 };
 
 export const successCard = {
-  padding: '20px',
-  backgroundColor: '#ECFDF5',
-  borderRadius: '8px',
-  borderLeft: '4px solid #10B981',
+  padding: '16px 20px',
+  backgroundColor: '#f0fdf4',
+  borderRadius: '10px',
+  borderLeft: '3px solid #22c55e',
 };
 
-// Colors
+// Colors — warm, Nepal-inspired palette
 export const colors = {
-  // Gray scale
-  gray50: '#F9FAFB',
-  gray100: '#F3F4F6',
-  gray200: '#E5E7EB',
-  gray300: '#D1D5DB',
-  gray400: '#9CA3AF',
-  gray500: '#6B7280',
-  gray600: '#4B5563',
-  gray700: '#374151',
-  gray800: '#1F2937',
-  gray900: '#111827',
+  // Warm stone scale
+  gray50: '#fafaf9',
+  gray100: '#f5f5f4',
+  gray200: '#e7e5e4',
+  gray300: '#d6d3d1',
+  gray400: '#a8a29e',
+  gray500: '#78716c',
+  gray600: '#57534e',
+  gray700: '#44403c',
+  gray800: '#292524',
+  gray900: '#1c1917',
   
-  // Brand
-  primary: '#4f46e5',
-  primaryDark: '#3730a3',
-  secondary: '#7c3aed',
+  // Brand — Nepal crimson
+  primary: '#c4382a',
+  primaryDark: '#a12e23',
+  secondary: '#e76f51',
+  
+  // Warm background
+  warmBg: '#fdf8f6',
+  warmBorder: '#f5f0eb',
   
   // Status
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  info: '#3B82F6',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
 };

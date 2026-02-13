@@ -1,10 +1,9 @@
 'use client';
 
-import { ReactNode, useState, useCallback } from 'react';
+import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActivityBar } from '@/components/navigation/ActivityBar';
 import { BottomNav, MobileHeader } from '@/components/navigation/BottomNav';
-import { RightPanel } from './RightPanel';
 import { cn } from '@/lib/utils';
 import { type DashboardView } from '@/contexts/dashboard-context';
 
@@ -19,7 +18,6 @@ interface DashboardLayoutProps {
     display_name: string;
     photo_url: string | null;
   } | null;
-  // Dashboard view state
   activeView?: DashboardView;
   onViewChange?: (view: DashboardView) => void;
   contextView?: ContextView;
@@ -32,7 +30,6 @@ interface DashboardLayoutProps {
   }>;
   selectedCategory?: string;
   onCategoryChange?: (category: string) => void;
-  // Right panel data
   suggestedCreators?: Array<{
     id: string;
     display_name: string;
@@ -52,10 +49,8 @@ interface DashboardLayoutProps {
     photo_url: string | null;
     hasNewStory?: boolean;
   }>;
-  // Callbacks
   onCreateClick?: () => void;
   onSettingsClick?: () => void;
-  // Layout options
   hideRightPanel?: boolean;
   hideContextSidebar?: boolean;
   fullWidth?: boolean;
@@ -82,14 +77,11 @@ export function DashboardLayout({
   showMobileTabs = true,
   className
 }: DashboardLayoutProps) {
-
-  // Layout computed values
-  const shouldShowRightPanel = !hideRightPanel && contextView === 'explore';
   const isFullWidth = fullWidth || FULL_WIDTH_VIEWS.includes(contextView);
   const shouldHideMobileHeader = contextView !== 'explore';
 
   return (
-    <div className={cn('min-h-screen bg-background', className)}>
+    <div className={cn('min-h-[100dvh] bg-background', className)}>
       {/* Mobile Header */}
       <MobileHeader
         title={mobileTitle}
@@ -98,18 +90,17 @@ export function DashboardLayout({
         hideHeader={shouldHideMobileHeader}
       />
 
-      {/* Desktop Grid Layout: [ActivityBar | Content | RightPanel?] */}
-      <div 
+      {/* Desktop Grid: [ActivityBar | Content] */}
+      <div
         className={cn(
-          'grid min-h-screen h-[calc(100vh-80px)] md:h-[100vh]',
-          // Mobile: single column with header/bottom nav spacing
-          shouldHideMobileHeader ? 'pb-20' : 'pb-20',
-          // Desktop: 2 or 3 column grid
-          'md:grid-cols-[64px_minmax(0,1fr)] md:pt-0 md:pb-0',
-          // shouldShowRightPanel && 'xl:grid-cols-[64px_minmax(0,1fr)_150px]'
+          'grid min-h-[100dvh]',
+          // Mobile: single column (3.5rem nav + safe area)
+          'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
+          // Desktop: 2-column with activity bar
+          'md:grid-cols-[64px_minmax(0,1fr)] md:pb-0',
         )}
       >
-        {/* Activity Bar - Desktop only */}
+        {/* Activity Bar — desktop only */}
         <aside className="hidden md:block">
           <ActivityBar
             user={user}
@@ -121,42 +112,33 @@ export function DashboardLayout({
           />
         </aside>
 
-        {/* Main Content Area */}
+        {/* Main Content */}
         <main className={cn(
-          'min-h-screen overflow-x-hidden w-full',
-          contextView === 'chat' && 'h-[calc(100vh - 80px)] md:h-screen overflow-hidden'
+          'min-h-[100dvh] overflow-x-hidden w-full',
+          contextView === 'chat' && 'h-[calc(100dvh-4rem)] md:h-[100dvh] overflow-hidden'
         )}>
           <div className={cn(
             'h-full mx-auto',
-            !isFullWidth && 'max-w-[830px] w-full pl-4 pr-4',
-            contextView === 'chat' && 'overflow-hidden max-w-none'
+            !isFullWidth && 'max-w-[830px] w-full px-3 sm:px-4',
+            contextView === 'chat' && 'overflow-hidden max-w-none px-0 sm:px-0'
           )}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={contextView}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className={cn(
-                  'h-full',
-                )}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full"
               >
                 {children}
               </motion.div>
             </AnimatePresence>
           </div>
         </main>
-
-        {/* Right Panel - LG screens and above */}
-        {/* {shouldShowRightPanel && (
-          <aside className="hidden lg:block overflow-hidden">
-            <RightPanel stories={stories} />
-          </aside>
-        )} */}
       </div>
 
-      {/* Bottom Navigation - Mobile only */}
+      {/* Bottom Navigation — mobile only */}
       <BottomNav
         activeView={activeView}
         onViewChange={onViewChange}
@@ -176,10 +158,10 @@ interface PageTransitionProps {
 export function PageTransition({ children, className }: PageTransitionProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className={className}
     >
       {children}

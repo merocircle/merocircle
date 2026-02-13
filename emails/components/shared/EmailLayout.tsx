@@ -3,6 +3,7 @@ import {
   Container,
   Head,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -18,11 +19,12 @@ interface EmailLayoutProps {
   settingsUrl: string;
   helpUrl: string;
   hideCreatorInfo?: boolean;
+  /** App base URL for logo and links (e.g. https://merocircle.app). If provided, logo is shown. */
+  appUrl?: string;
 }
 
 /**
- * Shared layout component for all emails
- * Provides consistent structure, branding, and footer
+ * Shared layout — warm, personal, inner-circle feel
  */
 export default function EmailLayout({
   preview,
@@ -32,27 +34,43 @@ export default function EmailLayout({
   settingsUrl,
   helpUrl,
   hideCreatorInfo = false,
+  appUrl,
 }: EmailLayoutProps) {
+  const baseUrl = appUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
+
   return (
     <Html>
       <Head />
       <Preview>{preview}</Preview>
       <Body style={main}>
         <Container style={wrapper}>
-          {/* Brand accent bar */}
+          {/* Warm brand accent bar */}
           <Section style={brandBar} />
+
+          {/* Logo — light theme for email clients */}
+          <Section style={logoSection}>
+            <Link href={baseUrl} style={logoLink}>
+              <Img
+                src={`${baseUrl}/logo/logo-light.png`}
+                alt="MeroCircle"
+                width={140}
+                height={48}
+                style={logoImg}
+              />
+            </Link>
+          </Section>
 
           <Container style={card}>
             {children}
           </Container>
 
-          {/* Footer */}
+          {/* Footer — warm, personal */}
           <Section style={footer}>
             <Text style={footerText}>
               {!hideCreatorInfo && creatorName && creatorProfileUrl && (
                 <>
                   <Link href={creatorProfileUrl} style={footerLink}>
-                    {creatorName}'s profile
+                    {creatorName}&apos;s circle
                   </Link>
                   <span style={separator}> · </span>
                 </>
@@ -66,7 +84,7 @@ export default function EmailLayout({
               </Link>
             </Text>
             <Text style={footerAddress}>
-              MeroCircle · Kathmandu, Nepal
+              MeroCircle · Made with care in Kathmandu, Nepal
             </Text>
           </Section>
         </Container>
@@ -75,56 +93,75 @@ export default function EmailLayout({
   );
 }
 
-// Shared layout styles
+// Shared layout styles — warm tones
 const main = {
-  backgroundColor: '#ffffff',
+  backgroundColor: '#fdf8f6',
   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   lineHeight: '1.6',
 };
 
 const wrapper = {
-  padding: '48px 0',
-  maxWidth: '600px',
+  padding: '40px 0',
+  maxWidth: '560px',
   margin: '0 auto',
 };
 
 const brandBar = {
   height: '3px',
-  background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
-  marginBottom: '40px',
+  background: 'linear-gradient(90deg, #c4382a 0%, #e76f51 100%)',
+  marginBottom: '24px',
+  borderRadius: '2px',
+};
+
+const logoSection = {
+  padding: '0 40px 24px',
+  textAlign: 'center' as const,
+};
+
+const logoLink = {
+  display: 'inline-block',
+};
+
+const logoImg = {
+  display: 'block',
+  maxWidth: '140px',
+  height: 'auto',
 };
 
 const card = {
   margin: '0 auto',
+  backgroundColor: '#ffffff',
+  borderRadius: '16px',
+  border: '1px solid #f5f0eb',
+  overflow: 'hidden' as const,
 };
 
 const footer = {
-  padding: '32px 40px 0',
+  padding: '28px 32px 0',
   textAlign: 'center' as const,
-  borderTop: '1px solid #F3F4F6',
-  margin: '0 0 48px',
+  margin: '0 0 40px',
 };
 
 const footerText = {
-  margin: '0 0 12px',
-  fontSize: '13px',
+  margin: '0 0 8px',
+  fontSize: '12px',
   lineHeight: '20px',
-  color: '#9CA3AF',
+  color: '#a8a29e',
 };
 
 const footerLink = {
-  color: '#6B7280',
+  color: '#78716c',
   textDecoration: 'none',
 };
 
 const separator = {
-  color: '#D1D5DB',
+  color: '#d6d3d1',
   margin: '0 4px',
 };
 
 const footerAddress = {
   margin: '0',
-  fontSize: '12px',
-  lineHeight: '18px',
-  color: '#D1D5DB',
+  fontSize: '11px',
+  lineHeight: '16px',
+  color: '#d6d3d1',
 };

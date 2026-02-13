@@ -16,14 +16,6 @@ export const CustomQuotedMessage: React.FC = () => {
   return (
     <div 
       className={`custom-reply-box ${isMyMessage ? 'custom-reply-box--me' : 'custom-reply-box--other'}`}
-      style={{
-        background: isMyMessage ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-        borderLeft: `4px solid ${isMyMessage ? 'rgba(255, 255, 255, 0.8)' : '#9333ea'}`,
-        borderRadius: '4px',
-        padding: '8px 12px',
-        marginBottom: '8px',
-        cursor: 'pointer',
-      }}
       onClick={() => {
         const quotedId = quotedMessage.id;
         if (!quotedId) return;
@@ -39,31 +31,8 @@ export const CustomQuotedMessage: React.FC = () => {
         }
       }}
     >
-      <div 
-        className="reply-box-sender-name"
-        style={{
-          fontWeight: 700,
-          fontSize: '0.875rem',
-          color: isMyMessage ? '#ffffff' : '#9333ea',
-          marginBottom: '4px',
-        }}
-      >
-        {senderName}
-      </div>
-      <div 
-        className="reply-box-message-text"
-        style={{
-          fontSize: '0.8rem',
-          color: isMyMessage ? '#ffffff' : '#1a1a1a',
-          opacity: isMyMessage ? 0.9 : 0.75,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          maxWidth: '100%',
-        }}
-      >
-        {messageText}
-      </div>
+      <div className="reply-box-sender-name">{senderName}</div>
+      <div className="reply-box-message-text">{messageText}</div>
     </div>
   );
 };

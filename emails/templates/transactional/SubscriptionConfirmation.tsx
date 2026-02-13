@@ -24,8 +24,8 @@ interface SubscriptionConfirmationProps {
 
 /**
  * Subscription confirmation email
- * Triggers: When supporter successfully subscribes/supports a creator
- * Recipients: Supporter who made the payment
+ * Triggers: When someone joins a creator's circle
+ * Recipients: Circle member who made the payment
  */
 export default function SubscriptionConfirmation({
   supporterName = 'Alex',
@@ -40,10 +40,10 @@ export default function SubscriptionConfirmation({
   helpUrl = 'https://merocircle.app/help',
 }: SubscriptionConfirmationProps) {
   const tierEmoji = tierLevel === 1 ? '⭐' : tierLevel === 2 ? '⭐⭐' : '⭐⭐⭐';
-  
+
   return (
     <EmailLayout
-      preview={`You're now supporting ${creatorName} as a ${tierName}`}
+      preview={`You're in the circle — welcome to ${creatorName}'s inner circle`}
       creatorName={creatorName}
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
@@ -51,15 +51,15 @@ export default function SubscriptionConfirmation({
     >
       <Section style={contentSection}>
         <Text style={successIcon}>🎉</Text>
-        
-        <Heading style={title}>You're now supporting {creatorName}!</Heading>
+
+        <Heading style={title}>You&apos;re in the circle</Heading>
 
         <Text style={subtitle}>
-          Thank you, {supporterName}
+          Welcome, {supporterName}
         </Text>
 
         <Text style={body}>
-          Your support means everything to {creatorName}. You're helping them create and share their work with the world.
+          You&apos;re now part of {creatorName}&apos;s inner circle — closer access to their work, their people, and what they&apos;re creating. Thank you for being here.
         </Text>
 
         <Section style={detailsCard}>
@@ -67,14 +67,14 @@ export default function SubscriptionConfirmation({
             <Text style={tierEmojiText}>{tierEmoji}</Text>
             <Text style={tierNameText}>{tierName}</Text>
           </Section>
-          
+
           <Section style={detailRow}>
-            <Text style={detailLabel}>Support Amount</Text>
+            <Text style={detailLabel}>Your contribution</Text>
             <Text style={detailValue}>
               {currency} {amount.toLocaleString()}
             </Text>
           </Section>
-          
+
           <Section style={detailRow}>
             <Text style={detailLabel}>Creator</Text>
             <Text style={detailValue}>{creatorName}</Text>
@@ -82,8 +82,8 @@ export default function SubscriptionConfirmation({
         </Section>
 
         <Section style={benefitsSection}>
-          <Text style={benefitsTitle}>What you get:</Text>
-          <Text style={benefitItem}>✓ Access to exclusive posts</Text>
+          <Text style={benefitsTitle}>What&apos;s waiting for you:</Text>
+          <Text style={benefitItem}>✓ Exclusive posts shared with the circle</Text>
           {tierLevel >= 2 && (
             <Text style={benefitItem}>✓ Join community chat channels</Text>
           )}
@@ -94,14 +94,14 @@ export default function SubscriptionConfirmation({
 
         <Section style={ctaWrapper}>
           <Link href={creatorProfileUrl} style={primaryButton}>
-            Visit {creatorName}'s Profile
+            Visit {creatorName}&apos;s circle
           </Link>
         </Section>
 
         {tierLevel >= 2 && (
           <Section style={ctaWrapper}>
             <Link href={chatUrl} style={secondaryButton}>
-              Join Community Chat
+              Join the conversation
             </Link>
           </Section>
         )}
@@ -111,10 +111,10 @@ export default function SubscriptionConfirmation({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          You now have access to all of {creatorName}'s exclusive content and community features.
+          You now have access to everything {creatorName} shares with their circle.
         </Text>
         <Text style={messageSubtext}>
-          Questions? <Link href={helpUrl} style={inlineLink}>Contact support</Link>
+          Questions? <Link href={helpUrl} style={inlineLink}>We&apos;re here to help</Link>
         </Text>
       </Section>
     </EmailLayout>
@@ -138,7 +138,7 @@ const title = {
   fontSize: '28px',
   lineHeight: '36px',
   fontWeight: '700',
-  color: '#111827',
+  color: '#1c1917',
   letterSpacing: '-0.6px',
 };
 
@@ -146,13 +146,13 @@ const subtitle = {
   margin: '0 0 20px',
   fontSize: '17px',
   lineHeight: '26px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const detailsCard = {
   margin: '32px 0',
   padding: '24px',
-  backgroundColor: '#F9FAFB',
+  backgroundColor: '#fafaf9',
   borderRadius: '12px',
   textAlign: 'left' as const,
 };
@@ -161,7 +161,7 @@ const tierBadge = {
   textAlign: 'center' as const,
   marginBottom: '20px',
   paddingBottom: '20px',
-  borderBottom: '1px solid #E5E7EB',
+  borderBottom: '1px solid #e7e5e4',
 };
 
 const tierEmojiText = {
@@ -174,7 +174,7 @@ const tierNameText = {
   margin: '0',
   fontSize: '18px',
   fontWeight: '600',
-  color: '#111827',
+  color: '#1c1917',
 };
 
 const detailRow = {
@@ -186,21 +186,21 @@ const detailRow = {
 const detailLabel = {
   margin: '0',
   fontSize: '14px',
-  color: '#6B7280',
+  color: '#78716c',
   fontWeight: '500',
 };
 
 const detailValue = {
   margin: '0',
   fontSize: '14px',
-  color: '#111827',
+  color: '#1c1917',
   fontWeight: '600',
 };
 
 const benefitsSection = {
   margin: '32px 0',
   padding: '24px',
-  backgroundColor: '#F0FDF4',
+  backgroundColor: '#f0fdf4',
   borderRadius: '12px',
   textAlign: 'left' as const,
 };
@@ -209,7 +209,7 @@ const benefitsTitle = {
   margin: '0 0 16px',
   fontSize: '16px',
   fontWeight: '600',
-  color: '#111827',
+  color: '#1c1917',
 };
 
 const benefitItem = {
@@ -227,12 +227,12 @@ const secondaryButton = {
   display: 'inline-block',
   padding: '12px 24px',
   backgroundColor: '#ffffff',
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
   borderRadius: '8px',
   fontWeight: '600',
   fontSize: '14px',
-  border: '2px solid #4f46e5',
+  border: '2px solid #c4382a',
 };
 
 const messageSection = {
@@ -244,17 +244,17 @@ const messageText = {
   margin: '0 0 8px',
   fontSize: '14px',
   lineHeight: '20px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const messageSubtext = {
   margin: '0',
   fontSize: '13px',
   lineHeight: '20px',
-  color: '#9CA3AF',
+  color: '#a8a29e',
 };
 
 const inlineLink = {
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
 };

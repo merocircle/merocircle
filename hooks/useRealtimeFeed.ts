@@ -17,6 +17,9 @@ interface Post {
   comments_count?: number;
 }
 
+// Global counter to ensure unique channel names across mounts
+let channelCounter = 0;
+
 /**
  * Hook to enable real-time updates for the feed
  * Subscribes to posts, likes, and comments changes via Supabase Realtime
@@ -25,192 +28,153 @@ export function useRealtimeFeed() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Handle new post
-  const handleNewPost = useCallback((payload: any) => {
-    const newPost = payload.new;
-
-    // We need to fetch the full post with creator info
-    // For now, just invalidate to trigger a refetch
-    queryClient.invalidateQueries({ queryKey: ['dashboard', 'unified'] });
-  }, [queryClient]);
-
-  // Handle post update
-  const handlePostUpdate = useCallback((payload: any) => {
-    const updatedPost = payload.new;
-
-    queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
-      if (!old?.posts) return old;
-      return {
-        ...old,
-        posts: old.posts.map((post: Post) =>
-          post.id === updatedPost.id
-            ? { ...post, ...updatedPost }
-            : post
-        ),
-      };
-    });
-  }, [queryClient, user?.id]);
-
-  // Handle post delete
-  const handlePostDelete = useCallback((payload: any) => {
-    const deletedId = payload.old.id;
-
-    queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
-      if (!old?.posts) return old;
-      return {
-        ...old,
-        posts: old.posts.filter((post: Post) => post.id !== deletedId),
-      };
-    });
-  }, [queryClient, user?.id]);
-
-  // Handle new like
-  const handleNewLike = useCallback((payload: any) => {
-    const newLike = payload.new;
-
-    queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
-      if (!old?.posts) return old;
-      return {
-        ...old,
-        posts: old.posts.map((post: Post) =>
-          post.id === newLike.post_id
-            ? { ...post, likes_count: (post.likes_count || 0) + 1 }
-            : post
-        ),
-      };
-    });
-  }, [queryClient, user?.id]);
-
-  // Handle like removed
-  const handleLikeDelete = useCallback((payload: any) => {
-    const deletedLike = payload.old;
-
-    queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
-      if (!old?.posts) return old;
-      return {
-        ...old,
-        posts: old.posts.map((post: Post) =>
-          post.id === deletedLike.post_id
-            ? { ...post, likes_count: Math.max(0, (post.likes_count || 0) - 1) }
-            : post
-        ),
-      };
-    });
-  }, [queryClient, user?.id]);
-
-  // Handle new comment
-  const handleNewComment = useCallback((payload: any) => {
-    const newComment = payload.new;
-
-    // Update post comments count
-    queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
-      if (!old?.posts) return old;
-      return {
-        ...old,
-        posts: old.posts.map((post: Post) =>
-          post.id === newComment.post_id
-            ? { ...post, comments_count: (post.comments_count || 0) + 1 }
-            : post
-        ),
-      };
-    });
-
-    // Invalidate specific post's comments cache
-    queryClient.invalidateQueries({ queryKey: ['comments', newComment.post_id] });
-  }, [queryClient, user?.id]);
-
-  // Handle comment deleted
-  const handleCommentDelete = useCallback((payload: any) => {
-    const deletedComment = payload.old;
-
-    queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
-      if (!old?.posts) return old;
-      return {
-        ...old,
-        posts: old.posts.map((post: Post) =>
-          post.id === deletedComment.post_id
-            ? { ...post, comments_count: Math.max(0, (post.comments_count || 0) - 1) }
-            : post
-        ),
-      };
-    });
-
-    queryClient.invalidateQueries({ queryKey: ['comments', deletedComment.post_id] });
-  }, [queryClient, user?.id]);
+  // Use refs for callbacks to avoid re-subscribing on every render
+  const queryClientRef = useRef(queryClient);
+  const userIdRef = useRef(user?.id);
+  queryClientRef.current = queryClient;
+  userIdRef.current = user?.id;
 
   const postsChannelRef = useRef<RealtimeChannel | null>(null);
   const likesChannelRef = useRef<RealtimeChannel | null>(null);
   const commentsChannelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    // Cleanup previous channels if they exist
-    if (postsChannelRef.current) {
-      supabase.removeChannel(postsChannelRef.current);
-      postsChannelRef.current = null;
-    }
-    if (likesChannelRef.current) {
-      supabase.removeChannel(likesChannelRef.current);
-      likesChannelRef.current = null;
-    }
-    if (commentsChannelRef.current) {
-      supabase.removeChannel(commentsChannelRef.current);
-      commentsChannelRef.current = null;
-    }
+    // Generate unique channel names for this mount
+    const mountId = ++channelCounter;
+    const postsName = `posts-realtime-${mountId}`;
+    const likesName = `likes-realtime-${mountId}`;
+    const commentsName = `comments-realtime-${mountId}`;
 
     // Subscribe to posts changes
     const postsChannel = supabase
-      .channel('posts-realtime')
+      .channel(postsName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
-        handleNewPost
+        () => {
+          queryClientRef.current.invalidateQueries({ queryKey: ['dashboard', 'unified'] });
+        }
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'posts' },
-        handlePostUpdate
+        (payload: any) => {
+          const updatedPost = payload.new;
+          queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            if (!old?.posts) return old;
+            return {
+              ...old,
+              posts: old.posts.map((post: Post) =>
+                post.id === updatedPost.id ? { ...post, ...updatedPost } : post
+              ),
+            };
+          });
+        }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'posts' },
-        handlePostDelete
+        (payload: any) => {
+          const deletedId = payload.old.id;
+          queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            if (!old?.posts) return old;
+            return {
+              ...old,
+              posts: old.posts.filter((post: Post) => post.id !== deletedId),
+            };
+          });
+        }
       )
       .subscribe();
     postsChannelRef.current = postsChannel;
 
     // Subscribe to likes changes
     const likesChannel = supabase
-      .channel('likes-realtime')
+      .channel(likesName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'post_likes' },
-        handleNewLike
+        (payload: any) => {
+          const newLike = payload.new;
+          queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            if (!old?.posts) return old;
+            return {
+              ...old,
+              posts: old.posts.map((post: Post) =>
+                post.id === newLike.post_id
+                  ? { ...post, likes_count: (post.likes_count || 0) + 1 }
+                  : post
+              ),
+            };
+          });
+        }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'post_likes' },
-        handleLikeDelete
+        (payload: any) => {
+          const deletedLike = payload.old;
+          queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            if (!old?.posts) return old;
+            return {
+              ...old,
+              posts: old.posts.map((post: Post) =>
+                post.id === deletedLike.post_id
+                  ? { ...post, likes_count: Math.max(0, (post.likes_count || 0) - 1) }
+                  : post
+              ),
+            };
+          });
+        }
       )
       .subscribe();
     likesChannelRef.current = likesChannel;
 
     // Subscribe to comments changes
     const commentsChannel = supabase
-      .channel('comments-realtime')
+      .channel(commentsName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'post_comments' },
-        handleNewComment
+        (payload: any) => {
+          const newComment = payload.new;
+          queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            if (!old?.posts) return old;
+            return {
+              ...old,
+              posts: old.posts.map((post: Post) =>
+                post.id === newComment.post_id
+                  ? { ...post, comments_count: (post.comments_count || 0) + 1 }
+                  : post
+              ),
+            };
+          });
+          queryClientRef.current.invalidateQueries({ queryKey: ['comments', newComment.post_id] });
+        }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'post_comments' },
-        handleCommentDelete
+        (payload: any) => {
+          const deletedComment = payload.old;
+          queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            if (!old?.posts) return old;
+            return {
+              ...old,
+              posts: old.posts.map((post: Post) =>
+                post.id === deletedComment.post_id
+                  ? { ...post, comments_count: Math.max(0, (post.comments_count || 0) - 1) }
+                  : post
+              ),
+            };
+          });
+          queryClientRef.current.invalidateQueries({ queryKey: ['comments', deletedComment.post_id] });
+        }
       )
       .subscribe();
     commentsChannelRef.current = commentsChannel;
 
-    // Cleanup subscriptions on unmount or when dependencies change
+    // Cleanup on unmount
     return () => {
       if (postsChannelRef.current) {
         supabase.removeChannel(postsChannelRef.current);
@@ -225,17 +189,9 @@ export function useRealtimeFeed() {
         commentsChannelRef.current = null;
       }
     };
-  }, [
-    handleNewPost,
-    handlePostUpdate,
-    handlePostDelete,
-    handleNewLike,
-    handleLikeDelete,
-    handleNewComment,
-    handleCommentDelete,
-  ]);
+  }, []); // Empty deps - subscribe once on mount, clean up on unmount
 
-  return null; // This hook only sets up subscriptions
+  return null;
 }
 
 /**
@@ -243,20 +199,22 @@ export function useRealtimeFeed() {
  */
 export function useRealtimeComments(postId: string | null) {
   const queryClient = useQueryClient();
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     if (!postId) return;
 
-    // Cleanup previous channel if it exists
+    // Cleanup previous channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    const channelName = `comments-${postId}`;
+    const mountId = ++channelCounter;
+    const channelName = `comments-${postId}-${mountId}`;
 
-    // Create and subscribe to new channel
     const channel = supabase
       .channel(channelName)
       .on(
@@ -268,8 +226,7 @@ export function useRealtimeComments(postId: string | null) {
           filter: `post_id=eq.${postId}`,
         },
         () => {
-          // Invalidate comments query to refetch
-          queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+          queryClientRef.current.invalidateQueries({ queryKey: ['comments', postId] });
         }
       )
       .subscribe();
@@ -282,12 +239,11 @@ export function useRealtimeComments(postId: string | null) {
         channelRef.current = null;
       }
     };
-  }, [postId, queryClient]);
+  }, [postId]);
 }
 
 /**
  * Subscribe to like/comment changes for a set of post IDs and call onPostActivity when any of them change.
- * Use this on the creator profile page so likes/comments are reflected without leaving the page.
  */
 export function useRealtimeCreatorPosts(
   postIds: string[],
@@ -301,14 +257,13 @@ export function useRealtimeCreatorPosts(
   postIdSetRef.current = new Set(postIds);
   onPostActivityRef.current = onPostActivity;
 
+  // Stable dependency for postIds
+  const postIdsKey = postIds.join(',');
+
   useEffect(() => {
     if (postIds.length === 0) return;
 
-    const notifyIfRelevant = (postId: string | undefined) => {
-      if (postId && postIdSetRef.current.has(postId)) {
-        onPostActivityRef.current();
-      }
-    };
+    const mountId = ++channelCounter;
 
     if (likesChannelRef.current) {
       supabase.removeChannel(likesChannelRef.current);
@@ -319,8 +274,14 @@ export function useRealtimeCreatorPosts(
       commentsChannelRef.current = null;
     }
 
+    const notifyIfRelevant = (postId: string | undefined) => {
+      if (postId && postIdSetRef.current.has(postId)) {
+        onPostActivityRef.current();
+      }
+    };
+
     const likesChannel = supabase
-      .channel('creator-posts-likes')
+      .channel(`creator-posts-likes-${mountId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'post_likes' },
@@ -335,7 +296,7 @@ export function useRealtimeCreatorPosts(
     likesChannelRef.current = likesChannel;
 
     const commentsChannel = supabase
-      .channel('creator-posts-comments')
+      .channel(`creator-posts-comments-${mountId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'post_comments' },
@@ -359,7 +320,7 @@ export function useRealtimeCreatorPosts(
         commentsChannelRef.current = null;
       }
     };
-  }, [postIds.join(',')]); // stable when same IDs
+  }, [postIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 export default useRealtimeFeed;

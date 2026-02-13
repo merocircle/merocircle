@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   Search,
-  PlusCircle,
+  Plus,
   MessageCircle,
   User,
-  Settings
+  Settings,
 } from 'lucide-react';
 import { BottomNavIcon } from './NavIcon';
 import { cn } from '@/lib/utils';
@@ -27,11 +27,10 @@ export function BottomNav({
   onViewChange,
   unreadMessages = 0,
   onCreateClick,
-  className
+  className,
 }: BottomNavProps) {
   const pathname = usePathname();
 
-  // Map pathname to active view
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
@@ -45,59 +44,40 @@ export function BottomNav({
   return (
     <motion.nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-16 border-t border-border/50 bg-background/80 backdrop-blur-xl pb-safe',
-        'md:hidden', // Only show on mobile
-        className
+        'fixed bottom-0 left-0 right-0 z-50',
+        'flex items-center justify-around',
+        'h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]',
+        'border-t border-border/20',
+        'bg-card/98 backdrop-blur-2xl',
+        'md:hidden',
+        className,
       )}
-      initial={{ y: 64, opacity: 0 }}
+      initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
     >
-      {/* Home */}
-      <BottomNavIcon
-        icon={Home}
-        label="Home"
-        isActive={currentActiveView === 'home'}
-        href="/home"
-      />
-
-      {/* Explore */}
-      <BottomNavIcon
-        icon={Search}
-        label="Explore"
-        isActive={currentActiveView === 'explore'}
-        href="/explore"
-      />
-
-      {/* Create (Center) */}
-      <BottomNavIcon
-        icon={PlusCircle}
-        label="Create"
-        isCenter
-        onClick={onCreateClick}
-      />
-
-      {/* Messages */}
-      <BottomNavIcon
-        icon={MessageCircle}
-        label="Chat"
-        isActive={currentActiveView === 'chat'}
-        badge={unreadMessages}
-        href="/chat"
-      />
-
-      {/* Profile */}
-      <BottomNavIcon
-        icon={User}
-        label="Me"
-        isActive={currentActiveView === 'profile'}
-        href="/profile"
-      />
+      <BottomNavIcon icon={Home} label="Home" isActive={currentActiveView === 'home'} href="/home" />
+      <BottomNavIcon icon={Search} label="Explore" isActive={currentActiveView === 'explore'} href="/explore" />
+      
+      {/* Center create button — elevated and prominent */}
+      <div className="relative -mt-4">
+        <motion.button
+          onClick={onCreateClick}
+          className="w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform"
+          whileTap={{ scale: 0.9 }}
+          aria-label="Create"
+        >
+          <Plus className="w-5 h-5" strokeWidth={2.5} />
+        </motion.button>
+      </div>
+      
+      <BottomNavIcon icon={MessageCircle} label="Chat" isActive={currentActiveView === 'chat'} badge={unreadMessages} href="/chat" />
+      <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href="/profile" />
     </motion.nav>
   );
 }
 
-// Mobile header component with hide-on-scroll behavior
+// Mobile header
 interface MobileHeaderProps {
   title?: string;
   showTabs?: boolean;
@@ -115,35 +95,37 @@ export function MobileHeader({
   onTabChange,
   onSettingsClick,
   hideHeader = false,
-  className
+  className,
 }: MobileHeaderProps) {
-  // Don't render header at all when hidden
   if (hideHeader) return null;
 
   return (
     <motion.header
       className={cn(
-        'fixed top-0 left-0 right-0 z-40 flex flex-col border-b border-border/50 bg-background/80 backdrop-blur-xl pt-safe',
-        'md:hidden', // Only show on mobile
-        className
+        'fixed top-0 left-0 right-0 z-40',
+        'flex flex-col',
+        'border-b border-border/20',
+        'bg-background/85 backdrop-blur-2xl',
+        'pt-[env(safe-area-inset-top)]',
+        'md:hidden',
+        className,
       )}
       initial={{ y: -64, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
     >
-      <div className="flex items-center justify-between h-14 px-4">
-        <h1 className="text-xl font-bold text-foreground">{title}</h1>
-
-        {/* Settings Button - Top Right */}
-        <motion.button
-          onClick={onSettingsClick}
-          className="p-2 rounded-full hover:bg-muted/80 transition-colors"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          aria-label="Settings"
-        >
-          <Settings className="w-5 h-5 text-muted-foreground" />
-        </motion.button>
+      <div className="flex items-center justify-between h-12 px-4">
+        <h1 className="text-lg font-bold text-foreground tracking-tight">{title}</h1>
+        <div className="flex items-center gap-1">
+          <motion.button
+            onClick={onSettingsClick}
+            className="p-2 rounded-full hover:bg-muted/60 transition-colors"
+            whileTap={{ scale: 0.95 }}
+            aria-label="Settings"
+          >
+            <Settings className="w-4.5 h-4.5 text-muted-foreground" />
+          </motion.button>
+        </div>
       </div>
 
       {showTabs && (
@@ -152,7 +134,7 @@ export function MobileHeader({
             onClick={() => onTabChange?.('for-you')}
             className={cn(
               'relative pb-2 text-sm font-medium transition-colors',
-              activeTab === 'for-you' ? 'text-foreground' : 'text-muted-foreground'
+              activeTab === 'for-you' ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
             For You
@@ -168,7 +150,7 @@ export function MobileHeader({
             onClick={() => onTabChange?.('following')}
             className={cn(
               'relative pb-2 text-sm font-medium transition-colors',
-              activeTab === 'following' ? 'text-foreground' : 'text-muted-foreground'
+              activeTab === 'following' ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
             Following

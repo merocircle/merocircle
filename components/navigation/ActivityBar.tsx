@@ -14,6 +14,7 @@ import {
   User,
   Sun,
   Moon,
+  Compass,
   Calendar
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -63,7 +64,7 @@ export function ActivityBar({
 }: ActivityBarProps) {
   const pathname = usePathname();
   const { isCreator } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -100,6 +101,7 @@ export function ActivityBar({
   // Main navigation items
   const navItems: NavItem[] = [
     { id: 'home', icon: Home, label: 'Home', view: 'home' },
+    { id: 'explore', icon: Compass, label: 'Explore', view: 'explore' },
     { id: 'messages', icon: MessageCircle, label: 'Messages', view: 'chat', badge: unreadMessages },
     { id: 'notifications', icon: Bell, label: 'Notifications', view: 'notifications', badge: unreadNotifications },
   ];
@@ -147,7 +149,7 @@ export function ActivityBar({
                 whileTap={{ scale: 0.95 }}
               >
                 <Image
-                  src="/logo/logo-small.png"
+                  src={resolvedTheme === 'dark' ? '/logo/logo-dark.png' : '/logo/logo-light.png'}
                   alt="MeroCircle"
                   width={40}
                   height={40}
