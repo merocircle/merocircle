@@ -148,6 +148,8 @@ export function withTimeline<T extends { created_at: string; id: string }>(
         : undefined;
       const isHighlighted = highlightedPostId === String(post.id);
 
+      const isTodayGroup = isToday(groupDate);
+
       result.push(
         <TimelinePost
           key={post.id}
@@ -157,6 +159,7 @@ export function withTimeline<T extends { created_at: string; id: string }>(
           showDate={showDate}
           dateLabel={dateLabel}
           isHighlighted={isHighlighted}
+          isTodayGroup={isTodayGroup}
         >
           {renderPost(post, {
             isFirst: isFirstGroup && isFirstInGroup,

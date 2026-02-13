@@ -768,6 +768,21 @@ a:not([disabled]),
   @apply border-primary bg-primary shadow-lg shadow-primary/20;
 }
 
+/* Today marker pulse animation */
+@keyframes timeline-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.6);
+  }
+}
+.timeline-today-pulse {
+  animation: timeline-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* ===========================================
    SAFE AREA SUPPORT (iOS notch, home indicator)
    =========================================== */

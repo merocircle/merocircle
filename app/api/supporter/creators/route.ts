@@ -83,15 +83,18 @@ export async function GET() {
 
     const creators = supporterRows.map((s: { creator_id: string; amount: number; created_at: string }) => {
       const creator = creatorData?.find((c: Record<string, unknown>) => c.id === s.creator_id);
-      if (!creator) return null;
-      const profile = Array.isArray(creator.creator_profiles)
-        ? creator.creator_profiles[0]
-        : creator.creator_profiles;
+      // If the creator was deleted or not found in users, still return a stub
+      // so they are not silently dropped from the circle strip
+      const profile = creator
+        ? (Array.isArray(creator.creator_profiles)
+            ? creator.creator_profiles[0]
+            : creator.creator_profiles)
+        : null;
       const tx = txByCreator.get(s.creator_id);
       return {
         id: s.creator_id,
-        name: (creator.display_name as string) || 'Unknown',
-        photo_url: (creator.photo_url as string) || null,
+        name: creator ? ((creator.display_name as string) || 'Creator') : 'Creator',
+        photo_url: creator ? ((creator.photo_url as string) || null) : null,
         category: profile?.category ? String(profile.category) : null,
         bio: profile?.bio ? String(profile.bio) : null,
         is_verified: profile?.is_verified === true,
@@ -101,7 +104,7 @@ export async function GET() {
         transactionCount: tx?.count ?? 1,
         lastSupportDate: tx?.lastDate || s.created_at,
       };
-    }).filter(Boolean);
+    });
 
     // Sort by last support date
     creators.sort((a: { lastSupportDate: string }, b: { lastSupportDate: string }) =>

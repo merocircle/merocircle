@@ -27,26 +27,32 @@ export async function GET(request: NextRequest) {
     let formattedCreators: any[] = [];
 
     if (user && supportedCreatorIds.length > 0) {
-      // Fetch supported creators
-      const { data: supportedCreatorProfiles } = await supabase
-        .from('creator_profiles')
+      // Fetch supported creators – start from users table so creators
+      // without a creator_profiles row are still included
+      const { data: supportedUsers } = await supabase
+        .from('users')
         .select(`
-          user_id, bio, category, is_verified, supporters_count, posts_count,
-          users!inner(id, display_name, photo_url)
+          id, display_name, photo_url,
+          creator_profiles(bio, category, is_verified, supporters_count, posts_count)
         `)
-        .in('user_id', supportedCreatorIds);
+        .in('id', supportedCreatorIds);
 
-      formattedCreators = (supportedCreatorProfiles || []).map((cp: any) => ({
-        user_id: cp.user_id,
-        display_name: cp.users?.display_name || 'Creator',
-        bio: cp.bio,
-        avatar_url: cp.users?.photo_url,
-        category: cp.category,
-        is_verified: cp.is_verified,
-        supporter_count: cp.supporters_count || 0,
-        posts_count: cp.posts_count || 0,
-        creator_profile: { category: cp.category, is_verified: cp.is_verified },
-      }));
+      formattedCreators = (supportedUsers || []).map((u: any) => {
+        const cp = Array.isArray(u.creator_profiles)
+          ? u.creator_profiles[0]
+          : u.creator_profiles;
+        return {
+          user_id: u.id,
+          display_name: u.display_name || 'Creator',
+          bio: cp?.bio || null,
+          avatar_url: u.photo_url,
+          category: cp?.category || null,
+          is_verified: cp?.is_verified || false,
+          supporter_count: cp?.supporters_count || 0,
+          posts_count: cp?.posts_count || 0,
+          creator_profile: { category: cp?.category || null, is_verified: cp?.is_verified || false },
+        };
+      });
     } else {
       // Fallback: show trending creators
       let trendingQuery = supabase
