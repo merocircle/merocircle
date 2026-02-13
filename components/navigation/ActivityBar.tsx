@@ -64,7 +64,7 @@ export function ActivityBar({
 }: ActivityBarProps) {
   const pathname = usePathname();
   const { isCreator } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -149,7 +149,7 @@ export function ActivityBar({
                 whileTap={{ scale: 0.95 }}
               >
                 <Image
-                  src="/logo/logo-small.png"
+                  src={resolvedTheme === 'dark' ? '/logo/logo-dark.png' : '/logo/logo-light.png'}
                   alt="MeroCircle"
                   width={40}
                   height={40}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ArrowRight, AlertCircle, Heart } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -45,6 +46,7 @@ function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+  const { resolvedTheme } = useTheme();
   const { userProfile, loading: authLoading } = useAuth();
   
   const leftSideRef = useRef<HTMLDivElement>(null);
@@ -236,7 +238,7 @@ function AuthPageContent() {
           <div className="auth-logo flex justify-center">
             <Link href="/" className="inline-block">
               <Image
-                src="/logo/logo.png"
+                src={resolvedTheme === 'dark' ? '/logo/logo-dark.png' : '/logo/logo-light.png'}
                 alt="MeroCircle"
                 width={170}
                 height={120}

@@ -3,6 +3,7 @@ import {
   Container,
   Head,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -18,6 +19,8 @@ interface EmailLayoutProps {
   settingsUrl: string;
   helpUrl: string;
   hideCreatorInfo?: boolean;
+  /** App base URL for logo and links (e.g. https://merocircle.app). If provided, logo is shown. */
+  appUrl?: string;
 }
 
 /**
@@ -31,7 +34,10 @@ export default function EmailLayout({
   settingsUrl,
   helpUrl,
   hideCreatorInfo = false,
+  appUrl,
 }: EmailLayoutProps) {
+  const baseUrl = appUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
+
   return (
     <Html>
       <Head />
@@ -40,6 +46,19 @@ export default function EmailLayout({
         <Container style={wrapper}>
           {/* Warm brand accent bar */}
           <Section style={brandBar} />
+
+          {/* Logo — light theme for email clients */}
+          <Section style={logoSection}>
+            <Link href={baseUrl} style={logoLink}>
+              <Img
+                src={`${baseUrl}/logo/logo-light.png`}
+                alt="MeroCircle"
+                width={140}
+                height={48}
+                style={logoImg}
+              />
+            </Link>
+          </Section>
 
           <Container style={card}>
             {children}
@@ -90,8 +109,23 @@ const wrapper = {
 const brandBar = {
   height: '3px',
   background: 'linear-gradient(90deg, #c4382a 0%, #e76f51 100%)',
-  marginBottom: '32px',
+  marginBottom: '24px',
   borderRadius: '2px',
+};
+
+const logoSection = {
+  padding: '0 40px 24px',
+  textAlign: 'center' as const,
+};
+
+const logoLink = {
+  display: 'inline-block',
+};
+
+const logoImg = {
+  display: 'block',
+  maxWidth: '140px',
+  height: 'auto',
 };
 
 const card = {

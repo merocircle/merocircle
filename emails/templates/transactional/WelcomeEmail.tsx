@@ -1,7 +1,6 @@
 import {
   Heading,
   Hr,
-  Img,
   Link,
   Section,
   Text,
@@ -28,7 +27,6 @@ export default function WelcomeEmail({
   helpUrl = 'https://merocircle.app/help',
 }: WelcomeEmailProps) {
   const isCreator = userRole === 'creator';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
 
   return (
     <EmailLayout
@@ -38,15 +36,6 @@ export default function WelcomeEmail({
       hideCreatorInfo
     >
       <Section style={contentSection}>
-        <Section style={logoSection}>
-          <Img
-            src={`${appUrl}/logo/logo.png`}
-            alt="MeroCircle"
-            style={logo}
-            width="100"
-          />
-        </Section>
-
         <Heading style={title}>
           {isCreator ? `Welcome home, ${userName}` : `Hey ${userName}, you're in`}
         </Heading>
@@ -118,15 +107,6 @@ export default function WelcomeEmail({
 
 const contentSection = {
   padding: '32px 32px 0',
-};
-
-const logoSection = {
-  textAlign: 'center' as const,
-  margin: '0 0 24px',
-};
-
-const logo = {
-  margin: '0 auto',
 };
 
 const title = {

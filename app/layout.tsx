@@ -19,6 +19,10 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "MeroCircle - Support Local Creators",
   description: "The leading platform for supporting and discovering amazing creators from Nepal. Join our community and help build the creator economy.",
+  icons: {
+    icon: "/logo/logo-light.png",
+    apple: "/logo/logo-light.png",
+  },
 };
 
 export default function RootLayout({
