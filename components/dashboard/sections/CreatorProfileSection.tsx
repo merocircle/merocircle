@@ -1108,9 +1108,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/5">
       {/* New Header Design - Matching Second Image */}
-      <div className="relative bg-card p-4 pb-2">
+      <div className="relative bg-card p-4 pb-2 rounded-md">
         {/* Cover Image Section */}
-        <div className="relative h-56 sm:h-56 md:h-56 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+        <div className="relative h-56 sm:h-56 md:h-56 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden rounded-md">
           {creatorDetails.cover_image_url ? (
             <Image
               src={creatorDetails.cover_image_url}
@@ -1120,9 +1120,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               priority
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-pink-500/10 to-purple-500/20" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-pink-500/10 to-purple-500/20 rounded-md" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 rounded-md" />
         </div>
 
         {/* Centered Profile Section */}
@@ -1193,7 +1193,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 className="mb-4"
               >
                 <Badge variant="outline" className="px-4 py-2 text-sm text-primary border-2 border-primary/50 bg-primary/10 rounded-full">
-                  <Star className="w-4 h-4 text-primary mr-2" />
+                  <Star className="w-4 h-4 text-primary mr-0.5" />
                   {creatorDetails.category}
                 </Badge>
               </motion.div>
@@ -1223,7 +1223,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   onClick={() => setActiveTab('membership')}
                   className="gap-2 px-8 py-6 text-base hover:shadow-lg shadow-primary/20 font-semibold"
                 >
-                  <Heart className="w-5 h-5" />
+                  <Sparkles className="w-5 h-5" />
                   Support Creator
                 </Button>
               )}

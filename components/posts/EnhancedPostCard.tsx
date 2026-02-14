@@ -436,7 +436,7 @@ export function EnhancedPostCard({
               </div>
 
               {allImages.length > 1 && (
-                <>
+                <div>
                   {currentImageIndex > 0 && (
                     <button
                       onClick={(e) => {
@@ -459,51 +459,11 @@ export function EnhancedPostCard({
                       <ChevronRight className="w-5 h-5" />
                     </button>
                   )}
-                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-card/80 text-foreground text-xs font-medium z-10 backdrop-blur-sm shadow-sm">
-                    {currentImageIndex + 1}/{allImages.length}
-                  </div>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                    {allImages.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentImageIndex(idx);
-                        }}
-                        className={cn(
-                          "h-1.5 rounded-full transition-all",
-                          idx === currentImageIndex
-                            ? "bg-primary w-4"
-                            : "bg-foreground/30 w-1.5 hover:bg-foreground/50",
-                        )}
-                      />
-                    ))}
-                  </div>
-                </>
+                </div>
               )}
             </div>
           </div>
         )}
-
-        {!shouldBlur &&
-          post.post_type !== "poll" &&
-          youtubeVideoId &&
-          allImages.length === 0 && (
-            <div
-              className={cn(showAuthor ? "mt-4" : "")}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="relative w-full aspect-video bg-black">
-                <iframe
-                  src={getYouTubeEmbedUrl(youtubeVideoId)}
-                  title="YouTube video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  className="absolute inset-0 w-full h-full"
-                />
-              </div>
-            </div>
-          )}
 
         {shouldBlur && (
           <div
@@ -520,7 +480,7 @@ export function EnhancedPostCard({
                 src={allImages[0]}
                 alt="Preview"
                 fill
-                className="object-cover opacity-15 blur-2xl scale-110"
+                className="object-cover opacity-15 blur-xl scale-110"
                 sizes="630px"
               />
             )}
@@ -531,10 +491,10 @@ export function EnhancedPostCard({
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground mb-0.5">
-                    Subscribe to access
+                    Supporters Only Post
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Join the circle to see this post
+                    Start supporting this creator to view this post
                   </p>
                 </div>
                 {onNavigateToMembership ? (
@@ -546,7 +506,7 @@ export function EnhancedPostCard({
                       onNavigateToMembership();
                     }}
                   >
-                    Join Circle
+                    Support Creator
                   </Button>
                 ) : (
                   <Button
@@ -563,6 +523,26 @@ export function EnhancedPostCard({
                   </Button>
                 )}
               </div>
+              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-card/80 text-foreground text-xs font-medium z-10 backdrop-blur-sm shadow-sm">
+                {currentImageIndex + 1}/{allImages.length}
+              </div>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {allImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(idx);
+                    }}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all",
+                      idx === currentImageIndex
+                        ? "bg-primary w-4"
+                        : "bg-foreground/30 w-1.5 hover:bg-foreground/50",
+                    )}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -571,7 +551,7 @@ export function EnhancedPostCard({
           {post.title && post.post_type !== "poll" && (
             <h2
               className="text-lg sm:text-xl font-bold text-foreground leading-tight mb-3 cursor-pointer"
-              onClick={handlePostClick}
+              onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}
             >
               {post.title}
             </h2>
@@ -584,7 +564,7 @@ export function EnhancedPostCard({
           )}
 
           {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
-            <div className="mb-4 cursor-pointer" onClick={handlePostClick}>
+            <div className="mb-4 cursor-pointer" onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}>
               <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px]">
                 {shouldBlur ? "Subscribe to access this post." : displayedContent}
                 {!shouldBlur && shouldTruncateContent && !showFullContent && (
@@ -611,7 +591,7 @@ export function EnhancedPostCard({
               <div className="flex items-center gap-4">
                 <motion.button
                   onClick={handleLike}
-                  disabled={!currentUserId || likeMutation.isPending}
+                  disabled={!currentUserId || likeMutation.isPending || shouldBlur}
                   whileTap={{ scale: 0.9 }}
                   className={cn(
                     "flex items-center gap-1.5 text-sm font-medium transition-colors",
@@ -621,31 +601,30 @@ export function EnhancedPostCard({
                   )}
                 >
                   <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
-                  <span>{likesCount > 0 ? likesCount : "Like"}</span>
+                  {!shouldBlur ? (
+                    <span>{likesCount > 0 ? likesCount : "Like"}</span>
+                  ) : (
+                    <span>Like</span>
+                  )}
                 </motion.button>
 
                 <motion.button
                   onClick={handleCommentClick}
+                  disabled={!currentUserId || shouldBlur}
                   whileTap={{ scale: 0.9 }}
                   className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>{commentsCount > 0 ? commentsCount : "Comment"}</span>
+                  {!shouldBlur ? (
+                    <span>{commentsCount > 0 ? commentsCount : "Comment"}</span>
+                  ): (
+                    <span>Comment</span>
+                  )}
                 </motion.button>
               </div>
-
-              <motion.button
-                onClick={handleShare}
-                whileTap={{ scale: 0.9 }}
-                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Share</span>
-              </motion.button>
             </div>
           )}
         </div>
-
         <AnimatePresence>
           {showComments && (
             <motion.div
