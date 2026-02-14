@@ -115,17 +115,13 @@ const FeedSection = memo(function FeedSection() {
 
   const showSkeleton = isLoading && !feedData;
 
-  // Filter: only supporter posts, sorted by latest
   const filteredPosts = useMemo(() => {
     if (!feedData?.posts) return [];
 
-    // Only posts from supported creators, sorted by created_at desc
-    return feedData.posts
-      .filter((post: any) => post.is_supporter === true)
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
+    return [...feedData.posts].sort(
+      (a: any, b: any) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
   }, [feedData?.posts]);
 
   // Set ref for a post
@@ -220,7 +216,7 @@ const FeedSection = memo(function FeedSection() {
                 post={post}
                 currentUserId={userId}
                 showActions={true}
-                isSupporter={true}
+                isSupporter={post.is_supporter ?? false}
                 showAuthor={true}
               />
             </div>
@@ -257,7 +253,7 @@ const FeedSection = memo(function FeedSection() {
                 post={post}
                 currentUserId={userId}
                 showActions={true}
-                isSupporter={true}
+                isSupporter={post.is_supporter ?? false}
               />
             </div>
           </div>
