@@ -113,6 +113,7 @@ const ExploreSection = memo(function ExploreSection() {
   const suggestedCreators = filterByCategory(feed?.suggested_creators || []);
 
   return (
+<<<<<<< Updated upstream
     <div className="space-y-6 pb-8">
       {/* Search Header */}
       <motion.div
@@ -122,6 +123,13 @@ const ExploreSection = memo(function ExploreSection() {
       >
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+=======
+    <div className="space-y-6 pb-8 pt-8">
+      {/* ── Search + Categories sticky header ── */}
+      <div className="sticky top-1 z-10 bg-background/85 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-0 border-b border-border/20 safe-area-top">
+        <div className="relative mb-3">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+>>>>>>> Stashed changes
           <Input
             type="text"
             placeholder="Search creators, categories..."

@@ -24,6 +24,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAuth } from '@/contexts/auth-context';
 import { type DashboardView } from '@/contexts/dashboard-context';
 
+import Logo from "@/components/ui/logo.svg";
+
 interface ActivityBarProps {
   user?: {
     id: string;
@@ -146,6 +148,7 @@ export function ActivityBar({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
+<<<<<<< Updated upstream
                 <Image
                   src="/logo/logo-small.png"
                   alt="MeroCircle"
@@ -154,6 +157,9 @@ export function ActivityBar({
                   className="object-contain"
                   priority
                 />
+=======
+                <Logo className="w-6 h-6 text-primary object-contain"/>
+>>>>>>> Stashed changes
               </motion.div>
             </Link>
           </TooltipTrigger>

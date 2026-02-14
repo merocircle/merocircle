@@ -497,6 +497,7 @@ export function EnhancedPostCard({
                   className="object-cover opacity-20 blur-2xl"
                   sizes="630px"
                 />
+<<<<<<< Updated upstream
               )}
               
               {/* Simple overlay */}
@@ -538,6 +539,148 @@ export function EnhancedPostCard({
                     </Button>
                   )}
                 </div>
+=======
+              </div>
+            </div>
+          )}
+
+        {shouldBlur && (
+          <div
+            className={cn(
+              "relative w-full overflow-hidden cursor-pointer rounded-lg",
+              "aspect-[16/10] bg-gradient-to-br from-muted to-muted/50",
+              showAuthor ? "mx-4 sm:mx-5 mt-4" : "mx-4 sm:mx-5 mt-4 sm:mt-5"
+            )}
+            data-blurred-section
+            onClick={(e) => e.stopPropagation()}
+          >
+            {allImages.length > 0 && (
+              <Image
+                src={allImages[0]}
+                alt="Preview"
+                fill
+                className="object-cover opacity-15 blur-xl scale-110"
+                sizes="630px"
+              />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center p-6 max-w-xs space-y-3">
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-card/90 border border-border shadow-lg">
+                  <Lock className="w-4.5 h-4.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground mb-0.5">
+                    Supporters Only Post
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Start supporting this creator to view this post
+                  </p>
+                </div>
+                {onNavigateToMembership ? (
+                  <Button
+                    size="sm"
+                    className="rounded-full px-5 shadow-md shadow-primary/15"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigateToMembership();
+                    }}
+                  >
+                    Support Creator
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="rounded-full px-5 shadow-md shadow-primary/15"
+                    asChild
+                  >
+                    <Link
+                      href={creatorProfileLink}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Join Circle
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 sm:p-5 pt-4">
+          {post.title && post.post_type !== "poll" && (
+            <h2
+              className="text-lg sm:text-xl font-bold text-foreground leading-tight mb-3 cursor-pointer"
+              onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}
+            >
+              {post.title}
+            </h2>
+          )}
+
+          {post.post_type === "poll" && pollData?.id && (
+            <div className="mb-3">
+              <PollCard pollId={pollData.id} currentUserId={currentUserId} />
+            </div>
+          )}
+
+          {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
+            <div className="mb-4 cursor-pointer" onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}>
+              <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px]">
+                {shouldBlur ? "Subscribe to access this post." : displayedContent}
+                {!shouldBlur && shouldTruncateContent && !showFullContent && (
+                  <span className="text-muted-foreground">...</span>
+                )}
+                {!shouldBlur && shouldTruncateContent && (
+                  <button
+                    onClick={handlePostClick}
+                    className="text-primary font-medium hover:underline ml-1"
+                  >
+                    Show more
+                  </button>
+                )}
+              </p>
+            </div>
+          )}
+
+          {showActions && (
+            <div
+              className="flex items-center justify-between pt-3 border-t border-border/30"
+              data-actions-section
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-4">
+                <motion.button
+                  onClick={handleLike}
+                  disabled={!currentUserId || likeMutation.isPending || shouldBlur}
+                  whileTap={{ scale: 0.9 }}
+                  className={cn(
+                    "flex items-center gap-1.5 text-sm font-medium transition-colors",
+                    isLiked
+                      ? "text-rose-500"
+                      : "text-muted-foreground hover:text-rose-500",
+                  )}
+                >
+                  <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
+                  {!shouldBlur ? (
+                    <span>{likesCount > 0 ? likesCount : "Like"}</span>
+                  ) : (
+                    <span>Like</span>
+                  )}
+                </motion.button>
+
+                <motion.button
+                  onClick={handleCommentClick}
+                  disabled={!currentUserId || shouldBlur}
+                  whileTap={{ scale: 0.9 }}
+                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  {!shouldBlur ? (
+                    <span>{commentsCount > 0 ? commentsCount : "Comment"}</span>
+                  ): (
+                    <span>Comment</span>
+                  )}
+                </motion.button>
+>>>>>>> Stashed changes
               </div>
             </div>
           ) : (
