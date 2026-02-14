@@ -374,7 +374,7 @@ export function PostDetailModal({
                 </div>
               )}
 
-            {shouldBlur && hasMedia && (
+            {shouldBlur && (
               <div className="relative w-full aspect-[16/10] bg-gradient-to-br from-muted to-muted/50 flex-shrink-0">
                 {allImages.length > 0 && (
                   <Image
@@ -392,10 +392,10 @@ export function PostDetailModal({
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">
-                        Circle-only
+                        Subscribe to access
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Join the inner circle to see this
+                        Join the circle to see this post
                       </p>
                     </div>
                   </div>
@@ -468,10 +468,10 @@ export function PostDetailModal({
                   ) : null;
                 })()}
 
-              {post.content && post.post_type !== "poll" && (
+              {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
                 <div className="mb-6">
                   <p className="text-foreground/85 leading-relaxed whitespace-pre-wrap text-[15px]">
-                    {post.content}
+                    {shouldBlur ? "Subscribe to access this post." : post.content}
                   </p>
                 </div>
               )}

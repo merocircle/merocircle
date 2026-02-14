@@ -509,7 +509,7 @@ export function EnhancedPostCard({
           <div
             className={cn(
               "relative w-full overflow-hidden cursor-pointer rounded-lg",
-              hasMedia ? "aspect-[16/10] bg-gradient-to-br from-muted to-muted/50" : "hidden",
+              "aspect-[16/10] bg-gradient-to-br from-muted to-muted/50",
               showAuthor ? "mx-4 sm:mx-5 mt-4" : "mx-4 sm:mx-5 mt-4 sm:mt-5"
             )}
             data-blurred-section
@@ -531,10 +531,10 @@ export function EnhancedPostCard({
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground mb-0.5">
-                    Circle-only
+                    Subscribe to access
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Join the inner circle to see this
+                    Join the circle to see this post
                   </p>
                 </div>
                 {onNavigateToMembership ? (
@@ -583,14 +583,14 @@ export function EnhancedPostCard({
             </div>
           )}
 
-          {post.content && post.post_type !== "poll" && (
+          {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
             <div className="mb-4 cursor-pointer" onClick={handlePostClick}>
               <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px]">
-                {displayedContent}
-                {shouldTruncateContent && !showFullContent && (
+                {shouldBlur ? "Subscribe to access this post." : displayedContent}
+                {!shouldBlur && shouldTruncateContent && !showFullContent && (
                   <span className="text-muted-foreground">...</span>
                 )}
-                {shouldTruncateContent && (
+                {!shouldBlur && shouldTruncateContent && (
                   <button
                     onClick={handlePostClick}
                     className="text-primary font-medium hover:underline ml-1"
