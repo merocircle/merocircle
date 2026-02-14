@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/header";
 import { useSession } from "next-auth/react";
 import { useAuth } from "@/contexts/auth-context";
+import "./landing-page.css";
 import {
   UrlMessageBanner,
+  LandingNav,
   HeroSection,
   ProblemSection,
   SolutionSection,
   WaysToSupportSection,
   TrustSection,
   ProcessSection,
+  PaymentSection,
   CTASection,
   Footer,
 } from "@/components/landing";
@@ -53,22 +56,34 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
-      <Header />
-      
-      <UrlMessageBanner 
-        message={urlMessage} 
-        onClose={() => setUrlMessage(null)} 
-      />
-      
-      <HeroSection />
+    <div className="landing-page-wrap">
+      {/* Full-page subtle background illustration */}
+      <div className="landing-page-bg" aria-hidden>
+        <Image
+          src="/Gemini_Generated_Image_alvhvualvhvualvh.png"
+          alt=""
+          fill
+          className="landing-page-bg-img"
+          sizes="100vw"
+          priority={false}
+        />
+      </div>
+      <div className="landing-page-content">
+        <LandingNav />
+        <UrlMessageBanner
+          message={urlMessage}
+          onClose={() => setUrlMessage(null)}
+        />
+        <HeroSection />
       <ProblemSection />
       <SolutionSection />
       <WaysToSupportSection />
-      <TrustSection />
-      <ProcessSection />
-      <CTASection />
-      <Footer />
+        <PaymentSection />
+        <TrustSection />
+        <ProcessSection />
+        <CTASection />
+        <Footer />
+      </div>
     </div>
   );
 }

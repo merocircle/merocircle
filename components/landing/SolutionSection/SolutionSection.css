@@ -1,160 +1,161 @@
+/* How It Works - reference design with Nepal image */
+.solution-section {
+  padding: 12rem 2rem;
+  overflow: hidden;
+  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+  background: white;
+}
+
+.solution-section-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  gap: 4rem;
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .solution-section-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+  }
+}
+
+.solution-reveal {
+  transition: opacity 1s ease-out, transform 1s ease-out;
+  opacity: 0;
+  transform: translateY(3rem);
+}
+.solution-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.solution-section-content {
+  order: 1;
+}
+.solution-section-visual {
+  order: 2;
+}
+
+.solution-section-eyebrow {
+  color: #990000;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  font-size: 10px;
+  margin: 0 0 1.5rem;
+}
 .solution-section-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  letter-spacing: -0.025em;
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
   line-height: 0.9;
-  padding: 0 0.5rem;
-  color: #000;
+  color: #1a1a1a;
+  margin: 0 0 1.5rem;
 }
-
-@media (min-width: 640px) {
-  .solution-section-title {
-    font-size: 3rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .solution-section-title {
-    font-size: 3.75rem;
-  }
-}
-
 @media (min-width: 1024px) {
   .solution-section-title {
     font-size: 4.5rem;
   }
 }
-
 .solution-section-description {
-  font-size: 1rem;
-  color: rgba(0, 0, 0, 0.6);
-  margin-bottom: 3rem;
-  max-width: 42rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 1rem;
+  font-size: 1.5rem;
+  color: rgb(107 114 128);
+  font-weight: 500;
+  line-height: 1.625;
+  margin: 0 0 2rem;
 }
 
-@media (min-width: 640px) {
-  .solution-section-description {
-    font-size: 1.125rem;
-    margin-bottom: 3.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .solution-section-description {
-    font-size: 1.25rem;
-    margin-bottom: 4rem;
-  }
-}
-
-.solution-section-grid {
+.solution-section-pills {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  min-width: 0;
+  gap: 2rem 3rem;
 }
-
-@media (min-width: 640px) {
-  .solution-section-grid {
-    gap: 1.75rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .solution-section-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2rem;
-  }
-}
-
-.solution-item {
+.solution-section-pill {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-width: 0;
-  touch-action: manipulation;
+  gap: 1rem;
 }
-
-.solution-item-icon-wrapper {
-  height: 3.5rem;
-  width: 3.5rem;
-  border-radius: 9999px;
-  background-color: #f3f4f6;
-  border: 1px solid #e5e7eb;
+.solution-section-pill-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgb(249 250 251);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
-  transition: background-color 0.5s;
-  flex-shrink: 0;
+  color: rgb(156 163 175);
+  transition: background 0.2s, color 0.2s;
 }
-
-@media (min-width: 640px) {
-  .solution-item-icon-wrapper {
-    height: 4rem;
-    width: 4rem;
-    margin-bottom: 1.25rem;
-  }
+.solution-section-pill:hover .solution-section-pill-icon {
+  background: rgba(153, 0, 0, 0.05);
+  color: #990000;
 }
-
-@media (min-width: 1024px) {
-  .solution-item-icon-wrapper {
-    height: 5rem;
-    width: 5rem;
-  }
-}
-
-.solution-item:hover .solution-item-icon-wrapper,
-.solution-item:active .solution-item-icon-wrapper {
-  background-color: #ff4000;
-}
-
-.solution-item-icon {
-  height: 1.25rem;
-  width: 1.25rem;
-  color: #000;
-  transition: color 0.5s;
-  flex-shrink: 0;
-}
-
-@media (min-width: 640px) {
-  .solution-item-icon {
-    height: 1.5rem;
-    width: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .solution-item-icon {
-    height: 2rem;
-    width: 2rem;
-  }
-}
-
-.solution-item:hover .solution-item-icon,
-.solution-item:active .solution-item-icon {
-  color: white;
-}
-
-.solution-item-title {
-  font-size: 0.75rem;
+.solution-section-pill-label {
   font-weight: 700;
+  color: rgb(31 41 55);
   letter-spacing: -0.025em;
-  color: #000;
+  font-size: 1.125rem;
 }
 
-@media (min-width: 640px) {
-  .solution-item-title {
-    font-size: 0.875rem;
-  }
+.solution-section-visual-inner {
+  position: relative;
+  padding: 1rem;
+}
+.solution-section-visual-inner::before {
+  content: "";
+  position: absolute;
+  inset: -2.5rem;
+  background: rgba(153, 0, 0, 0.05);
+  border-radius: 50%;
+  filter: blur(100px);
+  transition: background 0.2s;
+}
+.solution-section-visual-inner:hover::before {
+  background: rgba(153, 0, 0, 0.1);
 }
 
-@media (min-width: 1024px) {
-  .solution-item-title {
-    font-size: 1rem;
-  }
+.solution-section-image-wrap {
+  position: relative;
+}
+.solution-section-image {
+  width: 100%;
+  height: auto;
+  border-radius: 5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 8px solid white;
+  transition: filter 1s;
+  filter: grayscale(100%);
+}
+.solution-section-image-wrap:hover .solution-section-image {
+  filter: grayscale(0%);
+}
+
+.solution-section-image-badge {
+  position: absolute;
+  bottom: -2.5rem;
+  right: -2.5rem;
+  background: #1a1a1a;
+  color: white;
+  padding: 3rem;
+  border-radius: 3rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.solution-section-badge-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  color: #990000;
+  margin: 0 0 1rem;
+}
+.solution-section-badge-title {
+  font-size: 1.875rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  margin: 0;
 }

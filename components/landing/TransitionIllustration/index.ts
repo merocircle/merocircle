@@ -1,0 +1,1 @@
+export { TransitionIllustration } from "./TransitionIllustration";

@@ -1,0 +1,23 @@
+/* Transition illustration between Why MeroCircle and How It Works */
+.transition-illus {
+  padding: 4rem 2rem;
+  background: #fff;
+  border-top: 1px solid rgb(243 244 246);
+  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+}
+
+.transition-illus-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgb(243 244 246);
+}
+
+.transition-illus-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}

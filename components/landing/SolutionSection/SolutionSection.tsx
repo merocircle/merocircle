@@ -1,49 +1,84 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { RoundedSection } from "@/components/ui/rounded-section";
-import { AnimatedSection } from "@/components/ui/animated-section";
-import { Heart, Users, Globe, Shield } from "lucide-react";
+import Image from "next/image";
+import { Heart, MessageSquare, Globe, ShieldCheck } from "lucide-react";
+import { useReveal } from "../useReveal";
 import "./SolutionSection.css";
 
-const solutionItems = [
-  { icon: Heart, title: "Support" },
-  { icon: Users, title: "Connect" },
-  { icon: Globe, title: "Discover" },
-  { icon: Shield, title: "Secure" },
+const NEPAL_IMAGE = "/MeroCircle_Nepal_Concept_Art.png";
+
+const PILLS = [
+  { label: "Support", icon: Heart },
+  { label: "Connect", icon: MessageSquare },
+  { label: "Discover", icon: Globe },
+  { label: "Secure", icon: ShieldCheck },
 ];
+
+function RevealSection({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const [ref, isVisible] = useReveal();
+  return (
+    <div
+      ref={ref}
+      className={`solution-reveal ${isVisible ? "solution-reveal-visible" : ""} ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function SolutionSection() {
   return (
-    <RoundedSection theme="white">
-      <AnimatedSection className="w-full max-w-5xl mx-auto text-center" delay={0.1}>
-        <Badge className="mb-4 sm:mb-6 bg-black text-white text-xs" variant="default">
-          How It Works
-        </Badge>
-        <h2 className="solution-section-title">
-          Creators. Supporters. <br />
-          <span className="text-[#ff4000]">Nothing in between.</span>
-        </h2>
-        <p className="solution-section-description">
-          MeroCircle gives you a direct line of access to your favorite creators, with no ads or gatekeepers in the way. Through real-time connections, comments, and direct support, you can connect more deeply with creators here than anywhere else.
-        </p>
-        <div className="solution-section-grid">
-          {solutionItems.map((item, index) => (
-            <motion.div 
-              key={index} 
-              className="solution-item"
-              whileHover={{ y: -10 }} 
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className="solution-item-icon-wrapper">
-                <item.icon className="solution-item-icon" />
+    <section id="how-it-works" className="solution-section">
+      <div className="solution-section-inner">
+        <RevealSection className="solution-section-content">
+          <div className="solution-section-text">
+            <p className="solution-section-eyebrow">How It Works</p>
+            <h2 className="solution-section-title">
+              Creators. Supporters.
+              <br />
+              Nothing in between.
+            </h2>
+            <p className="solution-section-description">
+              MeroCircle gives you a direct line of access to your favorite creators, with no ads or gatekeepers in the way. Connect more deeply here than anywhere else.
+            </p>
+            <div className="solution-section-pills">
+              {PILLS.map((item) => (
+                <div key={item.label} className="solution-section-pill">
+                  <div className="solution-section-pill-icon">
+                    <item.icon size={18} />
+                  </div>
+                  <span className="solution-section-pill-label">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </RevealSection>
+
+        <RevealSection className="solution-section-visual">
+          <div className="solution-section-visual-inner">
+            <div className="solution-section-image-wrap">
+              <Image
+                src={NEPAL_IMAGE}
+                alt="Abstract geometric art: Himalayan mountains with digital nodes of connection"
+                width={600}
+                height={600}
+                className="solution-section-image"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+              <div className="solution-section-image-badge">
+                <p className="solution-section-badge-eyebrow">Nepal Regional Path</p>
+                <p className="solution-section-badge-title">100% Direct access.</p>
               </div>
-              <h3 className="solution-item-title">{item.title}</h3>
-            </motion.div>
-          ))}
-        </div>
-      </AnimatedSection>
-    </RoundedSection>
+            </div>
+          </div>
+        </RevealSection>
+      </div>
+    </section>
   );
 }

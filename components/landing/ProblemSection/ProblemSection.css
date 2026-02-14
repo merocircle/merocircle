@@ -1,166 +1,143 @@
-.problem-section-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
+/* Why MeroCircle - reference design */
+.problem-section {
+  padding: 12rem 2rem;
+  background: rgba(249, 250, 251, 0.5);
+  border-top: 1px solid rgb(243 244 246);
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
 }
 
-@media (min-width: 1024px) {
-  .problem-section-container {
-    flex-direction: row;
-    gap: 5rem;
-    align-items: flex-start;
-  }
+.problem-section-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
-.problem-section-content {
-  width: 100%;
-  flex-shrink: 0;
+.problem-reveal {
+  transition: opacity 1s ease-out, transform 1s ease-out;
+  opacity: 0;
+  transform: translateY(3rem);
+}
+.problem-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-@media (min-width: 1024px) {
-  .problem-section-content {
-    width: 41.666667%;
-  }
+.problem-section-header {
+  max-width: 48rem;
+  margin-bottom: 8rem;
 }
-
+.problem-section-eyebrow {
+  color: #990000;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  font-size: 10px;
+  margin: 0 0 1.5rem;
+}
 .problem-section-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin-bottom: 1.25rem;
-  letter-spacing: -0.025em;
-  line-height: 0.92;
-  color: #000;
+  font-size: 3.75rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+  color: #1a1a1a;
+  margin: 0 0 1.5rem;
 }
-
-@media (min-width: 640px) {
-  .problem-section-title {
-    font-size: 2.25rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .problem-section-title {
-    font-size: 3rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .problem-section-title {
-    font-size: 3.75rem;
-  }
-}
-
 .problem-section-description {
-  font-size: 1rem;
-  color: rgba(0, 0, 0, 0.6);
-  max-width: 28rem;
+  font-size: 1.5rem;
+  color: rgb(107 114 128);
+  font-weight: 500;
+  line-height: 1.625;
+  margin: 0;
 }
 
-@media (min-width: 640px) {
-  .problem-section-description {
-    font-size: 1.125rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .problem-section-description {
-    font-size: 1.25rem;
-  }
-}
-
-.problem-section-cards {
-  width: 100%;
+.problem-section-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  min-width: 0;
+  gap: 2rem;
 }
-
-@media (min-width: 640px) {
-  .problem-section-cards {
+@media (min-width: 768px) {
+  .problem-section-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
   }
 }
-
 @media (min-width: 1024px) {
-  .problem-section-cards {
-    width: 58.333333%;
+  .problem-section-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
-.problem-card {
-  background-color: rgba(249, 250, 251, 0.5);
-  border: none;
-  box-shadow: none;
+.problem-section-card-wrap {
+  height: 100%;
+}
+
+.problem-section-card {
+  height: 100%;
+  padding: 3rem;
+  background: white;
+  border-radius: 3.5rem;
+  border: 1px solid rgb(243 244 246);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+.problem-section-card:hover {
+  border-color: rgba(153, 0, 0, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+.problem-section-card-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6rem;
+  height: 6rem;
+  background: rgba(153, 0, 0, 0.05);
+  border-radius: 0 0 0 100%;
+  transform: translate(2rem, -2rem);
+  transition: background 0.2s;
+}
+.problem-section-card:hover .problem-section-card-corner {
+  background: rgba(153, 0, 0, 0.1);
+}
+
+.problem-section-card-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  background: rgba(153, 0, 0, 0.05);
   border-radius: 1rem;
-  padding: 0.5rem;
-  transition: background-color 0.5s;
-  min-width: 0;
-  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #990000;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: background 0.5s, color 0.5s;
 }
-
-@media (min-width: 640px) {
-  .problem-card {
-    border-radius: 1.5rem;
-    padding: 0.75rem;
-  }
-}
-
-.problem-card:hover,
-.problem-card:active {
-  background-color: #ff4000;
+.problem-section-card:hover .problem-section-card-icon {
+  background: #990000;
   color: white;
 }
 
-.problem-card-icon {
-  height: 2.25rem;
-  width: 2.25rem;
-  margin-bottom: 0.75rem;
-  color: #ff4000;
-  flex-shrink: 0;
-  transition: color 0.5s;
+.problem-section-card-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  color: #1a1a1a;
+  margin: 0 0 1.25rem;
 }
-
-@media (min-width: 640px) {
-  .problem-card-icon {
-    height: 2.75rem;
-    width: 2.75rem;
-    margin-bottom: 1rem;
-  }
-}
-
-.problem-card:hover .problem-card-icon,
-.problem-card:active .problem-card-icon {
-  color: white;
-}
-
-.problem-card-title {
+.problem-section-card-desc {
   font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.25;
-  margin-bottom: 0.5rem;
-}
-
-@media (min-width: 640px) {
-  .problem-card-title {
-    font-size: 1.125rem;
-  }
-}
-
-.problem-card-description {
-  font-size: 0.75rem;
+  color: rgb(156 163 175);
   line-height: 1.625;
-  transition: color 0.5s;
+  font-weight: 500;
+  margin: 0;
 }
 
-@media (min-width: 640px) {
-  .problem-card-description {
-    font-size: 0.875rem;
-  }
-}
-
-.problem-card:hover .problem-card-description,
-.problem-card:active .problem-card-description {
-  color: rgba(255, 255, 255, 0.8);
-}
+.problem-section-card-delay-0 { transition-delay: 0ms; }
+.problem-section-card-delay-1 { transition-delay: 100ms; }
+.problem-section-card-delay-2 { transition-delay: 200ms; }
+.problem-section-card-delay-3 { transition-delay: 300ms; }

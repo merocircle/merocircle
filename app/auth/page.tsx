@@ -2,16 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, ArrowRight, AlertCircle, Heart } from 'lucide-react';
+import { Loader2, ArrowRight, AlertCircle } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
-import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import gsap from 'gsap';
-
-import Logo from "@/components/ui/logo.svg";
+import './auth-theme.css';
 
 // Creator showcase cards data
 const creatorShowcase = [
@@ -48,7 +46,6 @@ function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
-  const { resolvedTheme } = useTheme();
   const { userProfile, loading: authLoading } = useAuth();
   
   const leftSideRef = useRef<HTMLDivElement>(null);
@@ -225,42 +222,48 @@ function AuthPageContent() {
 
   if (status === 'loading' || authLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-900" />
+      <div className="auth-theme min-h-screen flex items-center justify-center" style={{ background: 'var(--auth-bg, #faf8f6)' }}>
+        <Loader2 className="h-6 w-6 animate-spin text-[#6b5d56]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="auth-theme min-h-screen flex flex-col lg:flex-row">
       {/* Left Side - Auth Form */}
       <div
         ref={leftSideRef}
-        className="w-full lg:w-1/2 min-h-[100dvh] bg-white dark:bg-background flex items-center justify-center p-4 sm:p-6 lg:p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+        className="auth-left w-full lg:w-1/2 min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 lg:p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
       >
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           {/* Logo */}
           <div className="auth-logo flex justify-center">
             <Link href="/" className="inline-block">
-              <Logo className="w-24 h-24 text-primary object-contain"/>
+              <Image
+                src="/logo/logo-light.png"
+                alt="MeroCircle"
+                width={96}
+                height={96}
+                className="object-contain"
+              />
             </Link>
           </div>
 
           {/* Title */}
           <div className="space-y-2 sm:space-y-3">
-            <h1 className="auth-title text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-foreground tracking-tight">
+            <h1 className="auth-title text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
               Sign in
             </h1>
-            <p className="auth-description text-gray-600 dark:text-muted-foreground text-sm sm:text-base lg:text-lg">
+            <p className="auth-description text-sm sm:text-base lg:text-lg">
               Create an account to start supporting creators and join exclusive communities
             </p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-red-800">{error}</span>
+            <div className="auth-error rounded-xl p-4 flex items-start gap-3 border">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span className="text-sm">{error}</span>
             </div>
           )}
 
@@ -269,7 +272,7 @@ function AuthPageContent() {
             <Button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-medium text-base transition-all shadow-sm hover:shadow"
+              className="auth-btn-primary w-full h-12 font-medium text-base transition-all shadow-sm hover:shadow-md rounded-xl"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -287,19 +290,19 @@ function AuthPageContent() {
 
           {/* Footer */}
           <div className="auth-footer space-y-6 pt-4">
-            <p className="text-sm text-gray-500 dark:text-muted-foreground">
+            <p className="auth-footer-text text-sm">
               By continuing, you agree to MeroCircle's{' '}
-              <Link href="/terms" className="text-primary hover:underline">
+              <Link href="/terms" className="auth-link hover:no-underline">
                 Terms of Service
               </Link>
               {' '}and{' '}
-              <Link href="/privacy" className="text-primary hover:underline">
+              <Link href="/privacy" className="auth-link hover:no-underline">
                 Privacy Policy
               </Link>
             </p>
 
-            <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-muted-foreground">
+            <div className="auth-divider pt-6 border-t">
+              <p className="auth-footer-text text-sm">
                 All users start as supporters. You can become a creator anytime from your dashboard.
               </p>
             </div>
@@ -308,7 +311,7 @@ function AuthPageContent() {
       </div>
 
       {/* Right Side - Sliding Creator Cards */}
-      <div className="hidden lg:flex w-1/2 bg-slate-900 relative overflow-hidden">
+      <div className="auth-right hidden lg:flex w-1/2 relative overflow-hidden">
 
         {/* Cards Container */}
         <div className="relative w-full flex items-center justify-center p-12">
@@ -374,7 +377,7 @@ function AuthPageContent() {
                   key={index}
                   onClick={() => setCurrentCard(index)}
                   className={`h-2 rounded-full transition-all ${
-                    index === currentCard ? 'w-8 bg-white' : 'w-2 bg-white/40'
+                    index === currentCard ? 'w-8 auth-dot' : 'w-2 auth-dot-inactive'
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
@@ -385,7 +388,7 @@ function AuthPageContent() {
 
         {/* Bottom Text */}
         <div className="absolute bottom-8 left-8 right-8 text-center">
-          <p className="text-white/90 text-lg font-medium">
+          <p className="auth-right-bottom text-lg font-medium">
             Join 10,000+ supporters making a difference
           </p>
         </div>

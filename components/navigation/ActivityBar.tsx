@@ -26,8 +26,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAuth } from '@/contexts/auth-context';
 import { type DashboardView } from '@/contexts/dashboard-context';
 import { isAdmin } from '@/lib/admin-middleware';
-
-import Logo from "@/components/ui/logo.svg";
+import { Logo } from '@/components/ui/logo';
 
 interface ActivityBarProps {
   user?: {

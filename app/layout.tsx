@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-provider";
@@ -14,6 +14,12 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-space-grotesk",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta-sans",
 });
 
 export const viewport: Viewport = {
@@ -66,7 +72,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${spaceGrotesk.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} font-sans antialiased`} suppressHydrationWarning>
         <ErrorBoundary>
         <ThemeProvider
           attribute="class"
