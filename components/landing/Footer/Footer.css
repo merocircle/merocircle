@@ -6,6 +6,13 @@
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
   overflow: hidden;
 }
+@media (max-width: 767px) {
+  .landing-footer {
+    padding: 3rem 1.25rem 2rem;
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
+  }
+}
 
 /* Background: solid dark by default. To use a custom image, add it to public/ (e.g. footer-bg.png)
    then add: background-image: url('/footer-bg.png'); background-size: cover; background-position: center; */

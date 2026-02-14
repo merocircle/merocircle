@@ -32,6 +32,10 @@
   color: var(--auth-text-muted);
 }
 
+.auth-theme .auth-motto {
+  color: var(--auth-text-muted);
+}
+
 .auth-theme .auth-link {
   color: var(--auth-accent);
   font-weight: 600;

@@ -233,9 +233,9 @@ function AuthPageContent() {
       {/* Left Side - Auth Form */}
       <div
         ref={leftSideRef}
-        className="auth-left w-full lg:w-1/2 min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 lg:p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+        className="auth-left w-full lg:w-1/2 min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 lg:p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]"
       >
-        <div className="w-full max-w-md space-y-6 sm:space-y-8">
+        <div className="w-full max-w-md space-y-6 sm:space-y-8 overflow-hidden">
           {/* Logo */}
           <div className="auth-logo flex justify-center">
             <Link href="/" className="inline-block">
@@ -248,6 +248,11 @@ function AuthPageContent() {
               />
             </Link>
           </div>
+
+          {/* Motto (mobile: center of page feel) */}
+          <p className="auth-motto text-center text-sm font-semibold text-[var(--auth-text-muted)] max-w-xs mx-auto lg:max-w-none lg:text-left lg:mx-0">
+            Your favorite creator now more closer than ever.
+          </p>
 
           {/* Title */}
           <div className="space-y-2 sm:space-y-3">

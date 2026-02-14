@@ -10,6 +10,14 @@
   margin: 0 auto;
   padding: 0 2rem;
 }
+@media (max-width: 767px) {
+  .payment-section {
+    padding: 2rem 0;
+  }
+  .payment-section-inner {
+    padding: 0 1.25rem;
+  }
+}
 
 .payment-section-eyebrow {
   text-align: center;

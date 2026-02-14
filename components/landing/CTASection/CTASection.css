@@ -7,6 +7,11 @@
   overflow: hidden;
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
 }
+@media (max-width: 767px) {
+  .cta-section {
+    padding: 5rem 1.25rem 4rem;
+  }
+}
 
 .cta-section-bg {
   position: absolute;
@@ -41,6 +46,11 @@
   position: relative;
   z-index: 10;
 }
+@media (max-width: 767px) {
+  .cta-section-inner {
+    gap: 2.5rem;
+  }
+}
 
 .cta-section-title {
   font-size: 4rem;
@@ -49,6 +59,11 @@
   line-height: 0.8;
   color: #1a1a1a;
   margin: 0;
+}
+@media (max-width: 767px) {
+  .cta-section-title {
+    font-size: 2rem;
+  }
 }
 @media (min-width: 1024px) {
   .cta-section-title {
@@ -73,6 +88,11 @@
   line-height: 1.625;
   font-style: italic;
 }
+@media (max-width: 767px) {
+  .cta-section-quote {
+    font-size: 1rem;
+  }
+}
 @media (min-width: 768px) {
   .cta-section-quote {
     font-size: 2rem;
@@ -95,6 +115,13 @@
   text-decoration: none;
   transition: background 0.2s, transform 0.1s;
   box-shadow: 0 30px 60px -12px rgba(153, 0, 0, 0.5);
+}
+@media (max-width: 767px) {
+  .cta-section-btn {
+    padding: 1rem 2rem;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+  }
 }
 .cta-section-btn:hover {
   background: #000;
