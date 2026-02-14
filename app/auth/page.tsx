@@ -11,6 +11,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import gsap from 'gsap';
 
+import Logo from "@/components/ui/logo.svg";
+
 // Creator showcase cards data
 const creatorShowcase = [
   {
@@ -240,13 +242,7 @@ function AuthPageContent() {
           {/* Logo */}
           <div className="auth-logo flex justify-center">
             <Link href="/" className="inline-block">
-              <Image
-                src={resolvedTheme === 'dark' ? '/logo/logo-dark.png' : '/logo/logo-light.png'}
-                alt="MeroCircle"
-                width={170}
-                height={120}
-                className="object-contain"
-              />
+              <Logo className="w-24 h-24 text-primary object-contain"/>
             </Link>
           </div>
 
@@ -291,19 +287,19 @@ function AuthPageContent() {
 
           {/* Footer */}
           <div className="auth-footer space-y-6 pt-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-muted-foreground">
               By continuing, you agree to MeroCircle's{' '}
-              <Link href="/terms" className="text-gray-900 underline hover:no-underline">
+              <Link href="/terms" className="text-primary hover:underline">
                 Terms of Service
               </Link>
               {' '}and{' '}
-              <Link href="/privacy" className="text-gray-900 underline hover:no-underline">
+              <Link href="/privacy" className="text-primary hover:underline">
                 Privacy Policy
               </Link>
             </p>
 
-            <div className="pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+            <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground">
                 All users start as supporters. You can become a creator anytime from your dashboard.
               </p>
             </div>

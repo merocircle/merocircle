@@ -1193,7 +1193,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 className="mb-4"
               >
                 <Badge variant="outline" className="px-4 py-2 text-sm text-primary border-2 border-primary/50 bg-primary/10 rounded-full">
-                  <Star className="w-4 h-4 text-primary mr-2" />
+                  <Star className="w-4 h-4 text-primary mr-0.5" />
                   {creatorDetails.category}
                 </Badge>
               </motion.div>
