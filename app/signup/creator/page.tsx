@@ -220,9 +220,9 @@ export default function CreatorSignupPage() {
     });
   };
 
-  // Calculate estimated monthly income
+  // Calculate estimated monthly income (tier 1 is always free → 0)
   const calculateMonthlyIncome = () => {
-    const tier1Income = parseFloat(tierPrices.tier1) * parseFloat(estimatedSupporters.tier1 || '0');
+    const tier1Income = 0; // 1★ Supporter is free; supporter count does not affect income
     const tier2Income = parseFloat(tierPrices.tier2) * parseFloat(estimatedSupporters.tier2 || '0');
     const tier3Income = parseFloat(tierPrices.tier3) * parseFloat(estimatedSupporters.tier3 || '0');
     return tier1Income + tier2Income + tier3Income;
@@ -348,7 +348,7 @@ export default function CreatorSignupPage() {
           tier_name: 'One Star Supporter',
           description: 'Access to supporter posts',
           benefits: ['Access to exclusive posts', 'Support the creator'],
-          extra_perks: []
+          extra_perks: tierExtraPerks[1].filter(p => p.trim() !== '')
         },
         { 
           tier_level: 2, 
@@ -776,7 +776,7 @@ export default function CreatorSignupPage() {
                 {/* Left Column: Tier Setup */}
                 <Card className="p-8">
                   <div className="space-y-6">
-                    {/* Tier 1 - Supporter (always free, no extra perks) */}
+                    {/* Tier 1 - Supporter (free, with major perks & additional perks) */}
                     <div className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
@@ -795,6 +795,44 @@ export default function CreatorSignupPage() {
                           <Label className="text-sm font-medium">Price</Label>
                           <div className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-muted/50 dark:bg-muted/20 px-4 py-3 text-gray-700 dark:text-gray-300">
                             Free — no payment required
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Additional Perks</Label>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            Add perks for your free tier (e.g., early access to posts, newsletter)
+                          </p>
+                          <div className="space-y-2">
+                            {tierExtraPerks[1].map((perk, index) => (
+                              <div key={index} className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={perk}
+                                  onChange={(e) => updateExtraPerk(1, index, e.target.value)}
+                                  placeholder="e.g., Early access to posts, Newsletter..."
+                                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeExtraPerk(1, index)}
+                                  className="h-10 w-10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addExtraPerk(1)}
+                              className="w-full"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Perk
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -999,7 +1037,7 @@ export default function CreatorSignupPage() {
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600 dark:text-gray-400">1★ Tier Income:</span>
                           <span className="font-medium text-gray-900 dark:text-gray-100">
-                            NPR {((parseFloat(tierPrices.tier1) || 0) * (parseFloat(estimatedSupporters.tier1) || 0)).toLocaleString()}
+                            NPR 0
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
