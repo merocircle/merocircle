@@ -35,7 +35,7 @@ const tabs = [
 ];
 
 const CreatorStudioSection = memo(function CreatorStudioSection() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, creatorProfile } = useAuth();
   const { highlightedPostId, setHighlightedPostId } = useDashboardViewSafe();
   const [activeTab, setActiveTab] = useState('overview');
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
@@ -46,7 +46,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const highlightedPostRef = useRef<HTMLDivElement | null>(null);
   const scrollAttemptedRef = useRef(false);
 
-  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostDescription, setNewPostDescription] = useState('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [postVisibility, setPostVisibility] = useState('public');
@@ -154,27 +155,25 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
   const handleShareProfile = useCallback(async () => {
     if (!user?.id || typeof window === 'undefined') return;
-    // Use creator ID instead of username slug to avoid conflicts with duplicate names
-    const url = `${window.location.origin}/creator/${user.id}`;
+    // Prefer vanity URL: creator_profiles.vanity_username, else users.username (email prefix), else id
+    const slug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user.id;
+    const path = `/creator/${slug}`;
+    const url = `${window.location.origin}${path}`;
     try {
-      // Always copy to clipboard
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
-      
-      // Also try native share if available
       if (navigator.share) {
         await navigator.share({
           title: `Support ${userProfile?.display_name || 'this creator'}`,
-          url
+          url,
         });
       }
     } catch {
-      // Ignore share errors, but still show copied state
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     }
-  }, [user?.id, userProfile?.display_name]);
+  }, [user?.id, userProfile?.display_name, userProfile?.username, creatorProfile?.vanity_username]);
 
   useEffect(() => {
     if (dashboardData) {
@@ -189,6 +188,50 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     setTimeout(() => setShowErrorMessage(null), 3000);
   }, []);
 
+  const prepareFileForUpload = useCallback(async (file: File): Promise<File> => {
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const isHeic = fileExt === 'heic' || fileExt === 'heif' || 
+                   file.type?.toLowerCase().includes('heic') || 
+                   file.type?.toLowerCase().includes('heif');
+    
+    if (!isHeic) {
+      return file;
+    }
+
+    try {
+      const heic2anyModule = await import('heic2any');
+      const heic2any = heic2anyModule.default || heic2anyModule;
+      
+      if (!heic2any) {
+        throw new Error('heic2any library not available');
+      }
+      
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.95,
+      });
+
+      const jpegBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      
+      if (!jpegBlob) {
+        throw new Error('Conversion returned no blob');
+      }
+      
+      const typedBlob = jpegBlob instanceof Blob ? jpegBlob : new Blob([jpegBlob], { type: 'image/jpeg' });
+      const jpegFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+      const jpegFile = new File([typedBlob], jpegFileName, {
+        type: 'image/jpeg',
+        lastModified: file.lastModified,
+      });
+      
+      return jpegFile;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to convert HEIC image: ${errorMessage}. Please convert it to JPEG or PNG before uploading.`);
+    }
+  }, []);
+
   const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -198,17 +241,32 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       return;
     }
 
+    const maxSize = 50 * 1024 * 1024;
+    const oversizedFiles = Array.from(files).filter(file => file.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      showError(`Some files are too large. Maximum file size is 50MB.`);
+      return;
+    }
+
     setIsUploadingImage(true);
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
+        const fileToUpload = await prepareFileForUpload(file);
+        
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToUpload, fileToUpload.name);
         formData.append('folder', 'posts');
 
         const response = await fetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
+
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({ error: 'Upload failed' }));
+          const errorMsg = result.error || `Upload failed with status ${response.status}`;
+          throw new Error(errorMsg);
+        }
 
         const result = await response.json();
         if (result.success) {
@@ -222,12 +280,13 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       setUploadedImages(prev => [...prev, ...newUrls]);
     } catch (error) {
       console.error('Upload error:', error);
-      showError('File upload failed.');
+      const errorMessage = error instanceof Error ? error.message : 'File upload failed.';
+      showError(errorMessage);
     } finally {
       setIsUploadingImage(false);
       event.target.value = '';
     }
-  }, [uploadedImages.length, showError]);
+  }, [uploadedImages.length, showError, prepareFileForUpload]);
 
   const handlePublishPost = useCallback(() => {
     if (postType === 'poll') {
@@ -241,15 +300,19 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         return;
       }
     } else {
-      if (!newPostContent.trim()) {
-        showError('Caption is required.');
+      if (!newPostTitle.trim()) {
+        showError('Title is required.');
+        return;
+      }
+      if (!newPostDescription.trim()) {
+        showError('Description is required.');
         return;
       }
     }
 
     const body: any = {
-      title: postType === 'poll' ? pollQuestion.trim() : newPostContent.trim().slice(0, 100),
-      content: postType === 'poll' ? pollQuestion.trim() : newPostContent.trim(),
+      title: postType === 'poll' ? pollQuestion.trim() : newPostTitle.trim(),
+      content: postType === 'poll' ? pollQuestion.trim() : newPostDescription.trim(),
       image_urls: uploadedImages.length > 0 ? uploadedImages : [],
       is_public: postVisibility === 'public',
       tier_required: postVisibility === 'public' ? 'free' : postVisibility,
@@ -269,7 +332,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     publishPost(body, {
       onSuccess: (createdPost: any) => {
         setHighlightedPostId(createdPost?.id);
-        setNewPostContent('');
+        setNewPostTitle('');
+        setNewPostDescription('');
         setUploadedImages([]);
         setPollQuestion('');
         setPollOptions(['', '']);
@@ -285,12 +349,13 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         showError(error.message || 'Failed to publish.');
       }
     });
-  }, [postType, newPostContent, uploadedImages, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, publishPost, showError]);
+  }, [postType, newPostTitle, newPostDescription, uploadedImages, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, publishPost, showError]);
 
   const handlePostTypeChange = useCallback((type: 'post' | 'poll') => {
     setPostType(type);
     if (type === 'poll') {
-      setNewPostContent('');
+      setNewPostTitle('');
+      setNewPostDescription('');
     } else {
       setPollQuestion('');
       setPollOptions(['', '']);
@@ -452,6 +517,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 currentUserId={user?.id}
                 onboardingCompleted={onboardingCompleted}
                 highlightedPostRef={highlightedPostRef}
+                creatorSlug={creatorProfile?.vanity_username?.trim() || userProfile?.username || undefined}
               />
             </div>
           </motion.div>
@@ -483,7 +549,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
           <div className="px-6 pb-6">
             <PostCreationForm
               postType={postType}
-              newPostContent={newPostContent}
+              postTitle={newPostTitle}
+              postDescription={newPostDescription}
               uploadedImages={uploadedImages}
               isUploadingImage={isUploadingImage}
               postVisibility={postVisibility}
@@ -492,7 +559,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               onboardingCompleted={onboardingCompleted}
               isPublishing={isPublishing}
               onPostTypeChange={handlePostTypeChange}
-              onContentChange={setNewPostContent}
+              onTitleChange={setNewPostTitle}
+              onDescriptionChange={setNewPostDescription}
               onVisibilityChange={setPostVisibility}
               onPollQuestionChange={setPollQuestion}
               onPollOptionChange={updatePollOption}

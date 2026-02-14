@@ -1,52 +1,41 @@
 'use client';
 
 import { useState, memo, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, Sparkles, Users, Music, Camera, Palette, Code, Gamepad2, BookOpen, Loader2 } from 'lucide-react';
+import { Search, TrendingUp, Sparkles, Users, Music, Camera, Palette, Code, Gamepad2, BookOpen, Loader2, Crown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { useDiscoveryFeed, useCreatorSearch, Creator } from '@/hooks/useSocial';
+import { useDiscoveryFeed, useCreatorSearch } from '@/hooks/useSocial';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
+import { CreatorCard } from '@/components/explore/CreatorCard';
 import { cn } from '@/lib/utils';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-    },
+    transition: { staggerChildren: 0.04 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16 },
   show: {
     opacity: 1,
     y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 100,
-      damping: 15,
-    },
+    transition: { type: 'spring', stiffness: 120, damping: 16 },
   },
 };
 
-// Categories for browsing
 const categories = [
   { id: 'all', label: 'All', icon: Sparkles },
   { id: 'music', label: 'Music', icon: Music },
-  { id: 'photography', label: 'Photography', icon: Camera },
+  { id: 'photography', label: 'Photo', icon: Camera },
   { id: 'art', label: 'Art', icon: Palette },
   { id: 'tech', label: 'Tech', icon: Code },
   { id: 'gaming', label: 'Gaming', icon: Gamepad2 },
-  { id: 'education', label: 'Education', icon: BookOpen },
+  { id: 'education', label: 'Learn', icon: BookOpen },
 ];
 
 const ExploreSection = memo(function ExploreSection() {
@@ -55,24 +44,15 @@ const ExploreSection = memo(function ExploreSection() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  // Fetch discovery feed data from backend
   const { data: feed, isLoading: feedLoading, error: feedError } = useDiscoveryFeed();
-
-  // Fetch supported creators for "Your Circle" section
   const { data: supportedCreatorsData, isLoading: supportedLoading } = useSupportedCreators();
-
-  // Search functionality
   const { results: searchResults, loading: searchLoading, error: searchError, searchCreators, clearResults } = useCreatorSearch();
 
-  // Debounce search
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Trigger search when debounced query changes
   useEffect(() => {
     if (debouncedQuery.length >= 2) {
       searchCreators(debouncedQuery);
@@ -81,20 +61,17 @@ const ExploreSection = memo(function ExploreSection() {
     }
   }, [debouncedQuery, searchCreators, clearResults]);
 
-
   const isSearching = debouncedQuery.length >= 2;
   const showSearchResults = isSearching;
 
-  // Filter creators by category (client-side for now)
-  const filterByCategory = (creators: Creator[]) => {
+  const filterByCategory = (creators: any[]) => {
     if (selectedCategory === 'all') return creators;
-    return creators.filter(c =>
+    return creators.filter((c: any) =>
       c.creator_profile?.category?.toLowerCase() === selectedCategory.toLowerCase()
     );
   };
 
-  // Format supported creators to match Creator type
-  const supportedCreators: Creator[] = (supportedCreatorsData?.creators || []).map((creator: any) => ({
+  const supportedCreators = (supportedCreatorsData?.creators || []).map((creator: any) => ({
     user_id: creator.id || '',
     display_name: creator.name || 'Creator',
     avatar_url: creator.photo_url || null,
@@ -113,317 +90,257 @@ const ExploreSection = memo(function ExploreSection() {
   const suggestedCreators = filterByCategory(feed?.suggested_creators || []);
 
   return (
-<<<<<<< Updated upstream
-    <div className="space-y-6 pb-8">
-      {/* Search Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl pb-4 -mx-4 px-4 pt-2"
-      >
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-=======
     <div className="space-y-6 pb-8 pt-8">
       {/* ── Search + Categories sticky header ── */}
       <div className="sticky top-1 z-10 bg-background/85 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-0 border-b border-border/20 safe-area-top">
         <div className="relative mb-3">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
->>>>>>> Stashed changes
+      {/* ── Search + Categories sticky header ── */}
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-0 border-b border-border/20 safe-area-top">
+        <div className="relative mb-3">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search creators, categories..."
+            placeholder="Search creators..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 pr-4 h-12 rounded-full bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary"
+            className="pl-10 pr-10 h-10 rounded-full bg-muted/50 border-transparent focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20 text-sm"
           />
           {searchLoading && (
-            <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground animate-spin" />
+            <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
           )}
         </div>
-      </motion.div>
+
+        {/* Category pills */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2.5 -mx-1 px-1 scroll-smooth-touch no-select">
+          {categories.map((category) => {
+            const Icon = category.icon;
+            const isSelected = selectedCategory === category.id;
+            return (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={cn(
+                  'flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all border',
+                  isSelected
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                    : 'bg-card text-muted-foreground border-border/40 hover:border-primary/30 hover:text-foreground'
+                )}
+              >
+                <Icon className="h-3 w-3" />
+                {category.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Search Results */}
       {showSearchResults && (
         <motion.section
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="space-y-4"
+          className="space-y-3"
         >
-          <h2 className="text-lg font-semibold">Search Results</h2>
+          <h2 className="text-sm font-semibold text-foreground">Results</h2>
           {searchLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : searchError ? (
-            <div className="text-center text-destructive py-8">
-              <p className="font-medium">Search Error</p>
-              <p className="text-sm text-muted-foreground mt-1">{searchError}</p>
-            </div>
+            <div className="text-center text-destructive py-6 text-sm">{searchError}</div>
           ) : searchResults.length > 0 ? (
             <div className="space-y-2">
               {searchResults.map((creator) => (
-                <CreatorListCard
+                <CreatorCard
                   key={creator.user_id}
-                  creator={creator}
-                  creatorId={creator.user_id}
+                  creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                  variant="compact"
                 />
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-8">
-              No creators found for "{searchQuery}"
+            <p className="text-center text-muted-foreground py-6 text-sm">
+              No creators found for &ldquo;{searchQuery}&rdquo;
             </p>
           )}
         </motion.section>
       )}
 
-      {/* Show main content when not searching */}
+      {/* Main Content */}
       {!showSearchResults && (
         <>
-          {/* Categories */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Browse Categories</h3>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-              {categories.map((category) => {
-                const Icon = category.icon;
-                const isSelected = selectedCategory === category.id;
-                return (
-                  <motion.button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-                      isSelected
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                    )}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {category.label}
-                  </motion.button>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Loading State */}
           {feedLoading && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           )}
 
-          {/* Error State */}
           {feedError && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {feedError instanceof Error ? feedError.message : 'Failed to load creators'}
+              <p className="text-sm text-muted-foreground">
+                {feedError instanceof Error ? feedError.message : 'Failed to load'}
               </p>
-              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+              <Button variant="outline" size="sm" className="mt-3 rounded-full" onClick={() => window.location.reload()}>
                 Try Again
               </Button>
             </div>
           )}
 
-          {/* Your Circle - Creators I Support */}
           {!feedLoading && !feedError && (
             <>
-              <motion.section
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Your Circles</h2>
+              {/* Your Circle */}
+              {supportedCreators.length > 0 && (
+                <motion.section
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Crown className="w-3 h-3 text-primary" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-foreground">Your Circle</h3>
+                    </div>
                   </div>
-                </div>
 
-                {supportedLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : supportedCreators.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {supportedCreators.map((creator) => (
-                      <motion.div 
-                        key={creator.user_id} 
-                        variants={itemVariants} 
-                        onClick={() => {
-                          router.push(`/creator/${creator.user_id}`);
-                        }}>
-                        <Card className="p-4 border-2 border-gray-300 dark:border-border shadow-lg hover:border-primary dark:hover:border-primary/60 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 bg-card hover:scale-[1.02] hover:-translate-y-1 cursor-pointer">
-                          <div className="flex flex-col items-center text-center">
-                            <div className="relative mb-3">
-                              <Avatar className="h-16 w-16 ring-2 ring-primary/20">
-                                <AvatarImage src={creator.avatar_url || undefined} />
-                                <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-lg">
-                                  {creator.display_name.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
+                  {/* Horizontal scroll of avatars */}
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1 scroll-smooth-touch">
+                    {supportedCreators.map((creator: any) => (
+                      <motion.button
+                        key={creator.user_id}
+                        variants={itemVariants}
+                        onClick={() => router.push(`/creator/${creator.user_id}`)}
+                        className="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 group"
+                      >
+                        <div className="w-14 h-14 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all overflow-hidden bg-muted">
+                          {creator.avatar_url ? (
+                            <img src={creator.avatar_url} alt={creator.display_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                              <span className="text-lg font-semibold text-primary">{creator.display_name.charAt(0)}</span>
                             </div>
-                            <p className="font-semibold text-sm truncate w-full mb-1">{creator.display_name || 'Creator'}</p>
-                            <p className="text-xs text-muted-foreground mb-3">
-                              {formatCount(creator.supporter_count)} supporters
-                            </p>
-                            {creator.creator_profile?.category && (
-                              <Badge variant="outline" className="mb-3 text-xs">
-                                {creator.creator_profile.category}
-                              </Badge>
-                            )}
-                            <Button 
-                              size="sm" 
-                              className="w-full rounded-full"
-                              onClick={() => {
-                                router.push(`/creator/${creator.user_id}`);
-                              }}
-                            >
-                              Enter Circle
-                            </Button>
-                          </div>
-                        </Card>
-                      </motion.div>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground truncate w-full text-center group-hover:text-foreground transition-colors">
+                          {creator.display_name.split(' ')[0]}
+                        </span>
+                      </motion.button>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-4 text-sm">
-                    You haven't supported any creators yet. Start supporting creators to build your circle!
-                  </p>
-                )}
-              </motion.section>
+                </motion.section>
+              )}
 
               {/* Trending Creators */}
               <motion.section
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
-                className="space-y-4"
+                className="space-y-3"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Trending Creators</h2>
+                    <div className="w-6 h-6 rounded-full bg-orange-500/10 flex items-center justify-center">
+                      <TrendingUp className="w-3 h-3 text-orange-500" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground">Trending</h3>
                   </div>
                 </div>
 
                 {trendingCreators.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {trendingCreators.slice(0, 4).map((creator, index) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                    {trendingCreators.slice(0, 4).map((creator: any, index: number) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
-                        <Link href={`/creator/${creator.user_id}`}>
-                          <Card
-                            className="p-4 cursor-pointer border-2 border-gray-300 dark:border-border shadow-md hover:border-primary dark:hover:border-primary/60 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 bg-card"
-                          >
-                          <div className="flex flex-col items-center text-center">
-                            <div className="relative mb-3">
-                              <Avatar className="h-16 w-16 ring-2 ring-primary/20">
-                                <AvatarImage src={creator.avatar_url || undefined} />
-                                <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-lg">
-                                  {(creator.display_name || 'CR').slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              {index < 3 && (
-                                <span className={cn(
-                                  'absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
-                                  index === 0 && 'bg-yellow-500 text-yellow-900',
-                                  index === 1 && 'bg-gray-300 text-gray-700',
-                                  index === 2 && 'bg-amber-600 text-amber-100'
-                                )}>
-                                  #{index + 1}
-                                </span>
-                              )}
-                            </div>
-                            <p className="font-semibold text-sm truncate w-full">{creator.display_name || 'Creator'}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatCount(creator.supporter_count)} supporters
-                            </p>
-                            {creator.creator_profile?.category && (
-                              <Badge variant="outline" className="mt-2 text-xs">
-                                {creator.creator_profile.category}
-                              </Badge>
-                            )}
-                          </div>
-                        </Card>
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-4">
-                    No trending creators found
-                  </p>
-                )}
-              </motion.section>
-
-              {/* Creators You Might Like */}
-              <motion.section
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Creators You Might Like</h2>
-                  </div>
-                </div>
-
-                {suggestedCreators.length > 0 ? (
-                  <div className="space-y-2">
-                    {suggestedCreators.slice(0, 6).map((creator) => (
-                      <motion.div key={creator.user_id} variants={itemVariants}>
-                        <CreatorListCard
-                          creator={creator}
-                          creatorId={creator.user_id}
+                        <CreatorCard
+                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                          variant="full"
+                          rank={index}
                         />
                       </motion.div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-4">
-                    No suggested creators found
-                  </p>
+                  <div className="rounded-xl border border-dashed border-border/50 bg-muted/20 p-6 text-center">
+                    <TrendingUp className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No trending creators yet</p>
+                  </div>
                 )}
               </motion.section>
 
-              {/* Popular Categories */}
+              {/* Suggested Creators */}
               <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-4"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-3"
               >
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Popular Categories</h2>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-violet-500/10 flex items-center justify-center">
+                      <Sparkles className="w-3 h-3 text-violet-500" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground">Discover</h3>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                {suggestedCreators.length > 0 ? (
+                  <div className="space-y-2">
+                    {suggestedCreators.slice(0, 8).map((creator: any) => (
+                      <motion.div key={creator.user_id} variants={itemVariants}>
+                        <CreatorCard
+                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                          variant="compact"
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-border/50 bg-muted/20 p-6 text-center">
+                    <Sparkles className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No suggestions yet</p>
+                  </div>
+                )}
+              </motion.section>
+
+              {/* Quick Category Grid */}
+              <motion.section
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-3"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <Users className="w-3 h-3 text-blue-500" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-foreground">Categories</h3>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
                   {categories.slice(1).map((category) => {
                     const Icon = category.icon;
+                    const isSelected = selectedCategory === category.id;
                     return (
-                      <motion.button
+                      <button
                         key={category.id}
                         onClick={() => setSelectedCategory(category.id)}
-                        className="flex flex-col items-center gap-2 p-4 rounded-xl bg-card border-2 border-gray-300 dark:border-border shadow-md hover:border-primary dark:hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300"
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all",
+                          isSelected
+                            ? "bg-primary/10 border border-primary/20"
+                            : "bg-card border border-border/40 hover:border-primary/20"
+                        )}
                       >
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Icon className="h-6 w-6 text-primary" />
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                          isSelected ? "bg-primary/20" : "bg-muted"
+                        )}>
+                          <Icon className={cn("h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
                         </div>
-                        <span className="text-xs font-medium">{category.label}</span>
-                      </motion.button>
+                        <span className="text-[11px] font-medium">{category.label}</span>
+                      </button>
                     );
                   })}
                 </div>
@@ -435,45 +352,5 @@ const ExploreSection = memo(function ExploreSection() {
     </div>
   );
 });
-
-// Creator list card component
-function CreatorListCard({ creator, creatorId }: { creator: Creator; creatorId: string }) {
-  return (
-    <Link href={`/creator/${creatorId}`}>
-      <Card
-        className="p-3 cursor-pointer border-2 border-gray-300 dark:border-border shadow-md hover:border-primary dark:hover:border-primary/60 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:scale-[1.01] bg-card"
-      >
-      <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={creator.avatar_url || undefined} />
-          <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground">
-            {(creator.display_name || 'CR').slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{creator.display_name || 'Creator'}</p>
-          <p className="text-xs text-muted-foreground line-clamp-1">
-            {creator.bio || `${creator.creator_profile?.category || 'Creator'} · ${formatCount(creator.supporter_count)} supporters`}
-          </p>
-        </div>
-      </div>
-    </Card>
-    </Link>
-  );
-}
-
-// Helper function to format counts
-function formatCount(count: number | undefined | null): string {
-  if (count === undefined || count === null || isNaN(count)) {
-    return '0';
-  }
-  if (count >= 1000000) {
-    return (count / 1000000).toFixed(1) + 'M';
-  }
-  if (count >= 1000) {
-    return (count / 1000).toFixed(1) + 'K';
-  }
-  return count.toString();
-}
 
 export default ExploreSection;

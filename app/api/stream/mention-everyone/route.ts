@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'No recipients to notify', sent: 0 });
     }
 
-    // Send emails to all channel members
+    // Send emails to all channel members (@everyone)
     const { sent, failed } = await sendBulkChannelMentionEmails(
       recipients.map(m => ({
         email: m.email!,
@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
         messageText,
         senderName: senderUser.display_name || 'Someone',
         senderId,
+        mentionType: 'everyone',
       }
     );
 

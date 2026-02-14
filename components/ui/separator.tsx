@@ -1,10 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-
-// check for the theme mode and set the CSS accordingly
-const theme = localStorage.getItem('merocircle-theme');
-
 const Separator = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div"> & {

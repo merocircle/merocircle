@@ -100,6 +100,31 @@ export default function ProfileSection() {
     }
   }, [userProfile, creatorProfile]);
 
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'covers');
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) {
+        const response = await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cover_image_url: uploadData.url })
+        });
+        if (response.ok) {
+          setCoverImageUrl(uploadData.url);
+          await refreshProfile();
+        }
+      }
+    } catch (error) {
+      console.error('Cover upload error:', error);
+    }
+  };
+
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
@@ -288,33 +313,6 @@ export default function ProfileSection() {
             </div>
           </Card>
         </motion.div>
-
-        {/* Account Info Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6"
-        >
-          <Card className="p-5 border-border/50">
-            <h3 className="font-semibold text-foreground mb-4">Account</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Email</span>
-                <span className="text-foreground">{user?.email || 'Not set'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Member since</span>
-                <span className="text-foreground">
-                  {userProfile.created_at
-                    ? new Date(userProfile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-                    : 'Unknown'
-                  }
-                </span>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
       </div>
     );
   }
@@ -406,8 +404,10 @@ export default function ProfileSection() {
                     <Edit className="w-4 h-4 mr-1" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setActiveView('settings')} className="rounded-xl">
-                    <Settings className="w-4 h-4" />
+                  <Button variant="outline" size="sm" asChild className="rounded-xl">
+                    <Link href="/settings">
+                      <Settings className="w-4 h-4" />
+                    </Link>
                   </Button>
                 </>
               )}
@@ -427,7 +427,22 @@ export default function ProfileSection() {
           >
             <Card className="p-6 border-border/50">
               <h3 className="text-lg font-semibold text-foreground mb-4">Edit Profile</h3>
+              <p className="text-sm text-muted-foreground mb-4">Only information visible to others. Change profile picture above.</p>
               <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Cover Image</label>
+                  <div className="relative h-32 rounded-xl overflow-hidden bg-muted border">
+                    {coverImageUrl && <Image src={coverImageUrl} alt="Cover" fill className="object-cover" />}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <input type="file" id="cover-upload" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+                      <label htmlFor="cover-upload">
+                        <Button type="button" variant="secondary" size="sm" asChild>
+                          <span className="cursor-pointer"><Camera className="w-4 h-4 mr-2" />{coverImageUrl ? 'Change cover' : 'Upload cover'}</span>
+                        </Button>
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1 block">Display Name</label>
                   <Input

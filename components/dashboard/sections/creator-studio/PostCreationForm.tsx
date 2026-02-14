@@ -19,7 +19,8 @@ import { cn } from '@/lib/utils';
 
 interface PostCreationFormProps {
   postType: 'post' | 'poll';
-  newPostContent: string;
+  postTitle: string;
+  postDescription: string;
   uploadedImages: string[];
   isUploadingImage: boolean;
   postVisibility: string;
@@ -28,7 +29,8 @@ interface PostCreationFormProps {
   onboardingCompleted: boolean;
   isPublishing: boolean;
   onPostTypeChange: (type: 'post' | 'poll') => void;
-  onContentChange: (content: string) => void;
+  onTitleChange: (title: string) => void;
+  onDescriptionChange: (description: string) => void;
   onVisibilityChange: (visibility: string) => void;
   onPollQuestionChange: (question: string) => void;
   onPollOptionChange: (index: number, value: string) => void;
@@ -41,7 +43,8 @@ interface PostCreationFormProps {
 
 export function PostCreationForm({
   postType,
-  newPostContent,
+  postTitle,
+  postDescription,
   uploadedImages,
   isUploadingImage,
   postVisibility,
@@ -50,7 +53,8 @@ export function PostCreationForm({
   onboardingCompleted,
   isPublishing,
   onPostTypeChange,
-  onContentChange,
+  onTitleChange,
+  onDescriptionChange,
   onVisibilityChange,
   onPollQuestionChange,
   onPollOptionChange,
@@ -132,13 +136,31 @@ export function PostCreationForm({
         </div>
 
         {postType === 'post' && (
-          <Textarea
-            placeholder="Write a caption..."
-            value={newPostContent}
-            onChange={(e) => onContentChange(e.target.value)}
-            rows={4}
-            className="resize-none border-border rounded-xl"
-          />
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Title</label>
+              <Input
+                placeholder="Enter post title..."
+                value={postTitle}
+                onChange={(e) => onTitleChange(e.target.value)}
+                className="border-border rounded-xl"
+                maxLength={200}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{postTitle.length}/200 characters</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+              <Textarea
+                placeholder="Write a detailed description..."
+                value={postDescription}
+                onChange={(e) => onDescriptionChange(e.target.value)}
+                rows={6}
+                className="resize-none border-border rounded-xl"
+                maxLength={5000}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{postDescription.length}/5000 characters</p>
+            </div>
+          </div>
         )}
 
         {postType === 'poll' && (

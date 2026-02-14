@@ -24,8 +24,8 @@ interface NewSupporterNotificationProps {
 }
 
 /**
- * New supporter notification email
- * Triggers: When a creator receives new support/subscription
+ * New circle member notification email
+ * Triggers: When someone joins a creator's circle
  * Recipients: Creator who received the support
  */
 export default function NewSupporterNotification({
@@ -42,25 +42,25 @@ export default function NewSupporterNotification({
   helpUrl = 'https://merocircle.app/help',
 }: NewSupporterNotificationProps) {
   const tierEmoji = tierLevel === 1 ? '⭐' : tierLevel === 2 ? '⭐⭐' : '⭐⭐⭐';
-  
+
   return (
     <EmailLayout
-      preview={`${supporterName} just supported you with ${currency} ${amount}`}
+      preview={`${supporterName} just joined your circle — ${currency} ${amount}`}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
       hideCreatorInfo={true}
     >
       <Section style={contentSection}>
         <Text style={successIcon}>🎊</Text>
-        
-        <Heading style={title}>You have a new supporter!</Heading>
+
+        <Heading style={title}>Someone joined your circle</Heading>
 
         <Text style={subtitle}>
-          {supporterName} just supported you
+          {supporterName} is now part of your inner circle
         </Text>
 
         <Text style={body}>
-          Someone believes in your work and wants to support your journey. This is just the beginning!
+          Someone believes in what you&apos;re creating and wanted to be closer to your work. Your people are here.
         </Text>
 
         <Section style={detailsCard}>
@@ -68,30 +68,30 @@ export default function NewSupporterNotification({
             <Text style={tierEmojiText}>{tierEmoji}</Text>
             <Text style={tierNameText}>{tierName}</Text>
           </Section>
-          
+
           <Section style={detailRow}>
-            <Text style={detailLabel}>Support Amount</Text>
+            <Text style={detailLabel}>Their contribution</Text>
             <Text style={detailValue}>
               {currency} {amount.toLocaleString()}
             </Text>
           </Section>
-          
+
           <Section style={detailRow}>
-            <Text style={detailLabel}>Supporter</Text>
+            <Text style={detailLabel}>Circle member</Text>
             <Text style={detailValue}>{supporterName}</Text>
           </Section>
         </Section>
 
         {supporterMessage && (
           <Section style={messageCard}>
-            <Text style={messageLabel}>Message from {supporterName}:</Text>
+            <Text style={messageLabel}>A note from {supporterName}:</Text>
             <Text style={messageContent}>{supporterMessage}</Text>
           </Section>
         )}
 
         <Section style={ctaWrapper}>
           <Link href={supportersUrl} style={primaryButton}>
-            View All Supporters
+            See who&apos;s in your circle
           </Link>
         </Section>
 
@@ -106,10 +106,10 @@ export default function NewSupporterNotification({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          Keep creating amazing content! Your supporters are here to cheer you on.
+          Keep creating — your circle is here to cheer you on.
         </Text>
         <Text style={messageSubtext}>
-          Questions? <Link href={helpUrl} style={inlineLink}>Contact support</Link>
+          Questions? <Link href={helpUrl} style={inlineLink}>We&apos;re here to help</Link>
         </Text>
       </Section>
     </EmailLayout>
@@ -133,7 +133,7 @@ const title = {
   fontSize: '28px',
   lineHeight: '36px',
   fontWeight: '700',
-  color: '#111827',
+  color: '#1c1917',
   letterSpacing: '-0.6px',
 };
 
@@ -141,13 +141,13 @@ const subtitle = {
   margin: '0 0 20px',
   fontSize: '17px',
   lineHeight: '26px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const detailsCard = {
   margin: '32px 0',
   padding: '24px',
-  backgroundColor: '#F9FAFB',
+  backgroundColor: '#fafaf9',
   borderRadius: '12px',
   textAlign: 'left' as const,
 };
@@ -156,7 +156,7 @@ const tierBadge = {
   textAlign: 'center' as const,
   marginBottom: '20px',
   paddingBottom: '20px',
-  borderBottom: '1px solid #E5E7EB',
+  borderBottom: '1px solid #e7e5e4',
 };
 
 const tierEmojiText = {
@@ -169,7 +169,7 @@ const tierNameText = {
   margin: '0',
   fontSize: '18px',
   fontWeight: '600',
-  color: '#111827',
+  color: '#1c1917',
 };
 
 const detailRow = {
@@ -181,23 +181,23 @@ const detailRow = {
 const detailLabel = {
   margin: '0',
   fontSize: '14px',
-  color: '#6B7280',
+  color: '#78716c',
   fontWeight: '500',
 };
 
 const detailValue = {
   margin: '0',
   fontSize: '14px',
-  color: '#111827',
+  color: '#1c1917',
   fontWeight: '600',
 };
 
 const messageCard = {
   margin: '24px 0',
   padding: '20px',
-  backgroundColor: '#FEF3C7',
+  backgroundColor: '#fef7f5',
   borderRadius: '12px',
-  borderLeft: '4px solid #F59E0B',
+  borderLeft: '4px solid #c4382a',
   textAlign: 'left' as const,
 };
 
@@ -205,7 +205,7 @@ const messageLabel = {
   margin: '0 0 8px',
   fontSize: '13px',
   fontWeight: '600',
-  color: '#92400E',
+  color: '#a12e23',
   textTransform: 'uppercase' as const,
   letterSpacing: '0.5px',
 };
@@ -214,7 +214,7 @@ const messageContent = {
   margin: '0',
   fontSize: '15px',
   lineHeight: '22px',
-  color: '#78350F',
+  color: '#44403c',
   fontStyle: 'italic' as const,
 };
 
@@ -226,12 +226,12 @@ const secondaryButton = {
   display: 'inline-block',
   padding: '12px 24px',
   backgroundColor: '#ffffff',
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
   borderRadius: '8px',
   fontWeight: '600',
   fontSize: '14px',
-  border: '2px solid #4f46e5',
+  border: '2px solid #c4382a',
 };
 
 const messageSection = {
@@ -243,17 +243,17 @@ const messageText = {
   margin: '0 0 8px',
   fontSize: '14px',
   lineHeight: '20px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const messageSubtext = {
   margin: '0',
   fontSize: '13px',
   lineHeight: '20px',
-  color: '#9CA3AF',
+  color: '#a8a29e',
 };
 
 const inlineLink = {
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
 };

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { validateAmount, validateUUID } from '@/lib/validation';
+import { validateAmount, validateAmountAllowZero, validateUUID } from '@/lib/validation';
 import { logger } from '@/lib/logger';
 import { handleApiError } from '@/lib/api-utils';
 
@@ -33,6 +33,38 @@ export function validatePaymentRequest(
     };
   }
 
+  return {
+    valid: true,
+    errorResponse: null,
+    validatedAmount: amountValidation.value,
+  };
+}
+
+/**
+ * Validate payment request data, allowing amount 0 (free tier / direct zero payment).
+ */
+export function validatePaymentRequestAllowZero(
+  amount: string | number,
+  creatorId: string,
+  supporterId: string
+): {
+  valid: boolean;
+  errorResponse: NextResponse | null;
+  validatedAmount?: number;
+} {
+  const amountValidation = validateAmountAllowZero(amount);
+  if (!amountValidation.valid) {
+    return {
+      valid: false,
+      errorResponse: NextResponse.json({ error: amountValidation.error }, { status: 400 }),
+    };
+  }
+  if (!validateUUID(creatorId) || !validateUUID(supporterId)) {
+    return {
+      valid: false,
+      errorResponse: NextResponse.json({ error: 'Invalid user IDs' }, { status: 400 }),
+    };
+  }
   return {
     valid: true,
     errorResponse: null,

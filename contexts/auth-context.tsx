@@ -10,6 +10,7 @@ interface UserProfile {
   display_name: string;
   photo_url: string | null;
   role: 'user' | 'creator';
+  username: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -17,6 +18,7 @@ interface UserProfile {
 interface CreatorProfile {
   id: string;
   user_id: string;
+  vanity_username: string | null;
   bio: string | null;
   category: string | null;
   is_verified: boolean;
@@ -37,7 +39,7 @@ interface AuthContextType {
   isCreator: boolean;
   loading: boolean;
   updateUserRole: (role: 'user' | 'creator') => Promise<{ error: any }>;
-  createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>) => Promise<{ error: any }>;
+  createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>, vanityUsername?: string) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle?: () => void; // Optional for compatibility
@@ -127,7 +129,8 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
   const createCreatorProfile = async (
     bio: string,
     category: string,
-    socialLinks?: Record<string, string>
+    socialLinks?: Record<string, string>,
+    vanityUsername?: string
   ) => {
     if (!session?.user?.id) {
       return { error: 'Not authenticated' };
@@ -139,14 +142,24 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         return { error: roleError };
       }
 
+      const payload: {
+        user_id: string;
+        bio: string;
+        category: string;
+        social_links: Record<string, string>;
+        vanity_username?: string | null;
+      } = {
+        user_id: session.user.id,
+        bio,
+        category,
+        social_links: socialLinks || {},
+      };
+      const trimmed = vanityUsername?.trim().toLowerCase();
+      if (trimmed) payload.vanity_username = trimmed;
+
       const { data, error: createError } = await supabase
         .from('creator_profiles')
-        .insert({
-          user_id: session.user.id,
-          bio,
-          category,
-          social_links: socialLinks || {},
-        })
+        .insert(payload)
         .select()
         .single();
 

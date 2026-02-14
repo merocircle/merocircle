@@ -1,5 +1,4 @@
 import {
-  Container,
   Heading,
   Hr,
   Img,
@@ -24,9 +23,9 @@ interface PostNotificationProps {
 }
 
 /**
- * Email sent when a creator publishes a new post
+ * Email sent when a creator shares something with their circle
  * Triggers: Creator creates a post
- * Recipients: All active supporters
+ * Recipients: All circle members
  */
 export default function PostNotification({
   supporterName = 'Alex',
@@ -43,7 +42,7 @@ export default function PostNotification({
 
   return (
     <EmailLayout
-      preview={`New from ${creatorName}: ${postTitle}`}
+      preview={`${creatorName} shared something with their circle: ${postTitle}`}
       creatorName={creatorName}
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
@@ -51,9 +50,9 @@ export default function PostNotification({
     >
       <Section style={contentSection}>
         <Text style={greeting}>Hi {supporterName},</Text>
-        
-        <Text style={label}>{creatorName} just posted</Text>
-        
+
+        <Text style={label}>{creatorName} shared something with their circle</Text>
+
         <Heading style={title}>{postTitle}</Heading>
 
         {postImageUrl && (
@@ -77,7 +76,7 @@ export default function PostNotification({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          You're supporting {creatorName}. Your support makes their work possible.
+          You&apos;re part of {creatorName}&apos;s circle — your presence makes their work possible.
         </Text>
         <Text style={messageSubtext}>
           <Link href={settingsUrl} style={inlineLink}>Manage your preferences</Link>
@@ -96,7 +95,7 @@ const greeting = {
   margin: '0 0 4px',
   fontSize: '15px',
   lineHeight: '24px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const label = {
@@ -104,7 +103,7 @@ const label = {
   fontSize: '12px',
   lineHeight: '16px',
   fontWeight: '500',
-  color: '#9CA3AF',
+  color: '#a8a29e',
   letterSpacing: '0.5px',
   textTransform: 'uppercase' as const,
 };
@@ -114,7 +113,7 @@ const title = {
   fontSize: '30px',
   lineHeight: '38px',
   fontWeight: '700',
-  color: '#111827',
+  color: '#1c1917',
   letterSpacing: '-0.8px',
 };
 
@@ -122,7 +121,7 @@ const contentPreview = {
   margin: '0 0 32px',
   fontSize: '16px',
   lineHeight: '26px',
-  color: '#4B5563',
+  color: '#44403c',
   letterSpacing: '-0.2px',
 };
 
@@ -134,7 +133,7 @@ const imageLink = {
   display: 'block',
   borderRadius: '12px',
   overflow: 'hidden',
-  border: '1px solid #E5E7EB',
+  border: '1px solid #e7e5e4',
 };
 
 const heroImage = {
@@ -157,17 +156,17 @@ const messageText = {
   margin: '0 0 8px',
   fontSize: '14px',
   lineHeight: '20px',
-  color: '#6B7280',
+  color: '#78716c',
 };
 
 const messageSubtext = {
   margin: '0',
   fontSize: '13px',
   lineHeight: '20px',
-  color: '#9CA3AF',
+  color: '#a8a29e',
 };
 
 const inlineLink = {
-  color: '#4f46e5',
+  color: '#c4382a',
   textDecoration: 'none',
 };

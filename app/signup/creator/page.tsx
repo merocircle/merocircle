@@ -50,12 +50,15 @@ export default function CreatorSignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'signup' | 'creator-details' | 'tier-pricing' | 'complete'>('signup');
   const [creatorData, setCreatorData] = useState({
+    username: '',
     bio: '',
     category: '',
     socialLinks: {} as Record<string, string>
   });
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameChecking, setUsernameChecking] = useState(false);
   const [tierPrices, setTierPrices] = useState({
-    tier1: '500',
+    tier1: '0',
     tier2: '2000',
     tier3: '5000'
   });
@@ -75,6 +78,37 @@ export default function CreatorSignupPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { user, userProfile, createCreatorProfile } = useAuth();
+
+  /** Vanity username: 3–30 chars, lowercase letters, numbers, underscores only */
+  const USERNAME_REGEX = /^[a-z0-9_]{3,30}$/;
+  const validateUsernameFormat = (value: string): boolean =>
+    value.trim().length >= 3 && value.trim().length <= 30 && USERNAME_REGEX.test(value.trim().toLowerCase());
+
+  const checkUsernameAvailability = async (value: string): Promise<boolean> => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed || !USERNAME_REGEX.test(trimmed)) return false;
+    setUsernameChecking(true);
+    setUsernameError(null);
+    try {
+      const res = await fetch(`/api/creator/check-username?username=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setUsernameError(data.error || 'Invalid username');
+        return false;
+      }
+      if (!data.available) {
+        setUsernameError('Choose a new username. This one is already taken.');
+        return false;
+      }
+      setUsernameError(null);
+      return true;
+    } catch {
+      setUsernameError('Could not check availability');
+      return false;
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
 
   // Validate URL format
   const validateUrl = (url: string): boolean => {
@@ -186,9 +220,9 @@ export default function CreatorSignupPage() {
     });
   };
 
-  // Calculate estimated monthly income
+  // Calculate estimated monthly income (tier 1 is always free → 0)
   const calculateMonthlyIncome = () => {
-    const tier1Income = parseFloat(tierPrices.tier1) * parseFloat(estimatedSupporters.tier1 || '0');
+    const tier1Income = 0; // 1★ Supporter is free; supporter count does not affect income
     const tier2Income = parseFloat(tierPrices.tier2) * parseFloat(estimatedSupporters.tier2 || '0');
     const tier3Income = parseFloat(tierPrices.tier3) * parseFloat(estimatedSupporters.tier3 || '0');
     return tier1Income + tier2Income + tier3Income;
@@ -246,6 +280,22 @@ export default function CreatorSignupPage() {
   const handleCreatorSetup = async () => {
     if (!user || !creatorData.category) return;
 
+    const trimmedUsername = creatorData.username.trim().toLowerCase();
+    if (!trimmedUsername) {
+      setError('Please choose a username for your creator page');
+      return;
+    }
+    if (!validateUsernameFormat(creatorData.username)) {
+      setUsernameError('3–30 characters, only letters, numbers, and underscores');
+      setError('Please enter a valid username');
+      return;
+    }
+    const available = await checkUsernameAvailability(creatorData.username);
+    if (!available) {
+      setError('Choose a new username. This one is already taken.');
+      return;
+    }
+
     // Validate all social links before proceeding
     const hasInvalidLinks = Object.entries(creatorData.socialLinks).some(([platformId, url]) => {
       if (url.trim() === '') return false; // Empty is fine
@@ -275,8 +325,9 @@ export default function CreatorSignupPage() {
         Object.entries(creatorData.socialLinks).filter(([_, url]) => url.trim() !== '')
       );
 
-      // Create creator profile
-      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks);
+      // Create creator profile (vanity username for /creator/[slug])
+      const vanityUsername = creatorData.username.trim().toLowerCase() || undefined;
+      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks, vanityUsername);
 
       if (error) {
         console.error('Creator profile creation failed:', error);
@@ -293,7 +344,7 @@ export default function CreatorSignupPage() {
       const tierData = [
         { 
           tier_level: 1, 
-          price: parseFloat(tierPrices.tier1),
+          price: 0,
           tier_name: 'One Star Supporter',
           description: 'Access to supporter posts',
           benefits: ['Access to exclusive posts', 'Support the creator'],
@@ -521,42 +572,49 @@ export default function CreatorSignupPage() {
               </div>
 
               <Card className="p-8">
-                {/* User Profile Preview */}
-                {user && (
-                  <div className="flex items-center space-x-4 p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl mb-8 border border-purple-100 dark:border-purple-800">
-                    <div className="relative">
-                      {user.photo_url ? (
-                        <img
-                          src={user.photo_url}
-                          alt="Profile"
-                          className="w-16 h-16 rounded-full object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center ring-4 ring-white dark:ring-gray-800 shadow-lg">
-                          <User className="w-8 h-8 text-white" />
-                        </div>
-                      )}
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-                        <Crown className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                        {user.display_name || user.email?.split('@')[0] || 'Creator'}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        {user.email}
-                      </p>
-                      <Badge className="mt-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-                        <Crown className="w-3 h-3 mr-1" />
-                        Creator Account
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
+                {/* First line: Creator page URL (username), then Category, Bio, Social */}
                 <div className="space-y-6">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">1. Creator page URL (username)</p>
+                    <Label htmlFor="username" className="text-sm font-medium">
+                      Username *
+                    </Label>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 mb-2">
+                      Your creator page URL: /creator/{creatorData.username || 'your_username'}. Must be unique.
+                    </p>
+                    <input
+                      id="username"
+                      autoComplete="off"
+                      type="text"
+                      value={creatorData.username}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase().slice(0, 30);
+                        setCreatorData({ ...creatorData, username: v });
+                        setUsernameError(null);
+                      }}
+                      onBlur={async () => {
+                        if (!creatorData.username.trim()) return;
+                        if (!validateUsernameFormat(creatorData.username)) {
+                          setUsernameError('3–30 characters, only letters, numbers, and underscores');
+                          return;
+                        }
+                        await checkUsernameAvailability(creatorData.username);
+                      }}
+                      placeholder="your_username"
+                      className={`mt-1 w-full rounded-lg border ${
+                        usernameError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none`}
+                      maxLength={30}
+                      required
+                    />
+                    {usernameChecking && (
+                      <p className="text-xs text-gray-500 mt-1">Checking availability...</p>
+                    )}
+                    {usernameError && (
+                      <p className="text-xs text-red-500 mt-1">{usernameError}</p>
+                    )}
+                  </div>
+
                   <div>
                     <Label htmlFor="category" className="text-sm font-medium">
                       Category *
@@ -710,7 +768,7 @@ export default function CreatorSignupPage() {
                   Set Your Support Tiers
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Choose the base price for each tier level. Supporters can add custom amounts.
+                  The first tier (Supporter) is always free. Set the base price for Inner Circle and Core Member only.
                 </p>
               </div>
 
@@ -718,7 +776,7 @@ export default function CreatorSignupPage() {
                 {/* Left Column: Tier Setup */}
                 <Card className="p-8">
                   <div className="space-y-6">
-                    {/* Tier 1 */}
+                    {/* Tier 1 - Supporter (free, with major perks & additional perks) */}
                     <div className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
@@ -727,27 +785,22 @@ export default function CreatorSignupPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">One Star Supporter</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Supporter (Free)</h3>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Access to exclusive posts</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Access to community chat and posts</p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="tier1" className="text-sm font-medium">Base Price (NPR)</Label>
-                          <input
-                            id="tier1"
-                            type="number"
-                            min="10"
-                            value={tierPrices.tier1}
-                            onChange={(e) => setTierPrices({ ...tierPrices, tier1: e.target.value })}
-                            className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
-                          />
+                          <Label className="text-sm font-medium">Price</Label>
+                          <div className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-muted/50 dark:bg-muted/20 px-4 py-3 text-gray-700 dark:text-gray-300">
+                            Free — no payment required
+                          </div>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium">Extra Perks (Optional)</Label>
+                          <Label className="text-sm font-medium">Additional Perks</Label>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            Add custom perks for this tier
+                            Add perks for your free tier (e.g., early access to posts, newsletter)
                           </p>
                           <div className="space-y-2">
                             {tierExtraPerks[1].map((perk, index) => (
@@ -756,7 +809,7 @@ export default function CreatorSignupPage() {
                                   type="text"
                                   value={perk}
                                   onChange={(e) => updateExtraPerk(1, index, e.target.value)}
-                                  placeholder="e.g., Monthly newsletter, Early access..."
+                                  placeholder="e.g., Early access to posts, Newsletter..."
                                   className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
                                 />
                                 <Button
@@ -806,7 +859,7 @@ export default function CreatorSignupPage() {
                           <input
                             id="tier2"
                             type="number"
-                            min={parseInt(tierPrices.tier1) + 1}
+                            min={Math.max(1, (parseInt(tierPrices.tier1) || 0) + 1)}
                             value={tierPrices.tier2}
                             onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
                             className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
@@ -984,7 +1037,7 @@ export default function CreatorSignupPage() {
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600 dark:text-gray-400">1★ Tier Income:</span>
                           <span className="font-medium text-gray-900 dark:text-gray-100">
-                            NPR {((parseFloat(tierPrices.tier1) || 0) * (parseFloat(estimatedSupporters.tier1) || 0)).toLocaleString()}
+                            NPR 0
                           </span>
                         </div>
                         <div className="flex justify-between items-center">

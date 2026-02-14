@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,9 +41,12 @@ interface Subscription {
   cancelledAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** True when membership is from supporters table only (no subscription row) */
+  isSupportOnly?: boolean;
 }
 
 export default function SubscriptionsManagement() {
+  const queryClient = useQueryClient();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,22 +86,25 @@ export default function SubscriptionsManagement() {
   const handleUnsubscribeConfirm = async (feedback?: string) => {
     if (!selectedSubscription) return;
 
+    const isSupportOnly = selectedSubscription.isSupportOnly || String(selectedSubscription.id).startsWith('supporters:');
+    const body = isSupportOnly
+      ? { creator_id: selectedSubscription.creatorId, feedback }
+      : { subscription_id: selectedSubscription.id, feedback };
+
     try {
       const response = await fetch('/api/subscriptions/unsubscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscription_id: selectedSubscription.id,
-          feedback,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
         throw new Error('Failed to unsubscribe');
       }
 
-      // Refresh subscriptions list
+      // Refresh subscriptions list and "Your circle" on home
       await fetchSubscriptions();
+      queryClient.invalidateQueries({ queryKey: ['supporter', 'creators'] });
       setUnsubscribeDialogOpen(false);
       setSelectedSubscription(null);
     } catch (err: any) {

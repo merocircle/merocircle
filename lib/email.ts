@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import path from 'path';
 import crypto from 'crypto';
 import { logger } from './logger';
 import { render } from '@react-email/render';
@@ -367,7 +368,13 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     const settingsUrl = EMAIL_CONFIG.urls.settings;
     const helpUrl = EMAIL_CONFIG.urls.help;
 
-    // Render welcome email template
+    // Embed images via Content-ID (CID) so they display in email clients that block external URLs
+    const cidLogo = 'logo@merocircle.app';
+    const cidTeam = 'team@merocircle.app';
+    const publicDir = path.join(process.cwd(), 'public');
+    const logoPath = path.join(publicDir, 'logo', 'logo-light.png');
+    const teamPath = path.join(publicDir, 'team.jpg');
+
     const html = await render(
       WelcomeEmail({
         userName: data.userName,
@@ -376,6 +383,9 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
         exploreUrl,
         settingsUrl,
         helpUrl,
+        appUrl,
+        logoSrc: `cid:${cidLogo}`,
+        teamImageSrc: `cid:${cidTeam}`,
       })
     );
 
@@ -387,6 +397,10 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
       subject: EMAIL_SUBJECTS.welcome(data.userName),
       html,
       messageId,
+      attachments: [
+        { filename: 'logo-light.png', path: logoPath, cid: cidLogo },
+        { filename: 'team.jpg', path: teamPath, cid: cidTeam },
+      ],
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',
@@ -423,10 +437,13 @@ interface ChannelMentionEmailData {
   messageText: string;
   senderName: string;
   senderId: string;
+  /** 'you' = specific @username mention; 'everyone' = @everyone mention */
+  mentionType?: 'you' | 'everyone';
 }
 
 /**
- * Sends an email notification to a channel member when @everyone is mentioned
+ * Sends an email when a user is mentioned in a channel.
+ * Use mentionType 'you' for @username mentions, 'everyone' for @everyone.
  */
 export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Promise<boolean> {
   try {
@@ -439,6 +456,7 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
     const appUrl = EMAIL_CONFIG.urls.app;
     const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
     const channelUrl = `${appUrl}/chat?channel=${data.channelId}`;
+    const mentionType = data.mentionType ?? 'everyone';
 
     // Render email using ChannelMentionNotification template
     const emailHtml = await render(
@@ -452,10 +470,13 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
         creatorProfileUrl,
         settingsUrl: EMAIL_CONFIG.urls.settings,
         helpUrl: EMAIL_CONFIG.urls.help,
+        mentionType,
       })
     );
 
-    const subject = `${data.senderName} mentioned everyone in ${data.channelName}`;
+    const subject = mentionType === 'you'
+      ? `${data.senderName} mentioned you in ${data.channelName}`
+      : `${data.senderName} mentioned everyone in ${data.channelName}`;
 
     // Generate unique Message-ID to prevent email threading
     const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.memberId}@merocircle.app>`;

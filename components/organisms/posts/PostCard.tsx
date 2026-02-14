@@ -182,9 +182,9 @@ export function PostCard({
             >
               <Lock className="h-8 w-8 text-muted-foreground" />
             </motion.div>
-            <h4 className="font-semibold text-lg mb-2">Supporter-only content</h4>
+            <h4 className="font-semibold text-lg mb-2">Circle-only</h4>
             <p className="text-sm text-muted-foreground text-center mb-4">
-              Support this creator to unlock this post
+              Join the inner circle to see this
             </p>
             <TierBadge tier={tierRequired} size="md" />
           </div>

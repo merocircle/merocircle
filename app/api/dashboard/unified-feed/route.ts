@@ -172,6 +172,18 @@ export async function GET(request: NextRequest) {
     const creatorsMap = new Map((creators || []).map((c: any) => [c.id, c]));
     const profilesMap = new Map((creatorProfiles || []).map((cp: any) => [cp.user_id, cp]));
 
+    // Fetch current user's likes for these posts
+    let userLikedPostIds = new Set<string>();
+    if (user) {
+      const postIds = allPosts.map((p: any) => p.id);
+      const { data: userLikes } = await supabase
+        .from('likes')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .in('post_id', postIds);
+      userLikedPostIds = new Set((userLikes || []).map((l: any) => l.post_id));
+    }
+
     // Format posts
     const formattedPosts = allPosts.map((p: any) => {
       const creator = creatorsMap.get(p.creator_id);
@@ -200,9 +212,10 @@ export async function GET(request: NextRequest) {
           category: profile?.category || null,
           is_verified: profile?.is_verified || false
         },
-        poll: p.polls || null,
+        poll: Array.isArray(p.polls) ? (p.polls[0] || null) : (p.polls || null),
         likes_count: p.likes_count || 0,
         comments_count: p.comments_count || 0,
+        is_liked: user ? userLikedPostIds.has(p.id) : false,
         is_supporter: isSupporter,
         engagement_score: 0
       };

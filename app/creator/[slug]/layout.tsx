@@ -1,22 +1,31 @@
 import { Metadata } from 'next';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { resolveCreatorSlug } from '@/lib/creator-resolve';
 
 export async function generateMetadata({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
   searchParams?: Promise<{ post?: string }>;
 }): Promise<Metadata> {
-  const { id: creatorId } = await params;
+  const { slug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const postId = resolvedSearchParams?.post;
-  
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
-  
+  const resolved = await resolveCreatorSlug(slug);
+  if (!resolved) {
+    return {
+      title: 'Creator Not Found | MeroCircle',
+      description: 'Discover and support amazing creators from Nepal',
+    };
+  }
+  const { creatorId, username } = resolved;
+  const canonicalPath = username ? `/creator/${username}` : `/creator/${creatorId}`;
+
   try {
-    // Create Supabase server client
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +39,6 @@ export async function generateMetadata({
       }
     );
 
-    // Fetch creator details
     const { data: creator } = await supabase
       .from('users')
       .select(`
@@ -53,7 +61,6 @@ export async function generateMetadata({
       };
     }
 
-    // If post ID is provided, fetch post details
     if (postId) {
       const { data: post } = await supabase
         .from('posts')
@@ -65,7 +72,7 @@ export async function generateMetadata({
       if (post) {
         const postImage = post.image_urls?.[0] || post.image_url;
         const postDescription = post.content.substring(0, 160) + (post.content.length > 160 ? '...' : '');
-        
+        const postUrl = `${appUrl}${canonicalPath}?post=${postId}`;
         return {
           title: `${post.title} by ${creator.display_name} | MeroCircle`,
           description: postDescription,
@@ -73,7 +80,7 @@ export async function generateMetadata({
             title: post.title,
             description: postDescription,
             images: postImage ? [postImage] : creator.photo_url ? [creator.photo_url] : [],
-            url: `${appUrl}/creator/${creatorId}?post=${postId}`,
+            url: postUrl,
             siteName: 'MeroCircle',
             type: 'article',
           },
@@ -87,11 +94,9 @@ export async function generateMetadata({
       }
     }
 
-    // Default creator metadata
-    const creatorProfile = Array.isArray(creator.creator_profiles) 
-      ? creator.creator_profiles[0] 
+    const creatorProfile = Array.isArray(creator.creator_profiles)
+      ? creator.creator_profiles[0]
       : creator.creator_profiles;
-    
     const bio = creatorProfile?.bio || `Support ${creator.display_name} on MeroCircle`;
     const category = creatorProfile?.category;
 
@@ -102,7 +107,7 @@ export async function generateMetadata({
         title: `Support ${creator.display_name} on MeroCircle`,
         description: bio.substring(0, 160),
         images: creator.photo_url ? [creator.photo_url] : [],
-        url: `${appUrl}/creator/${creatorId}`,
+        url: `${appUrl}${canonicalPath}`,
         siteName: 'MeroCircle',
         type: 'profile',
       },
@@ -122,10 +127,6 @@ export async function generateMetadata({
   }
 }
 
-export default function CreatorLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function CreatorLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

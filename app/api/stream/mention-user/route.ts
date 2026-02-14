@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
           messageText,
           senderName: senderUser.display_name || 'Someone',
           senderId,
+          mentionType: 'you',
         });
 
         if (success) {

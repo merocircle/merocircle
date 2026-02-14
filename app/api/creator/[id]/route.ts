@@ -16,6 +16,7 @@ export async function GET(
       .from('creator_profiles')
       .select(`
         user_id,
+        vanity_username,
         bio,
         category,
         is_verified,
@@ -28,7 +29,7 @@ export async function GET(
         social_links,
         cover_image_url,
         onboarding_completed,
-        users!inner(id, display_name, email, photo_url, role)
+        users!inner(id, display_name, email, photo_url, role, username)
       `)
       .eq('user_id', creatorId)
       .single();
@@ -36,6 +37,10 @@ export async function GET(
     if (profileError || !creatorProfile) {
       return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
     }
+
+    const creatorUser = Array.isArray(creatorProfile.users)
+      ? creatorProfile.users[0]
+      : (creatorProfile.users as { id: string; display_name: string; email: string; photo_url: string | null; role: string; username: string | null } | undefined);
 
     // Check if current user is a supporter and their tier level
     const { data: paymentMethods } = await supabase
@@ -137,13 +142,12 @@ export async function GET(
       return {
         id: post.id,
         title: post.title,
-        // For non-supporters viewing supporter-only posts: hide actual content and image URLs
-        // This prevents them from accessing the content via inspect element
+        // For non-supporters viewing supporter-only posts: hide text content only
         content: shouldHideContent ? null : post.content,
-        // Don't send image_url to non-supporters - they can't access it even via inspect
-        image_url: shouldHideContent ? null : post.image_url,
-        image_urls: shouldHideContent ? [] : (post.image_urls || []),
-        media_url: shouldHideContent ? null : (post.media_url || null),
+        // Send image URLs so the UI can show a blurred preview and "Subscribe to access"
+        image_url: post.image_url,
+        image_urls: post.image_urls || [],
+        media_url: post.media_url,
         is_public: post.is_public,
         tier_required: post.tier_required || 'free',
         post_type: post.post_type || 'post',
@@ -152,8 +156,8 @@ export async function GET(
         creator_id: post.creator_id,
         creator: {
           id: post.users?.id || creatorId,
-          display_name: post.users?.display_name || creatorProfile.users.display_name,
-          photo_url: post.users?.photo_url || creatorProfile.users.photo_url,
+          display_name: post.users?.display_name || creatorUser?.display_name,
+          photo_url: post.users?.photo_url ?? creatorUser?.photo_url,
           role: post.users?.role || 'creator'
         },
         creator_profile: {
@@ -173,9 +177,10 @@ export async function GET(
       success: true,
       creatorDetails: {
         user_id: creatorProfile.user_id,
-        display_name: creatorProfile.users.display_name,
-        email: creatorProfile.users.email,
-        avatar_url: creatorProfile.users.photo_url,
+        display_name: creatorUser?.display_name ?? '',
+        email: creatorUser?.email ?? '',
+        avatar_url: creatorUser?.photo_url ?? null,
+        username: (creatorProfile.vanity_username?.trim() || creatorUser?.username) ?? null,
         bio: creatorProfile.bio,
         category: creatorProfile.category,
         is_verified: creatorProfile.is_verified,

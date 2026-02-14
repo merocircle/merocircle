@@ -37,6 +37,13 @@ export async function POST(request: NextRequest) {
     const transactionUuid = generateTransactionUuid();
     const amountStr = validation.validatedAmount.toString();
 
+    // Build success_url for eSewa redirect. Must be a public HTTPS URL so eSewa can redirect the user.
+    // Set NEXT_PUBLIC_APP_URL to your production URL (e.g. https://yourdomain.com); avoid localhost.
+    const successUrl = `${config.app.baseUrl}/payment/success?transaction_uuid=${transactionUuid}&total_amount=${amountStr}&product_code=${config.esewa.merchantCode}&creator_id=${creatorId}`;
+    if (config.app.baseUrl.startsWith('http://localhost')) {
+      logger.warn('eSewa success_url uses localhost – user may get stuck on eSewa success page. Set NEXT_PUBLIC_APP_URL to a public URL for payment redirects.', 'PAYMENT_API', { successUrl });
+    }
+
     // Build eSewa config (without signature)
     const esewaConfig: Omit<EsewaConfig, 'signature'> = {
       amount: amountStr,
@@ -46,7 +53,7 @@ export async function POST(request: NextRequest) {
       product_code: config.esewa.merchantCode,
       product_service_charge: "0",
       product_delivery_charge: "0",
-      success_url: `${config.app.baseUrl}/payment/success?transaction_uuid=${transactionUuid}&total_amount=${amountStr}&product_code=${config.esewa.merchantCode}&creator_id=${creatorId}`,
+      success_url: successUrl,
       failure_url: `${config.app.baseUrl}/payment/failure`,
       signed_field_names: "total_amount,transaction_uuid,product_code",
     };

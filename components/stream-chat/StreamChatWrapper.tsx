@@ -7,13 +7,14 @@ import {
   Window,
   MessageList,
   MessageInput,
-  Thread,
 } from 'stream-chat-react';
 import type { Channel as StreamChannelType } from 'stream-chat';
 import { useStreamChat } from '@/contexts/stream-chat-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
+import { CustomQuotedMessage } from './CustomQuotedMessage';
+import { CustomMessageOptions } from './CustomMessageOptions';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send
@@ -509,6 +510,10 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
     }
   }, [chatClient, user, fetchDMChannels]);
 
+  // Hide thread UI (we only use quote reply, not threads)
+  const NoOpMessageRepliesCountButton = useCallback(() => null, []);
+  const NoOpThread = useCallback(() => null, []);
+
   // Custom message actions
   const CustomMessageActionsList = useMemo(() => {
     if (!isCreator) return undefined;
@@ -751,13 +756,19 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {activeChannel ? (
-              <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
+              <Channel 
+                channel={activeChannel} 
+                CustomMessageActionsList={CustomMessageActionsList}
+                QuotedMessage={CustomQuotedMessage}
+                MessageOptions={CustomMessageOptions}
+                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+              >
                 <Window>
                   <CustomChannelHeader />
                   <MessageList />
                   <MessageInput focus />
                 </Window>
-                <Thread />
+                <NoOpThread />
               </Channel>
             ) : channelError ? (
               <div className="flex items-center justify-center h-full bg-muted/50">
@@ -918,7 +929,13 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
           {mobileView === 'chat' && activeChannel && (
             <div className="h-full flex flex-col overflow-hidden">
-              <Channel channel={activeChannel} CustomMessageActionsList={CustomMessageActionsList}>
+              <Channel 
+                channel={activeChannel} 
+                CustomMessageActionsList={CustomMessageActionsList}
+                QuotedMessage={CustomQuotedMessage}
+                MessageOptions={CustomMessageOptions}
+                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+              >
                 <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
                     <button
@@ -932,7 +949,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                   <MessageList />
                   <MessageInput focus />
                 </Window>
-                <Thread />
+                <NoOpThread />
               </Channel>
             </div>
           )}
@@ -976,16 +993,16 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         />
       )}
 
-      {/* Styles */}
+      {/* Styles — use global app theme (--primary, --foreground, etc.) */}
       <style jsx global>{`
         .stream-chat-wrapper {
-          --str-chat__primary-color: #9333ea;
-          --str-chat__active-primary-color: #7e22ce;
+          --str-chat__primary-color: var(--primary);
+          --str-chat__active-primary-color: var(--primary);
           --str-chat__border-radius-circle: 9999px;
-          --str-chat__border-radius-sm: 0.5rem;
-          --str-chat__border-radius-md: 0.75rem;
-          --str-chat__border-radius-lg: 1rem;
-          --str-chat__font-family: var(--font-space-grotesk), system-ui, sans-serif;
+          --str-chat__border-radius-sm: var(--radius);
+          --str-chat__border-radius-md: var(--radius);
+          --str-chat__border-radius-lg: var(--radius);
+          --str-chat__font-family: var(--font-sans), system-ui, sans-serif;
         }
 
         .str-chat__channel-list {
@@ -993,17 +1010,17 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         }
 
         .str-chat__channel-preview-messenger--active {
-          background: rgba(147, 51, 234, 0.1) !important;
-          border-left: 3px solid #9333ea !important;
+          background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+          border-left: 3px solid var(--primary) !important;
         }
 
         .str-chat__channel-preview-messenger:hover {
-          background: rgba(147, 51, 234, 0.05) !important;
+          background: color-mix(in srgb, var(--primary) 5%, transparent) !important;
         }
 
         .str-chat__message-simple--me .str-chat__message-bubble {
-          background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%) !important;
-          color: white !important;
+          background: var(--primary) !important;
+          color: var(--primary-foreground) !important;
         }
 
         .str-chat__message-input {
@@ -1011,19 +1028,53 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         }
 
         .str-chat__send-button {
-          background: #9333ea !important;
+          background: var(--primary) !important;
         }
 
         .str-chat__send-button:hover {
-          background: #7e22ce !important;
+          background: color-mix(in srgb, var(--primary) 90%, black) !important;
         }
 
         .str-chat__channel-search-input {
-          border-radius: 0.5rem !important;
+          border-radius: var(--radius) !important;
         }
 
         .str-chat__thread {
           border-left: 1px solid var(--border);
+        }
+
+        /* Light mode — align stream-chat with app theme */
+        .stream-chat-wrapper .str-chat__theme-light {
+          --str-chat__background-color: var(--background);
+          --str-chat__secondary-background-color: var(--card);
+          --str-chat__primary-surface-color: var(--muted);
+          --str-chat__text-color: var(--foreground);
+          --str-chat__secondary-text-color: var(--muted-foreground);
+          --str-chat__border-color: var(--border);
+        }
+
+        .str-chat__main-panel,
+        .str-chat__channel,
+        .str-chat__container {
+          background: var(--background) !important;
+        }
+
+        .str-chat__message-list {
+          background: var(--background) !important;
+        }
+
+        .str-chat__message-input {
+          background: var(--card) !important;
+        }
+
+        .str-chat__input-flat {
+          background: var(--muted) !important;
+        }
+
+        .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
+          background: var(--card) !important;
+          color: var(--foreground) !important;
+          border: 1px solid var(--border) !important;
         }
 
         .str-chat__avatar {
@@ -1123,6 +1174,138 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
         .str-chat__quoted-message-preview .str-chat__message-inner {
           margin-left: 0 !important;
+        }
+
+        /* Reaction emoji below the bubble; options and reply stay beside the bubble */
+        .str-chat__message--other .str-chat__message-inner {
+          grid-template-areas:
+            'message-bubble options'
+            'reactions reactions' !important;
+        }
+        .str-chat__message--me .str-chat__message-inner {
+          grid-template-areas:
+            'reminder reminder'
+            'options message-bubble'
+            'reactions reactions' !important;
+        }
+
+        /* Scroll-to-message highlight when clicking a quoted reply */
+        .str-chat__message--highlighted {
+          animation: reply-scroll-highlight 2s ease-out;
+        }
+
+        @keyframes reply-scroll-highlight {
+          0% {
+            background-color: color-mix(in srgb, var(--primary) 25%, transparent);
+          }
+          100% {
+            background-color: transparent;
+          }
+        }
+
+        /* Quoted message box — visible container with border and background */
+        .custom-reply-box {
+          transition: all 0.2s ease;
+          border-radius: 0.5rem !important;
+          padding: 8px 12px !important;
+          margin-bottom: 8px !important;
+          cursor: pointer;
+          border: 1px solid transparent;
+          border-left-width: 4px !important;
+        }
+
+        /* Received messages: visible box on light bubble */
+        .custom-reply-box--other,
+        .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box {
+          background: var(--muted) !important;
+          border-color: var(--border) !important;
+          border-left-color: var(--primary) !important;
+        }
+
+        /* Sent messages: visible box on primary bubble */
+        .custom-reply-box--me,
+        .str-chat__message-simple--me .custom-reply-box {
+          background: color-mix(in srgb, var(--primary-foreground) 15%, transparent) !important;
+          border-color: color-mix(in srgb, var(--primary-foreground) 30%, transparent) !important;
+          border-left-color: var(--primary-foreground) !important;
+        }
+
+        .custom-reply-box:hover {
+          opacity: 0.95;
+          transform: translateY(-1px);
+        }
+
+        .custom-reply-box:active {
+          transform: translateY(0);
+        }
+
+        .reply-box-sender-name {
+          font-weight: 700;
+          font-size: 0.875rem;
+          margin-bottom: 4px;
+        }
+
+        .reply-box-message-text {
+          font-size: 0.8rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 100%;
+        }
+
+        /* Light mode - received messages - OTHER PEOPLE'S MESSAGES */
+        .custom-reply-box-other .reply-box-sender-name,
+        .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-sender-name {
+          color: var(--primary) !important;
+        }
+
+        .custom-reply-box-other .reply-box-message-text,
+        .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-message-text {
+          color: var(--foreground) !important;
+          opacity: 0.75 !important;
+        }
+
+        /* Light mode - sent messages - MY MESSAGES */
+        .custom-reply-box--me .reply-box-sender-name,
+        .str-chat__message-simple--me .custom-reply-box .reply-box-sender-name {
+          color: var(--primary-foreground) !important;
+        }
+
+        .custom-reply-box--me .reply-box-message-text,
+        .str-chat__message-simple--me .custom-reply-box .reply-box-message-text {
+          color: var(--primary-foreground) !important;
+          opacity: 0.9 !important;
+        }
+
+        /* Dark mode - received messages (visible box) */
+        .dark .custom-reply-box-other,
+        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box {
+          background: color-mix(in srgb, var(--foreground) 12%, transparent) !important;
+          border-color: var(--border) !important;
+          border-left-color: var(--primary) !important;
+        }
+
+        .dark .custom-reply-box-other .reply-box-sender-name,
+        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-sender-name {
+          color: var(--primary) !important;
+        }
+
+        .dark .custom-reply-box-other .reply-box-message-text,
+        .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-message-text {
+          color: var(--foreground) !important;
+          opacity: 1 !important;
+        }
+
+        /* Dark mode - sent messages */
+        .dark .custom-reply-box--me .reply-box-sender-name,
+        .dark .str-chat__message-simple--me .custom-reply-box .reply-box-sender-name {
+          color: var(--primary-foreground) !important;
+        }
+
+        .dark .custom-reply-box--me .reply-box-message-text,
+        .dark .str-chat__message-simple--me .custom-reply-box .reply-box-message-text {
+          color: var(--primary-foreground) !important;
+          opacity: 0.9 !important;
         }
 
         .str-chat__message-actions-list-item {

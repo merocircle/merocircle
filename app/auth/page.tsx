@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ArrowRight, AlertCircle, Heart } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -45,6 +46,7 @@ function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
+  const { resolvedTheme } = useTheme();
   const { userProfile, loading: authLoading } = useAuth();
   
   const leftSideRef = useRef<HTMLDivElement>(null);
@@ -54,7 +56,14 @@ function AuthPageContent() {
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam) {
-      setError(errorParam);
+      // Map NextAuth error codes to user-friendly messages
+      const errorMessages: Record<string, string> = {
+        Configuration: 'Authentication is not configured correctly. Please ensure NEXTAUTH_URL, NEXTAUTH_SECRET, GOOGLE_CLIENT_ID, and GOOGLE_CLIENT_SECRET are set in .env.local.',
+        AccessDenied: 'Access denied. You do not have permission to sign in.',
+        Verification: 'The sign-in link has expired or has already been used.',
+        Default: 'An error occurred during sign in. Please try again.',
+      };
+      setError(errorMessages[errorParam] || errorParam);
       router.replace('/auth', { scroll: false });
     }
   }, [searchParams, router]);
@@ -221,15 +230,18 @@ function AuthPageContent() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Side - Auth Form */}
-      <div ref={leftSideRef} className="w-full lg:w-1/2 bg-white flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
+      <div
+        ref={leftSideRef}
+        className="w-full lg:w-1/2 min-h-[100dvh] bg-white dark:bg-background flex items-center justify-center p-4 sm:p-6 lg:p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="w-full max-w-md space-y-6 sm:space-y-8">
           {/* Logo */}
           <div className="auth-logo flex justify-center">
             <Link href="/" className="inline-block">
               <Image
-                src="/logo/logo.png"
+                src={resolvedTheme === 'dark' ? '/logo/logo-dark.png' : '/logo/logo-light.png'}
                 alt="MeroCircle"
                 width={170}
                 height={120}
@@ -239,11 +251,11 @@ function AuthPageContent() {
           </div>
 
           {/* Title */}
-          <div className="space-y-3">
-            <h1 className="auth-title text-4xl font-bold text-gray-900 tracking-tight">
+          <div className="space-y-2 sm:space-y-3">
+            <h1 className="auth-title text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-foreground tracking-tight">
               Sign in
             </h1>
-            <p className="auth-description text-gray-600 text-lg">
+            <p className="auth-description text-gray-600 dark:text-muted-foreground text-sm sm:text-base lg:text-lg">
               Create an account to start supporting creators and join exclusive communities
             </p>
           </div>
