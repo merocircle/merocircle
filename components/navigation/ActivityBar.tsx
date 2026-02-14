@@ -159,18 +159,7 @@ export function ActivityBar({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
-<<<<<<< Updated upstream
-                <Image
-                  src={resolvedTheme === 'dark' ? '/logo/logo-dark.png' : '/logo/logo-light.png'}
-                  alt="MeroCircle"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-=======
                 <Logo className="w-6 h-6 text-primary object-contain"/>
->>>>>>> Stashed changes
               </motion.div>
             </Link>
           </TooltipTrigger>

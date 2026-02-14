@@ -1108,13 +1108,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/5">
       {/* New Header Design - Matching Second Image */}
-      <div className="relative bg-card p-4 pb-2">
+      <div className="relative bg-card p-4 pb-2 rounded-md">
         {/* Cover Image Section */}
         <div className="relative h-56 sm:h-56 md:h-56 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden rounded-md">
-      {/* New Header Design - Matching Second Image */}
-      <div className="relative bg-card p-4 pb-2">
-        {/* Cover Image Section */}
-        <div className="relative h-56 sm:h-56 md:h-56 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
           {creatorDetails.cover_image_url ? (
             <Image
               src={creatorDetails.cover_image_url}
@@ -1124,9 +1120,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               priority
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-pink-500/10 to-purple-500/20" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-pink-500/10 to-purple-500/20 rounded-md" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 rounded-md" />
         </div>
 
         {/* Centered Profile Section */}
@@ -1227,7 +1223,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   onClick={() => setActiveTab('membership')}
                   className="gap-2 px-8 py-6 text-base hover:shadow-lg shadow-primary/20 font-semibold"
                 >
-                  <Heart className="w-5 h-5" />
+                  <Sparkles className="w-5 h-5" />
                   Support Creator
                 </Button>
               )}
@@ -1508,57 +1504,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                         </div>
                       )}
                     </div>
-            {/* Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="flex items-center justify-center gap-3 mb-8"
-            >
-              {isSupporter ? (
-                <Badge className="gap-2 px-5 py-2.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-base">
-                  <CheckCircle2 className="w-4 h-4" />
-                  In the Circle
-                </Badge>
-              ) : (
-                <Button
-                  size="lg"
-                  onClick={() => {
-                    setActiveTab('membership')
-                      setTimeout(() => {
-                        window.scrollTo({
-                          top: window.innerHeight,
-                          behavior: 'smooth',
-                        });
-                      }, 0);
-                  }}
-                  className="gap-2 px-8 py-6 text-base hover:shadow-lg shadow-primary/20 font-semibold"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  Support Creator
-                </Button>
-              )}
-              <Button
-                variant={shareCopied ? "default" : "outline"}
-                size="lg"
-                onClick={handleShare}
-                className="px-6 py-6"
-              >
-                {shareCopied ? (
-                  <CheckCircle2 className="w-5 h-5" />
-                ) : (
-                  <Share2 className="w-5 h-5" />
-                )}
-              </Button>
-              {/* <Button
-                variant="outline"
-                size="lg"
-                className="px-6 py-6"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </Button> */}
-            </motion.div>
-          </div>
 
                     {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 && (
                       <>

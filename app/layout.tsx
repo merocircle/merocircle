@@ -29,7 +29,8 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo/logo-favicon.svg",
     apple: "/logo/logo-favicon.svg",
-  },w
+  },
+};
 
 export default function RootLayout({
   children,

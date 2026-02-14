@@ -436,7 +436,7 @@ export function EnhancedPostCard({
               </div>
 
               {allImages.length > 1 && (
-                <>
+                <div>
                   {currentImageIndex > 0 && (
                     <button
                       onClick={(e) => {
@@ -459,9 +459,11 @@ export function EnhancedPostCard({
                       <ChevronRight className="w-5 h-5" />
                     </button>
                   )}
-              </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
         {shouldBlur && (
           <div
@@ -521,28 +523,26 @@ export function EnhancedPostCard({
                   </Button>
                 )}
               </div>
-                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-card/80 text-foreground text-xs font-medium z-10 backdrop-blur-sm shadow-sm">
-                    {currentImageIndex + 1}/{allImages.length}
-                  </div>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                    {allImages.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrentImageIndex(idx);
-                        }}
-                        className={cn(
-                          "h-1.5 rounded-full transition-all",
-                          idx === currentImageIndex
-                            ? "bg-primary w-4"
-                            : "bg-foreground/30 w-1.5 hover:bg-foreground/50",
-                        )}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
+              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-card/80 text-foreground text-xs font-medium z-10 backdrop-blur-sm shadow-sm">
+                {currentImageIndex + 1}/{allImages.length}
+              </div>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {allImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(idx);
+                    }}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all",
+                      idx === currentImageIndex
+                        ? "bg-primary w-4"
+                        : "bg-foreground/30 w-1.5 hover:bg-foreground/50",
+                    )}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -624,148 +624,7 @@ export function EnhancedPostCard({
               </div>
             </div>
           )}
-
-        {shouldBlur && (
-          <div
-            className={cn(
-              "relative w-full overflow-hidden cursor-pointer rounded-lg",
-              "aspect-[16/10] bg-gradient-to-br from-muted to-muted/50",
-              showAuthor ? "mx-4 sm:mx-5 mt-4" : "mx-4 sm:mx-5 mt-4 sm:mt-5"
-            )}
-            data-blurred-section
-            onClick={(e) => e.stopPropagation()}
-          >
-            {allImages.length > 0 && (
-              <Image
-                src={allImages[0]}
-                alt="Preview"
-                fill
-                className="object-cover opacity-15 blur-2xl scale-110"
-                sizes="630px"
-              />
-            )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center p-6 max-w-xs space-y-3">
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-card/90 border border-border shadow-lg">
-                  <Lock className="w-4.5 h-4.5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-0.5">
-                    Subscribe to access
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Join the circle to see this post
-                  </p>
-                </div>
-                {onNavigateToMembership ? (
-                  <Button
-                    size="sm"
-                    className="rounded-full px-5 shadow-md shadow-primary/15"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigateToMembership();
-                    }}
-                  >
-                    Join Circle
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="rounded-full px-5 shadow-md shadow-primary/15"
-                    asChild
-                  >
-                    <Link
-                      href={creatorProfileLink}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Join Circle
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="p-4 sm:p-5 pt-4">
-          {post.title && post.post_type !== "poll" && (
-            <h2
-              className="text-lg sm:text-xl font-bold text-foreground leading-tight mb-3 cursor-pointer"
-              onClick={handlePostClick}
-            >
-              {post.title}
-            </h2>
-          )}
-
-          {post.post_type === "poll" && pollData?.id && (
-            <div className="mb-3">
-              <PollCard pollId={pollData.id} currentUserId={currentUserId} />
-            </div>
-          )}
-
-          {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
-            <div className="mb-4 cursor-pointer" onClick={handlePostClick}>
-              <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px]">
-                {shouldBlur ? "Subscribe to access this post." : displayedContent}
-                {!shouldBlur && shouldTruncateContent && !showFullContent && (
-                  <span className="text-muted-foreground">...</span>
-                )}
-                {!shouldBlur && shouldTruncateContent && (
-                  <button
-                    onClick={handlePostClick}
-                    className="text-primary font-medium hover:underline ml-1"
-                  >
-                    Show more
-                  </button>
-                )}
-              </p>
-            </div>
-          )}
-
-          {showActions && (
-            <div
-              className="flex items-center justify-between pt-3 border-t border-border/30"
-              data-actions-section
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-4">
-                <motion.button
-                  onClick={handleLike}
-                  disabled={!currentUserId || likeMutation.isPending}
-                  whileTap={{ scale: 0.9 }}
-                  className={cn(
-                    "flex items-center gap-1.5 text-sm font-medium transition-colors",
-                    isLiked
-                      ? "text-rose-500"
-                      : "text-muted-foreground hover:text-rose-500",
-                  )}
-                >
-                  <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
-                  <span>{likesCount > 0 ? likesCount : "Like"}</span>
-                </motion.button>
-
-                <motion.button
-                  onClick={handleCommentClick}
-                  whileTap={{ scale: 0.9 }}
-                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>{commentsCount > 0 ? commentsCount : "Comment"}</span>
-                </motion.button>
-              </div>
-
-              <motion.button
-                onClick={handleShare}
-                whileTap={{ scale: 0.9 }}
-                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Share</span>
-              </motion.button>
-            </div>
-          )}
         </div>
-
         <AnimatePresence>
           {showComments && (
             <motion.div
