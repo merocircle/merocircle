@@ -95,20 +95,17 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
     }
   }, [isConnected, user, fetchChannels, fetchDMChannels, fetchUnreadCounts, creatorId]);
 
-  // Auto-expand servers when loaded
+  // Auto-expand servers on initial load only; never overwrite user's collapse/expand choices
+  const initialExpandDoneRef = useRef(false);
   useEffect(() => {
-    if (!loading && (filteredOtherServers.length > 0 || filteredMyServer)) {
-      const allIds = new Set([...filteredOtherServers.map((s: Server) => s.id), ...(filteredMyServer ? [filteredMyServer.id] : [])]);
-      
-      // Only update if the set actually changed
-      const currentIds = Array.from(expandedServers).sort().join(',');
-      const newIds = Array.from(allIds).sort().join(',');
-      
-      if (currentIds !== newIds) {
-        setExpandedServers(allIds);
-      }
-    }
-  }, [loading, filteredOtherServers, filteredMyServer, expandedServers]);
+    if (loading) return;
+    const allIds = new Set([...filteredOtherServers.map((s: Server) => s.id), ...(filteredMyServer ? [filteredMyServer.id] : [])]);
+    if (allIds.size === 0) return;
+    if (initialExpandDoneRef.current) return;
+
+    initialExpandDoneRef.current = true;
+    setExpandedServers(allIds);
+  }, [loading, filteredOtherServers, filteredMyServer]);
 
   // Listen for new messages (debounced to prevent rate limiting)
   useEffect(() => {
@@ -569,27 +566,27 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
       <div key={server.id} className="mb-1">
         <button
           onClick={() => toggleServer(server.id)}
-          className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-muted/50 rounded-lg transition-colors group"
+          className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left hover:bg-muted/50 rounded-lg transition-colors group"
         >
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/30">
+          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/30">
             {server.image ? (
               <img src={server.image} alt={server.name} className="w-full h-full object-cover" />
             ) : (
-              <Users className="h-3.5 w-3.5 text-primary" />
+              <Users className="h-3 w-3 text-primary" />
             )}
           </div>
-          <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground truncate flex-1">
+          <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground truncate flex-1">
             {server.name}
           </span>
           {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <ChevronDown className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
           )}
         </button>
 
         {isExpanded && (
-          <div className="mt-0.5 space-y-0.5 px-1">
+          <div className="mt-0.5 space-y-0.5 px-0.5">
             {server.channels.map(channel => {
               const lastMsg = getChannelLastMessage(channel.stream_channel_id);
               return (
@@ -610,9 +607,9 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
             {isMyServer && isCreator && (
               <button
                 onClick={() => setShowCreateChannel(true)}
-                className="w-full px-3 py-2.5 flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-border/50"
+                className="w-full px-2.5 py-1.5 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors border border-dashed border-border/50"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3 w-3" />
                 <span>Create Channel</span>
               </button>
             )}
