@@ -442,17 +442,13 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
           {/* Quick actions */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
             <Button
-              size="sm"
-              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm shadow-sm shadow-primary/10 flex-shrink-0"
-              onClick={() => setShowCreatePostModal(true)}
+              variant="default"
+              className="gap-2 rounded-xl"
+              asChild
             >
-              <Plus className="w-3.5 h-3.5" />
-              New Post
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0" asChild>
-              <Link href="/chat">
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Chat</span>
+              <Link href="/create-post">
+                <Plus className="w-4 h-4" />
+                Create Post
               </Link>
             </Button>
             <Button
