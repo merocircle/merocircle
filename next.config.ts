@@ -64,14 +64,6 @@ const nextConfig: NextConfig = {
     turbo: {
       resolveAlias: {},
     },
-    // Optimize package imports to reduce bundle size
-    optimizePackageImports: [
-      'lucide-react',
-      'date-fns',
-      'recharts',
-      '@radix-ui/react-icons',
-      'react-icons',
-    ],
   },
 
   // Suppress Supabase realtime dependency warning
