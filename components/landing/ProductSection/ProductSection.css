@@ -1,0 +1,72 @@
+/* Product / Dashboard section - reference design */
+.product-section {
+  padding: 12rem 2rem;
+  background: rgba(249, 250, 251, 0.5);
+  border-top: 1px solid rgb(243 244 246);
+  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+}
+
+.product-section-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.product-reveal {
+  transition: opacity 1s ease-out, transform 1s ease-out;
+  opacity: 0;
+  transform: translateY(3rem);
+}
+.product-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.product-section-header {
+  text-align: center;
+  max-width: 42rem;
+  margin: 0 auto 4rem;
+}
+.product-section-eyebrow {
+  color: #990000;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  font-size: 10px;
+  margin: 0 0 1rem;
+}
+.product-section-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+  color: #1a1a1a;
+  margin: 0 0 1rem;
+}
+@media (min-width: 768px) {
+  .product-section-title {
+    font-size: 3rem;
+  }
+}
+.product-section-description {
+  font-size: 1.125rem;
+  color: rgb(107 114 128);
+  font-weight: 500;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.product-section-visual {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.product-section-image-frame {
+  border-radius: 2rem;
+  overflow: hidden;
+  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgb(243 244 246);
+}
+.product-section-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}

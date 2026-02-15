@@ -33,6 +33,13 @@ const nextConfig: NextConfig = {
         { module: /node_modules\/@supabase\/realtime-js/ }
       ];
     }
+
+    config.module.rules.push({
+      test: /\.svg$/i,
+      issuer: /\.[jt]sx?$/,
+      use: ["@svgr/webpack"],
+    });
+
     return config;
   },
 };

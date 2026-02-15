@@ -27,14 +27,14 @@ export default function WelcomeEmail({
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
 }: WelcomeEmailProps) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
-
   return (
     <EmailLayout
       preview={`Hi ${firstName}, welcome to Mero Circle — we're glad you're here.`}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
       hideCreatorInfo
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       {/* Top accent */}
       <Section style={topAccent} />

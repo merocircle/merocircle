@@ -15,7 +15,9 @@ import {
   User,
   Sun,
   Moon,
-  Calendar
+  Compass,
+  Calendar,
+  Shield
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
@@ -24,6 +26,8 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth-context';
 import { type DashboardView } from '@/contexts/dashboard-context';
+import { isAdmin } from '@/lib/admin-middleware';
+import { Logo } from '@/components/ui/logo';
 
 interface ActivityBarProps {
   user?: {
@@ -64,7 +68,8 @@ export function ActivityBar({
 }: ActivityBarProps) {
   const pathname = usePathname();
   const { isCreator } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const isAdminUser = user?.id ? isAdmin(user.id) : false;
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -93,6 +98,7 @@ export function ActivityBar({
     if (pathname === '/settings') return 'settings';
     if (pathname === '/profile') return 'profile';
     if (pathname === '/creator-studio') return 'creator-studio';
+    if (pathname === '/admin') return 'home'; // Admin page doesn't have a view
     return 'home';
   };
 
@@ -109,6 +115,11 @@ export function ActivityBar({
   // Creator-only navigation item
   const creatorNavItem: NavItem | null = isCreator
     ? { id: 'creator-studio', icon: BarChart3, label: 'Creator Studio', view: 'creator-studio' }
+    : null;
+
+  // Admin-only navigation item
+  const adminNavItem: NavItem | null = isAdminUser
+    ? { id: 'admin', icon: Shield, label: 'Admin' }
     : null;
 
   // Events navigation item (coming soon)
@@ -148,14 +159,7 @@ export function ActivityBar({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Image
-                  src="/logo/logo-small.png"
-                  alt="MeroCircle"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
+                <Logo className="w-6 h-6 text-primary object-contain"/>
               </motion.div>
             </Link>
           </TooltipTrigger>
@@ -200,6 +204,25 @@ export function ActivityBar({
               </TooltipTrigger>
               <TooltipContent side="right">
                 <p>{creatorNavItem.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Admin - Only for admins */}
+          {adminNavItem && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <NavIcon
+                    icon={adminNavItem.icon}
+                    label={adminNavItem.label}
+                    isActive={pathname === '/admin'}
+                    href="/admin"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{adminNavItem.label}</p>
               </TooltipContent>
             </Tooltip>
           )}

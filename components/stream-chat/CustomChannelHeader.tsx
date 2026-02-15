@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { useChannelStateContext } from 'stream-chat-react';
-import { Users, Hash, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Users, Hash } from 'lucide-react';
 
 interface CustomChannelData {
   name?: string;
@@ -28,9 +27,9 @@ export function CustomChannelHeader() {
   ).length;
 
   return (
-    <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30 bg-card/95 backdrop-blur-sm">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
       <div className="flex items-center gap-3">
-        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
           {channelImage ? (
             <img
               src={channelImage}
@@ -38,39 +37,37 @@ export function CustomChannelHeader() {
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            <Hash className="h-4 w-4 text-primary" />
+            <Hash className="h-5 w-5 text-primary" />
           )}
         </div>
 
         <div>
-          <h3 className="font-semibold text-foreground text-sm leading-tight">{channelName}</h3>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-            <span>{memberCount} members</span>
-            {onlineCount > 0 && (
-              <>
-                <span className="text-border">·</span>
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--online)] inline-block animate-pulse" />
-                  {onlineCount} online
+          <h3 className="font-semibold text-foreground">{channelName}</h3>
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <Users className="h-3.5 w-3.5" />
+            <span>
+              {memberCount} member{memberCount !== 1 ? 's' : ''}
+              {onlineCount > 0 && (
+                <span className="text-green-600 dark:text-green-400 ml-1">
+                  ({onlineCount} online)
                 </span>
-              </>
-            )}
-          </div>
+              )}
+            </span>
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => setShowMembers(!showMembers)}
-          className={cn(
-            "p-2 rounded-full transition-colors",
+          className={`p-2 rounded-lg transition-colors ${
             showMembers
-              ? "bg-primary/10 text-primary"
-              : "hover:bg-muted text-muted-foreground hover:text-foreground"
-          )}
+              ? 'bg-primary/10 text-primary'
+              : 'hover:bg-muted text-muted-foreground hover:text-primary'
+          }`}
           title="Show Members"
         >
-          <Users className="h-4 w-4" />
+          <Users className="h-5 w-5" />
         </button>
       </div>
 
@@ -87,19 +84,19 @@ function MembersSidebar({ channel, onClose }: { channel: any; onClose: () => voi
   const offlineMembers = members.filter(m => !m.user?.online);
 
   return (
-    <div className="fixed inset-y-0 right-0 w-72 bg-card shadow-2xl z-50 flex flex-col border-l border-border/30">
-      <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
-        <h3 className="font-semibold text-foreground text-sm">Members ({members.length})</h3>
-        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-          <X className="w-4 h-4" />
+    <div className="fixed inset-y-0 right-0 w-72 bg-card shadow-xl z-50 flex flex-col border-l border-border">
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <h3 className="font-semibold text-foreground">Members</h3>
+        <button onClick={onClose} className="p-1 rounded hover:bg-muted text-xl leading-none text-muted-foreground hover:text-foreground">
+          &times;
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
         {onlineMembers.length > 0 && (
-          <div className="mb-3">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1.5">
-              Online — {onlineMembers.length}
+          <div className="mb-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase px-2 mb-2">
+              Online &mdash; {onlineMembers.length}
             </p>
             {onlineMembers.map((member: any) => (
               <MemberItem key={member.user_id} member={member} />
@@ -109,8 +106,8 @@ function MembersSidebar({ channel, onClose }: { channel: any; onClose: () => voi
 
         {offlineMembers.length > 0 && (
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1.5">
-              Offline — {offlineMembers.length}
+            <p className="text-xs font-medium text-muted-foreground uppercase px-2 mb-2">
+              Offline &mdash; {offlineMembers.length}
             </p>
             {offlineMembers.map((member: any) => (
               <MemberItem key={member.user_id} member={member} />
@@ -126,30 +123,29 @@ function MemberItem({ member }: { member: any }) {
   const user = member.user;
 
   return (
-    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer">
       <div className="relative">
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
           {user?.image ? (
             <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-xs font-medium text-primary">
+            <span className="text-sm font-medium text-primary">
               {(user?.name || 'U')[0].toUpperCase()}
             </span>
           )}
         </div>
         <div
-          className={cn(
-            "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card",
-            user?.online ? 'bg-[var(--online)]' : 'bg-muted-foreground/30'
-          )}
+          className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card ${
+            user?.online ? 'bg-green-500' : 'bg-muted-foreground'
+          }`}
         />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-medium text-foreground truncate">
+        <p className="text-sm font-medium text-foreground truncate">
           {user?.name || 'Unknown User'}
         </p>
         {member.role && member.role !== 'member' && (
-          <p className="text-[10px] text-primary font-medium capitalize">{member.role}</p>
+          <p className="text-xs text-primary capitalize">{member.role}</p>
         )}
       </div>
     </div>

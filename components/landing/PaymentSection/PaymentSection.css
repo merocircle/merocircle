@@ -1,0 +1,99 @@
+.payment-section {
+  padding: 3rem 0;
+  background: rgb(249 250 251);
+  overflow: hidden;
+  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+}
+
+.payment-section-inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+@media (max-width: 767px) {
+  .payment-section {
+    padding: 2rem 0;
+  }
+  .payment-section-inner {
+    padding: 0 1.25rem;
+  }
+}
+
+.payment-section-eyebrow {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgb(107 114 128);
+  margin: 0 0 1.5rem;
+}
+
+.payment-section-marquee-wrap {
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+}
+
+.payment-section-marquee {
+  display: flex;
+  width: max-content;
+  animation: payment-marquee 30s linear infinite;
+}
+
+.payment-section-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes payment-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.payment-section-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  padding: 0 2rem;
+  flex-shrink: 0;
+}
+
+.payment-section-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 56px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+
+.payment-section-logo-wrap:hover {
+  opacity: 1;
+}
+
+.payment-section-logo {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center;
+}

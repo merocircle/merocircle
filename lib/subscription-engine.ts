@@ -360,13 +360,13 @@ export async function manageSubscription(
           });
         } else if (allChannels && allChannels.length > 0) {
           // Determine which channels the supporter should have access to
+          // Only add to "All Supporters" channel (min_tier_required === 1); no tier-specific channels
           const eligibleChannels = allChannels.filter((channel: any) => 
-            channel.min_tier_required <= tierLevel
+            channel.min_tier_required === 1
           );
-          
-          // Determine which channels they should NOT have access to (for downgrades)
+          // Channels they should NOT be in (tier-specific; we do not add to these)
           const ineligibleChannels = allChannels.filter((channel: any) => 
-            channel.min_tier_required > tierLevel
+            channel.min_tier_required !== 1
           );
 
           logger.info('Channel access analysis', 'SUBSCRIPTION_ENGINE', {

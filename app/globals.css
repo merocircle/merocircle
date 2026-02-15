@@ -856,6 +856,30 @@ a:not([disabled]),
 }
 
 /* ===========================================
+   LANDING PAGE KEYFRAMES (reference design)
+   =========================================== */
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-25px) rotate(1deg); }
+}
+@keyframes landing-float-slow {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-15px, -20px); }
+}
+@keyframes landing-bounce-slow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-15px) scale(1.05); }
+}
+@keyframes landing-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-landing-float { animation: landing-float 6s ease-in-out infinite; }
+.animate-landing-float-slow { animation: landing-float-slow 10s ease-in-out infinite; }
+.animate-landing-bounce-slow { animation: landing-bounce-slow 5s ease-in-out infinite; }
+.animate-landing-spin-slow { animation: landing-spin-slow 12s linear infinite; }
+
+/* ===========================================
    ROUNDED SECTIONS
    =========================================== */
 .rounded-section {

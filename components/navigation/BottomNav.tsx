@@ -1,18 +1,20 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
   Search,
-  Plus,
   MessageCircle,
   User,
   Settings,
+  BarChart3,
 } from 'lucide-react';
 import { BottomNavIcon } from './NavIcon';
 import { cn } from '@/lib/utils';
 import { type DashboardView } from '@/contexts/dashboard-context';
+import { useAuth } from '@/contexts/auth-context';
 
 interface BottomNavProps {
   activeView?: DashboardView;
@@ -30,6 +32,7 @@ export function BottomNav({
   className,
 }: BottomNavProps) {
   const pathname = usePathname();
+  const { isCreator } = useAuth();
 
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
@@ -40,6 +43,9 @@ export function BottomNav({
   };
 
   const currentActiveView = getActiveViewFromPath();
+
+  const isCreatorStudioActive = pathname === '/creator-studio';
+  const isSignupCreatorActive = pathname === '/signup/creator';
 
   return (
     <motion.nav
@@ -58,19 +64,38 @@ export function BottomNav({
     >
       <BottomNavIcon icon={Home} label="Home" isActive={currentActiveView === 'home'} href="/home" />
       <BottomNavIcon icon={Search} label="Explore" isActive={currentActiveView === 'explore'} href="/explore" />
-      
-      {/* Center create button — elevated and prominent */}
+
+      {/* Center: Creator Studio (creators) or Join as creator (non-creators) */}
       <div className="relative -mt-4">
-        <motion.button
-          onClick={onCreateClick}
-          className="w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform"
-          whileTap={{ scale: 0.9 }}
-          aria-label="Create"
-        >
-          <Plus className="w-5 h-5" strokeWidth={2.5} />
-        </motion.button>
+        {isCreator ? (
+          <Link
+            href="/creator-studio"
+            className={cn(
+              'w-11 h-11 rounded-full flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform',
+              isCreatorStudioActive
+                ? 'bg-primary/90 text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-card'
+                : 'bg-primary text-primary-foreground',
+            )}
+            aria-label="Creator Studio"
+          >
+            <BarChart3 className="w-5 h-5" strokeWidth={2.5} />
+          </Link>
+        ) : (
+          <Link
+            href="/signup/creator"
+            className={cn(
+              'w-11 h-11 rounded-full flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform',
+              isSignupCreatorActive
+                ? 'bg-muted text-muted-foreground ring-2 ring-border ring-offset-2 ring-offset-card'
+                : 'bg-muted text-foreground border border-border/60',
+            )}
+            aria-label="Join as creator"
+          >
+            <Settings className="w-5 h-5" strokeWidth={2} />
+          </Link>
+        )}
       </div>
-      
+
       <BottomNavIcon icon={MessageCircle} label="Chat" isActive={currentActiveView === 'chat'} badge={unreadMessages} href="/chat" />
       <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href="/profile" />
     </motion.nav>

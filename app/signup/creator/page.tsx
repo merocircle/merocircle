@@ -58,7 +58,7 @@ export default function CreatorSignupPage() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [tierPrices, setTierPrices] = useState({
-    tier1: '500',
+    tier1: '0',
     tier2: '2000',
     tier3: '5000'
   });
@@ -220,9 +220,9 @@ export default function CreatorSignupPage() {
     });
   };
 
-  // Calculate estimated monthly income
+  // Calculate estimated monthly income (tier 1 is always free → 0)
   const calculateMonthlyIncome = () => {
-    const tier1Income = parseFloat(tierPrices.tier1) * parseFloat(estimatedSupporters.tier1 || '0');
+    const tier1Income = 0; // 1★ Supporter is free; supporter count does not affect income
     const tier2Income = parseFloat(tierPrices.tier2) * parseFloat(estimatedSupporters.tier2 || '0');
     const tier3Income = parseFloat(tierPrices.tier3) * parseFloat(estimatedSupporters.tier3 || '0');
     return tier1Income + tier2Income + tier3Income;
@@ -344,7 +344,7 @@ export default function CreatorSignupPage() {
       const tierData = [
         { 
           tier_level: 1, 
-          price: parseFloat(tierPrices.tier1),
+          price: 0,
           tier_name: 'One Star Supporter',
           description: 'Access to supporter posts',
           benefits: ['Access to exclusive posts', 'Support the creator'],
@@ -768,7 +768,7 @@ export default function CreatorSignupPage() {
                   Set Your Support Tiers
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Choose the base price for each tier level. Supporters can add custom amounts.
+                  The first tier (Supporter) is always free. Set the base price for Inner Circle and Core Member only.
                 </p>
               </div>
 
@@ -776,7 +776,7 @@ export default function CreatorSignupPage() {
                 {/* Left Column: Tier Setup */}
                 <Card className="p-8">
                   <div className="space-y-6">
-                    {/* Tier 1 */}
+                    {/* Tier 1 - Supporter (free, with major perks & additional perks) */}
                     <div className="p-6 border-2 border-gray-200 dark:border-gray-700 rounded-xl">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
@@ -785,27 +785,22 @@ export default function CreatorSignupPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">One Star Supporter</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Supporter (Free)</h3>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Access to exclusive posts</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Access to community chat and posts</p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="tier1" className="text-sm font-medium">Base Price (NPR)</Label>
-                          <input
-                            id="tier1"
-                            type="number"
-                            min="10"
-                            value={tierPrices.tier1}
-                            onChange={(e) => setTierPrices({ ...tierPrices, tier1: e.target.value })}
-                            className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
-                          />
+                          <Label className="text-sm font-medium">Price</Label>
+                          <div className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-muted/50 dark:bg-muted/20 px-4 py-3 text-gray-700 dark:text-gray-300">
+                            Free — no payment required
+                          </div>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium">Extra Perks (Optional)</Label>
+                          <Label className="text-sm font-medium">Additional Perks</Label>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            Add custom perks for this tier
+                            Add perks for your free tier (e.g., early access to posts, newsletter)
                           </p>
                           <div className="space-y-2">
                             {tierExtraPerks[1].map((perk, index) => (
@@ -814,7 +809,7 @@ export default function CreatorSignupPage() {
                                   type="text"
                                   value={perk}
                                   onChange={(e) => updateExtraPerk(1, index, e.target.value)}
-                                  placeholder="e.g., Monthly newsletter, Early access..."
+                                  placeholder="e.g., Early access to posts, Newsletter..."
                                   className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
                                 />
                                 <Button
@@ -864,7 +859,7 @@ export default function CreatorSignupPage() {
                           <input
                             id="tier2"
                             type="number"
-                            min={parseInt(tierPrices.tier1) + 1}
+                            min={Math.max(1, (parseInt(tierPrices.tier1) || 0) + 1)}
                             value={tierPrices.tier2}
                             onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
                             className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
@@ -1042,7 +1037,7 @@ export default function CreatorSignupPage() {
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600 dark:text-gray-400">1★ Tier Income:</span>
                           <span className="font-medium text-gray-900 dark:text-gray-100">
-                            NPR {((parseFloat(tierPrices.tier1) || 0) * (parseFloat(estimatedSupporters.tier1) || 0)).toLocaleString()}
+                            NPR 0
                           </span>
                         </div>
                         <div className="flex justify-between items-center">

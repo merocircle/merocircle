@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sanitizeString } from '@/lib/validation';
 import { logger } from '@/lib/logger';
-import { validatePaymentRequest, verifyCreator, generateTransactionUuid } from '@/lib/payment-utils';
+import { validatePaymentRequest, validatePaymentRequestAllowZero, verifyCreator, generateTransactionUuid } from '@/lib/payment-utils';
 import { processPaymentSuccess } from '@/lib/payment-success-engine';
 import { handleApiError } from '@/lib/api-utils';
 
@@ -11,9 +11,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { amount, creatorId, supporterId, supporterMessage, tier_level } = body;
 
-    // Validate payment request
-    const validation = validatePaymentRequest(amount, creatorId, supporterId);
-    if (!validation.valid || !validation.validatedAmount) {
+    // Validate payment request (allow zero for free tier)
+    const allowZero = amount === 0 || amount === '0';
+    const validation = allowZero
+      ? validatePaymentRequestAllowZero(amount, creatorId, supporterId)
+      : validatePaymentRequest(amount, creatorId, supporterId);
+    if (!validation.valid || validation.validatedAmount === undefined) {
       return validation.errorResponse!;
     }
 

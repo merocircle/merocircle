@@ -300,6 +300,7 @@ export function useLikePost() {
             const delta = action === 'like' ? 1 : -1;
             return {
               ...post,
+              is_liked: action === 'like',
               likes_count: Math.max(0, (post.likes_count || 0) + delta),
             };
           }),

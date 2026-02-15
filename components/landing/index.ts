@@ -1,9 +1,12 @@
 export { UrlMessageBanner } from "./UrlMessageBanner";
+export { LandingNav } from "./LandingNav";
 export { HeroSection } from "./HeroSection";
 export { ProblemSection } from "./ProblemSection";
 export { SolutionSection } from "./SolutionSection";
 export { WaysToSupportSection } from "./WaysToSupportSection";
 export { TrustSection } from "./TrustSection";
 export { ProcessSection } from "./ProcessSection";
+export { PaymentSection } from "./PaymentSection";
+export { TeamSection } from "./TeamSection";
 export { CTASection } from "./CTASection";
 export { Footer } from "./Footer";

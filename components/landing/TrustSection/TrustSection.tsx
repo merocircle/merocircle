@@ -31,7 +31,7 @@ const trustFeatures = [
 
 export function TrustSection() {
   return (
-    <RoundedSection theme="grey">
+    <RoundedSection theme="grey" id="for-creators">
       <AnimatedSection className="w-full max-w-5xl mx-auto" delay={0.1}>
         <div className="trust-section-header">
           <Badge className="mb-4 sm:mb-6 text-xs" variant="outline">

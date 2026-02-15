@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-provider";
@@ -16,9 +16,26 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta-sans",
+});
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "MeroCircle - Support Local Creators",
   description: "The leading platform for supporting and discovering amazing creators from Nepal. Join our community and help build the creator economy.",
+  icons: {
+    icon: "/logo/logo-favicon.svg",
+    apple: "/logo/logo-favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -29,6 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <head>
+        <script src="https://t.contentsquare.net/uxa/0a3928cc3193c.js"></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -55,7 +73,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${spaceGrotesk.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} font-sans antialiased`} suppressHydrationWarning>
         <ErrorBoundary>
         <ThemeProvider
           attribute="class"

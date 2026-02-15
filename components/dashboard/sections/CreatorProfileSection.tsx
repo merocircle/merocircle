@@ -31,7 +31,8 @@ import {
   Sparkles,
   Star,
   MessageCircle,
-  TrendingUp
+  TrendingUp,
+  MoreVertical
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
@@ -47,17 +48,16 @@ import { cn } from '@/lib/utils';
 import { SocialLinksCard } from '@/components/organisms/creator';
 import { SupportBanner } from '@/components/creator/SupportBanner';
 
-// Lazy load chat component
 const StreamCommunitySection = dynamic(
   () => import('./StreamCommunitySection'),
   { loading: () => <div className="flex items-center justify-center h-96"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>, ssr: false }
 );
 
-// Lazy load PaymentGatewaySelector
 const PaymentGatewaySelector = dynamic(
   () => import('@/components/payment/PaymentGatewaySelector').then(mod => ({ default: mod.PaymentGatewaySelector })),
   { loading: () => null, ssr: false }
 );
+
 interface CreatorProfileSectionProps {
   creatorId: string;
   initialHighlightedPostId?: string | null;
@@ -71,8 +71,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const { user } = useAuth();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
   const highlightedPostRef = useRef<HTMLDivElement>(null);
+  const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Use either the context highlighted post (for dashboard) or the prop (for public page)
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const [tempHighlightPostId, setTempHighlightPostId] = useState<string | null>(null);
   const highlightedPostId = isWithinProvider ? contextHighlightedPostId : localHighlightedPostId;
@@ -104,11 +104,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     updateSupporterTier
   } = useCreatorDetails(creatorId);
 
-  // Refetch creator details when likes/comments change on any of this creator's posts
   const creatorPostIds = useMemo(() => recentPosts.map((p) => String(p.id)), [recentPosts]);
   useRealtimeCreatorPosts(creatorPostIds, refreshCreatorDetails);
 
-  // When landing with ?renew=true, fetch previous payment method and send user to that gateway (or direct renew)
   const renewHandledRef = useRef(false);
   useEffect(() => {
     if (!renewFromUrl || !user || !creatorId || renewHandledRef.current) return;
@@ -297,7 +295,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     }
   }, [updateSupporterTier, recentPosts]);
   
-  // Refresh creator details when returning from payment
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('refresh') || urlParams.has('payment_complete')) {
@@ -305,12 +302,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     }
   }, [refreshCreatorDetails]);
   
-  // Ensure posts tab is active when there's a highlighted post
   useEffect(() => {
     if (highlightedPostId && !isWithinProvider && activeTab !== 'posts') {
       setActiveTab('posts');
     }
   }, [highlightedPostId, isWithinProvider, activeTab]);
+
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showGatewaySelector, setShowGatewaySelector] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -321,11 +318,11 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     amount: number;
     message?: string;
   } | null>(null);
+  const [showConfirmFreeSupport, setShowConfirmFreeSupport] = useState<{ message?: string } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [showTiers, setShowTiers] = useState(false);
   const [showSupportBanner, setShowSupportBanner] = useState(false);
 
-  // Handle scroll for support banner
   useEffect(() => {
     if (activeTab !== 'posts' || isSupporter) {
       setShowSupportBanner(false);
@@ -338,12 +335,11 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Check initial scroll position
+    handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, [activeTab, isSupporter]);
 
-  // If viewing own profile, redirect to profile page
   const isOwnProfile = user && user.id === creatorId && isWithinProvider;
   useEffect(() => {
     if (isOwnProfile) {
@@ -370,6 +366,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       return;
     }
 
+    // Free tier (Supporter): confirm modal then direct payment with amount 0
+    if (tierLevel === 1 && amount === 0) {
+      setShowConfirmFreeSupport({ message });
+      return;
+    }
+
     setPendingPayment({ tierLevel, amount, message });
     setShowGatewaySelector(true);
   }, [user, creatorId, isWithinProvider]);
@@ -381,21 +383,23 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     try {
       const pending = JSON.parse(raw);
       if (pending.creatorId === creatorId) {
-        setPendingPayment({
-          tierLevel: pending.tierLevel,
-          amount: pending.amount,
-          message: pending.message
-        });
-        setShowGatewaySelector(true);
+        if (pending.tierLevel === 1 && pending.amount === 0) {
+          setShowConfirmFreeSupport({ message: pending.message });
+        } else {
+          setPendingPayment({
+            tierLevel: pending.tierLevel,
+            amount: pending.amount,
+            message: pending.message
+          });
+          setShowGatewaySelector(true);
+        }
       }
     } catch {
-      // Ignore invalid data
     } finally {
       localStorage.removeItem('pendingSupport');
     }
   }, [user, creatorId]);
 
-  // Handle highlighted post - switch to posts tab and scroll to the post
   useEffect(() => {
     if (highlightedPostId && !loading && recentPosts.length > 0 && activeTab === 'posts') {
       const normalizedHighlightedId = String(highlightedPostId).toLowerCase().trim();
@@ -422,7 +426,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           }
         };
 
-        // Start scrolling after ensuring tab is active and content is rendered
         const scrollTimer = setTimeout(() => {
           attemptScroll();
         }, 500);
@@ -431,7 +434,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           attemptScroll();
         }, 2000);
 
-        // Clear the highlighted post after 5 seconds (for public page)
         const clearTimer = setTimeout(() => {
           if (!isWithinProvider) {
             setLocalHighlightedPostId(null);
@@ -446,6 +448,29 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       }
     }
   }, [highlightedPostId, loading, recentPosts, activeTab, isWithinProvider]);
+
+  const setPostRef = useCallback(
+    (postId: string, el: HTMLDivElement | null) => {
+      if (el) {
+        postRefs.current.set(postId, el);
+      } else {
+        postRefs.current.delete(postId);
+      }
+    },
+    [],
+  );
+
+  const scrollToPost = useCallback((postId: string) => {
+    const el = postRefs.current.get(postId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.transition = 'box-shadow 0.3s ease';
+      el.style.boxShadow = '0 0 0 2px hsl(var(--primary))';
+      setTimeout(() => {
+        el.style.boxShadow = '';
+      }, 1000);
+    }
+  }, []);
 
   const handleGatewaySelection = useCallback(async (gateway: 'esewa' | 'khalti' | 'dodo' | 'direct') => {
     if (!pendingPayment || !user) return;
@@ -477,13 +502,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         const result = await response.json();
         
         if (result.success && result.transaction) {
-          // Redirect to payment success page with transaction details
-          const transactionUuid = result.transaction.transaction_uuid;
-          const totalAmount = result.transaction.amount;
-          // router.push(
-          //   `/payment/success?transaction_uuid=${transactionUuid}&total_amount=${totalAmount}&product_code=DIRECT&creator_id=${creatorId}&gateway=direct`
-          // );
-
           setPaymentSuccess({
             transactionUuid: result.transaction.transaction_uuid,
             totalAmount: result.transaction.amount,
@@ -511,7 +529,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       const { tierLevel, amount, message } = pendingPayment;
 
       if (gateway === 'dodo') {
-        // Dodo Payments (Visa/Mastercard) - Monthly subscription
         const response = await fetch('/api/payment/dodo/subscription/initiate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -527,11 +544,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         if (!response.ok) throw new Error('Dodo subscription initiation failed');
 
         const result = await response.json();
-        // if (result.success && result.payment_url) {
-        //   window.location.href = result.payment_url;
-        //   return;
-        // }
-        // throw new Error(result.error || 'Invalid Dodo response');
 
         if (result.success && result.transaction) {
           setPaymentSuccess({
@@ -555,24 +567,20 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           })
         });
 
-        if (!response.ok) throw new Error('Khalti payment initiation failed');
+        if (!response.ok) {
+          const errBody = await response.json().catch(() => ({}));
+          throw new Error(errBody.error || 'Khalti payment initiation failed');
+        }
 
         const result = await response.json();
-        // if (result.success && result.payment_url) {
-        //   window.location.href = result.payment_url;
-        //   return;
-        // }
-        // throw new Error(result.error || 'Invalid Khalti response');
-        if (result.success && result.transaction) {
-          setPaymentSuccess({
-            transactionUuid: result.transaction.transaction_uuid,
-            totalAmount: result.transaction.amount,
-            gateway: 'khalti',
-          });
-        } else throw new Error(result.error || 'Khalti payment failed');
+        // Khalti API returns payment_url – redirect user to Khalti to complete payment
+        if (result.success && result.payment_url) {
+          window.location.href = result.payment_url;
+          return;
+        }
+        throw new Error(result.error || 'Khalti payment failed');
       }
 
-      // eSewa payment
       const response = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -585,41 +593,38 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         })
       });
 
-      if (!response.ok) throw new Error('Payment initiation failed');
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Payment initiation failed');
+      }
 
       const result = await response.json();
 
+      // eSewa: redirect via URL if provided (e.g. test mode)
       if (result.test_mode && result.redirect_url) {
         window.location.href = result.redirect_url;
         return;
       }
 
-      // if (result.success && result.esewaConfig) {
-      //   const form = document.createElement('form');
-      //   form.method = 'POST';
-      //   form.action = result.payment_url;
-
-      //   Object.entries(result.esewaConfig).forEach(([key, value]) => {
-      //     const input = document.createElement('input');
-      //     input.type = 'hidden';
-      //     input.name = key;
-      //     input.value = String(value);
-      //     form.appendChild(input);
-      //   });
-
-      //   document.body.appendChild(form);
-      //   form.submit();
-      // } else {
-      //   throw new Error(result.error || 'Invalid payment response');
-      // }
-
-      if (result.success && result.transaction) {
-        setPaymentSuccess({
-          transactionUuid: result.transaction.transaction_uuid,
-          totalAmount: result.transaction.amount,
-          gateway: 'esewa',
+      // eSewa: API returns payment_url + esewaConfig — submit form to redirect user to eSewa
+      if (result.success && result.payment_url && result.esewaConfig) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = result.payment_url;
+        Object.entries(result.esewaConfig).forEach(([k, v]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = k;
+          input.value = String(v);
+          form.appendChild(input);
         });
-      } else throw new Error(result.error || 'eSewa payment failed');
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+
+      // Unexpected response shape
+      throw new Error(result.error || 'eSewa payment failed');
     } catch (error: unknown) {
       console.error('[PAYMENT] Error:', error);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
@@ -627,6 +632,46 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       setPendingPayment(null);
     }
   }, [pendingPayment, user, creatorId, refreshCreatorDetails]);
+
+  const handleConfirmFreeSupport = useCallback(async () => {
+    if (!user || !showConfirmFreeSupport) return;
+    setPaymentLoading(true);
+    try {
+      const response = await fetch('/api/payment/direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: 0,
+          creatorId,
+          supporterId: user.id,
+          supporterMessage: showConfirmFreeSupport.message || '',
+          tier_level: 1,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to join as supporter');
+      }
+      const result = await response.json();
+      if (result.success && result.transaction) {
+        updateSupporterTier(1);
+        refreshCreatorDetails();
+        setPaymentSuccess({
+          transactionUuid: result.transaction.transaction_uuid,
+          totalAmount: Number(result.transaction.amount ?? 0),
+          gateway: 'direct',
+        });
+        setShowConfirmFreeSupport(null);
+      } else {
+        throw new Error(result.error || 'Failed to join');
+      }
+    } catch (error) {
+      console.error('Free support error:', error);
+      alert(error instanceof Error ? error.message : 'Could not join as supporter. Please try again.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, [user, creatorId, showConfirmFreeSupport, refreshCreatorDetails, updateSupporterTier]);
 
   const handleSubscription = useCallback(async (tierId: string) => {
     if (!user) {
@@ -652,14 +697,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     try {
       setAuthLoading(true);
       setAuthError(null);
-      // Use NextAuth signIn - redirect back to current page after sign-in
       const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/home';
       const result = await signIn('google', { callbackUrl });
       if (result?.error) {
         setAuthError(result.error || 'Failed to sign in with Google');
         setAuthLoading(false);
       }
-      // If successful, redirect will happen automatically
     } catch (error: unknown) {
       setAuthError(error instanceof Error ? error.message : 'Failed to sign in');
       setAuthLoading(false);
@@ -679,7 +722,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   const handleShare = useCallback(async () => {
     if (!creatorId || typeof window === 'undefined') return;
-    // Copy vanity URL: /creator/username (creator_profiles.vanity_username or users.username fallback)
     const slug = creatorDetails?.username || creatorId;
     const path = `/creator/${slug}`;
     const url = `${window.location.origin}${path}`;
@@ -700,23 +742,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   }, [creatorId, creatorDetails?.display_name, creatorDetails?.username]);
 
   const handleBack = useCallback(() => {
-    // if (isWithinProvider) {
-    //   closeCreatorProfile();
-    //   return;
-    // }
-    // if (user) {
-    //   router.push('/home');
-    //   return;
-    // }
-    // if (typeof window !== 'undefined' && window.history.length > 1) {
-    //   router.back();
-    //   return;
-    // }
-    // router.push('/');
     router.back();
   }, [closeCreatorProfile, isWithinProvider, router, user]);
 
-  // Transform posts for EnhancedPostCard
   const transformPost = useCallback((post: Record<string, unknown>) => {
     const postId = String(post.id || '');
     const likes = post.likes as Array<Record<string, unknown>> | undefined;
@@ -747,7 +775,138 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     };
   }, [creatorId, creatorDetails]);
 
-  // Build tabs content
+  const renderTimelinePosts = useMemo(() => {
+    if (recentPosts.length === 0) return [];
+
+    const result: React.ReactNode[] = [];
+    let lastDate: string | null = null;
+
+    recentPosts.forEach((post: any, index: number) => {
+      const postDate = new Date(post.created_at).toDateString();
+      const showDate = postDate !== lastDate;
+      lastDate = postDate;
+
+      const isLast = index === recentPosts.length - 1;
+      const postId = String(post.id);
+      const isHighlighted = highlightedPostId === postId || tempHighlightPostId === postId;
+
+      result.push(
+        <div
+          key={postId}
+          ref={(el) => setPostRef(postId, el)}
+          className="relative"
+        >
+          <div className="hidden sm:flex gap-4">
+            <div className="flex flex-col items-center flex-shrink-0 w-12">
+              <button
+                onClick={() => scrollToPost(postId)}
+                className={cn(
+                  "w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all hover:scale-125 hover:bg-primary cursor-pointer",
+                  "bg-border dark:bg-border focus:outline-none focus:ring-2 focus:ring-primary/50",
+                )}
+                aria-label={`Jump to post from ${new Date(post.created_at).toLocaleDateString()}`}
+              />
+
+              {showDate && (
+                <span className="mt-1.5 text-[9px] font-medium text-muted-foreground text-center max-w-[4rem] leading-tight">
+                  {(() => {
+                    const d = new Date(post.created_at);
+                    const today = new Date();
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+
+                    if (d.toDateString() === today.toDateString())
+                      return "Today";
+                    if (d.toDateString() === yesterday.toDateString())
+                      return "Yesterday";
+                    return d.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+                  })()}
+                </span>
+              )}
+
+              {!isLast && (
+                <div className="flex-1 min-h-[16px] w-[2px] mt-1.5 bg-border/50" />
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0 pb-3 sm:pb-4">
+              <div
+                ref={isHighlighted ? highlightedPostRef : undefined}
+                data-post-id={postId}
+                className={cn(
+                  'transition-all duration-500',
+                  isHighlighted && 'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
+                )}
+              >
+                <EnhancedPostCard
+                  post={transformPost(post)}
+                  currentUserId={user?.id}
+                  showActions={true}
+                  isSupporter={isSupporter}
+                  showAuthor={true}
+                  onNavigateToMembership={() => setActiveTab('membership')}
+                  creatorSlug={creatorDetails?.username ?? undefined}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="sm:hidden">
+            {showDate && (
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-px flex-1 bg-border/30" />
+                <span className="text-[11px] font-medium text-muted-foreground px-3 py-1 bg-card rounded-full border border-border/40 shadow-xs">
+                  {(() => {
+                    const d = new Date(post.created_at);
+                    const today = new Date();
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+
+                    if (d.toDateString() === today.toDateString())
+                      return "Today";
+                    if (d.toDateString() === yesterday.toDateString())
+                      return "Yesterday";
+                    return d.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    });
+                  })()}
+                </span>
+                <div className="h-px flex-1 bg-border/30" />
+              </div>
+            )}
+            <div className="pb-3">
+              <div
+                ref={isHighlighted ? highlightedPostRef : undefined}
+                data-post-id={postId}
+                className={cn(
+                  'transition-all duration-500',
+                  isHighlighted && 'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
+                )}
+              >
+                <EnhancedPostCard
+                  post={transformPost(post)}
+                  currentUserId={user?.id}
+                  showActions={true}
+                  isSupporter={isSupporter}
+                  showAuthor={false}
+                  onNavigateToMembership={() => setActiveTab('membership')}
+                  creatorSlug={creatorDetails?.username ?? undefined}
+                />
+              </div>
+            </div>
+          </div>
+        </div>,
+      );
+    });
+
+    return result;
+  }, [recentPosts, highlightedPostId, tempHighlightPostId, scrollToPost, setPostRef, transformPost, user?.id, isSupporter, creatorDetails?.username]);
+
   const tabs = useMemo(() => [
     {
       value: 'home',
@@ -759,7 +918,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           animate="visible"
           className="space-y-6"
         >
-          {/* Tier Selection */}
           <motion.div variants={fadeInUp} className="flex justify-center">
             <div className="w-full max-w-2xl">
               <TierSelection
@@ -772,7 +930,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             </div>
           </motion.div>
 
-          {/* Recent Posts Preview */}
           {recentPosts.length > 0 && (
             <motion.div variants={fadeInUp} className="space-y-4">
               <div className="flex items-center justify-between">
@@ -788,6 +945,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     currentUserId={user?.id}
                     showActions={true}
                     isSupporter={isSupporter}
+                    showAuthor={true}
                     creatorSlug={creatorDetails?.username ?? undefined}
                   />
                 </motion.div>
@@ -808,29 +966,9 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           className="space-y-6"
         >
           {recentPosts.length > 0 ? (
-            (recentPosts as Array<Record<string, unknown>>).map((post) => {
-              const postId = String(post.id);
-              const isHighlighted = highlightedPostId === postId;
-              return (
-                <motion.div
-                  key={postId}
-                  variants={fadeInUp}
-                  ref={isHighlighted ? highlightedPostRef : undefined}
-                  className={cn(
-                    'transition-all duration-500',
-                    isHighlighted && 'ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl'
-                  )}
-                >
-                  <EnhancedPostCard
-                    post={transformPost(post)}
-                    currentUserId={user?.id}
-                    showActions={true}
-                    isSupporter={isSupporter}
-                    creatorSlug={creatorDetails?.username ?? undefined}
-                  />
-                </motion.div>
-              );
-            })
+            <TimelineFeed>
+              {renderTimelinePosts}
+            </TimelineFeed>
           ) : (
             <motion.div variants={fadeInUp}>
               <Card className="p-12 text-center border-border">
@@ -918,9 +1056,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         </motion.div>
       )
     }
-  ], [subscriptionTiers, creatorDetails, handlePayment, paymentLoading, recentPosts, transformPost, user?.id, isSupporter, highlightedPostId]);
+  ], [subscriptionTiers, creatorDetails, handlePayment, paymentLoading, recentPosts, renderTimelinePosts, transformPost, user?.id, isSupporter]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/10">
@@ -937,7 +1074,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     );
   }
 
-  // If viewing own profile, show loading while redirecting
   if (isOwnProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/10">
@@ -950,7 +1086,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     );
   }
 
-  // Error state
   if (error || !creatorDetails) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/10 flex items-center justify-center p-6">
@@ -972,479 +1107,427 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/5">
-      {/* Professional Hero Section */}
-      <div className="relative">
-        {/* Cover Image */}
-        <div className="relative h-52 sm:h-64 md:h-72 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
-          {creatorDetails.cover_image_url && (
-            <>
-              <Image
-                src={creatorDetails.cover_image_url}
-                alt="Cover"
-                fill
-                className="object-cover opacity-40"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-            </>
+      {/* New Header Design - Matching Second Image */}
+      <div className="relative bg-card p-4 pb-2 rounded-md">
+        {/* Cover Image Section */}
+        <div className="relative h-56 sm:h-56 md:h-56 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden rounded-md">
+          {creatorDetails.cover_image_url ? (
+            <Image
+              src={creatorDetails.cover_image_url}
+              alt="Cover"
+              fill
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-pink-500/10 to-purple-500/20 rounded-md" />
           )}
-          {!creatorDetails.cover_image_url && (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-pink-500/5 to-purple-500/5" />
-          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 rounded-md" />
         </div>
 
-        {/* Profile Section */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative -mt-20"
-          >
-            <div className="bg-card backdrop-blur-xl rounded-2xl border border-border/50 shadow-xl p-5 sm:p-6 md:p-8">
-              <div className="flex flex-col md:flex-row gap-5 md:gap-8">
-                {/* Avatar */}
+        {/* Centered Profile Section */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative -mt-24 sm:-mt-32 text-center">
+            {/* Avatar */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="inline-block relative mb-2"
+            >
+              <Avatar className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 border-8 border-background">
+                <AvatarImage src={creatorDetails.avatar_url} alt={creatorDetails.display_name} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-5xl font-bold">
+                  {creatorDetails.display_name?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              {creatorDetails.is_verified && (
                 <motion.div
-                  initial={{ scale: 0.8 }}
+                  initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200 }}
-                  className="flex-shrink-0"
+                  transition={{ delay: 0.3, type: "spring" }}
+                  className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-2 shadow-lg border-2 border-background"
                 >
-                  <div className="relative">
-                    <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 border-4 border-background shadow-xl ring-2 ring-muted/20">
-                      <AvatarImage src={creatorDetails.avatar_url} alt={creatorDetails.display_name} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-2xl sm:text-3xl font-bold">
-                        {creatorDetails.display_name?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {creatorDetails.is_verified && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.3, type: "spring" }}
-                        className="absolute -bottom-2 -right-2 bg-blue-500 rounded-full p-2 shadow-lg"
-                      >
-                        <CheckCircle2 className="w-5 h-5 text-white" />
-                      </motion.div>
-                    )}
-                  </div>
+                  <CheckCircle2 className="w-6 h-6 text-white" />
                 </motion.div>
+              )}
+            </motion.div>
 
-                {/* Creator Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2.5 mb-2 flex-wrap">
-                        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground truncate">
-                          {creatorDetails.display_name}
-                        </h1>
-                        {creatorDetails.category && (
-                          <Badge variant="outline" className="gap-1.5 px-2.5 py-1 text-xs">
-                            <Star className="w-3 h-3 text-amber-500" />
-                            {creatorDetails.category}
-                          </Badge>
-                        )}
-                      </div>
+            {/* Creator Name & Username */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-4"
+            >
+              <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold text-foreground">
+                {creatorDetails.display_name}
+              </h1>
+              <p className="text-md font-medium text-muted-foreground mb-2">
+                @{creatorDetails.username}
+              </p>
+            </motion.div>
 
-                      {creatorDetails.bio && (
-                        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-3 line-clamp-3">
-                          {creatorDetails.bio}
-                        </p>
-                      )}
-                      {/* Stats */}
-                      <div className="flex flex-wrap items-center gap-5">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                            <Users className="w-4 h-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-base font-bold text-foreground leading-tight">
-                              {creatorDetails.supporter_count || 0}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground">in the circle</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-pink-500/10">
-                            <FileText className="w-4 h-4 text-pink-500" />
-                          </div>
-                          <div>
-                            <p className="text-base font-bold text-foreground leading-tight">
-                              {creatorDetails.posts_count || 0}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground">posts</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2.5 flex-shrink-0">
-                      {isSupporter ? (
-                        <Badge className="gap-2 px-4 py-2 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-sm">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          In the Circle
-                        </Badge>
-                      ) : (
-                        <Button
-                          size="lg"
-                          onClick={() => setActiveTab('membership')}
-                          className="gap-2 rounded-full px-6 shadow-lg shadow-primary/20 text-sm font-semibold"
-                        >
-                          <Heart className="w-4 h-4" />
-                          Join Circle
-                        </Button>
-                      )}
-                      <Button
-                        variant={shareCopied ? "default" : "outline"}
-                        size="icon"
-                        onClick={handleShare}
-                        className="h-9 w-9 rounded-full hover:bg-muted/50 transition-colors"
-                        title={shareCopied ? "Link copied!" : "Share"}
-                      >
-                        {shareCopied ? (
-                          <CheckCircle2 className="w-4 h-4" />
-                        ) : (
-                          <Share2 className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleBack}
-                        className="h-9 w-9 rounded-full"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-      {/* Content Area */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="space-y-6">
-
-            {/* Tabs */}
+            {/* Stats Row */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
+              className="flex items-center justify-center gap-8 mb-4"
             >
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="sticky top-0 z-20 grid w-full grid-cols-5 lg:w-auto lg:inline-grid h-12 bg-card/95 backdrop-blur-lg border-b border-border/30 shadow-sm">
-                  <TabsTrigger value="posts" className="gap-2">
-                    <FileText className="w-4 h-4" />
-                    Posts
-                  </TabsTrigger>
-                  <TabsTrigger value="membership" className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Membership
-                  </TabsTrigger>
-                  <TabsTrigger value="chat" className="gap-2">
-                    <MessageCircle className="w-4 h-4" />
-                    Chat
-                  </TabsTrigger>
-                  <TabsTrigger value="shop" className="gap-2">
-                    <ShoppingBag className="w-4 h-4" />
-                    Shop
-                  </TabsTrigger>
-                  <TabsTrigger value="about" className="gap-2">
-                    <Info className="w-4 h-4" />
-                    About
-                  </TabsTrigger>
-                </TabsList>
+              <div className="text-center flex items-center justify-center gap-1">
+                <p className="text-sm text-foreground">
+                  <span className='font-bold'>{creatorDetails.supporter_count || 0}</span> supporters 
+                  <span className='mx-2'>•</span>
+                  <span className='font-bold'>{creatorDetails.posts_count || 0}</span> posts
+                </p>
+              </div>
+            </motion.div>
 
-                <TabsContent value="chat" className="mt-6">
-                  <div className="relative">
-                    {isSupporter && (creatorDetails?.supporter_tier_level || 0) >= 2 ? (
-                      <Card className="border-border/50 shadow-lg overflow-hidden">
-                        <div className="h-[600px]">
-                          <StreamCommunitySection creatorId={creatorId} />
-                        </div>
-                      </Card>
-                    ) : (
-                      /* Blurred Chat Preview */
-                      <div className="relative">
-                        <Card className="border-border/50 overflow-hidden">
-                          <div className="h-[600px] relative">
-                            {/* Blurred Preview */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
-                              <div className="absolute inset-0 opacity-20 blur-xl">
-                                <div className="p-4 space-y-4">
-                                  <div className="h-12 bg-foreground/20 rounded" />
-                                  <div className="h-20 bg-foreground/10 rounded" />
-                                  <div className="h-16 bg-foreground/10 rounded" />
-                                  <div className="h-24 bg-foreground/10 rounded" />
-                                </div>
-                              </div>
-                              
-                              {/* Lock Overlay */}
-                              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm bg-background/80">
-                                <div className="text-center p-8 max-w-md space-y-6">
-                                  <div className="flex justify-center">
-                                    <div className="p-4 bg-background rounded-2xl shadow-xl border border-border">
-                                      <MessageCircle className="w-12 h-12 text-primary" />
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <h3 className="text-xl font-bold text-foreground mb-1.5">
-                                      This is for the inner circle
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                      Join {creatorDetails.display_name}&apos;s circle to chat directly and connect
-                                    </p>
-                                  </div>
-                                  
-                                  <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-                                    <div className="flex items-center justify-center gap-2">
-                                      <div className="w-1 h-1 rounded-full bg-primary" />
-                                      <span>Private conversations</span>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2">
-                                      <div className="w-1 h-1 rounded-full bg-primary" />
-                                      <span>Circle-only channels</span>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2">
-                                      <div className="w-1 h-1 rounded-full bg-primary" />
-                                      <span>Direct access to the creator</span>
-                                    </div>
-                                  </div>
-                                  
-                                  <Button 
-                                    size="lg" 
-                                    className="w-full shadow-lg shadow-primary/20 rounded-full" 
-                                    onClick={() => setActiveTab('membership')}
-                                  >
-                                    <span>Join the Circle</span>
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
+            {/* Category Badge */}
+            {creatorDetails.category && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="mb-4"
+              >
+                <Badge variant="outline" className="px-4 py-2 text-sm text-primary border-2 border-primary/50 bg-primary/10 rounded-full">
+                  <Star className="w-4 h-4 text-primary mr-0.5" />
+                  {creatorDetails.category}
+                </Badge>
+              </motion.div>
+            )}
 
-                <TabsContent value="membership" className="mt-6">
-                  <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-8">
-                      <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                        Join {creatorDetails.display_name}&apos;s Circle
-                      </h2>
-                      <p className="text-muted-foreground text-base max-w-xl mx-auto">
-                        {creatorDetails.bio || `Be part of an inner circle of ${creatorDetails.supporter_count || 0} people who get closer access, exclusive content, and a direct line.`}
-                      </p>
-                      {creatorDetails.supporter_count > 0 && (
-                        <div className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                          <Users className="w-4 h-4" />
-                          <span><span className="font-semibold text-foreground">{creatorDetails.supporter_count}</span> in the circle</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {isSupporter ? (
-                      /* Supporter View */
-                      <div>
-                        <Card className="border-border/50 p-6 mb-6">
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-green-500/10 border-2 border-green-500/20">
-                              <CheckCircle2 className="w-7 h-7 text-green-500" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">You're supporting at</p>
-                              <p className="text-2xl font-bold text-foreground">
-                                {creatorDetails?.supporter_tier_level === 1 && 'Supporter'}
-                                {creatorDetails?.supporter_tier_level === 2 && 'Inner Circle'}
-                                {creatorDetails?.supporter_tier_level === 3 && 'Core Member'}
-                              </p>
-                            </div>
-                          </div>
-{/*                           
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowTiers(!showTiers)}
-                            className="w-full"
-                          >
-                            {showTiers ? 'Hide' : 'View'} All Membership Tiers
-                          </Button> */}
-                        </Card>
-                        
-                        {/* {showTiers && ( */}
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <TierSelection
-                              tiers={subscriptionTiers}
-                              creatorName={creatorDetails.display_name || ''}
-                              currentTierLevel={creatorDetails.supporter_tier_level || 0}
-                              onSelectTier={handlePayment}
-                              loading={paymentLoading}
-                            />
-                          </motion.div>
-                        {/* )} */}
-                      </div>
-                    ) : (
-                      /* Non-Supporter View */
-                      <TierSelection
-                        tiers={subscriptionTiers}
-                        creatorName={creatorDetails.display_name || ''}
-                        currentTierLevel={creatorDetails.supporter_tier_level || 0}
-                        onSelectTier={handlePayment}
-                        loading={paymentLoading}
-                      />
-                    )}
-                  </div>
-                </TabsContent>
+            {creatorDetails.bio && (
+              <p className="text-base sm:text-md text-muted-foreground max-w-xl mx-auto mb-4">
+                {creatorDetails.bio}
+              </p>
+            )}
 
-                <TabsContent value="posts" className="mt-6">
-                  {recentPosts.length > 0 ? (
-                    <>
-                      <TimelineFeed
-                        emptyMessage="This creator hasn't shared any content yet. Check back soon!"
-                        onRefresh={refreshCreatorDetails}
-                      >
-                        {withTimeline(
-                          recentPosts as Array<Record<string, unknown> & { created_at: string; id: string }>,
-                          (post) => (
-                            <div
-                              ref={(highlightedPostId === String(post.id) || tempHighlightPostId === String(post.id)) ? highlightedPostRef : undefined}
-                              data-post-id={String(post.id)}
-                              className={cn(
-                                'transition-all duration-500',
-                                (highlightedPostId === String(post.id) || tempHighlightPostId === String(post.id)) &&
-                                  'ring-2 ring-primary ring-offset-4 ring-offset-background rounded-xl'
-                              )}
-                            >
-                              <EnhancedPostCard
-                                post={transformPost(post)}
-                                currentUserId={user?.id}
-                                showActions={true}
-                                isSupporter={isSupporter}
-                                onNavigateToMembership={() => setActiveTab('membership')}
-                                creatorSlug={creatorDetails?.username ?? undefined}
-                              />
-                            </div>
-                          ),
-                          highlightedPostId || tempHighlightPostId
-                        )}
-                      </TimelineFeed>
-                      {/* Bottom padding when banner is visible */}
-                      {showSupportBanner && <div className="h-24" />}
-                    </>
-                  ) : (
-                    <Card className="p-16 text-center border-dashed border-2 border-border/50">
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
-                          <FileText className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground mb-2">No Posts Yet</h3>
-                          <p className="text-muted-foreground">
-                            This creator hasn&apos;t shared any content yet. Check back soon!
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="shop" className="mt-6">
-                  <Card className="p-16 text-center border-border/50">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-                        <ShoppingBag className="w-8 h-8 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-foreground mb-2">Shop Coming Soon</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                          This creator will soon be able to sell products and merchandise directly to their supporters.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="about" className="mt-6">
-                  <Card className="border-border/50 shadow-lg">
-                    <div className="p-6 space-y-6">
-                      {creatorDetails.bio && (
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                            <MessageCircle className="w-5 h-5 text-primary" />
-                            About
-                          </h3>
-                          <p className="text-muted-foreground leading-relaxed">
-                            {creatorDetails.bio}
-                          </p>
-                        </div>
-                      )}
-
-                      <Separator />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {creatorDetails.category && (
-                          <div>
-                            <h4 className="font-medium text-sm text-muted-foreground mb-3">Category</h4>
-                            <Badge variant="outline" className="gap-2 px-3 py-1.5">
-                              <Star className="w-4 h-4 text-amber-500" />
-                              {creatorDetails.category}
-                            </Badge>
-                          </div>
-                        )}
-
-                        {creatorDetails.created_at && (
-                          <div>
-                            <h4 className="font-medium text-sm text-muted-foreground mb-3">Member Since</h4>
-                            <div className="flex items-center gap-2 text-foreground">
-                              <Calendar className="w-4 h-4 text-primary" />
-                              <span className="font-medium">
-                                {new Date(creatorDetails.created_at).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 && (
-                        <>
-                          <Separator />
-                          <div>
-                            <h4 className="font-medium text-sm text-muted-foreground mb-4 flex items-center gap-2">
-                              <Globe className="w-4 h-4 text-primary" />
-                              Connect with {creatorDetails.display_name}
-                            </h4>
-                            <SocialLinksCard
-                              socialLinks={creatorDetails.social_links}
-                              variant="inline"
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+            {/* Action Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex items-center justify-center gap-3 mb-8"
+            >
+              {isSupporter ? (
+                <Badge className="gap-2 px-5 py-2.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-base">
+                  <CheckCircle2 className="w-4 h-4" />
+                  In the Circle
+                </Badge>
+              ) : (
+                <Button
+                  size="lg"
+                  onClick={() => setActiveTab('membership')}
+                  className="gap-2 px-8 py-6 text-base hover:shadow-lg shadow-primary/20 font-semibold"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Support Creator
+                </Button>
+              )}
+              <Button
+                variant={shareCopied ? "default" : "outline"}
+                size="lg"
+                onClick={handleShare}
+                className="px-6 py-6"
+              >
+                {shareCopied ? (
+                  <CheckCircle2 className="w-5 h-5" />
+                ) : (
+                  <Share2 className="w-5 h-5" />
+                )}
+              </Button>
+              {/* <Button
+                variant="outline"
+                size="lg"
+                className="px-6 py-6"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </Button> */}
             </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Payment Gateway Selector Modal */}
+      {/* Tabs Section */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid h-12 bg-background backdrop-blur-lg border border-border/50 shadow-sm mb-8 p-1">
+                <TabsTrigger value="posts" className="data-[state=active]:bg-card/95">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Posts
+                </TabsTrigger>
+                <TabsTrigger value="membership" className="data-[state=active]:bg-card/95">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Membership
+                </TabsTrigger>
+                <TabsTrigger value="chat" className="data-[state=active]:bg-card/95">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat
+                </TabsTrigger>
+                <TabsTrigger value="shop" className="data-[state=active]:bg-card/95">
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Shop
+                </TabsTrigger>
+                <TabsTrigger value="about" className="data-[state=active]:bg-card/95">
+                  <Info className="w-4 h-4 mr-2" />
+                  About
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="chat" className="mt-6">
+                <div className="relative">
+                  {isSupporter ? (
+                    <Card className="border-border/50 shadow-lg overflow-hidden">
+                      <div className="h-[600px]">
+                        <StreamCommunitySection creatorId={creatorId} />
+                      </div>
+                    </Card>
+                  ) : (
+                    <div className="relative">
+                      <Card className="border-border/50 overflow-hidden">
+                        <div className="h-[600px] relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                            <div className="absolute inset-0 opacity-20 blur-xl">
+                              <div className="p-4 space-y-4">
+                                <div className="h-12 bg-foreground/20 rounded" />
+                                <div className="h-20 bg-foreground/10 rounded" />
+                                <div className="h-16 bg-foreground/10 rounded" />
+                                <div className="h-24 bg-foreground/10 rounded" />
+                              </div>
+                            </div>
+                            
+                            <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm bg-background/80">
+                              <div className="text-center p-8 max-w-md space-y-6">
+                                <div className="flex justify-center">
+                                  <div className="p-4 bg-background rounded-2xl shadow-xl border border-border">
+                                    <MessageCircle className="w-12 h-12 text-primary" />
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <h3 className="text-xl font-bold text-foreground mb-1.5">
+                                    This is for the inner circle
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    Join {creatorDetails.display_name}&apos;s circle to chat directly and connect
+                                  </p>
+                                </div>
+                                
+                                <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="w-1 h-1 rounded-full bg-primary" />
+                                    <span>Private conversations</span>
+                                  </div>
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="w-1 h-1 rounded-full bg-primary" />
+                                    <span>Circle-only channels</span>
+                                  </div>
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="w-1 h-1 rounded-full bg-primary" />
+                                    <span>Direct access to the creator</span>
+                                  </div>
+                                </div>
+                                
+                                <Button 
+                                  size="lg" 
+                                  className="w-full shadow-lg shadow-primary/20 rounded-full" 
+                                  onClick={() => setActiveTab('membership')}
+                                >
+                                  <span>Join the Circle</span>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="membership" className="mt-6">
+                <div className="max-w-4xl mx-auto">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                      Join {creatorDetails.display_name}&apos;s Circle
+                    </h2>
+                    <p className="text-muted-foreground text-base max-w-xl mx-auto">
+                      {creatorDetails.bio || `Be part of an inner circle of ${creatorDetails.supporter_count || 0} people who get closer access, exclusive content, and a direct line.`}
+                    </p>
+                    {creatorDetails.supporter_count > 0 && (
+                      <div className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span><span className="font-semibold text-foreground">{creatorDetails.supporter_count}</span> in the circle</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {isSupporter ? (
+                    <div>
+                      <Card className="border-border/50 p-6 mb-6">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-green-500/10 border-2 border-green-500/20">
+                            <CheckCircle2 className="w-7 h-7 text-green-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">You're supporting at</p>
+                            <p className="text-2xl font-bold text-foreground">
+                              {creatorDetails?.supporter_tier_level === 1 && 'Supporter'}
+                              {creatorDetails?.supporter_tier_level === 2 && 'Inner Circle'}
+                              {creatorDetails?.supporter_tier_level === 3 && 'Core Member'}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <TierSelection
+                          tiers={subscriptionTiers}
+                          creatorName={creatorDetails.display_name || ''}
+                          currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                          onSelectTier={handlePayment}
+                          loading={paymentLoading}
+                        />
+                      </motion.div>
+                    </div>
+                  ) : (
+                    <TierSelection
+                      tiers={subscriptionTiers}
+                      creatorName={creatorDetails.display_name || ''}
+                      currentTierLevel={creatorDetails.supporter_tier_level || 0}
+                      onSelectTier={handlePayment}
+                      loading={paymentLoading}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="posts" className="mt-6">
+                {recentPosts.length > 0 ? (
+                  <>
+                    <TimelineFeed
+                      emptyMessage="This creator hasn't shared any content yet. Check back soon!"
+                      onRefresh={refreshCreatorDetails}
+                    >
+                      {renderTimelinePosts}
+                    </TimelineFeed>
+                    {showSupportBanner && <div className="h-24" />}
+                  </>
+                ) : (
+                  <Card className="p-16 text-center border-dashed border-2 border-border/50">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                        <FileText className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">No Posts Yet</h3>
+                        <p className="text-muted-foreground">
+                          This creator hasn&apos;t shared any content yet. Check back soon!
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </TabsContent>
+
+              <TabsContent value="shop" className="mt-6">
+                <Card className="p-16 text-center border-border/50">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+                      <ShoppingBag className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">Shop Coming Soon</h3>
+                      <p className="text-muted-foreground max-w-md mx-auto">
+                        This creator will soon be able to sell products and merchandise directly to their supporters.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="about" className="mt-6">
+                <Card className="border-border/50 shadow-lg">
+                  <div className="p-6 space-y-6">
+                    {creatorDetails.bio && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                          <MessageCircle className="w-5 h-5 text-primary" />
+                          About
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {creatorDetails.bio}
+                        </p>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {creatorDetails.category && (
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">Category</h4>
+                          <Badge variant="outline" className="gap-2 px-3 py-1.5">
+                            <Star className="w-4 h-4 text-amber-500" />
+                            {creatorDetails.category}
+                          </Badge>
+                        </div>
+                      )}
+
+                      {creatorDetails.created_at && (
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">Member Since</h4>
+                          <div className="flex items-center gap-2 text-foreground">
+                            <Calendar className="w-4 h-4 text-primary" />
+                            <span className="font-medium">
+                              {new Date(creatorDetails.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {creatorDetails.social_links && Object.keys(creatorDetails.social_links).length > 0 && (
+                      <>
+                        <Separator />
+                        <div>
+                          <h4 className="font-medium text-sm text-muted-foreground mb-4 flex items-center gap-2">
+                            <Globe className="w-4 h-4 text-primary" />
+                            Connect with {creatorDetails.display_name}
+                          </h4>
+                          <SocialLinksCard
+                            socialLinks={creatorDetails.social_links}
+                            variant="inline"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </div>
+      </div>
+
       {pendingPayment && user && (
         <PaymentGatewaySelector
           open={showGatewaySelector}
@@ -1463,7 +1546,25 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         />
       )}
 
-      {/* Auth Modal for Support Action */}
+      <Dialog open={!!showConfirmFreeSupport} onOpenChange={(open) => !open && setShowConfirmFreeSupport(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Join as Supporter (Free)</DialogTitle>
+            <DialogDescription>
+              You&apos;ll get access to community chat and posts. No payment required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-4">
+            <Button variant="outline" className="flex-1" onClick={() => setShowConfirmFreeSupport(null)} disabled={paymentLoading}>
+              Cancel
+            </Button>
+            <Button className="flex-1" onClick={handleConfirmFreeSupport} disabled={paymentLoading}>
+              {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showAuthModal} onOpenChange={handleAuthModalChange}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -1499,7 +1600,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         </DialogContent>
       </Dialog>
 
-      {/* Support Banner - Only for non-supporters in Posts tab */}
       {!isSupporter && activeTab === 'posts' && (
         <SupportBanner
           creatorName={creatorDetails.display_name}
@@ -1509,16 +1609,27 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           show={showSupportBanner}
         />
       )}
-    {paymentSuccess && (
-      <PaymentSuccessModal
-        open={!!paymentSuccess}
-        onClose={() => setPaymentSuccess(null)}
-        transactionUuid={paymentSuccess.transactionUuid}
-        totalAmount={paymentSuccess.totalAmount}
-      />
-    )}
+      
+      {paymentSuccess && (
+        <PaymentSuccessModal
+          open={!!paymentSuccess}
+          onClose={() => setPaymentSuccess(null)}
+          onViewPosts={() => {
+            refreshCreatorDetails();
+            setActiveTab('posts');
+            setPaymentSuccess(null);
+          }}
+          onViewChat={() => {
+            refreshCreatorDetails();
+            setActiveTab('chat');
+            setPaymentSuccess(null);
+          }}
+          transactionUuid={paymentSuccess.transactionUuid}
+          totalAmount={paymentSuccess.totalAmount}
+          creatorName={creatorDetails?.display_name ?? ''}
+        />
+      )}
 
-      {/* Renew link but subscription already active */}
       <Dialog open={showRenewAlreadyActiveDialog} onOpenChange={setShowRenewAlreadyActiveDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -1533,6 +1644,5 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         </DialogContent>
       </Dialog>
     </div>
-    
   );
 }
