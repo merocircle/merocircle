@@ -83,6 +83,9 @@ export function TierSelection({
             // Mark middle tier as recommended
             const isRecommended = tier.tier_level === 2 && tiers.length >= 2;
 
+            // Tier II and III are coming soon
+            const isComingSoon = tier.tier_level >= 2;
+
             return (
               <motion.div
                 key={tier.id}
@@ -93,13 +96,25 @@ export function TierSelection({
               >
                 <Card
                   className={`relative overflow-hidden border border-border bg-background transition-all duration-200 flex flex-col w-full ${
-                    isCurrent ? 'opacity-75 cursor-not-allowed' : loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-foreground/30 hover:shadow-lg'
-                  } ${isCurrent ? 'ring-1 ring-foreground/10' : ''} ${isRecommended ? 'border-foreground/30' : ''}`}
-                  onClick={() => !loading && !isCurrent && handleTierSelect(tier)}
+                    isCurrent || isComingSoon ? 'opacity-75 cursor-not-allowed' : loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-foreground/30 hover:shadow-lg'
+                  } ${isCurrent ? 'ring-1 ring-foreground/10' : ''} ${isRecommended && !isComingSoon ? 'border-foreground/30' : ''}`}
+                  onClick={() => !loading && !isCurrent && !isComingSoon && handleTierSelect(tier)}
                 >
                   {/* Blocked Overlay for Current Plan */}
                   {isCurrent && (
                     <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] z-30 rounded-lg pointer-events-none" />
+                  )}
+
+                  {/* Coming Soon Overlay for Tier II and III */}
+                  {isComingSoon && !isCurrent && (
+                    <div className="absolute inset-0 bg-background/70 backdrop-blur-[2px] z-30 rounded-lg flex items-center justify-center pointer-events-none">
+                      <div className="text-center">
+                        <Badge className="gap-1.5 px-4 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-sm font-semibold">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Coming Soon
+                        </Badge>
+                      </div>
+                    </div>
                   )}
 
                   {loading && (
@@ -122,7 +137,7 @@ export function TierSelection({
                   )}
 
                   {/* Recommended Badge */}
-                  {isRecommended && !isCurrent && (
+                  {isRecommended && !isCurrent && !isComingSoon && (
                     <div className="absolute top-0 left-0 right-0 bg-foreground text-background text-xs font-semibold py-1.5 px-4 text-center z-10">
                       RECOMMENDED BY CREATOR
                     </div>
@@ -204,6 +219,13 @@ export function TierSelection({
                           className="w-full py-3 px-4 rounded-md font-medium text-center bg-muted/50 text-muted-foreground cursor-not-allowed border border-border/50"
                         >
                           Current Plan
+                        </button>
+                      ) : isComingSoon ? (
+                        <button
+                          disabled
+                          className="w-full py-3 px-4 rounded-md font-medium text-center bg-muted/30 text-muted-foreground cursor-not-allowed border border-border/30"
+                        >
+                          Coming Soon
                         </button>
                       ) : (
                         <button

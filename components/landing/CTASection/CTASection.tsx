@@ -1,46 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { useReveal } from "../useReveal";
 import "./CTASection.css";
 
-function RevealSection({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const [ref, isVisible] = useReveal();
-  return (
-    <div
-      ref={ref}
-      className={`cta-reveal ${isVisible ? "cta-reveal-visible" : ""} ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
 export function CTASection() {
+  const [ref, isVisible] = useReveal();
+
   return (
-    <section className="cta-section">
-      <div className="cta-section-bg" aria-hidden />
-      <RevealSection className="cta-section-inner">
-        <h2 className="cta-section-title">
-          READY TO SUPPORT
+    <section className="final-cta" ref={ref}>
+      <div className={`final-cta-inner ${isVisible ? "final-cta-visible" : ""}`}>
+        <h2 className="final-cta-title">
+          Your creator is already here.
           <br />
-          <span className="cta-section-title-accent">YOUR CREATOR?</span>
+          <span className="final-cta-accent">Are you?</span>
         </h2>
-        <p className="cta-section-quote">
-          &ldquo;Join thousands of supporters making a difference in Nepal.&rdquo;
+
+        <p className="final-cta-sub">
+          Every day you wait is a post you miss, a conversation
+          you&apos;re not part of, and a circle that grows without you.
         </p>
-        <div className="cta-section-actions">
-          <Link href="/auth" className="cta-section-btn">
-            Start Your Journey
-          </Link>
-        </div>
-      </RevealSection>
+
+        <Link href="/auth" className="final-cta-btn">
+          Get Started
+          <ArrowRight size={18} />
+        </Link>
+      </div>
     </section>
   );
 }

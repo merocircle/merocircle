@@ -30,6 +30,7 @@ export interface CreatorDetails {
   username: string | null
   bio: string | null
   avatar_url: string | null
+  cover_image_url: string | null
   created_at: string
   category: string | null
   is_verified: boolean
@@ -81,14 +82,7 @@ export const useCreatorDetails = (creatorId: string | null) => {
       setLoading(true)
       setError(null)
       
-      // Always fetch fresh data (no cache) to reflect recent payments/tier changes
-      const response = await fetch(`/api/creator/${id}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-      })
+      const response = await fetch(`/api/creator/${id}`)
       
       if (!response.ok) {
         const errorData = await response.json()

@@ -21,11 +21,11 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
   const { openCreatorProfile } = useDashboardViewSafe()
 
   const handleCreatorClick = useCallback(() => {
-    const creatorId = post.creator.user_id || post.creator_id
+    const creatorId = post.creator?.user_id || post.creator_id
     if (creatorId) {
       openCreatorProfile(creatorId)
     }
-  }, [openCreatorProfile, post.creator.user_id, post.creator_id])
+  }, [openCreatorProfile, post.creator?.user_id, post.creator_id])
 
   const handleLikeToggle = async () => {
     try {
@@ -49,16 +49,16 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           <div className="flex items-center space-x-3">
             <div onClick={handleCreatorClick} className="cursor-pointer">
               <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 hover:ring-2 hover:ring-blue-500 transition-all">
-                {post.creator.avatar_url ? (
+                {post.creator?.avatar_url ? (
                   <Image
                     src={post.creator.avatar_url}
-                    alt={post.creator.display_name}
+                    alt={post.creator?.display_name || 'Creator'}
                     fill
                     className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                    {post.creator.display_name.charAt(0).toUpperCase()}
+                    {(post.creator?.display_name || 'C').charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
@@ -69,7 +69,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
                 onClick={handleCreatorClick}
                 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
               >
-                {post.creator.display_name}
+                {post.creator?.display_name || 'Creator'}
               </h4>
               <p className="text-sm text-gray-500">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}

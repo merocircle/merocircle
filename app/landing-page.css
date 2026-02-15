@@ -1,34 +1,23 @@
-/* Landing page wrapper + full-page subtle background */
+/* ── Landing page shell ──────────────────────── */
 .landing-page-wrap {
   position: relative;
   min-height: 100vh;
-  background: #fff;
-  scroll-behavior: smooth;
-  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
-}
-.landing-page-wrap ::selection {
-  background: #990000;
-  color: white;
+  background: #ffffff;
+  overflow-x: hidden;
 }
 
-/* Fixed layer: image fills full width and height */
-.landing-page-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.landing-page-bg-img {
-  object-fit: cover;
-  object-position: center;
-  opacity: 0.28;
-  width: 100%;
-  height: 100%;
-}
-
-/* Content above the background */
 .landing-page-content {
   position: relative;
   z-index: 1;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+.landing-page-wrap ::selection {
+  background: #990000;
+  color: white;
 }

@@ -48,7 +48,8 @@ export async function generateMetadata({
         creator_profiles (
           bio,
           category,
-          is_verified
+          is_verified,
+          supporters_count
         )
       `)
       .eq('id', creatorId)
@@ -61,6 +62,17 @@ export async function generateMetadata({
       };
     }
 
+    const creatorProfile = Array.isArray(creator.creator_profiles)
+      ? creator.creator_profiles[0]
+      : creator.creator_profiles;
+    const bio = creatorProfile?.bio || `Support ${creator.display_name} on MeroCircle`;
+    const category = creatorProfile?.category;
+    const supporterCount = creatorProfile?.supporters_count || 0;
+
+    // Build a richer description for SEO
+    const seoDescription = `${bio.substring(0, 120)}${bio.length > 120 ? '...' : ''}${category ? ` | ${category} creator` : ''} on MeroCircle${supporterCount > 0 ? ` | ${supporterCount} supporters` : ''}`;
+
+    // Post-specific metadata
     if (postId) {
       const { data: post } = await supabase
         .from('posts')
@@ -71,51 +83,75 @@ export async function generateMetadata({
 
       if (post) {
         const postImage = post.image_urls?.[0] || post.image_url;
-        const postDescription = post.content.substring(0, 160) + (post.content.length > 160 ? '...' : '');
+        const postDescription = post.content
+          ? post.content.substring(0, 160) + (post.content.length > 160 ? '...' : '')
+          : `A post by ${creator.display_name} on MeroCircle`;
         const postUrl = `${appUrl}${canonicalPath}?post=${postId}`;
+        const ogImages = postImage
+          ? [{ url: postImage, width: 1200, height: 630, alt: post.title }]
+          : creator.photo_url
+            ? [{ url: creator.photo_url, width: 400, height: 400, alt: creator.display_name }]
+            : [];
+
         return {
           title: `${post.title} by ${creator.display_name} | MeroCircle`,
           description: postDescription,
+          alternates: { canonical: postUrl },
           openGraph: {
-            title: post.title,
+            title: `${post.title} by ${creator.display_name}`,
             description: postDescription,
-            images: postImage ? [postImage] : creator.photo_url ? [creator.photo_url] : [],
+            images: ogImages,
             url: postUrl,
             siteName: 'MeroCircle',
             type: 'article',
           },
           twitter: {
-            card: 'summary_large_image',
-            title: post.title,
+            card: postImage ? 'summary_large_image' : 'summary',
+            title: `${post.title} by ${creator.display_name}`,
             description: postDescription,
-            images: postImage ? [postImage] : creator.photo_url ? [creator.photo_url] : [],
+            images: ogImages.map(img => img.url),
           },
         };
       }
     }
 
-    const creatorProfile = Array.isArray(creator.creator_profiles)
-      ? creator.creator_profiles[0]
-      : creator.creator_profiles;
-    const bio = creatorProfile?.bio || `Support ${creator.display_name} on MeroCircle`;
-    const category = creatorProfile?.category;
+    // Profile-level metadata
+    const profileUrl = `${appUrl}${canonicalPath}`;
+    const profileTitle = `${creator.display_name}${category ? ` | ${category}` : ''} on MeroCircle`;
+    // Use "summary" card for profiles so the profile picture appears as a square icon on WhatsApp/Twitter
+    const ogImages = creator.photo_url
+      ? [{ url: creator.photo_url, width: 400, height: 400, alt: creator.display_name }]
+      : [];
 
     return {
-      title: `${creator.display_name}${category ? ` - ${category}` : ''} | MeroCircle`,
-      description: bio.substring(0, 160),
+      title: profileTitle,
+      description: seoDescription.substring(0, 160),
+      alternates: { canonical: profileUrl },
+      keywords: [
+        creator.display_name,
+        ...(category ? [category, `${category} Nepal`, `${category} creator`] : []),
+        'MeroCircle',
+        'Nepal creator',
+        'support creator Nepal',
+      ],
       openGraph: {
-        title: `Support ${creator.display_name} on MeroCircle`,
-        description: bio.substring(0, 160),
-        images: creator.photo_url ? [creator.photo_url] : [],
-        url: `${appUrl}${canonicalPath}`,
+        title: profileTitle,
+        description: seoDescription.substring(0, 160),
+        images: ogImages,
+        url: profileUrl,
         siteName: 'MeroCircle',
         type: 'profile',
       },
       twitter: {
-        card: 'summary_large_image',
-        title: `Support ${creator.display_name}`,
-        description: bio.substring(0, 160),
-        images: creator.photo_url ? [creator.photo_url] : [],
+        card: 'summary',
+        title: profileTitle,
+        description: seoDescription.substring(0, 160),
+        images: ogImages.map(img => img.url),
+      },
+      other: {
+        // WhatsApp and messaging apps use these
+        'og:image:width': '400',
+        'og:image:height': '400',
       },
     };
   } catch (error) {

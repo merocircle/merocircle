@@ -1,12 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { StreamChat, Channel as StreamChannel, UserResponse, OwnUserResponse } from 'stream-chat';
+import type { Channel as StreamChannel, UserResponse, OwnUserResponse } from 'stream-chat';
 import { useSession } from 'next-auth/react';
 import { useAuth } from './auth-context';
 
-// Stream Chat client type
-type StreamChatClient = StreamChat;
+// Stream Chat client type — use `any` at runtime to avoid importing the heavy module at top level
+type StreamChatClient = any;
 
 interface StreamChatContextType {
   chatClient: StreamChatClient | null;
@@ -56,6 +56,8 @@ export function StreamChatProvider({ children }: { children: React.ReactNode }) 
 
       const { token, userId, userName, userImage } = await response.json();
 
+      // Dynamically import the heavy stream-chat SDK only when needed
+      const { StreamChat } = await import('stream-chat');
       // Create or get Stream client instance
       const client = StreamChat.getInstance(apiKey);
 

@@ -45,19 +45,6 @@ const createTransporter = () => {
   });
 };
 
-/** Logo embedding for all emails (CID attachment so logo displays in clients that block external images) */
-const LOGO_CID = 'logo@merocircle.app';
-function getLogoAttachment(): { cid: string; path: string; logoSrc: string; attachment: { filename: string; path: string; cid: string }[] } {
-  const publicDir = path.join(process.cwd(), 'public');
-  const logoPath = path.join(publicDir, 'logo', 'logo-light.png');
-  return {
-    cid: LOGO_CID,
-    path: logoPath,
-    logoSrc: `cid:${LOGO_CID}`,
-    attachment: [{ filename: 'logo-light.png', path: logoPath, cid: LOGO_CID }],
-  };
-}
-
 interface PostNotificationEmailData {
   supporterEmail: string;
   supporterName: string;
@@ -104,7 +91,6 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
 
     const appUrl = EMAIL_CONFIG.urls.app;
     const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
-    const logo = getLogoAttachment();
 
     // Render email using appropriate template
     const EmailTemplate = data.isPoll ? PollNotification : PostNotification;
@@ -128,8 +114,6 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
         creatorProfileUrl,
         settingsUrl: EMAIL_CONFIG.urls.settings,
         helpUrl: EMAIL_CONFIG.urls.help,
-        appUrl,
-        logoSrc: logo.logoSrc,
       })
     );
 
@@ -155,7 +139,6 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
       text: emailText,
       html: emailHtml,
       messageId,
-      attachments: logo.attachment,
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',
@@ -366,8 +349,8 @@ interface WelcomeEmailData {
 }
 
 /**
- * Sends a welcome email to a new user
- * Triggered by database webhook when a new user signs up
+ * Sends a personalized welcome letter to a new user
+ * Triggered on account creation — a warm note from the team
  */
 export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
   try {
@@ -378,28 +361,29 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const profileUrl = data.userRole === 'creator' 
-      ? `${appUrl}/creator-studio` 
-      : `${appUrl}/profile`;
     const exploreUrl = `${appUrl}/explore`;
     const settingsUrl = EMAIL_CONFIG.urls.settings;
     const helpUrl = EMAIL_CONFIG.urls.help;
 
-    const logo = getLogoAttachment();
+    // Extract first name for personalization
+    const firstName = data.userName.split(' ')[0] || data.userName;
+
+    // Embed images via Content-ID (CID) so they display in email clients that block external URLs
+    const cidLogo = 'logo@merocircle.app';
     const cidTeam = 'team@merocircle.app';
     const publicDir = path.join(process.cwd(), 'public');
+    const logoPath = path.join(publicDir, 'logo', 'logo-light.png');
     const teamPath = path.join(publicDir, 'team.jpg');
+
 
     const html = await render(
       WelcomeEmail({
-        userName: data.userName,
-        userRole: data.userRole,
-        profileUrl,
+        firstName,
         exploreUrl,
         settingsUrl,
         helpUrl,
         appUrl,
-        logoSrc: logo.logoSrc,
+        logoSrc: `cid:${cidLogo}`,
         teamImageSrc: `cid:${cidTeam}`,
       })
     );
@@ -409,11 +393,11 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     const mailOptions = {
       from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
       to: data.userEmail,
-      subject: EMAIL_SUBJECTS.welcome(data.userName),
+      subject: EMAIL_SUBJECTS.welcome(firstName),
       html,
       messageId,
       attachments: [
-        ...logo.attachment,
+        { filename: 'logo-light.png', path: logoPath, cid: cidLogo },
         { filename: 'team.jpg', path: teamPath, cid: cidTeam },
       ],
       headers: {
@@ -427,8 +411,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
 
     logger.info('Welcome email sent successfully', 'EMAIL', {
       recipient: data.userEmail,
-      userName: data.userName,
-      userRole: data.userRole,
+      firstName,
     });
 
     return true;
@@ -472,7 +455,6 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
     const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
     const channelUrl = `${appUrl}/chat?channel=${data.channelId}`;
     const mentionType = data.mentionType ?? 'everyone';
-    const logo = getLogoAttachment();
 
     // Render email using ChannelMentionNotification template
     const emailHtml = await render(
@@ -487,8 +469,6 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
         settingsUrl: EMAIL_CONFIG.urls.settings,
         helpUrl: EMAIL_CONFIG.urls.help,
         mentionType,
-        appUrl,
-        logoSrc: logo.logoSrc,
       })
     );
 
@@ -508,7 +488,6 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
       subject,
       html: emailHtml,
       messageId,
-      attachments: logo.attachment,
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',
@@ -609,7 +588,6 @@ export async function sendSubscriptionConfirmationEmail(data: SubscriptionConfir
     const appUrl = EMAIL_CONFIG.urls.app;
     const creatorProfileUrl = data.creatorProfileUrl || getCreatorProfileUrl(data.creatorName);
     const chatUrl = data.chatUrl || `${appUrl}/chat`;
-    const logo = getLogoAttachment();
 
     // Render subscription confirmation email template
     const html = await render(
@@ -624,8 +602,6 @@ export async function sendSubscriptionConfirmationEmail(data: SubscriptionConfir
         chatUrl,
         settingsUrl: EMAIL_CONFIG.urls.settings,
         helpUrl: EMAIL_CONFIG.urls.help,
-        appUrl,
-        logoSrc: logo.logoSrc,
       })
     );
 
@@ -640,7 +616,6 @@ export async function sendSubscriptionConfirmationEmail(data: SubscriptionConfir
       subject: EMAIL_SUBJECTS.subscriptionConfirmation(data.creatorName),
       html,
       messageId,
-      attachments: logo.attachment,
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',
@@ -693,7 +668,6 @@ export async function sendNewSupporterNotificationEmail(data: NewSupporterNotifi
     const appUrl = EMAIL_CONFIG.urls.app;
     const creatorStudioUrl = `${appUrl}/creator-studio`;
     const supportersUrl = `${appUrl}/creator-studio?tab=supporters`;
-    const logo = getLogoAttachment();
 
     // Render new supporter notification email template
     const html = await render(
@@ -709,8 +683,6 @@ export async function sendNewSupporterNotificationEmail(data: NewSupporterNotifi
         supportersUrl,
         settingsUrl: EMAIL_CONFIG.urls.settings,
         helpUrl: EMAIL_CONFIG.urls.help,
-        appUrl,
-        logoSrc: logo.logoSrc,
       })
     );
 
@@ -725,7 +697,6 @@ export async function sendNewSupporterNotificationEmail(data: NewSupporterNotifi
       subject: EMAIL_SUBJECTS.newSupporterNotification(data.supporterName, data.amount, data.currency),
       html,
       messageId,
-      attachments: logo.attachment,
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',
@@ -774,7 +745,6 @@ export async function sendSubscriptionExpiringEmail(data: {
 
     const appUrl = EMAIL_CONFIG.urls.app;
     const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
-    const logo = getLogoAttachment();
 
     const emailHtml = await render(
       SubscriptionExpiringReminder({
@@ -786,8 +756,6 @@ export async function sendSubscriptionExpiringEmail(data: {
         renewUrl: data.renewUrl,
         creatorProfileUrl,
         settingsUrl: EMAIL_CONFIG.urls.settings,
-        appUrl,
-        logoSrc: logo.logoSrc,
       })
     );
 
@@ -802,7 +770,6 @@ export async function sendSubscriptionExpiringEmail(data: {
       subject: EMAIL_SUBJECTS.subscriptionExpiring(data.creatorName, data.daysUntilExpiry),
       html: emailHtml,
       messageId,
-      attachments: logo.attachment,
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',
@@ -847,7 +814,6 @@ export async function sendSubscriptionExpiredEmail(data: {
 
     const appUrl = EMAIL_CONFIG.urls.app;
     const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
-    const logo = getLogoAttachment();
 
     const emailHtml = await render(
       SubscriptionExpiredNotification({
@@ -856,8 +822,6 @@ export async function sendSubscriptionExpiredEmail(data: {
         renewUrl: data.renewUrl,
         creatorProfileUrl,
         settingsUrl: EMAIL_CONFIG.urls.settings,
-        appUrl,
-        logoSrc: logo.logoSrc,
       })
     );
 
@@ -872,7 +836,6 @@ export async function sendSubscriptionExpiredEmail(data: {
       subject: EMAIL_SUBJECTS.subscriptionExpired(data.creatorName),
       html: emailHtml,
       messageId,
-      attachments: logo.attachment,
       headers: {
         'Message-ID': messageId,
         'X-Mailer': 'MeroCircle',
