@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Space_Grotesk, Plus_Jakarta_Sans, Roboto} from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-provider";
@@ -15,6 +15,19 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["400", "500", "600", "700"],
   variable: "--font-space-grotesk",
 });
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plus-jakarta-sans",
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-roboto",
+});
+
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -38,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light" suppressHydrationWarning>
+    <html lang="en" className={`${roboto.className} light`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -66,7 +79,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${spaceGrotesk.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${roboto.variable} antialiased`} suppressHydrationWarning>
         <ErrorBoundary>
         <ThemeProvider
           attribute="class"
