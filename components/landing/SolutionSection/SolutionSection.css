@@ -3,7 +3,7 @@
   padding: 12rem 2rem;
   overflow: hidden;
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
-  background: white;
+  background: var(--card);
 }
 @media (max-width: 767px) {
   .solution-section {
@@ -43,7 +43,7 @@
 }
 
 .solution-section-eyebrow {
-  color: #990000;
+  color: var(--primary);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.4em;
@@ -55,7 +55,7 @@
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 0.9;
-  color: #1a1a1a;
+  color: var(--foreground);
   margin: 0 0 1.5rem;
 }
 @media (max-width: 767px) {
@@ -70,7 +70,7 @@
 }
 .solution-section-description {
   font-size: 1.5rem;
-  color: rgb(107 114 128);
+  color: var(--muted-foreground);
   font-weight: 500;
   line-height: 1.625;
   margin: 0 0 2rem;
@@ -95,20 +95,20 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: rgb(249 250 251);
+  background: var(--muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgb(156 163 175);
+  color: var(--muted-foreground);
   transition: background 0.2s, color 0.2s;
 }
 .solution-section-pill:hover .solution-section-pill-icon {
-  background: rgba(153, 0, 0, 0.05);
-  color: #990000;
+  background: rgba(215, 122, 106, 0.05);
+  color: var(--primary);
 }
 .solution-section-pill-label {
   font-weight: 700;
-  color: rgb(31 41 55);
+  color: var(--foreground);
   letter-spacing: -0.025em;
   font-size: 1.125rem;
 }
@@ -121,13 +121,13 @@
   content: "";
   position: absolute;
   inset: -2.5rem;
-  background: rgba(153, 0, 0, 0.05);
+  background: rgba(215, 122, 106, 0.05);
   border-radius: 50%;
   filter: blur(100px);
   transition: background 0.2s;
 }
 .solution-section-visual-inner:hover::before {
-  background: rgba(153, 0, 0, 0.1);
+  background: rgba(215, 122, 106, 0.1);
 }
 
 .solution-section-image-wrap {
@@ -138,7 +138,7 @@
   height: auto;
   border-radius: 5rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  border: 8px solid white;
+  border: 8px solid var(--card);
   transition: filter 1s;
   filter: grayscale(100%);
 }
@@ -150,8 +150,8 @@
   position: absolute;
   bottom: -2.5rem;
   right: -2.5rem;
-  background: #1a1a1a;
-  color: white;
+  background: var(--foreground);
+  color: var(--primary-foreground);
   padding: 3rem;
   border-radius: 3rem;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -171,7 +171,7 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.4em;
-  color: #990000;
+  color: var(--primary);
   margin: 0 0 1rem;
 }
 @media (max-width: 767px) {

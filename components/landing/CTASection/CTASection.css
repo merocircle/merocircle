@@ -2,7 +2,7 @@
 .cta-section {
   padding: 16rem 2rem;
   text-align: center;
-  background: white;
+  background: var(--card);
   position: relative;
   overflow: hidden;
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
@@ -20,7 +20,7 @@
   transform: translate(-50%, -50%);
   width: 1200px;
   height: 1200px;
-  background: rgba(153, 0, 0, 0.05);
+  background: rgba(215, 122, 106, 0.05);
   border-radius: 50%;
   filter: blur(200px);
   pointer-events: none;
@@ -57,7 +57,7 @@
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 0.8;
-  color: #1a1a1a;
+  color: var(--foreground);
   margin: 0;
 }
 @media (max-width: 767px) {
@@ -76,12 +76,12 @@
   }
 }
 .cta-section-title-accent {
-  color: #990000;
+  color: var(--primary);
 }
 
 .cta-section-quote {
   font-size: 1.875rem;
-  color: rgb(156 163 175);
+  color: var(--muted-foreground);
   max-width: 42rem;
   margin: 0;
   font-weight: 500;
@@ -105,8 +105,8 @@
 }
 .cta-section-btn {
   padding: 2.5rem 6rem;
-  background: #990000;
-  color: white;
+  background: var(--primary);
+  color: var(--primary-foreground);
   border-radius: 9999px;
   font-size: 14px;
   font-weight: 900;
@@ -114,7 +114,7 @@
   letter-spacing: 0.5em;
   text-decoration: none;
   transition: background 0.2s, transform 0.1s;
-  box-shadow: 0 30px 60px -12px rgba(153, 0, 0, 0.5);
+  box-shadow: 0 30px 60px -12px rgba(215, 122, 106, 0.5);
 }
 @media (max-width: 767px) {
   .cta-section-btn {
@@ -124,7 +124,7 @@
   }
 }
 .cta-section-btn:hover {
-  background: #000;
+  background: var(--foreground);
 }
 .cta-section-btn:active {
   transform: scale(0.98);

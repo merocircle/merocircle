@@ -2,7 +2,7 @@
 .landing-footer {
   position: relative;
   padding: 4rem 2rem 2.5rem;
-  border-top: 1px solid rgb(243 244 246);
+  border-top: 1px solid var(--border);
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
   overflow: hidden;
 }
@@ -20,13 +20,13 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: #1a1a1a;
+  background: var(--foreground);
 }
 .landing-footer-bg::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(26, 26, 26, 0.92), rgba(26, 26, 26, 0.97));
+  background: linear-gradient(to bottom, rgba(43, 30, 26, 0.92), rgba(43, 30, 26, 0.97));
   z-index: 1;
 }
 
@@ -61,12 +61,12 @@
   font-size: 1.5rem;
   font-weight: 900;
   letter-spacing: -0.05em;
-  color: #fff;
+  color: var(--primary-foreground);
 }
 
 .landing-footer-tagline {
   font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--muted-foreground);
   line-height: 1.4;
   margin: 0;
   max-width: 20rem;
@@ -78,13 +78,13 @@
   gap: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #990000;
+  color: var(--primary);
   text-decoration: none;
   margin-top: 0.25rem;
   transition: color 0.2s, opacity 0.2s;
 }
 .landing-footer-contact:hover {
-  color: #cc0000;
+  color: var(--primary);
   opacity: 0.9;
 }
 
@@ -103,14 +103,14 @@
   display: flex;
   gap: 1.25rem;
   margin-top: 0.5rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted-foreground);
 }
 .landing-footer-social-icon {
   cursor: pointer;
   transition: color 0.2s;
 }
 .landing-footer-social-icon:hover {
-  color: #990000;
+  color: var(--primary);
 }
 
 .landing-footer-links-block {
@@ -123,7 +123,7 @@
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted-foreground);
   margin: 0;
 }
 .landing-footer-links {
@@ -137,12 +137,12 @@
   font-weight: 600;
 }
 .landing-footer-link {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(250, 246, 244, 0.75);
   text-decoration: none;
   transition: color 0.2s;
 }
 .landing-footer-link:hover {
-  color: #990000;
+  color: var(--primary);
 }
 
 .landing-footer-bottom {
@@ -150,7 +150,7 @@
   flex-direction: column;
   gap: 1rem;
   padding-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border);
 }
 @media (min-width: 640px) {
   .landing-footer-bottom {
@@ -165,7 +165,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--muted-foreground);
   margin: 0;
 }
 
@@ -178,10 +178,10 @@
   letter-spacing: 0.1em;
 }
 .landing-footer-legal-link {
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--muted-foreground);
   text-decoration: none;
   transition: color 0.2s;
 }
 .landing-footer-legal-link:hover {
-  color: #990000;
+  color: var(--primary);
 }

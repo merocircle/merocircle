@@ -1,6 +1,6 @@
 .payment-section {
   padding: 3rem 0;
-  background: rgb(249 250 251);
+  background: var(--background);
   overflow: hidden;
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
 }
@@ -25,7 +25,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: rgb(107 114 128);
+  color: var(--muted-foreground);
   margin: 0 0 1.5rem;
 }
 

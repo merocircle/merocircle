@@ -2,13 +2,13 @@
 .landing-page-wrap {
   position: relative;
   min-height: 100vh;
-  background: #fff;
+  background: var(--background);
   scroll-behavior: smooth;
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
 }
 .landing-page-wrap ::selection {
-  background: #990000;
-  color: white;
+  background: var(--primary);
+  color: var(--background);
 }
 
 /* Fixed layer: image fills full width and height */

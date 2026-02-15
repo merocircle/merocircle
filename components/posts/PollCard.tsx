@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, Clock, Users } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, BarChart2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -131,7 +131,7 @@ export function PollCard({ pollId, currentUserId, creatorId, showResults = false
       {/* Poll Question */}
       <div className="flex items-start gap-3 mb-4">
         <div className="p-2 bg-primary/10 rounded-lg">
-          <Users className="w-5 h-5 text-primary" />
+          <BarChart2 className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-bold text-foreground mb-1">{poll.question}</h3>
@@ -239,14 +239,28 @@ export function PollCard({ pollId, currentUserId, creatorId, showResults = false
         })}
       </div>
 
+      {/* Show Less Button */}
+      {showAllOptions && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAllOptions(false)}
+          className="mt-3 w-full hover:text-foreground text-primary"
+        >
+          <ChevronUp />
+          Show less
+        </Button>
+      )}
+
       {/* Show More Button */}
       {hasMoreOptions && !showAllOptions && (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowAllOptions(true)}
-          className="mt-3 w-full text-muted-foreground hover:text-foreground"
+          className="mt-3 w-full hover:text-foreground text-primary"
         >
+          <ChevronDown />
           Show {hiddenCount} more option{hiddenCount === 1 ? '' : 's'}
         </Button>
       )}

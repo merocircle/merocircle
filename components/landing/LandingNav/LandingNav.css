@@ -7,7 +7,7 @@
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgb(243 244 246);
+  border-bottom: 1px solid var(--border);
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
 }
 
@@ -53,7 +53,7 @@
   font-size: 1.5rem;
   font-weight: 900;
   letter-spacing: -0.05em;
-  color: #1a1a1a;
+  color: var(--foreground);
 }
 
 .landing-nav-desktop {
@@ -72,13 +72,13 @@
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-weight: 700;
-  color: rgb(156 163 175);
+  color: var(--muted-foreground);
   text-decoration: none;
   position: relative;
   transition: color 0.2s;
 }
 .landing-nav-link:hover {
-  color: #990000;
+  color: var(--primary);
 }
 .landing-nav-link::after {
   content: "";
@@ -87,7 +87,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: #990000;
+  background: var(--primary);
   transition: width 0.2s;
 }
 .landing-nav-link:hover::after {
@@ -100,15 +100,15 @@
   letter-spacing: 0.2em;
   font-weight: 900;
   padding: 0.75rem 2.5rem;
-  background: #990000;
-  color: white;
+  background: var(--primary);
+  color: var(--primary-foreground);
   border-radius: 9999px;
   text-decoration: none;
   transition: background 0.2s, transform 0.1s;
-  box-shadow: 0 20px 25px -5px rgba(153, 0, 0, 0.3);
+  box-shadow: 0 20px 25px -5px rgba(215, 122, 106, 0.3);
 }
 .landing-nav-cta:hover {
-  background: #000;
+  background: var(--foreground);
 }
 .landing-nav-cta:active {
   transform: scale(0.98);
@@ -118,7 +118,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1a1a1a;
+  color: var(--foreground);
   padding: 0.5rem;
 }
 @media (min-width: 1024px) {
@@ -132,7 +132,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem 2rem 1.5rem;
-  border-top: 1px solid rgb(243 244 246);
+  border-top: 1px solid var(--border);
 }
 @media (min-width: 1024px) {
   .landing-nav-mobile-menu {
@@ -143,12 +143,12 @@
 .landing-nav-mobile-link {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--foreground);
   text-decoration: none;
   padding: 0.5rem 0;
 }
 .landing-nav-mobile-link:hover {
-  color: #990000;
+  color: var(--primary);
 }
 
 .landing-nav-mobile-cta {
@@ -159,8 +159,8 @@
   letter-spacing: 0.2em;
   font-weight: 900;
   padding: 0.75rem 1.5rem;
-  background: #990000;
-  color: white;
+  background: var(--primary);
+  color: var(--primary-foreground);
   border-radius: 9999px;
   text-decoration: none;
   display: block;
