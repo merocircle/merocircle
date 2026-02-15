@@ -46,6 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <head>
+        <script src="https://t.contentsquare.net/uxa/0a3928cc3193c.js"></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
