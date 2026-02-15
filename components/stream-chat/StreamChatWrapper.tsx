@@ -18,7 +18,8 @@ import { CustomMessageOptions } from './CustomMessageOptions';
 import { CustomMessage } from './CustomMessage';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
-  ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send
+  ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send,
+  Search, Info, X
 } from 'lucide-react';
 import { useChannels, useDMChannels, useUnreadCounts } from './hooks';
 import { 
@@ -26,8 +27,9 @@ import {
   CreateChannelModal, 
   UserProfilePopup,
   ChannelListItem,
-  DMListItem
+  DMListItem,
 } from './components';
+import { ChannelInfoPanel } from './components/ChannelInfoPanel';
 import type { MobileView, DMChannel } from './types';
 import type { Server, SupabaseChannel } from './hooks/useChannels';
 import 'stream-chat-react/dist/css/v2/index.css';
@@ -52,6 +54,8 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; image?: string; createdAt?: string } | null>(null);
   const [mobileView, setMobileView] = useState<MobileView>('servers');
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
+  const [sidebarSearch, setSidebarSearch] = useState('');
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
 
@@ -91,20 +95,17 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
     }
   }, [isConnected, user, fetchChannels, fetchDMChannels, fetchUnreadCounts, creatorId]);
 
-  // Auto-expand servers when loaded
+  // Auto-expand servers on initial load only; never overwrite user's collapse/expand choices
+  const initialExpandDoneRef = useRef(false);
   useEffect(() => {
-    if (!loading && (filteredOtherServers.length > 0 || filteredMyServer)) {
-      const allIds = new Set([...filteredOtherServers.map((s: Server) => s.id), ...(filteredMyServer ? [filteredMyServer.id] : [])]);
-      
-      // Only update if the set actually changed
-      const currentIds = Array.from(expandedServers).sort().join(',');
-      const newIds = Array.from(allIds).sort().join(',');
-      
-      if (currentIds !== newIds) {
-        setExpandedServers(allIds);
-      }
-    }
-  }, [loading, filteredOtherServers, filteredMyServer, expandedServers]);
+    if (loading) return;
+    const allIds = new Set([...filteredOtherServers.map((s: Server) => s.id), ...(filteredMyServer ? [filteredMyServer.id] : [])]);
+    if (allIds.size === 0) return;
+    if (initialExpandDoneRef.current) return;
+
+    initialExpandDoneRef.current = true;
+    setExpandedServers(allIds);
+  }, [loading, filteredOtherServers, filteredMyServer]);
 
   // Listen for new messages (debounced to prevent rate limiting)
   useEffect(() => {
@@ -540,49 +541,75 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
     };
   }, [isCreator, user?.id, handleStartDM]);
 
+  // Helper: get last message info for a channel
+  const getChannelLastMessage = useCallback((streamChannelId: string | null) => {
+    if (!streamChannelId || !chatClient) return { text: '', time: '' };
+    try {
+      const ch = chatClient.activeChannels?.[streamChannelId] || chatClient.channel('messaging', streamChannelId);
+      const msgs = ch?.state?.messages;
+      if (msgs && msgs.length > 0) {
+        const last = msgs[msgs.length - 1];
+        return {
+          text: last.text || (last.attachments?.length ? 'Sent an attachment' : ''),
+          time: last.created_at ? (typeof last.created_at === 'string' ? last.created_at : last.created_at.toISOString()) : '',
+        };
+      }
+    } catch {}
+    return { text: '', time: '' };
+  }, [chatClient]);
+
   // Render helpers
   const renderServerDesktop = useCallback((server: Server, isMyServer: boolean) => {
     const isExpanded = expandedServers.has(server.id);
 
     return (
-      <div key={server.id} className="mb-0.5">
+      <div key={server.id} className="mb-1">
         <button
           onClick={() => toggleServer(server.id)}
-          className="w-full px-4 py-2.5 flex items-center gap-2.5 text-left hover:bg-muted/60 rounded-lg transition-colors group"
+          className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left hover:bg-muted/50 rounded-lg transition-colors group"
         >
-          {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-          )}
-          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/50">
+          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/30">
             {server.image ? (
               <img src={server.image} alt={server.name} className="w-full h-full object-cover" />
             ) : (
-              <Users className="h-3.5 w-3.5 text-primary" />
+              <Users className="h-3 w-3 text-primary" />
             )}
           </div>
-          <span className="font-medium text-sm text-foreground truncate flex-1">{server.name}</span>
+          <span className="font-medium text-[11px] uppercase tracking-wider text-muted-foreground truncate flex-1">
+            {server.name}
+          </span>
+          {isExpanded ? (
+            <ChevronDown className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+          ) : (
+            <ChevronRight className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+          )}
         </button>
 
         {isExpanded && (
-          <div className="ml-5 pl-3 border-l border-border/50 mt-0.5 space-y-0.5 mb-1">
-            {server.channels.map(channel => (
-              <ChannelListItem
-                key={channel.id}
-                channel={channel}
-                isActive={activeChannel?.id === channel.stream_channel_id}
-                isDisabled={!channel.stream_channel_id}
-                unreadCount={channel.stream_channel_id ? channelUnreadCounts[channel.stream_channel_id] || 0 : 0}
-                onClick={() => selectChannel(channel)}
-              />
-            ))}
+          <div className="mt-0.5 space-y-0.5 px-0.5">
+            {server.channels.map(channel => {
+              const lastMsg = getChannelLastMessage(channel.stream_channel_id);
+              return (
+                <ChannelListItem
+                  key={channel.id}
+                  channel={channel}
+                  isActive={activeChannel?.id === channel.stream_channel_id}
+                  isDisabled={!channel.stream_channel_id}
+                  unreadCount={channel.stream_channel_id ? channelUnreadCounts[channel.stream_channel_id] || 0 : 0}
+                  onClick={() => selectChannel(channel)}
+                  serverImage={server.image}
+                  serverName={server.name}
+                  lastMessage={lastMsg.text}
+                  lastMessageTime={lastMsg.time}
+                />
+              );
+            })}
             {isMyServer && isCreator && (
               <button
                 onClick={() => setShowCreateChannel(true)}
-                className="w-full px-3 py-2 flex items-center gap-2 text-left text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors border border-dashed border-border/60"
+                className="w-full px-2.5 py-1.5 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors border border-dashed border-border/50"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3 w-3" />
                 <span>Create Channel</span>
               </button>
             )}
@@ -590,7 +617,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         )}
       </div>
     );
-  }, [expandedServers, toggleServer, activeChannel, channelUnreadCounts, selectChannel, isCreator]);
+  }, [expandedServers, toggleServer, activeChannel, channelUnreadCounts, selectChannel, isCreator, getChannelLastMessage]);
 
   const renderServerMobile = useCallback((server: Server) => {
     const totalUnread = server.channels.reduce((sum, ch) => {
@@ -687,50 +714,50 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full overflow-hidden">
           {/* Sidebar */}
-          <div className="w-80 border-r border-border flex-shrink-0 bg-card/80 backdrop-blur-sm flex flex-col overflow-hidden">
+          <div className="w-80 border-r border-border flex-shrink-0 bg-card/50 backdrop-blur-sm flex flex-col overflow-hidden">
             {/* Sidebar Header */}
-            <div className="px-5 py-4 border-b border-border flex-shrink-0">
-              <div className="flex items-center justify-between">
+            <div className="px-4 pt-4 pb-3 flex-shrink-0">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                     <MessageCircle className="h-4 w-4 text-primary" />
                   </div>
-                  <h2 className="text-base font-semibold text-foreground tracking-tight">Messages</h2>
+                  <h2 className="text-lg font-bold text-foreground tracking-tight">Chats</h2>
                 </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30 transition-all"
+                />
+                {sidebarSearch && (
+                  <button
+                    onClick={() => setSidebarSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted"
+                  >
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Channel List */}
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 px-2">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="py-2">
-                  {filteredOtherServers.length > 0 && (
-                    <div className="mb-1">
-                      <div className="px-5 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-                        {creatorId ? 'Community' : 'Channels'}
-                      </div>
-                      {filteredOtherServers.map((server: Server) => renderServerDesktop(server, false))}
-                    </div>
-                  )}
-
-                  {isCreator && filteredMyServer && (
-                    <div className="mb-1">
-                      <div className="px-5 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-                        My Server
-                      </div>
-                      {renderServerDesktop(filteredMyServer, true)}
-                    </div>
-                  )}
-
+                <div className="py-1 space-y-1">
                   {!creatorId && dmChannels.length > 0 && (
-                    <div className="mb-1">
+                    <div className="mb-2">
                       <button
                         onClick={() => setExpandedDMs(!expandedDMs)}
-                        className="w-full px-5 py-2 flex items-center gap-2 text-left group"
+                        className="w-full px-2 py-1.5 flex items-center gap-2 text-left group"
                       >
                         {expandedDMs ? (
                           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -741,14 +768,16 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                           {isCreator ? 'Direct Messages' : 'Messages'}
                         </span>
                         {dmChannels.reduce((sum, dm) => sum + dm.unreadCount, 0) > 0 && (
-                          <span className="ml-auto min-w-[18px] h-[18px] px-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                          <span className="min-w-[18px] h-[18px] px-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                             {dmChannels.reduce((sum, dm) => sum + dm.unreadCount, 0)}
                           </span>
                         )}
                       </button>
                       {expandedDMs && (
-                        <div className="ml-5 pl-2.5 border-l border-border/50 mt-0.5 space-y-0.5">
-                          {dmChannels.map(dm => (
+                        <div className="space-y-0.5">
+                          {dmChannels
+                            .filter(dm => !sidebarSearch || dm.otherUser.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
+                            .map(dm => (
                             <DMListItem
                               key={dm.channel.id}
                               dm={dm}
@@ -761,11 +790,31 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                     </div>
                   )}
 
-                  {filteredOtherServers.length === 0 && !filteredMyServer && (
-                    <div className="px-5 py-10 text-center text-muted-foreground">
-                      <MessageSquare className="h-8 w-8 mx-auto mb-2.5 opacity-40" />
-                      <p className="text-sm font-medium">No channels yet</p>
-                      <p className="text-xs mt-1 opacity-70">
+                  {filteredOtherServers.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                        {creatorId ? 'Community' : 'Channels'}
+                      </div>
+                      {filteredOtherServers
+                        .filter(s => !sidebarSearch || s.name.toLowerCase().includes(sidebarSearch.toLowerCase()) || s.channels.some(c => c.name.toLowerCase().includes(sidebarSearch.toLowerCase())))
+                        .map((server: Server) => renderServerDesktop(server, false))}
+                    </div>
+                  )}
+
+                  {isCreator && filteredMyServer && (
+                    <div className="mb-2">
+                      <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                        My Server
+                      </div>
+                      {renderServerDesktop(filteredMyServer, true)}
+                    </div>
+                  )}
+
+                  {filteredOtherServers.length === 0 && !filteredMyServer && dmChannels.length === 0 && (
+                    <div className="px-4 py-12 text-center text-muted-foreground">
+                      <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm font-medium">No conversations</p>
+                      <p className="text-xs mt-1.5 opacity-60 leading-relaxed">
                         {creatorId ? 'This creator has no channels yet' : 'Support a creator to join their community'}
                       </p>
                     </div>
@@ -776,43 +825,50 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           </div>
 
           {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
-            {activeChannel ? (
-              <Channel 
-                channel={activeChannel} 
-                CustomMessageActionsList={CustomMessageActionsList}
-                QuotedMessage={CustomQuotedMessage}
-                MessageOptions={CustomMessageOptions}
-                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
-                Message={CustomMessage}
-              >
-                <Window>
-                  <CustomChannelHeader />
-                  <MessageList />
-                  <MessageInput focus />
-                </Window>
-                <NoOpThread />
-              </Channel>
-            ) : channelError ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center p-8">
-                  <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-                    <AlertCircle className="h-7 w-7 text-destructive" />
+          <div className="flex-1 flex min-w-0 overflow-hidden bg-background">
+            <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${showInfoPanel ? 'border-r border-border' : ''}`}>
+              {activeChannel ? (
+                <Channel 
+                  channel={activeChannel} 
+                  CustomMessageActionsList={CustomMessageActionsList}
+                  QuotedMessage={CustomQuotedMessage}
+                  MessageOptions={CustomMessageOptions}
+                  MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                  Message={CustomMessage}
+                >
+                  <Window>
+                    <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
+                    <MessageList />
+                    <MessageInput focus />
+                  </Window>
+                  <NoOpThread />
+                </Channel>
+              ) : channelError ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center p-8">
+                    <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                      <AlertCircle className="h-7 w-7 text-destructive" />
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground mb-1.5">Channel Access Error</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm">{channelError}</p>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground mb-1.5">Channel Access Error</h3>
-                  <p className="text-sm text-muted-foreground max-w-sm">{channelError}</p>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center p-8">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mx-auto mb-4">
-                    <MessageCircle className="h-8 w-8 text-primary/40" />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mx-auto mb-4">
+                      <MessageCircle className="h-8 w-8 text-primary/30" />
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground mb-1">Select a conversation</h3>
+                    <p className="text-sm text-muted-foreground">Pick a chat from the sidebar to get started</p>
                   </div>
-                  <h3 className="text-base font-semibold text-foreground mb-1">Select a conversation</h3>
-                  <p className="text-sm text-muted-foreground">Choose a channel from the sidebar to start chatting</p>
                 </div>
-              </div>
+              )}
+            </div>
+
+            {/* Info Panel */}
+            {showInfoPanel && activeChannel && (
+              <ChannelInfoPanel channel={activeChannel} onClose={() => setShowInfoPanel(false)} />
             )}
           </div>
         </div>
@@ -1032,14 +1088,20 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           --str-chat__primary-color: var(--primary);
           --str-chat__active-primary-color: var(--primary);
           --str-chat__border-radius-circle: 9999px;
-          --str-chat__border-radius-sm: 12px;
-          --str-chat__border-radius-md: 16px;
-          --str-chat__border-radius-lg: 20px;
+          --str-chat__border-radius-sm: 14px;
+          --str-chat__border-radius-md: 18px;
+          --str-chat__border-radius-lg: 22px;
           --str-chat__font-family: var(--font-sans), system-ui, sans-serif;
         }
 
         .str-chat__channel-list {
           background: transparent !important;
+        }
+
+        /* Hide file upload button */
+        .str-chat__file-input-container,
+        .str-chat__attachment-selector {
+          display: none !important;
         }
 
         .str-chat__channel-preview-messenger--active {
@@ -1051,33 +1113,80 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           background: color-mix(in srgb, var(--primary) 5%, transparent) !important;
         }
 
-        /* My messages — primary color bubble */
+        /* ── Message bubbles ── */
+
+        /* My messages — primary color bubble with asymmetric rounding */
         .str-chat__message-simple--me .str-chat__message-bubble {
           background: var(--primary) !important;
           color: var(--primary-foreground) !important;
-          border-radius: 18px 18px 4px 18px !important;
+          border-radius: 20px 20px 4px 20px !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
         }
 
-        /* Other messages — softer bubble */
+        /* Other messages — softer bubble with asymmetric rounding */
         .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
-          border-radius: 18px 18px 18px 4px !important;
+          border-radius: 20px 20px 20px 4px !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
         }
 
-        .str-chat__message-input {
-          border-top: 1px solid var(--border) !important;
-          padding: 12px 16px !important;
+        /* ── Larger avatars in message list (36px) ── */
+        .str-chat__message .str-chat__avatar {
+          width: 36px !important;
+          height: 36px !important;
+          min-width: 36px !important;
+          flex-shrink: 0 !important;
         }
-
-        .str-chat__send-button {
-          background: var(--primary) !important;
-          border-radius: 12px !important;
+        .str-chat__message .str-chat__avatar-image {
           width: 36px !important;
           height: 36px !important;
         }
 
+        /* ── Message hover — show subtle bg + timestamp on hover ── */
+        .str-chat__li {
+          transition: background-color 0.15s ease;
+        }
+        .str-chat__li:hover {
+          background-color: color-mix(in srgb, var(--muted) 40%, transparent);
+          border-radius: 8px;
+        }
+
+        /* ── Styled message input area ── */
+        .str-chat__message-input {
+          border-top: 1px solid var(--border) !important;
+          padding: 12px 16px !important;
+          background: var(--card) !important;
+        }
+
+        .str-chat__input-flat {
+          border-radius: 24px !important;
+          background: var(--muted) !important;
+          padding: 4px 8px !important;
+          border: 1px solid var(--border) !important;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .str-chat__input-flat:focus-within {
+          border-color: var(--primary) !important;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent) !important;
+        }
+
+        .str-chat__input-flat textarea {
+          font-size: 14px !important;
+          line-height: 1.5 !important;
+        }
+
+        /* Send button — circular, prominent */
+        .str-chat__send-button {
+          background: var(--primary) !important;
+          border-radius: 50% !important;
+          width: 38px !important;
+          height: 38px !important;
+          transition: all 0.15s ease !important;
+          flex-shrink: 0 !important;
+        }
+
         .str-chat__send-button:hover {
           background: color-mix(in srgb, var(--primary) 85%, black) !important;
-          transform: scale(1.05);
+          transform: scale(1.08);
         }
 
         .str-chat__send-button svg {
@@ -1085,35 +1194,91 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           height: 18px !important;
         }
 
+        /* Attachment button styling */
+        .str-chat__file-input-container .str-chat__file-input-container-button {
+          color: var(--muted-foreground) !important;
+        }
+        .str-chat__file-input-container .str-chat__file-input-container-button:hover {
+          color: var(--primary) !important;
+        }
+
         .str-chat__channel-search-input {
-          border-radius: 12px !important;
+          border-radius: 14px !important;
         }
 
         .str-chat__thread {
           border-left: 1px solid var(--border);
         }
 
-        /* Input field styling */
-        .str-chat__input-flat {
-          border-radius: 14px !important;
-        }
-
-        .str-chat__input-flat textarea {
-          font-size: 14px !important;
-        }
-
         /* Message sender name */
         .str-chat__message-sender-name {
           font-weight: 600 !important;
-          font-size: 13px !important;
+          font-size: 12.5px !important;
+          letter-spacing: -0.01em !important;
         }
 
         /* Message timestamp */
         .str-chat__message-data time {
-          font-size: 11px !important;
+          font-size: 10px !important;
+          opacity: 0.5 !important;
+        }
+        .str-chat__li:hover .str-chat__message-data time {
+          opacity: 0.8 !important;
         }
 
-        /* Light mode — align stream-chat with app theme */
+        /* ── Emoji reactions styling ── */
+        .str-chat__reaction-list {
+          padding: 2px 0 !important;
+        }
+        .str-chat__reaction-list .emoji-mart-emoji {
+          cursor: pointer !important;
+        }
+        .str-chat__simple-reactions-list {
+          border-radius: 12px !important;
+          padding: 2px 4px !important;
+          gap: 2px !important;
+        }
+        .str-chat__simple-reactions-list-item {
+          font-size: 16px !important;
+          padding: 2px 6px !important;
+          border-radius: 10px !important;
+          background: color-mix(in srgb, var(--muted) 80%, transparent) !important;
+          border: 1px solid var(--border) !important;
+          transition: transform 0.1s ease !important;
+        }
+        .str-chat__simple-reactions-list-item:hover {
+          transform: scale(1.15) !important;
+        }
+        .str-chat__simple-reactions-list-item--selected {
+          background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+          border-color: var(--primary) !important;
+        }
+
+        /* ── Typing indicator ── */
+        .str-chat__typing-indicator {
+          padding: 4px 16px !important;
+          font-size: 12px !important;
+          color: var(--muted-foreground) !important;
+        }
+        .str-chat__typing-indicator__avatars .str-chat__avatar {
+          width: 20px !important;
+          height: 20px !important;
+          min-width: 20px !important;
+        }
+        .str-chat__typing-indicator__dots {
+          margin-left: 4px !important;
+        }
+
+        /* ── Emoji picker ── */
+        .str-chat__emoji-picker-button {
+          color: var(--muted-foreground) !important;
+          transition: color 0.15s ease !important;
+        }
+        .str-chat__emoji-picker-button:hover {
+          color: var(--primary) !important;
+        }
+
+        /* ── Light mode — align stream-chat with app theme ── */
         .stream-chat-wrapper .str-chat__theme-light {
           --str-chat__background-color: var(--background);
           --str-chat__secondary-background-color: var(--card);
@@ -1131,15 +1296,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
         .str-chat__message-list {
           background: var(--background) !important;
-          padding: 16px !important;
-        }
-
-        .str-chat__message-input {
-          background: var(--card) !important;
-        }
-
-        .str-chat__input-flat {
-          background: var(--muted) !important;
+          padding: 12px 16px !important;
         }
 
         .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
@@ -1162,7 +1319,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           border-radius: 50% !important;
         }
 
-        /* Dark mode — align stream-chat with app theme */
+        /* ── Dark mode — align stream-chat with app theme ── */
         .dark .stream-chat-wrapper .str-chat__theme-dark {
           --str-chat__background-color: var(--background);
           --str-chat__secondary-background-color: var(--card);
@@ -1189,6 +1346,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
         .dark .str-chat__input-flat {
           background: var(--muted) !important;
+          border-color: var(--border) !important;
         }
 
         .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .str-chat__message-bubble {
@@ -1207,6 +1365,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           color: inherit !important;
         }
 
+        /* ── System messages ── */
         .str-chat__message--system {
           text-align: center;
           padding: 8px 16px;
@@ -1281,7 +1440,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           }
         }
 
-        /* Quoted message box — visible container with border and background */
+        /* ── Quoted message box ── */
         .custom-reply-box {
           transition: all 0.2s ease;
           border-radius: 0.5rem !important;
@@ -1292,7 +1451,6 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           border-left-width: 4px !important;
         }
 
-        /* Received messages: visible box on light bubble */
         .custom-reply-box--other,
         .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box {
           background: var(--muted) !important;
@@ -1300,7 +1458,6 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           border-left-color: var(--primary) !important;
         }
 
-        /* Sent messages: visible box on primary bubble */
         .custom-reply-box--me,
         .str-chat__message-simple--me .custom-reply-box {
           background: color-mix(in srgb, var(--primary-foreground) 15%, transparent) !important;
@@ -1331,7 +1488,6 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           max-width: 100%;
         }
 
-        /* Light mode - received messages - OTHER PEOPLE'S MESSAGES */
         .custom-reply-box-other .reply-box-sender-name,
         .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box .reply-box-sender-name {
           color: var(--primary) !important;
@@ -1343,7 +1499,6 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           opacity: 0.75 !important;
         }
 
-        /* Light mode - sent messages - MY MESSAGES */
         .custom-reply-box--me .reply-box-sender-name,
         .str-chat__message-simple--me .custom-reply-box .reply-box-sender-name {
           color: var(--primary-foreground) !important;
@@ -1355,7 +1510,6 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           opacity: 0.9 !important;
         }
 
-        /* Dark mode - received messages (visible box) */
         .dark .custom-reply-box-other,
         .dark .str-chat__message-simple:not(.str-chat__message-simple--me) .custom-reply-box {
           background: color-mix(in srgb, var(--foreground) 12%, transparent) !important;
@@ -1374,7 +1528,6 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           opacity: 1 !important;
         }
 
-        /* Dark mode - sent messages */
         .dark .custom-reply-box--me .reply-box-sender-name,
         .dark .str-chat__message-simple--me .custom-reply-box .reply-box-sender-name {
           color: var(--primary-foreground) !important;
@@ -1386,6 +1539,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           opacity: 0.9 !important;
         }
 
+        /* ── Message actions ── */
         .str-chat__message-actions-list-item {
           display: flex;
           align-items: center;
@@ -1416,6 +1570,33 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         .dark .str-chat__message-actions-list-item:hover {
           background: var(--muted);
           color: var(--primary);
+        }
+
+        /* ── Date separators ── */
+        .str-chat__date-separator {
+          padding: 8px 0 !important;
+        }
+        .str-chat__date-separator-date {
+          font-size: 11px !important;
+          font-weight: 600 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.05em !important;
+          color: var(--muted-foreground) !important;
+          background: var(--background) !important;
+          padding: 2px 12px !important;
+          border-radius: 9999px !important;
+        }
+        .str-chat__date-separator-line {
+          background: var(--border) !important;
+        }
+
+        /* ── Message options (action icons) - show on hover ── */
+        .str-chat__message-options-wrapper {
+          opacity: 0;
+          transition: opacity 0.15s ease !important;
+        }
+        .str-chat__li:hover .str-chat__message-options-wrapper {
+          opacity: 1;
         }
       `}</style>
     </div>

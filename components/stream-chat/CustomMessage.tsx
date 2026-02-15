@@ -6,13 +6,13 @@ import { Crown } from 'lucide-react';
 
 /**
  * Custom message component that highlights messages from the channel creator/owner.
- * Wraps Stream Chat's default MessageSimple with a full-width themed background.
+ * Creator messages get a full-width gradient background with a left accent border
+ * and a "Creator" badge with Crown icon.
  */
 export function CustomMessage(props: any) {
   const { message } = useMessageContext();
   const { channel } = useChannelStateContext();
   
-  // Determine if the message sender is the channel creator (owner)
   const channelCreatorId = channel?.data?.created_by?.id || (channel?.data as any)?.created_by_id;
   const isCreatorMessage = message?.user?.id === channelCreatorId;
   const isSystemMessage = message?.type === 'system';
