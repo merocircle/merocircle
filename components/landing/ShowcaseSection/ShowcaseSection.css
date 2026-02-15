@@ -1,0 +1,493 @@
+/* ── Showcase section ── */
+.showcase {
+  padding: 5rem 1.5rem 6rem;
+  background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+  overflow: hidden;
+}
+
+.showcase-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.showcase-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Audience labels */
+.showcase-audience-label {
+  display: inline-block;
+  margin: 0 auto 1rem;
+  padding: 0.3rem 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #990000;
+  background: rgba(153, 0, 0, 0.05);
+  border: 1px solid rgba(153, 0, 0, 0.1);
+  border-radius: 9999px;
+}
+
+.showcase-audience-label-alt {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.05);
+  border-color: rgba(37, 99, 235, 0.1);
+}
+
+.showcase-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  color: #0f0f0f;
+}
+
+.showcase-subtitle {
+  margin: 0 auto 3rem;
+  max-width: 460px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #6b7280;
+  font-weight: 430;
+}
+
+/* Section divider between creator and supporter blocks */
+.showcase-divider {
+  width: 48px;
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4rem auto;
+}
+
+/* ═══════════════════════════════
+   ORBIT VISUALIZATION
+   ═══════════════════════════════ */
+.orbit-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 1;
+  margin: 0 auto 5rem;
+}
+
+/* SVG rings */
+.orbit-rings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.orbit-svg-ring {
+  fill: none;
+  stroke-width: 1;
+}
+
+.orbit-svg-ring-outer {
+  stroke: rgba(0, 0, 0, 0.04);
+  stroke-dasharray: 4 8;
+  animation: orbit-ring-rotate 80s linear infinite;
+  transform-origin: center;
+}
+
+.orbit-svg-ring-mid {
+  stroke: rgba(0, 0, 0, 0.05);
+  animation: orbit-ring-rotate-reverse 55s linear infinite;
+  transform-origin: center;
+}
+
+.orbit-svg-ring-inner {
+  stroke: rgba(153, 0, 0, 0.08);
+  animation: orbit-ring-rotate 35s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes orbit-ring-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes orbit-ring-rotate-reverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+/* Center avatar */
+.orbit-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.orbit-center-img {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 1px rgba(153, 0, 0, 0.06),
+    0 12px 48px rgba(0, 0, 0, 0.12);
+}
+
+.orbit-live-badge {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 9999px;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4);
+}
+
+/* ═══════════════════════════════
+   FLOATING CARDS
+   ═══════════════════════════════ */
+.orbit-card {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.orbit-card-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.orbit-card-icon-green {
+  background: #ecfdf5;
+  color: #059669;
+}
+.orbit-card-icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.orbit-card-label {
+  margin: 0;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
+.orbit-card-value {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.2;
+}
+
+.orbit-card-value-sm {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+/* Avatar stack inside proof card */
+.orbit-avatar-stack {
+  display: flex;
+}
+.orbit-stack-img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #fff;
+  margin-left: -5px;
+}
+.orbit-stack-img:first-child {
+  margin-left: 0;
+}
+
+/* Pill icons (heart, lock) */
+.orbit-pill {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03);
+  z-index: 5;
+}
+
+/* Card positions */
+.orbit-card-proof {
+  top: 8%;
+  right: 6%;
+}
+.orbit-card-revenue {
+  right: -2%;
+  top: 44%;
+}
+.orbit-card-chat {
+  left: -2%;
+  bottom: 28%;
+}
+.orbit-card-video {
+  bottom: 8%;
+  right: 14%;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+}
+
+.orbit-pill-heart {
+  top: 32%;
+  left: 10%;
+}
+.orbit-pill-lock {
+  top: 12%;
+  left: 24%;
+}
+
+/* Mini avatars */
+.orbit-mini {
+  position: absolute;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 4;
+}
+.orbit-mini-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.orbit-mini-1 {
+  width: 32px;
+  height: 32px;
+  right: 24%;
+  bottom: 22%;
+}
+.orbit-mini-2 {
+  width: 28px;
+  height: 28px;
+  left: 18%;
+  top: 46%;
+}
+
+/* Float animations — varied timing */
+.orbit-float-1 { animation: orbit-float-a 5s ease-in-out infinite; }
+.orbit-float-2 { animation: orbit-float-b 6s ease-in-out 0.3s infinite; }
+.orbit-float-3 { animation: orbit-float-a 5.5s ease-in-out 0.8s infinite; }
+.orbit-float-4 { animation: orbit-float-b 4.5s ease-in-out 1s infinite; }
+.orbit-float-5 { animation: orbit-float-a 6.5s ease-in-out 0.5s infinite; }
+.orbit-float-6 { animation: orbit-float-b 5s ease-in-out 1.2s infinite; }
+
+@keyframes orbit-float-a {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes orbit-float-b {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-4px) translateX(2px); }
+}
+
+/* ═══════════════════════════════
+   BENEFIT BLOCKS
+   ═══════════════════════════════ */
+.showcase-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+  margin-bottom: 3.5rem;
+  text-align: left;
+  max-width: 840px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.showcase-benefit {
+  position: relative;
+  padding-top: 0.25rem;
+}
+
+.showcase-benefit-num {
+  display: block;
+  margin-bottom: 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #990000;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.showcase-benefit h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 750;
+  color: #111;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.showcase-benefit p {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #6b7280;
+  font-weight: 430;
+}
+
+/* Supporter benefits — tighter since no orbit above */
+.showcase-benefits-supporter {
+  margin-top: 0;
+}
+
+/* Secondary CTA */
+.showcase-cta-wrap {
+  text-align: center;
+}
+
+.showcase-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: transparent;
+  color: #990000;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border: 1.5px solid rgba(153, 0, 0, 0.25);
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.showcase-cta:hover {
+  background: #990000;
+  color: #fff;
+  border-color: #990000;
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════ */
+@media (max-width: 768px) {
+  .showcase {
+    padding: 3.5rem 1.25rem 4rem;
+  }
+
+  .orbit-wrap {
+    max-width: 340px;
+    margin-bottom: 3.5rem;
+  }
+
+  .orbit-center-img {
+    width: 76px;
+    height: 76px;
+  }
+
+  .orbit-card {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.625rem;
+    border-radius: 8px;
+    gap: 0.35rem;
+  }
+
+  .orbit-card-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+  }
+  .orbit-card-icon svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .orbit-card-label { font-size: 0.4375rem; }
+  .orbit-card-value { font-size: 0.625rem; }
+  .orbit-card-value-sm { font-size: 0.5625rem; }
+
+  .orbit-stack-img {
+    width: 16px;
+    height: 16px;
+    margin-left: -4px;
+  }
+
+  .orbit-pill {
+    width: 28px;
+    height: 28px;
+  }
+  .orbit-pill svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .orbit-card-proof { top: 6%; right: 0; }
+  .orbit-card-revenue { right: -4%; top: 42%; }
+  .orbit-card-chat { left: -4%; bottom: 24%; }
+  .orbit-card-video { bottom: 4%; right: 8%; }
+  .orbit-pill-heart { top: 30%; left: 4%; }
+  .orbit-pill-lock { top: 8%; left: 20%; }
+
+  .orbit-mini-1 { width: 26px; height: 26px; }
+  .orbit-mini-2 { width: 22px; height: 22px; }
+
+  .showcase-benefits {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 2.5rem;
+  }
+
+  .showcase-title {
+    font-size: 1.625rem;
+  }
+
+  .showcase-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .showcase-divider {
+    margin: 3rem auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .orbit-wrap {
+    max-width: 290px;
+  }
+}

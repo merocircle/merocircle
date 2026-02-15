@@ -25,7 +25,8 @@ export function extractYouTubeVideoId(url: string): string | null {
 }
 
 // Detect YouTube URLs in text content
-export function detectYouTubeUrl(text: string): string | null {
+export function detectYouTubeUrl(text: string | null | undefined): string | null {
+  if (!text) return null;
   const urlPattern = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/[^\s]+/gi;
   const matches = text.match(urlPattern);
 
@@ -43,7 +44,8 @@ export function getYouTubeEmbedUrl(videoId: string): string {
 }
 
 // Extract video ID from text content
-export function extractVideoIdFromContent(content: string): string | null {
+export function extractVideoIdFromContent(content: string | null | undefined): string | null {
+  if (!content) return null;
   const url = detectYouTubeUrl(content);
   if (!url) return null;
 

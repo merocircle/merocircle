@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
           supporters_count,
           posts_count,
           total_earnings,
+          vanity_username,
           created_at,
           users!inner(id, display_name, photo_url, email)
         `)
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
           supporters_count,
           posts_count,
           total_earnings,
+          vanity_username,
           created_at,
           users!inner(id, display_name, photo_url, email)
         `)
@@ -53,11 +55,14 @@ export async function GET(request: NextRequest) {
     const suggestedCreators = suggestedResult.data
 
     // Map creators with supporters_count instead of follower_count
-    const trending_creators = (trendingCreators || []).map((cp: { user_id: string; bio: string | null; supporters_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
+    const trending_creators = (trendingCreators || []).map((cp: any) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
       bio: cp.bio,
       avatar_url: cp.users.photo_url,
+      vanity_username: cp.vanity_username || null,
+      category: cp.category || null,
+      is_verified: cp.is_verified || false,
       supporter_count: cp.supporters_count || 0,
       posts_count: cp.posts_count || 0,
       total_earned: cp.total_earnings || 0,
@@ -80,11 +85,14 @@ export async function GET(request: NextRequest) {
       }
     }))
 
-    const suggested_creators = (suggestedCreators || []).map((cp: { user_id: string; bio: string | null; supporters_count: number | null; posts_count: number | null; total_earnings: number | null; created_at: string; users: { display_name: string; photo_url: string | null } }) => ({
+    const suggested_creators = (suggestedCreators || []).map((cp: any) => ({
       user_id: cp.user_id,
       display_name: cp.users.display_name,
       bio: cp.bio,
       avatar_url: cp.users.photo_url,
+      vanity_username: cp.vanity_username || null,
+      category: cp.category || null,
+      is_verified: cp.is_verified || false,
       supporter_count: cp.supporters_count || 0,
       posts_count: cp.posts_count || 0,
       total_earned: cp.total_earnings || 0,

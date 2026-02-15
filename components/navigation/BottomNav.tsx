@@ -32,13 +32,13 @@ export function BottomNav({
   className,
 }: BottomNavProps) {
   const pathname = usePathname();
-  const { isCreator } = useAuth();
+  const { isCreator, creatorProfile } = useAuth();
 
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
     if (pathname === '/chat') return 'chat';
-    if (pathname === '/profile') return 'profile';
+    if (pathname === '/profile' || (pathname.startsWith('/creator/') && pathname.includes(creatorProfile?.vanity_username || '___never___'))) return 'profile';
     return 'home';
   };
 
@@ -97,7 +97,7 @@ export function BottomNav({
       </div>
 
       <BottomNavIcon icon={MessageCircle} label="Chat" isActive={currentActiveView === 'chat'} badge={unreadMessages} href="/chat" />
-      <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href="/profile" />
+      <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} />
     </motion.nav>
   );
 }

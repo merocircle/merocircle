@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         .from('users')
         .select(`
           id, display_name, photo_url,
-          creator_profiles(bio, category, is_verified, supporters_count, posts_count)
+          creator_profiles(bio, category, is_verified, supporters_count, posts_count, vanity_username)
         `)
         .in('id', supportedCreatorIds);
 
@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
           display_name: u.display_name || 'Creator',
           bio: cp?.bio || null,
           avatar_url: u.photo_url,
+          vanity_username: cp?.vanity_username || null,
           category: cp?.category || null,
           is_verified: cp?.is_verified || false,
           supporter_count: cp?.supporters_count || 0,
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
       let trendingQuery = supabase
         .from('creator_profiles')
         .select(`
-          user_id, bio, category, is_verified, supporters_count, posts_count,
+          user_id, bio, category, is_verified, supporters_count, posts_count, vanity_username,
           users!inner(id, display_name, photo_url)
         `)
         .order('supporters_count', { ascending: false })
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
         display_name: cp.users?.display_name || 'Creator',
         bio: cp.bio,
         avatar_url: cp.users?.photo_url,
+        vanity_username: cp.vanity_username || null,
         category: cp.category,
         is_verified: cp.is_verified,
         supporter_count: cp.supporters_count || 0,
@@ -107,10 +109,9 @@ export async function GET(request: NextRequest) {
       // Exclude own posts
       postsQuery = postsQuery.neq('creator_id', user.id);
     } else if (user) {
-      // User is authenticated but doesn't follow anyone — show public posts
-      postsQuery = postsQuery
-        .eq('is_public', true)
-        .neq('creator_id', user.id);
+      // User is authenticated but doesn't follow anyone — show ALL posts
+      // from the platform (supporter-only content will be gated on the frontend)
+      postsQuery = postsQuery.neq('creator_id', user.id);
     } else {
       // Not authenticated — show public posts only
       postsQuery = postsQuery.eq('is_public', true);
@@ -131,38 +132,49 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ── Hydrate posts with creator info ──
+    // ── Hydrate posts with creator info (parallel fetches) ──
     const creatorIds = [...new Set(allPosts.map((p: any) => p.creator_id))];
+    const postIds = allPosts.map((p: any) => p.id);
 
-    const [{ data: creators }, { data: creatorProfiles }] = await Promise.all([
+    const parallelQueries: Promise<any>[] = [
       supabase.from('users').select('id, display_name, photo_url').in('id', creatorIds),
-      supabase.from('creator_profiles').select('user_id, category, is_verified').in('user_id', creatorIds),
-    ]);
+      supabase.from('creator_profiles').select('user_id, category, is_verified, vanity_username').in('user_id', creatorIds),
+    ];
 
-    const creatorsMap = new Map((creators || []).map((c: any) => [c.id, c]));
-    const profilesMap = new Map((creatorProfiles || []).map((cp: any) => [cp.user_id, cp]));
-
-    // Fetch user's likes
-    let userLikedPostIds = new Set<string>();
+    // Fetch likes in parallel too
     if (user) {
-      const postIds = allPosts.map((p: any) => p.id);
-      const { data: userLikes } = await supabase
-        .from('likes')
-        .select('post_id')
-        .eq('user_id', user.id)
-        .in('post_id', postIds);
-      userLikedPostIds = new Set((userLikes || []).map((l: any) => l.post_id));
+      parallelQueries.push(
+        supabase.from('likes').select('post_id').eq('user_id', user.id).in('post_id', postIds)
+      );
+    }
+
+    const results = await Promise.all(parallelQueries);
+
+    const creatorsMap = new Map(((results[0] as any).data || []).map((c: any) => [c.id, c]));
+    const profilesMap = new Map(((results[1] as any).data || []).map((cp: any) => [cp.user_id, cp]));
+
+    let userLikedPostIds = new Set<string>();
+    if (user && results[2]) {
+      userLikedPostIds = new Set(((results[2] as any).data || []).map((l: any) => l.post_id));
     }
 
     // ── Format posts (already sorted by created_at from DB) ──
     const formattedPosts = allPosts.map((p: any) => {
       const creator = creatorsMap.get(p.creator_id);
       const profile = profilesMap.get(p.creator_id);
+      const isSupporterOfThisCreator = user ? supportedCreatorIds.includes(p.creator_id) : false;
+      const isOwnPost = user ? user.id === p.creator_id : false;
+
+      // Gate supporter-only content on the backend
+      const isSupporterOnly = !p.is_public || (p.tier_required && p.tier_required !== 'free');
+      const shouldHideContent = isSupporterOnly && !isSupporterOfThisCreator && !isOwnPost;
 
       return {
         id: p.id,
         title: p.title,
-        content: p.content,
+        // Hide text content for non-supporters
+        content: shouldHideContent ? null : p.content,
+        // Send image URLs so the UI can still show a blurred preview
         image_url: p.image_url,
         image_urls: p.image_urls || [],
         is_public: p.is_public,
@@ -175,17 +187,19 @@ export async function GET(request: NextRequest) {
           id: creator?.id || p.creator_id,
           display_name: creator?.display_name || 'Creator',
           photo_url: creator?.photo_url || null,
+          vanity_username: profile?.vanity_username || null,
           role: 'creator',
         },
         creator_profile: {
           category: profile?.category || null,
           is_verified: profile?.is_verified || false,
         },
-        poll: Array.isArray(p.polls) ? (p.polls[0] || null) : (p.polls || null),
+        // Hide poll data for non-supporters viewing supporter-only posts
+        poll: shouldHideContent ? null : (Array.isArray(p.polls) ? (p.polls[0] || null) : (p.polls || null)),
         likes_count: p.likes_count || 0,
         comments_count: p.comments_count || 0,
         is_liked: user ? userLikedPostIds.has(p.id) : false,
-        is_supporter: user ? supportedCreatorIds.includes(p.creator_id) : false,
+        is_supporter: isSupporterOfThisCreator,
       };
     });
 

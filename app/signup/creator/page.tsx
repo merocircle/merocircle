@@ -21,7 +21,9 @@ import {
   Plus,
   X,
   Calculator,
-  TrendingUp
+  TrendingUp,
+  Camera,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSession, signIn } from 'next-auth/react';
@@ -72,6 +74,8 @@ export default function CreatorSignupPage() {
     tier2: '20',
     tier3: '10'
   });
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
   const [addedSocialPlatforms, setAddedSocialPlatforms] = useState<string[]>([]);
   const [selectedPlatformToAdd, setSelectedPlatformToAdd] = useState<string>('');
@@ -258,6 +262,56 @@ export default function CreatorSignupPage() {
     }
   }, [user, userProfile, router]);
 
+  const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+    // Max 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'avatars');
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      const data = await res.json();
+      setProfilePhotoUrl(data.url);
+
+      // Also update the user's photo_url in the database
+      await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_url: data.url }),
+      });
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
@@ -279,6 +333,12 @@ export default function CreatorSignupPage() {
 
   const handleCreatorSetup = async () => {
     if (!user || !creatorData.category) return;
+
+    // Require profile picture
+    if (!profilePhotoUrl && !user.user_metadata?.avatar_url) {
+      setError('Please upload a profile picture before continuing');
+      return;
+    }
 
     const trimmedUsername = creatorData.username.trim().toLowerCase();
     if (!trimmedUsername) {
@@ -572,8 +632,60 @@ export default function CreatorSignupPage() {
               </div>
 
               <Card className="p-8">
-                {/* First line: Creator page URL (username), then Category, Bio, Social */}
                 <div className="space-y-6">
+                  {/* Profile Picture Upload */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Profile Picture *</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      Your supporters will see this photo. A clear, recognizable image works best.
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border flex-shrink-0">
+                        {(profilePhotoUrl || user?.user_metadata?.avatar_url) ? (
+                          <img
+                            src={profilePhotoUrl || user?.user_metadata?.avatar_url}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                            <User className="w-8 h-8 text-muted-foreground/40" />
+                          </div>
+                        )}
+                        {uploadingPhoto && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-white animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          type="file"
+                          id="profile-photo-upload"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleProfilePhotoUpload}
+                          disabled={uploadingPhoto}
+                        />
+                        <label htmlFor="profile-photo-upload">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            disabled={uploadingPhoto}
+                          >
+                            <span className="cursor-pointer">
+                              <Camera className="w-4 h-4 mr-2" />
+                              {profilePhotoUrl || user?.user_metadata?.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                            </span>
+                          </Button>
+                        </label>
+                        <p className="text-[11px] text-muted-foreground mt-1.5">JPG, PNG. Max 5MB.</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">1. Creator page URL (username)</p>
                     <Label htmlFor="username" className="text-sm font-medium">
@@ -839,7 +951,12 @@ export default function CreatorSignupPage() {
                     </div>
 
                     {/* Tier 2 */}
-                    <div className="p-6 border-2 border-yellow-300 dark:border-yellow-600 rounded-xl bg-yellow-50/50 dark:bg-yellow-900/10">
+                    <div className="relative p-6 border-2 border-yellow-300 dark:border-yellow-600 rounded-xl bg-yellow-50/50 dark:bg-yellow-900/10 opacity-60">
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-semibold rounded-full">
+                          Coming Soon
+                        </span>
+                      </div>
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
                           <Check className="w-6 h-6 text-white" />
@@ -907,7 +1024,12 @@ export default function CreatorSignupPage() {
                     </div>
 
                     {/* Tier 3 */}
-                    <div className="p-6 border-2 border-purple-300 dark:border-purple-600 rounded-xl bg-purple-50/50 dark:bg-purple-900/10">
+                    <div className="relative p-6 border-2 border-purple-300 dark:border-purple-600 rounded-xl bg-purple-50/50 dark:bg-purple-900/10 opacity-60">
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-semibold rounded-full">
+                          Coming Soon
+                        </span>
+                      </div>
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
                           <Crown className="w-6 h-6 text-white" />

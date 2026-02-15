@@ -125,6 +125,7 @@ export function PostCard({
 
   // Check for YouTube video in content
   const youtubeId = React.useMemo(() => {
+    if (!content) return null;
     const urlMatch = content.match(/https?:\/\/[^\s]+/);
     if (urlMatch) {
       return getYouTubeId(urlMatch[0]);

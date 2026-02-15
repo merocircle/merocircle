@@ -29,7 +29,7 @@ const TEAM = [
     current: "Special Project Lead @ Tools for Humanity",
     image: "/Shaswot Lamichhane.png",
     words:
-      "We built MeroCircle because creators in Nepal deserve a direct line to their supporters—no algorithms, no middlemen. Every like and share should turn into real support. This is our way of backing the people who make the content we love.",
+      "We built MeroCircle because creators in Nepal deserve a direct line to their supporters. No algorithms, no middlemen. Every like and share should turn into real support. This is our way of backing the people who make the content we love.",
   },
   {
     name: "Nishar Miya",
@@ -37,15 +37,15 @@ const TEAM = [
     current: "AI Engineer @ Dayos",
     image: "/Nishar.jpeg",
     words:
-      "It started with a simple question: what if supporting your favorite creator was as easy as sending a message? We wanted a place where creators and supporters meet directly. MeroCircle is that bridge—built for Nepal, from the ground up.",
+      "It started with a simple question: what if supporting your favorite creator was as easy as sending a message? We wanted a place where creators and supporters meet directly. MeroCircle is that bridge, built for Nepal, from the ground up.",
   },
   {
     name: "Kritish Dhakal",
     role: "UI/UX Developer",
-    current: "—",
+    current: "",
     image: null as string | null,
     words:
-      "As the UI/UX designer, my focus is on making every tap and scroll feel intentional. MeroCircle should feel like a quiet room where connection happens—clear, calm, and without the noise of feeds or algorithms. We're designing for the moment a supporter decides to give, and for the creator who receives it. That moment deserves a clear path and zero friction.",
+      "As the UI/UX designer, my focus is on making every tap and scroll feel intentional. MeroCircle should feel like a quiet room where connection happens. Clear, calm, and without the noise of feeds or algorithms. We're designing for the moment a supporter decides to give, and for the creator who receives it. That moment deserves a clear path and zero friction.",
     isPlaceholder: true,
   },
 ];
@@ -90,7 +90,7 @@ export function TeamSection() {
                 <div className="team-card-body">
                   <h3 className="team-card-name">{member.name}</h3>
                   <p className="team-card-role">{member.role}</p>
-                  {member.current !== "—" && (
+                  {member.current && (
                     <p className="team-card-current">{member.current}</p>
                   )}
                   <blockquote className="team-card-words">&ldquo;{member.words}&rdquo;</blockquote>

@@ -51,7 +51,8 @@ export async function GET() {
           category,
           is_verified,
           total_earnings,
-          supporters_count
+          supporters_count,
+          vanity_username
         )
       `)
       .in('id', creatorIds);
@@ -95,6 +96,7 @@ export async function GET() {
         id: s.creator_id,
         name: creator ? ((creator.display_name as string) || 'Creator') : 'Creator',
         photo_url: creator ? ((creator.photo_url as string) || null) : null,
+        vanity_username: profile?.vanity_username ? String(profile.vanity_username) : null,
         category: profile?.category ? String(profile.category) : null,
         bio: profile?.bio ? String(profile.bio) : null,
         is_verified: profile?.is_verified === true,

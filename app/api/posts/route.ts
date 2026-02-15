@@ -137,7 +137,8 @@ export async function POST(request: NextRequest) {
       is_public = true,
       tier_required = 'free',
       post_type = 'post',
-      poll_data
+      poll_data,
+      sendNotifications: shouldNotify = true,
     } = body;
 
     // Use unified post publishing engine
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
       tier_required,
       post_type,
       poll_data,
-      sendNotifications: true,
+      sendNotifications: shouldNotify,
       logActivity: true,
     });
 

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useDiscoveryFeed, useCreatorSearch } from '@/hooks/useSocial';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { CreatorCard } from '@/components/explore/CreatorCard';
-import { cn } from '@/lib/utils';
+import { cn, getValidAvatarUrl } from '@/lib/utils';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -208,15 +208,15 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.button
                         key={creator.user_id}
                         variants={itemVariants}
-                        onClick={() => router.push(`/creator/${creator.user_id}`)}
+                        onClick={() => router.push(`/creator/${creator.vanity_username || creator.user_id}`)}
                         className="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 group"
                       >
                         <div className="w-14 h-14 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all overflow-hidden bg-muted">
-                          {creator.avatar_url ? (
-                            <img src={creator.avatar_url} alt={creator.display_name} className="w-full h-full object-cover" />
+                          {getValidAvatarUrl(creator.avatar_url) ? (
+                            <img src={getValidAvatarUrl(creator.avatar_url)!} alt={creator.display_name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                              <span className="text-lg font-semibold text-primary">{creator.display_name.charAt(0)}</span>
+                              <span className="text-lg font-semibold text-primary">{creator.display_name.charAt(0).toUpperCase()}</span>
                             </div>
                           )}
                         </div>

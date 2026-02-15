@@ -15,6 +15,7 @@ import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
 import { CustomQuotedMessage } from './CustomQuotedMessage';
 import { CustomMessageOptions } from './CustomMessageOptions';
+import { CustomMessage } from './CustomMessage';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send
@@ -762,6 +763,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                 QuotedMessage={CustomQuotedMessage}
                 MessageOptions={CustomMessageOptions}
                 MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                Message={CustomMessage}
               >
                 <Window>
                   <CustomChannelHeader />
@@ -935,6 +937,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                 QuotedMessage={CustomQuotedMessage}
                 MessageOptions={CustomMessageOptions}
                 MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                Message={CustomMessage}
               >
                 <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">

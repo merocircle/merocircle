@@ -1,8 +1,8 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Compass, Plus, RefreshCw } from 'lucide-react';
+import { Users, Compass, Plus, RefreshCw, ChevronDown, Sparkles } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,8 @@ import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TimelineFeed, withTimeline } from '@/components/posts/TimelineFeed';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { cn, getValidAvatarUrl } from '@/lib/utils';
 
 // ── Circles strip — followed creators at the top ──
 function CirclesStrip() {
@@ -23,6 +24,7 @@ function CirclesStrip() {
       id: c.id,
       name: c.name || 'Creator',
       photo: c.photo_url,
+      slug: c.vanity_username || c.id,
       hasNew: c.has_new_post || false,
     }));
   }, [supportedCreatorsData]);
@@ -76,7 +78,7 @@ function CirclesStrip() {
         {creators.map((creator: any) => (
           <button
             key={creator.id}
-            onClick={() => router.push(`/creator/${creator.id}`)}
+            onClick={() => router.push(`/creator/${creator.slug}`)}
             className="flex flex-col items-center gap-1 flex-shrink-0 w-[60px] group"
           >
             <div className={cn(
@@ -85,9 +87,9 @@ function CirclesStrip() {
                 ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 : "ring-1.5 ring-border/30 ring-offset-1 ring-offset-background group-hover:ring-primary/40"
             )}>
-              {creator.photo ? (
+              {getValidAvatarUrl(creator.photo) ? (
                 <img
-                  src={creator.photo}
+                  src={getValidAvatarUrl(creator.photo)!}
                   alt={creator.name}
                   className="w-full h-full object-cover"
                   loading="lazy"
@@ -95,7 +97,7 @@ function CirclesStrip() {
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10">
                   <span className="text-sm font-semibold text-primary">
-                    {creator.name.charAt(0)}
+                    {creator.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
               )}
@@ -158,6 +160,9 @@ const FeedSection = memo(function FeedSection() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: feedData, isLoading, isFetching } = useUnifiedDashboard();
+  const [discoverPosts, setDiscoverPosts] = useState<any[]>([]);
+  const [showDiscover, setShowDiscover] = useState(false);
+  const [loadingDiscover, setLoadingDiscover] = useState(false);
 
   useRealtimeFeed();
 
@@ -168,6 +173,23 @@ const FeedSection = memo(function FeedSection() {
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['dashboard', 'unified'] });
   };
+
+  const handleShowMore = useCallback(async () => {
+    if (showDiscover) return; // Already shown
+    setLoadingDiscover(true);
+    try {
+      const res = await fetch('/api/dashboard/discover?limit=20');
+      if (res.ok) {
+        const data = await res.json();
+        setDiscoverPosts(data.posts || []);
+      }
+    } catch (err) {
+      console.error('Failed to load discover posts:', err);
+    } finally {
+      setLoadingDiscover(false);
+      setShowDiscover(true);
+    }
+  }, [showDiscover]);
 
   return (
     <div>
@@ -222,11 +244,60 @@ const FeedSection = memo(function FeedSection() {
                         post={post}
                         currentUserId={userId}
                         showActions={true}
+                        showAuthor={true}
                         isSupporter={post.is_supporter || false}
                       />
                     ),
                   )}
                 </TimelineFeed>
+
+                {/* Show More / Discover section */}
+                {!showDiscover ? (
+                  <div className="flex justify-center py-8">
+                    <Button
+                      variant="outline"
+                      onClick={handleShowMore}
+                      disabled={loadingDiscover}
+                      className="gap-2 rounded-full px-6 border-border/60 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                    >
+                      {loadingDiscover ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 text-primary" />
+                      )}
+                      {loadingDiscover ? 'Loading...' : 'Discover more from the platform'}
+                    </Button>
+                  </div>
+                ) : discoverPosts.length > 0 ? (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-2 px-1 py-4">
+                      <div className="h-px flex-1 bg-border/40" />
+                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-3">
+                        <Compass className="w-3.5 h-3.5" />
+                        From across the platform
+                      </span>
+                      <div className="h-px flex-1 bg-border/40" />
+                    </div>
+                    <TimelineFeed emptyMessage="No discover posts available.">
+                      {withTimeline(
+                        discoverPosts,
+                        (post: any) => (
+                          <EnhancedPostCard
+                            post={post}
+                            currentUserId={userId}
+                            showActions={true}
+                            showAuthor={true}
+                            isSupporter={false}
+                          />
+                        ),
+                      )}
+                    </TimelineFeed>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-sm text-muted-foreground">
+                    No more posts to discover right now.
+                  </div>
+                )}
               </div>
             ) : hasFollowing ? (
               /* Following creators but no posts yet */
