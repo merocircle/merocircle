@@ -27,9 +27,9 @@ export function CustomChannelHeader() {
   ).length;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+    <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card/80 backdrop-blur-sm flex-shrink-0">
       <div className="flex items-center gap-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center ring-1 ring-border/50">
           {channelImage ? (
             <img
               src={channelImage}
@@ -37,37 +37,38 @@ export function CustomChannelHeader() {
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            <Hash className="h-5 w-5 text-primary" />
+            <Hash className="h-4 w-4 text-primary" />
           )}
         </div>
 
         <div>
-          <h3 className="font-semibold text-foreground">{channelName}</h3>
-          <p className="text-sm text-muted-foreground flex items-center gap-2">
-            <Users className="h-3.5 w-3.5" />
-            <span>
-              {memberCount} member{memberCount !== 1 ? 's' : ''}
-              {onlineCount > 0 && (
-                <span className="text-green-600 dark:text-green-400 ml-1">
-                  ({onlineCount} online)
+          <h3 className="font-semibold text-sm text-foreground">{channelName}</h3>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <span>{memberCount} member{memberCount !== 1 ? 's' : ''}</span>
+            {onlineCount > 0 && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  {onlineCount} online
                 </span>
-              )}
-            </span>
+              </>
+            )}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <button
           onClick={() => setShowMembers(!showMembers)}
           className={`p-2 rounded-lg transition-colors ${
             showMembers
               ? 'bg-primary/10 text-primary'
-              : 'hover:bg-muted text-muted-foreground hover:text-primary'
+              : 'hover:bg-muted text-muted-foreground hover:text-foreground'
           }`}
           title="Show Members"
         >
-          <Users className="h-5 w-5" />
+          <Users className="h-4 w-4" />
         </button>
       </div>
 
