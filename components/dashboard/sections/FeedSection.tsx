@@ -115,7 +115,8 @@ const FeedSection = memo(function FeedSection() {
 
   useRealtimeFeed();
 
-  const showSkeleton = isLoading && !feedData;
+  // Show skeleton until we have feed data (avoid flashing "No posts" before the API responds)
+  const showSkeleton = !feedData;
 
   // New API returns supporter_posts + other_posts; fallback to legacy posts
   const supporterPosts = useMemo(() => {
