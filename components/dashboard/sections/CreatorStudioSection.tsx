@@ -15,7 +15,6 @@ import {
   Plus,
   MessageCircle,
   ExternalLink,
-  Pencil,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -33,8 +32,6 @@ import {
   RecentPostsList,
   SupportersList,
 } from './creator-studio';
-import { EditProfilePricingModal } from '../EditProfilePricingModal';
-
 // Tab configuration
 const tabs = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -51,7 +48,6 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState<string | null>(null);
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
-  const [showEditProfilePricingModal, setShowEditProfilePricingModal] = useState(false);
   const highlightedPostRef = useRef<HTMLDivElement | null>(null);
   const scrollAttemptedRef = useRef(false);
 
@@ -474,33 +470,9 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 <span className="hidden sm:inline">View Profile</span>
               </a>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0"
-              onClick={() => setShowEditProfilePricingModal(true)}
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Edit profile & pricing</span>
-            </Button>
           </div>
         </div>
       </motion.div>
-
-      <EditProfilePricingModal
-        open={showEditProfilePricingModal}
-        onOpenChange={setShowEditProfilePricingModal}
-        profile={{
-          ...(dashboardData?.profile ?? { bio: null, category: null, social_links: {}, vanity_username: null }),
-          display_name: user?.display_name ?? dashboardData?.profile?.display_name ?? null,
-        }}
-        tiers={dashboardData?.tiers ?? []}
-        onSaved={() => {
-          queryClient.invalidateQueries({ queryKey: ['creator', 'dashboard', user?.id] });
-          setShowSuccessMessage(true);
-          setTimeout(() => setShowSuccessMessage(false), 3000);
-        }}
-      />
 
       {showOnboardingBanner && user && (
         <div className="mb-5">
