@@ -38,6 +38,7 @@ export function PollCard({ pollId, currentUserId, creatorId, showResults = false
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [showAllOptions, setShowAllOptions] = useState(false);
 
   useEffect(() => {
     fetchPollData();
@@ -120,6 +121,11 @@ export function PollCard({ pollId, currentUserId, creatorId, showResults = false
   const isCreator = !!(currentUserId && creatorId && currentUserId === creatorId);
   const effectiveShowResults = showResults || isCreator || hasVoted || hasExpired;
 
+  // Only show first 5 options by default, rest are hidden behind "Show more"
+  const hasMoreOptions = options.length > 5;
+  const visibleOptions = showAllOptions ? options : options.slice(0, 5);
+  const hiddenCount = options.length - 5;
+
   return (
     <Card className="p-6 bg-muted/30 border-border/50">
       {/* Poll Question */}
@@ -156,7 +162,7 @@ export function PollCard({ pollId, currentUserId, creatorId, showResults = false
 
       {/* Poll Options */}
       <div className="space-y-3">
-        {options.map((option) => {
+        {visibleOptions.map((option) => {
           const isSelected = selectedOptions.includes(option.id);
           const hasUserVoted = userVotes.includes(option.id);
 
@@ -232,6 +238,18 @@ export function PollCard({ pollId, currentUserId, creatorId, showResults = false
           }
         })}
       </div>
+
+      {/* Show More Button */}
+      {hasMoreOptions && !showAllOptions && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAllOptions(true)}
+          className="mt-3 w-full text-muted-foreground hover:text-foreground"
+        >
+          Show {hiddenCount} more option{hiddenCount === 1 ? '' : 's'}
+        </Button>
+      )}
 
       {/* View Results Button */}
       {!effectiveShowResults && hasVoted && (
