@@ -19,6 +19,8 @@ interface SubscriptionExpiringReminderProps {
   creatorProfileUrl: string;
   settingsUrl: string;
   helpUrl?: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 export default function SubscriptionExpiringReminder({
@@ -31,6 +33,8 @@ export default function SubscriptionExpiringReminder({
   creatorProfileUrl = 'https://merocircle.app',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: SubscriptionExpiringReminderProps) {
   const formattedDate = new Date(expiryDate).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -53,6 +57,8 @@ export default function SubscriptionExpiringReminder({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Heading style={title}>Hi {supporterName},</Heading>

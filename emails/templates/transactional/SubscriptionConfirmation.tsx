@@ -20,6 +20,8 @@ interface SubscriptionConfirmationProps {
   chatUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 /**
@@ -38,6 +40,8 @@ export default function SubscriptionConfirmation({
   chatUrl = 'https://merocircle.app/chat',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: SubscriptionConfirmationProps) {
   const tierEmoji = tierLevel === 1 ? '⭐' : tierLevel === 2 ? '⭐⭐' : '⭐⭐⭐';
 
@@ -48,6 +52,8 @@ export default function SubscriptionConfirmation({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Text style={successIcon}>🎉</Text>

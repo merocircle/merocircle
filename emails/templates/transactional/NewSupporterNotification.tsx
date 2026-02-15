@@ -21,6 +21,8 @@ interface NewSupporterNotificationProps {
   supportersUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 /**
@@ -40,6 +42,8 @@ export default function NewSupporterNotification({
   supportersUrl = 'https://merocircle.app/creator-studio?tab=supporters',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: NewSupporterNotificationProps) {
   const tierEmoji = tierLevel === 1 ? '⭐' : tierLevel === 2 ? '⭐⭐' : '⭐⭐⭐';
 
@@ -49,6 +53,8 @@ export default function NewSupporterNotification({
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
       hideCreatorInfo={true}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Text style={successIcon}>🎊</Text>

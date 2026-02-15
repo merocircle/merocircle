@@ -136,6 +136,8 @@ export async function GET(request: NextRequest) {
             receiptUrl: `${appUrl}/payment/receipt/TXN-2024-001234`,
             settingsUrl: `${appUrl}/settings`,
             helpUrl: `${appUrl}/help`,
+            appUrl,
+            logoSrc: `${appUrl}/logo/logo-light.png`,
           })
         );
         break;
@@ -152,6 +154,8 @@ export async function GET(request: NextRequest) {
             creatorProfileUrl: `${appUrl}/creator/bhuwan`,
             settingsUrl: `${appUrl}/settings`,
             helpUrl: `${appUrl}/help`,
+            appUrl,
+            logoSrc: `${appUrl}/logo/logo-light.png`,
           })
         );
         break;

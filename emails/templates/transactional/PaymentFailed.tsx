@@ -19,6 +19,8 @@ interface PaymentFailedProps {
   creatorProfileUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 /**
@@ -36,6 +38,8 @@ export default function PaymentFailed({
   creatorProfileUrl = 'https://merocircle.app/sarahchen',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: PaymentFailedProps) {
   return (
     <EmailLayout
@@ -44,6 +48,8 @@ export default function PaymentFailed({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Text style={errorIcon}>!</Text>

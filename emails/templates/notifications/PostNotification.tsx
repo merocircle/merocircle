@@ -20,6 +20,8 @@ interface PostNotificationProps {
   creatorProfileUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 /**
@@ -37,6 +39,8 @@ export default function PostNotification({
   creatorProfileUrl = 'https://merocircle.app/sarahchen',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: PostNotificationProps) {
   const preview = postContent.length > 160 ? postContent.substring(0, 160) + '…' : postContent;
 
@@ -47,6 +51,8 @@ export default function PostNotification({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Text style={greeting}>Hi {supporterName},</Text>
