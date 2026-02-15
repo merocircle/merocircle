@@ -27,7 +27,6 @@ import {
   FileText,
   Send,
   Clock,
-  Globe,
   Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -371,9 +370,25 @@ export function EnhancedPostCard({
       ? post.content
       : `${post.content.slice(0, DESCRIPTION_PREVIEW_LENGTH)}...`;
 
+  const isSupportersOnlyPost = isSupporterOnly || post.is_public === false;
+
   return (
     <article className="w-full min-w-0">
-      <div className="bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-300 hover:border-border/80 hover:shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
+      <div
+        className={cn(
+          "rounded-xl transition-all duration-300",
+          isSupportersOnlyPost &&
+            "p-[3px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_16px_rgba(234,88,12,0.22),0_0_40px_rgba(234,88,12,0.12),0_0_72px_rgba(234,88,12,0.06)] hover:shadow-[0_0_20px_rgba(234,88,12,0.28),0_0_48px_rgba(234,88,12,0.14),0_0_88px_rgba(234,88,12,0.08)]"
+        )}
+      >
+        <div
+          className={cn(
+            "bg-card overflow-hidden transition-all duration-300",
+            isSupportersOnlyPost
+              ? "rounded-[10px]"
+              : "rounded-xl border border-border/50 hover:border-border/80 hover:shadow-[0_2px_16px_rgba(0,0,0,0.06)]"
+          )}
+        >
         {showAuthor && (
           <div className="px-4 sm:px-5 pt-4 sm:pt-5">
             <Link
@@ -390,23 +405,25 @@ export function EnhancedPostCard({
                 <p className="text-sm font-semibold text-foreground">
                   {post.creator.display_name}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
                     {formatDistanceToNow(new Date(post.created_at), {
                       addSuffix: true,
                     })}
                   </span>
-                  <span>·</span>
-                  {isSupporterOnly || post.is_public === false ? (
-                    <span className="flex items-center gap-1">
-                      <Lock className="w-3 h-3" />
-                      Supporter Only
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Globe className="w-3 h-3" />
-                      Public
+                  {isSupportersOnlyPost && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold",
+                        "border-2 border-orange-400/60 dark:border-orange-500/50",
+                        "bg-gradient-to-r from-orange-400/15 via-red-400/10 to-red-500/15",
+                        "text-orange-800 dark:text-orange-200",
+                        "shadow-[0_0_12px_rgba(234,88,12,0.15)]"
+                      )}
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      Supporters only
                     </span>
                   )}
                 </div>
@@ -705,6 +722,7 @@ export function EnhancedPostCard({
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
 
       <ShareModal
