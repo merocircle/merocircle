@@ -51,8 +51,16 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
   const [platformIds, setPlatformIds] = useState<string[]>([]);
   const [tierPrices, setTierPrices] = useState<Record<number, string>>({});
   const [extraPerks, setExtraPerks] = useState<Record<number, string[]>>({ 1: [], 2: [], 3: [] });
+  const [estTier2, setEstTier2] = useState('20');
+  const [estTier3, setEstTier3] = useState('10');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  const monthlyIncome = () => {
+    const p2 = (parseFloat(tierPrices[2] ?? '0') || 0) * (parseFloat(estTier2) || 0);
+    const p3 = (parseFloat(tierPrices[3] ?? '0') || 0) * (parseFloat(estTier3) || 0);
+    return p2 + p3;
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -165,7 +173,7 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
       onClick={() => onOpenChange(false)}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900"
+        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -301,61 +309,98 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
           )}
 
           {step === 2 && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Set your tier prices (NPR per month). Tier 1 is always free.</p>
-              {[1, 2, 3].map((level) => {
-                const t = tiers?.find((x) => x.tier_level === level);
-                const name = t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
-                return (
-                  <div
-                    key={level}
-                    className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50"
-                  >
-                    <p className="mb-2 font-medium text-gray-900 dark:text-gray-100">{name}</p>
-                    {level === 1 ? (
-                      <p className="text-sm text-gray-500">Free — no payment</p>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={0}
-                          value={tierPrices[level] ?? ''}
-                          onChange={(e) => setTierPrices({ ...tierPrices, [level]: e.target.value })}
-                          className={`${inputStyles} w-24`}
-                        />
-                        <span className="text-sm text-gray-500">NPR / month</span>
-                      </div>
-                    )}
-                    <div className="mt-3">
-                      <p className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">Extra perks</p>
-                      {(extraPerks[level] ?? []).map((perk, i) => (
-                        <div key={i} className="mb-1 flex gap-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr,minmax(240px,320px)]">
+              {/* Left: Tier pricing */}
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Set your tier prices (NPR per month). Tier 1 is always free.</p>
+                {[1, 2, 3].map((level) => {
+                  const t = tiers?.find((x) => x.tier_level === level);
+                  const name = t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
+                  return (
+                    <div
+                      key={level}
+                      className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50"
+                    >
+                      <p className="mb-2 font-medium text-gray-900 dark:text-gray-100">{name}</p>
+                      {level === 1 ? (
+                        <p className="text-sm text-gray-500">Free — no payment</p>
+                      ) : (
+                        <div className="flex items-center gap-2">
                           <input
-                            type="text"
-                            value={perk}
-                            onChange={(e) => setPerk(level, i, e.target.value)}
-                            placeholder="e.g. Early access"
-                            className={inputStyles}
+                            type="number"
+                            min={0}
+                            value={tierPrices[level] ?? ''}
+                            onChange={(e) => setTierPrices({ ...tierPrices, [level]: e.target.value })}
+                            className={`${inputStyles} w-24`}
                           />
-                          <button type="button" onClick={() => removePerk(level, i)} className="rounded p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700">
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                          <span className="text-sm text-gray-500">NPR / month</span>
                         </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addPerk(level)}
-                        className="mt-1 text-sm text-violet-600 hover:text-violet-700 dark:text-violet-400"
-                      >
-                        + Add perk
-                      </button>
+                      )}
+                      <div className="mt-3">
+                        <p className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">Extra perks</p>
+                        {(extraPerks[level] ?? []).map((perk, i) => (
+                          <div key={i} className="mb-1 flex gap-2">
+                            <input
+                              type="text"
+                              value={perk}
+                              onChange={(e) => setPerk(level, i, e.target.value)}
+                              placeholder="e.g. Early access"
+                              className={inputStyles}
+                            />
+                            <button type="button" onClick={() => removePerk(level, i)} className="rounded p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700">
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => addPerk(level)}
+                          className="mt-1 text-sm text-violet-600 hover:text-violet-700 dark:text-violet-400"
+                        >
+                          + Add perk
+                        </button>
+                      </div>
                     </div>
+                  );
+                })}
+                {err && <p className="text-sm text-red-600">{err}</p>}
+              </div>
+
+              {/* Right: Income calculator */}
+              <div className="rounded-lg border border-emerald-200 bg-gradient-to-b from-emerald-50/80 to-teal-50/80 p-4 dark:border-emerald-800 dark:from-emerald-950/30 dark:to-teal-950/30 md:sticky md:top-0">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="text-lg">🧮</span>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Income calculator</h3>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600 dark:text-gray-400">Est. Inner Circle supporters</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={estTier2}
+                      onChange={(e) => setEstTier2(e.target.value)}
+                      className={inputStyles}
+                    />
                   </div>
-                );
-              })}
-              {err && <p className="text-sm text-red-600">{err}</p>}
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-600 dark:text-gray-400">Est. Core Member supporters</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={estTier3}
+                      onChange={(e) => setEstTier3(e.target.value)}
+                      className={inputStyles}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 rounded-lg bg-emerald-600 px-4 py-3 text-white">
+                  <p className="text-xs text-emerald-100">Est. monthly</p>
+                  <p className="text-xl font-bold">NPR {monthlyIncome().toLocaleString()}</p>
+                </div>
+              </div>
             </div>
           )}
         </div>

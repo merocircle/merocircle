@@ -33,7 +33,7 @@ import {
   RecentPostsList,
   SupportersList,
 } from './creator-studio';
-import { EditProfilePricingModal } from '../EditProfilePricingModal';
+import { EditProfilePricingModal } from './EditProfilePricingModal';
 
 // Tab configuration
 const tabs = [
