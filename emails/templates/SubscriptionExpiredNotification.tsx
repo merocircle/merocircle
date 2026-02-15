@@ -16,6 +16,8 @@ interface SubscriptionExpiredNotificationProps {
   creatorProfileUrl: string;
   settingsUrl: string;
   helpUrl?: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 export default function SubscriptionExpiredNotification({
@@ -25,6 +27,8 @@ export default function SubscriptionExpiredNotification({
   creatorProfileUrl = 'https://merocircle.app',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: SubscriptionExpiredNotificationProps) {
   return (
     <EmailLayout
@@ -33,6 +37,8 @@ export default function SubscriptionExpiredNotification({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Heading style={title}>Hi {supporterName},</Heading>

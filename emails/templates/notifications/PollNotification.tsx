@@ -18,6 +18,8 @@ interface PollNotificationProps {
   creatorProfileUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 /**
@@ -34,6 +36,8 @@ export default function PollNotification({
   creatorProfileUrl = 'https://merocircle.app/sarahchen',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: PollNotificationProps) {
   const preview = pollDescription.length > 160 ? pollDescription.substring(0, 160) + '…' : pollDescription;
 
@@ -44,6 +48,8 @@ export default function PollNotification({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Text style={greeting}>Hi {supporterName},</Text>

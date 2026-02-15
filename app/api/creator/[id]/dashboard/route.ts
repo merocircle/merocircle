@@ -40,7 +40,8 @@ export async function GET(
         updated_at,
         social_links,
         cover_image_url,
-        onboarding_completed
+        onboarding_completed,
+        vanity_username
       `)
       .eq('user_id', creatorId)
       .single();
@@ -120,7 +121,28 @@ export async function GET(
     const totalEarnings = calculateTotalAmount(transactions || []);
     const monthlyEarnings = calculateMonthlyTotal(transactions || []);
 
+    const { data: tiersData } = await supabase
+      .from('subscription_tiers')
+      .select('*')
+      .eq('creator_id', creatorId)
+      .order('tier_level', { ascending: true });
+
     return NextResponse.json({
+      profile: {
+        bio: profileToUse.bio,
+        category: profileToUse.category,
+        social_links: profileToUse.social_links || {},
+        vanity_username: profileToUse.vanity_username ?? null,
+        cover_image_url: profileToUse.cover_image_url ?? null,
+      },
+      tiers: (tiersData || []).map((t: { tier_level: number; price: number; tier_name: string; description: string | null; benefits: string[]; extra_perks: string[] }) => ({
+        tier_level: t.tier_level,
+        price: t.price,
+        tier_name: t.tier_name,
+        description: t.description,
+        benefits: t.benefits || [],
+        extra_perks: t.extra_perks || [],
+      })),
       stats: {
         monthlyEarnings,
         totalEarnings,

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-provider";
@@ -14,12 +15,14 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-space-grotesk",
+  display: "swap",
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800"],
   variable: "--font-plus-jakarta-sans",
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -122,7 +125,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"
@@ -183,7 +186,9 @@ export default function RootLayout({
           }}
         />
         <link rel="manifest" href="/manifest.json" />
-        <script src="https://t.contentsquare.net/uxa/0a3928cc3193c.js"></script>
+        {/* DNS prefetch for faster third-party connections */}
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -191,24 +196,24 @@ export default function RootLayout({
                 try {
                   var theme = localStorage.getItem('merocircle-theme');
                   if (theme === 'dark') {
-                    document.documentElement.classList.remove('light');
                     document.documentElement.classList.add('dark');
                   } else if (theme === 'light') {
-                    document.documentElement.classList.remove('dark');
                     document.documentElement.classList.add('light');
                   } else {
                     // system or unset: follow OS preference
                     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                       document.documentElement.classList.add('dark');
-                      document.documentElement.classList.remove('light');
                     } else {
                       document.documentElement.classList.add('light');
-                      document.documentElement.classList.remove('dark');
                     }
                   }
                 } catch (e) {
-                  document.documentElement.classList.add('light');
-                  document.documentElement.classList.remove('dark');
+                  // On error, follow OS preference
+                  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.add('light');
+                  }
                 }
               })();
             `,
@@ -216,6 +221,11 @@ export default function RootLayout({
         />
       </head>
       <body className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} font-sans antialiased`} suppressHydrationWarning>
+        {/* Load analytics after page is interactive — not render-blocking */}
+        <Script
+          src="https://t.contentsquare.net/uxa/0a3928cc3193c.js"
+          strategy="lazyOnload"
+        />
         <ErrorBoundary>
         <ThemeProvider
           attribute="class"

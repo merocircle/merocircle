@@ -71,7 +71,6 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold text-sm text-foreground truncate">{channelName}</h3>
             <div className="flex items-center gap-2 mt-0.5">
-              {/* Online avatar stack */}
               {avatarStack.length > 0 && (
                 <div className="flex -space-x-1.5">
                   {avatarStack.map((m: any) => (
@@ -130,7 +129,6 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
         </div>
       </div>
 
-      {/* Search bar */}
       {showSearch && (
         <div className="px-4 py-2 border-b border-border bg-card/40 flex-shrink-0">
           <div className="flex items-center gap-2">

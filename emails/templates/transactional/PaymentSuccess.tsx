@@ -19,6 +19,8 @@ interface PaymentSuccessProps {
   receiptUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 /**
@@ -36,6 +38,8 @@ export default function PaymentSuccess({
   receiptUrl = 'https://merocircle.app/receipts/123',
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
+  appUrl,
+  logoSrc,
 }: PaymentSuccessProps) {
   return (
     <EmailLayout
@@ -44,6 +48,8 @@ export default function PaymentSuccess({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Text style={successIcon}>✓</Text>

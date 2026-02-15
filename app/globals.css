@@ -899,7 +899,7 @@ section:has(+ .rounded-section),
 /* ===========================================
    STREAM CHAT - CREATOR MESSAGE HIGHLIGHT
    Full-width themed row background for creator messages.
-   Creator badge is injected via CSS ::after on the sender name.
+   Creator badge via creator-message-tag; left-edge glow via ::before.
    =========================================== */
 .creator-message-row {
   position: relative;
@@ -931,17 +931,41 @@ section:has(+ .rounded-section),
   box-shadow: 0 0 8px hsl(var(--primary) / 0.3);
 }
 
+.creator-message-indicator {
+  display: none;
+}
+
+.creator-message-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 10px 1px 8px;
+  margin-left: 40px;
+  margin-bottom: -2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.12);
+  border-radius: 0 0 6px 6px;
+}
+
 /* Dark mode: stronger highlight */
 .dark .creator-message-row {
   background: linear-gradient(
     90deg,
-    hsl(var(--primary) / 0.06) 0%,
-    hsl(var(--primary) / 0.12) 40%,
-    hsl(var(--primary) / 0.06) 100%
+    hsl(var(--primary) / 0.08) 0%,
+    hsl(var(--primary) / 0.14) 50%,
+    hsl(var(--primary) / 0.08) 100%
   );
   border-left-color: hsl(var(--primary) / 0.7);
 }
 
 .dark .creator-message-row::before {
   box-shadow: 0 0 12px hsl(var(--primary) / 0.4);
+}
+
+.dark .creator-message-tag {
+  background: hsl(var(--primary) / 0.18);
 }

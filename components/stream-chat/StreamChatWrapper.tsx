@@ -567,7 +567,6 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
 
     return (
       <div key={server.id} className="mb-1">
-        {/* Server header -- always visible */}
         <button
           onClick={() => toggleServer(server.id)}
           className="w-full px-3 py-2 flex items-center gap-2.5 text-left hover:bg-muted/50 rounded-lg transition-colors group"
@@ -614,7 +613,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                 className="w-full px-3 py-2.5 flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-border/50"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>New Channel</span>
+                <span>Create Channel</span>
               </button>
             )}
           </div>
@@ -722,9 +721,13 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
             {/* Sidebar Header */}
             <div className="px-4 pt-4 pb-3 flex-shrink-0">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Chats</h2>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <MessageCircle className="h-4 w-4 text-primary" />
+                  </div>
+                  <h2 className="text-lg font-bold text-foreground tracking-tight">Chats</h2>
+                </div>
               </div>
-              {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <input
@@ -753,21 +756,31 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                 </div>
               ) : (
                 <div className="py-1 space-y-1">
-                  {/* DMs first -- like modern chat apps */}
                   {!creatorId && dmChannels.length > 0 && (
                     <div className="mb-2">
-                      <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
-                        <span>{isCreator ? 'Direct Messages' : 'Messages'}</span>
+                      <button
+                        onClick={() => setExpandedDMs(!expandedDMs)}
+                        className="w-full px-2 py-1.5 flex items-center gap-2 text-left group"
+                      >
+                        {expandedDMs ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                          {isCreator ? 'Direct Messages' : 'Messages'}
+                        </span>
                         {dmChannels.reduce((sum, dm) => sum + dm.unreadCount, 0) > 0 && (
                           <span className="min-w-[18px] h-[18px] px-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                             {dmChannels.reduce((sum, dm) => sum + dm.unreadCount, 0)}
                           </span>
                         )}
-                      </div>
-                      <div className="space-y-0.5">
-                        {dmChannels
-                          .filter(dm => !sidebarSearch || dm.otherUser.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
-                          .map(dm => (
+                      </button>
+                      {expandedDMs && (
+                        <div className="space-y-0.5">
+                          {dmChannels
+                            .filter(dm => !sidebarSearch || dm.otherUser.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
+                            .map(dm => (
                             <DMListItem
                               key={dm.channel.id}
                               dm={dm}
@@ -775,7 +788,8 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
                               onClick={() => selectDMChannel(dm)}
                             />
                           ))}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1142,7 +1156,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
         /* ── Styled message input area ── */
         .str-chat__message-input {
           border-top: 1px solid var(--border) !important;
-          padding: 10px 16px !important;
+          padding: 12px 16px !important;
           background: var(--card) !important;
         }
 
@@ -1303,6 +1317,7 @@ export function StreamChatWrapper({ className = '', creatorId, channelId: urlCha
           opacity: 0.8;
         }
 
+        /* Avatar sizing */
         .str-chat__avatar-image {
           border-radius: 50% !important;
         }

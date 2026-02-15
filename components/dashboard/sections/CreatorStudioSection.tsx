@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Crown,
@@ -14,12 +15,14 @@ import {
   Plus,
   MessageCircle,
   ExternalLink,
+  Pencil,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
 import {
   StatsCards,
@@ -30,6 +33,7 @@ import {
   RecentPostsList,
   SupportersList,
 } from './creator-studio';
+import { EditProfilePricingModal } from './EditProfilePricingModal';
 
 // Tab configuration
 const tabs = [
@@ -44,9 +48,10 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showErrorMessage, setShowErrorMessage] = useState<string | null>(null);
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [showEditProfilePricingModal, setShowEditProfilePricingModal] = useState(false);
   const highlightedPostRef = useRef<HTMLDivElement | null>(null);
   const scrollAttemptedRef = useRef(false);
 
@@ -65,6 +70,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
   const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
   const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
+  const queryClient = useQueryClient();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
 
   useEffect(() => {
@@ -349,8 +355,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         setNotifyByEmail(true);
         setShowCreatePostModal(false);
 
-        setShowSuccessMessage(true);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
+        setSuccessMessage('Post published!');
+        setTimeout(() => setSuccessMessage(null), 3000);
 
         // Ensure we're on the overview tab, then scroll to the new post
         setActiveTab('overview');
@@ -441,18 +447,14 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
           {/* Quick actions */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
             <Button
-              size="sm"
-              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm shadow-sm shadow-primary/10 flex-shrink-0"
-              onClick={() => setShowCreatePostModal(true)}
+              variant="default"
+              className="gap-2 rounded-xl"
+              asChild
             >
-              <Plus className="w-3.5 h-3.5" />
-              New Post
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0" asChild>
-              <a href="/chat">
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Chat</span>
-              </a>
+              <Link href="/create-post">
+                <Plus className="w-4 h-4" />
+                Create Post
+              </Link>
             </Button>
             <Button
               variant={shareCopied ? "default" : "outline"}
@@ -472,9 +474,33 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 <span className="hidden sm:inline">View Profile</span>
               </a>
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0"
+              onClick={() => setShowEditProfilePricingModal(true)}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Edit profile & pricing</span>
+            </Button>
           </div>
         </div>
       </motion.div>
+
+      <EditProfilePricingModal
+        open={showEditProfilePricingModal}
+        onOpenChange={setShowEditProfilePricingModal}
+        profile={{
+          ...(dashboardData?.profile ?? { bio: null, category: null, social_links: {}, vanity_username: null }),
+          display_name: user?.display_name ?? dashboardData?.profile?.display_name ?? null,
+        }}
+        tiers={dashboardData?.tiers ?? []}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['creator', 'dashboard', user?.id] });
+          setSuccessMessage('Profile & pricing updated!');
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }}
+      />
 
       {showOnboardingBanner && user && (
         <div className="mb-5">
@@ -489,7 +515,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       )}
 
       <ToastMessages
-        showSuccess={showSuccessMessage}
+        showSuccess={!!successMessage}
+        successMessage={successMessage ?? undefined}
         showError={!!showErrorMessage}
         errorMessage={showErrorMessage}
       />

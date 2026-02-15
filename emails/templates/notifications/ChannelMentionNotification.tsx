@@ -22,6 +22,8 @@ interface ChannelMentionNotificationProps {
   helpUrl: string;
   /** 'you' = specific @username mention; 'everyone' = @everyone mention */
   mentionType?: 'you' | 'everyone';
+  appUrl?: string;
+  logoSrc?: string;
 }
 
 /**
@@ -40,6 +42,8 @@ export default function ChannelMentionNotification({
   settingsUrl = 'https://merocircle.app/settings',
   helpUrl = 'https://merocircle.app/help',
   mentionType = 'everyone',
+  appUrl,
+  logoSrc,
 }: ChannelMentionNotificationProps) {
   const preview = messageText.length > 160 ? messageText.substring(0, 160) + '…' : messageText;
   const isMentionYou = mentionType === 'you';
@@ -53,6 +57,8 @@ export default function ChannelMentionNotification({
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
+      appUrl={appUrl}
+      logoSrc={logoSrc}
     >
       <Section style={contentSection}>
         <Text style={greeting}>Hi {memberName},</Text>

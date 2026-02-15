@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -66,12 +67,10 @@ export function ActivityBar({
 }: ActivityBarProps) {
   const pathname = usePathname();
   const { isCreator, creatorProfile } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const isAdminUser = user?.id ? isAdmin(user.id) : false;
-
-  const resolvedTheme = theme === 'system'
-    ? (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : theme;
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
   const toggleTheme = () => {
     // Cycle: system -> light -> dark -> system
@@ -299,11 +298,11 @@ export function ActivityBar({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {theme === 'system' ? <Monitor size={18} /> : theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                {!mounted ? <Monitor size={18} /> : theme === 'system' ? <Monitor size={18} /> : theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </motion.button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={8}>
-              <p>{theme === 'system' ? 'System Theme' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
+              <p>{!mounted ? 'Theme' : theme === 'system' ? 'System Theme' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
             </TooltipContent>
           </Tooltip>
 

@@ -61,13 +61,17 @@ export function useRealtimeFeed() {
         (payload: any) => {
           const updatedPost = payload.new;
           queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            const updateIn = (list: Post[] | undefined) =>
+              list?.map((post: Post) => (post.id === updatedPost.id ? { ...post, ...updatedPost } : post));
+            if (old?.supporter_posts != null || old?.other_posts != null) {
+              return {
+                ...old,
+                supporter_posts: updateIn(old.supporter_posts) ?? old.supporter_posts,
+                other_posts: updateIn(old.other_posts) ?? old.other_posts,
+              };
+            }
             if (!old?.posts) return old;
-            return {
-              ...old,
-              posts: old.posts.map((post: Post) =>
-                post.id === updatedPost.id ? { ...post, ...updatedPost } : post
-              ),
-            };
+            return { ...old, posts: updateIn(old.posts) ?? old.posts };
           });
         }
       )
@@ -77,11 +81,16 @@ export function useRealtimeFeed() {
         (payload: any) => {
           const deletedId = payload.old.id;
           queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            const filterOut = (list: Post[] | undefined) => list?.filter((post: Post) => post.id !== deletedId);
+            if (old?.supporter_posts != null || old?.other_posts != null) {
+              return {
+                ...old,
+                supporter_posts: filterOut(old.supporter_posts) ?? old.supporter_posts,
+                other_posts: filterOut(old.other_posts) ?? old.other_posts,
+              };
+            }
             if (!old?.posts) return old;
-            return {
-              ...old,
-              posts: old.posts.filter((post: Post) => post.id !== deletedId),
-            };
+            return { ...old, posts: filterOut(old.posts) ?? old.posts };
           });
         }
       )
@@ -97,15 +106,19 @@ export function useRealtimeFeed() {
         (payload: any) => {
           const newLike = payload.new;
           queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
+            const bumpLike = (list: Post[] | undefined) =>
+              list?.map((post: Post) =>
+                post.id === newLike.post_id ? { ...post, likes_count: (post.likes_count || 0) + 1 } : post
+              );
+            if (old?.supporter_posts != null || old?.other_posts != null) {
+              return {
+                ...old,
+                supporter_posts: bumpLike(old.supporter_posts) ?? old.supporter_posts,
+                other_posts: bumpLike(old.other_posts) ?? old.other_posts,
+              };
+            }
             if (!old?.posts) return old;
-            return {
-              ...old,
-              posts: old.posts.map((post: Post) =>
-                post.id === newLike.post_id
-                  ? { ...post, likes_count: (post.likes_count || 0) + 1 }
-                  : post
-              ),
-            };
+            return { ...old, posts: bumpLike(old.posts) ?? old.posts };
           });
         }
       )
@@ -115,15 +128,21 @@ export function useRealtimeFeed() {
         (payload: any) => {
           const deletedLike = payload.old;
           queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
-            if (!old?.posts) return old;
-            return {
-              ...old,
-              posts: old.posts.map((post: Post) =>
+            const unbumpLike = (list: Post[] | undefined) =>
+              list?.map((post: Post) =>
                 post.id === deletedLike.post_id
                   ? { ...post, likes_count: Math.max(0, (post.likes_count || 0) - 1) }
                   : post
-              ),
-            };
+              );
+            if (old?.supporter_posts != null || old?.other_posts != null) {
+              return {
+                ...old,
+                supporter_posts: unbumpLike(old.supporter_posts) ?? old.supporter_posts,
+                other_posts: unbumpLike(old.other_posts) ?? old.other_posts,
+              };
+            }
+            if (!old?.posts) return old;
+            return { ...old, posts: unbumpLike(old.posts) ?? old.posts };
           });
         }
       )
@@ -139,15 +158,21 @@ export function useRealtimeFeed() {
         (payload: any) => {
           const newComment = payload.new;
           queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
-            if (!old?.posts) return old;
-            return {
-              ...old,
-              posts: old.posts.map((post: Post) =>
+            const bumpComment = (list: Post[] | undefined) =>
+              list?.map((post: Post) =>
                 post.id === newComment.post_id
                   ? { ...post, comments_count: (post.comments_count || 0) + 1 }
                   : post
-              ),
-            };
+              );
+            if (old?.supporter_posts != null || old?.other_posts != null) {
+              return {
+                ...old,
+                supporter_posts: bumpComment(old.supporter_posts) ?? old.supporter_posts,
+                other_posts: bumpComment(old.other_posts) ?? old.other_posts,
+              };
+            }
+            if (!old?.posts) return old;
+            return { ...old, posts: bumpComment(old.posts) ?? old.posts };
           });
           queryClientRef.current.invalidateQueries({ queryKey: ['comments', newComment.post_id] });
         }
@@ -158,15 +183,21 @@ export function useRealtimeFeed() {
         (payload: any) => {
           const deletedComment = payload.old;
           queryClientRef.current.setQueryData(['dashboard', 'unified', userIdRef.current], (old: any) => {
-            if (!old?.posts) return old;
-            return {
-              ...old,
-              posts: old.posts.map((post: Post) =>
+            const unbumpComment = (list: Post[] | undefined) =>
+              list?.map((post: Post) =>
                 post.id === deletedComment.post_id
                   ? { ...post, comments_count: Math.max(0, (post.comments_count || 0) - 1) }
                   : post
-              ),
-            };
+              );
+            if (old?.supporter_posts != null || old?.other_posts != null) {
+              return {
+                ...old,
+                supporter_posts: unbumpComment(old.supporter_posts) ?? old.supporter_posts,
+                other_posts: unbumpComment(old.other_posts) ?? old.other_posts,
+              };
+            }
+            if (!old?.posts) return old;
+            return { ...old, posts: unbumpComment(old.posts) ?? old.posts };
           });
           queryClientRef.current.invalidateQueries({ queryKey: ['comments', deletedComment.post_id] });
         }
