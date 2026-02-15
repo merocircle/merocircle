@@ -17,7 +17,6 @@ import {
   MessageCircle,
   Bookmark,
   Loader2,
-  Lock,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -28,6 +27,7 @@ import {
   Send,
   Clock,
   Share2,
+  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -383,12 +383,30 @@ export function EnhancedPostCard({
       >
         <div
           className={cn(
-            "bg-card overflow-hidden transition-all duration-300",
+            "bg-card overflow-hidden transition-all duration-300 relative",
             isSupportersOnlyPost
               ? "rounded-[10px]"
               : "rounded-xl border border-border/50 hover:border-border/80 hover:shadow-[0_2px_16px_rgba(0,0,0,0.06)]"
           )}
         >
+          {/* Supporters only badge – top right */}
+          {isSupportersOnlyPost && (
+            <div className="absolute top-3 right-3 z-10">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold",
+                  "border-2 border-orange-400/60 dark:border-orange-500/50",
+                  "bg-gradient-to-r from-orange-400/15 via-red-400/10 to-red-500/15",
+                  "text-orange-800 dark:text-orange-200",
+                  "shadow-[0_0_12px_rgba(234,88,12,0.15)]"
+                )}
+              >
+                <UsersRound className="w-3.5 h-3.5" />
+                Supporters only
+              </span>
+            </div>
+          )}
+
         {showAuthor && (
           <div className="px-4 sm:px-5 pt-4 sm:pt-5">
             <Link
@@ -412,20 +430,6 @@ export function EnhancedPostCard({
                       addSuffix: true,
                     })}
                   </span>
-                  {isSupportersOnlyPost && (
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold",
-                        "border-2 border-orange-400/60 dark:border-orange-500/50",
-                        "bg-gradient-to-r from-orange-400/15 via-red-400/10 to-red-500/15",
-                        "text-orange-800 dark:text-orange-200",
-                        "shadow-[0_0_12px_rgba(234,88,12,0.15)]"
-                      )}
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      Supporters only
-                    </span>
-                  )}
                 </div>
               </div>
             </Link>
@@ -504,7 +508,7 @@ export function EnhancedPostCard({
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center p-6 max-w-xs space-y-3">
                 <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-card/90 border border-border shadow-lg">
-                  <Lock className="w-4.5 h-4.5 text-primary" />
+                  <UsersRound className="w-4.5 h-4.5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground mb-0.5">
