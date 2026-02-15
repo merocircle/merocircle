@@ -378,7 +378,7 @@ export function EnhancedPostCard({
         className={cn(
           "rounded-xl transition-all duration-300",
           isSupportersOnlyPost &&
-            "p-[3px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_16px_rgba(234,88,12,0.22),0_0_40px_rgba(234,88,12,0.12),0_0_72px_rgba(234,88,12,0.06)] hover:shadow-[0_0_20px_rgba(234,88,12,0.28),0_0_48px_rgba(234,88,12,0.14),0_0_88px_rgba(234,88,12,0.08)]"
+            "p-[2px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.2),0_0_48px_rgba(234,88,12,0.12),0_0_96px_rgba(234,88,12,0.08),0_0_160px_rgba(234,88,12,0.04)] hover:shadow-[0_0_28px_rgba(234,88,12,0.26),0_0_64px_rgba(234,88,12,0.14),0_0_120px_rgba(234,88,12,0.09),0_0_200px_rgba(234,88,12,0.05)]"
         )}
       >
         <div
