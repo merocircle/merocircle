@@ -111,7 +111,7 @@ export function EnhancedPostCard({
   onShare,
   showActions = true,
   isSupporter = false,
-  showAuthor = false,
+  showAuthor = true,
   onNavigateToMembership,
   creatorSlug,
 }: EnhancedPostCardProps) {
@@ -580,7 +580,7 @@ export function EnhancedPostCard({
 
           {post.post_type === "poll" && pollData?.id && (
             <div className="mb-3">
-              <PollCard pollId={pollData.id} currentUserId={currentUserId} />
+              <PollCard pollId={pollData.id} currentUserId={currentUserId} creatorId={post.creator.id} />
             </div>
           )}
 
@@ -638,7 +638,7 @@ export function EnhancedPostCard({
                   <MessageCircle className="w-4 h-4" />
                   {!shouldBlur ? (
                     <span>{commentsCount > 0 ? commentsCount : "Comment"}</span>
-                  ): (
+                  ) : (
                     <span>Comment</span>
                   )}
                 </motion.button>

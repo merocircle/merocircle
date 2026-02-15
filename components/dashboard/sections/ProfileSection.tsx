@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import {
   Settings,
   Heart,
@@ -20,15 +21,17 @@ import {
   Camera,
   Edit,
   Save,
-  Grid3X3,
-  List,
   Loader2,
-  MessageCircle,
-  Eye,
-  X,
-  Sparkles
+  Sparkles,
+  X
 } from 'lucide-react';
+import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
+import { TimelineFeed } from '@/components/posts/TimelineFeed';
+import { TimelinePost } from '@/components/posts/TimelinePost';
+import { staggerContainer, fadeInUp } from '@/components/animations/variants';
+import { isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/lib/supabase';
+
 import { cn } from '@/lib/utils';
 
 // Tab configuration (only for creators)
@@ -46,12 +49,13 @@ export default function ProfileSection() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editData, setEditData] = useState({
     display_name: '',
     bio: '',
     category: ''
   });
+
+  const creatorDetails = useCreatorDetails(user?.id || null)
 
   // Fetch user's posts (only for creators)
   useEffect(() => {
@@ -63,7 +67,8 @@ export default function ProfileSection() {
             .select(`
               *,
               post_likes(id),
-              post_comments(id)
+              post_comments(id),
+              polls(id, question, allows_multiple_answers, expires_at)
             `)
             .eq('creator_id', user.id)
             .order('created_at', { ascending: false })
@@ -73,7 +78,8 @@ export default function ProfileSection() {
             setPosts(data.map((post: any) => ({
               ...post,
               likes_count: post.post_likes?.length || 0,
-              comments_count: post.post_comments?.length || 0
+              comments_count: post.post_comments?.length || 0,
+              poll: post.polls || null
             })));
           }
         } catch (error) {
@@ -526,91 +532,79 @@ export default function ProfileSection() {
         {activeTab === 'posts' && (
           <motion.div
             key="posts"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
             exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
           >
-            {/* View Toggle */}
-            <div className="flex justify-end mb-4">
-              <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={cn(
-                    'p-2 rounded-lg transition-colors',
-                    viewMode === 'grid' ? 'bg-background shadow-sm' : 'text-muted-foreground'
-                  )}
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={cn(
-                    'p-2 rounded-lg transition-colors',
-                    viewMode === 'list' ? 'bg-background shadow-sm' : 'text-muted-foreground'
-                  )}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
             {postsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : posts.length > 0 ? (
-              viewMode === 'grid' ? (
-                <div className="grid grid-cols-3 gap-1">
-                  {posts.map((post) => (
-                    <motion.div
+              <TimelineFeed>
+                {posts.map((post, index) => {
+                  const postDate = new Date(post.created_at);
+                  const isLast = index === posts.length - 1;
+                  const showDate = index === 0 || 
+                    new Date(posts[index - 1].created_at).toDateString() !== postDate.toDateString();
+                  
+                  const today = new Date();
+                  const yesterday = new Date(today);
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  
+                  const dateLabel = isToday(postDate) 
+                    ? 'Today' 
+                    : isYesterday(postDate) 
+                      ? 'Yesterday' 
+                      : postDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                  const transformedPost = {
+                    id: String(post.id),
+                    title: post.title || '',
+                    content: post.content || '',
+                    image_url: post.image_url || undefined,
+                    image_urls: post.image_urls || (post.image_url ? [post.image_url] : []),
+                    media_url: post.media_url || undefined,
+                    tier_required: post.tier_required || 'free',
+                    post_type: post.post_type || 'post',
+                    created_at: post.created_at,
+                    creator: {
+                      id: user?.id || '',
+                      display_name: userProfile?.display_name || 'Unknown',
+                      photo_url: userProfile?.photo_url || undefined,
+                      role: 'creator'
+                    },
+                    creator_profile: {
+                      category: creatorProfile?.category || undefined,
+                      is_verified: false
+                    },
+                    poll: post.poll ? { id: post.poll.id } : undefined,
+                    likes_count: post.likes_count || 0,
+                    comments_count: post.comments_count || 0
+                  };
+
+                  return (
+                    <TimelinePost
                       key={post.id}
-                      className="relative aspect-square bg-muted rounded-lg overflow-hidden group cursor-pointer"
-                      whileHover={{ scale: 1.02 }}
+                      createdAt={post.created_at}
+                      isFirst={index === 0}
+                      isLast={isLast}
+                      showDate={showDate}
+                      dateLabel={dateLabel}
                     >
-                      {post.image_url ? (
-                        <Image src={post.image_url} alt={post.title} fill className="object-cover" />
-                      ) : (
-                        <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/20 to-pink-500/20">
-                          <FileText className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white">
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
-                          {post.likes_count}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" />
-                          {post.comments_count}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {posts.map((post) => (
-                    <Card key={post.id} className="p-4 border-border/50 hover:border-primary/30 transition-colors">
-                      <h3 className="font-semibold text-foreground mb-2">{post.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{post.content}</p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
-                          {post.likes_count}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" />
-                          {post.comments_count}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {post.view_count || 0}
-                        </span>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )
+                      <EnhancedPostCard
+                        post={transformedPost}
+                        currentUserId={user?.id}
+                        showActions={true}
+                        isSupporter={false}
+                        showAuthor={true}
+                      />
+                    </TimelinePost>
+                  );
+                })}
+              </TimelineFeed>
             ) : (
               <Card className="p-12 text-center border-dashed border-2">
                 <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />

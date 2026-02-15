@@ -25,10 +25,11 @@ interface Poll {
 interface PollCardProps {
   pollId: string;
   currentUserId?: string;
+  creatorId?: string;
   showResults?: boolean;
 }
 
-export function PollCard({ pollId, currentUserId, showResults = false }: PollCardProps) {
+export function PollCard({ pollId, currentUserId, creatorId, showResults = false }: PollCardProps) {
   const [poll, setPoll] = useState<Poll | null>(null);
   const [options, setOptions] = useState<PollOption[]>([]);
   const [totalVotes, setTotalVotes] = useState(0);
@@ -103,11 +104,11 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
 
   if (loading) {
     return (
-      <Card className="p-6 animate-pulse">
-        <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+      <Card className="p-6 animate-pulse bg-muted/30 border-border/50">
+        <div className="h-6 bg-muted rounded w-3/4 mb-4"></div>
         <div className="space-y-2">
-          <div className="h-12 bg-gray-200 rounded"></div>
-          <div className="h-12 bg-gray-200 rounded"></div>
+          <div className="h-12 bg-muted rounded"></div>
+          <div className="h-12 bg-muted rounded"></div>
         </div>
       </Card>
     );
@@ -116,14 +117,15 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
   if (!poll) return null;
 
   const hasVoted = userVotes.length > 0;
-  const showPollResults = showResults || hasVoted || hasExpired;
+  const isCreator = !!(currentUserId && creatorId && currentUserId === creatorId);
+  const effectiveShowResults = showResults || isCreator || hasVoted || hasExpired;
 
   return (
-    <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+    <Card className="p-6 bg-muted/30 border-border/50">
       {/* Poll Question */}
       <div className="flex items-start gap-3 mb-4">
-        <div className="p-2 bg-blue-500 rounded-lg">
-          <Users className="w-5 h-5 text-white" />
+        <div className="p-2 bg-primary/10 rounded-lg">
+          <Users className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-bold text-foreground mb-1">{poll.question}</h3>
@@ -145,7 +147,7 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
             {poll.allows_multiple_answers && (
               <>
                 <span>•</span>
-                <span className="text-blue-600 dark:text-blue-400">Multiple choice</span>
+                <span className="text-primary">Multiple choice</span>
               </>
             )}
           </div>
@@ -158,7 +160,7 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
           const isSelected = selectedOptions.includes(option.id);
           const hasUserVoted = userVotes.includes(option.id);
 
-          if (showPollResults) {
+          if (effectiveShowResults || isCreator) {
             // Show results
             return (
               <motion.div
@@ -171,13 +173,13 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
                   className={cn(
                     "relative p-4 rounded-lg border-2 overflow-hidden",
                     hasUserVoted
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card"
                   )}
                 >
                   {/* Progress bar background */}
                   <div
-                    className="absolute inset-0 bg-blue-100 dark:bg-blue-900/20 transition-all duration-500"
+                    className="absolute inset-0 bg-primary/10 transition-all duration-500"
                     style={{ width: `${option.percentage}%` }}
                   />
 
@@ -185,13 +187,13 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
                   <div className="relative flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {hasUserVoted && (
-                        <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
                       )}
                       <span className="font-medium">{option.option_text}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground">{option.votes} votes</span>
-                      <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      <span className="text-lg font-bold text-primary">
                         {option.percentage}%
                       </span>
                     </div>
@@ -200,28 +202,28 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
               </motion.div>
             );
           } else {
-            // Show voting interface
+            // Show voting interface (disabled for creator)
             return (
               <motion.button
                 key={option.id}
                 onClick={() => handleVote(option.id)}
-                disabled={voting || !currentUserId}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                disabled={voting || !currentUserId || isCreator}
+                whileHover={!isCreator ? { scale: 1.02 } : undefined}
+                whileTap={!isCreator ? { scale: 0.98 } : undefined}
                 className={cn(
                   "w-full p-4 rounded-lg border-2 text-left transition-all",
-                  "hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30",
+                  "hover:border-primary hover:bg-primary/5",
                   isSelected
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800",
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card",
                   voting && "opacity-50 cursor-not-allowed"
                 )}
               >
                 <div className="flex items-center gap-3">
                   {isSelected ? (
-                    <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
                   ) : (
-                    <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    <Circle className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   )}
                   <span className="font-medium">{option.option_text}</span>
                 </div>
@@ -232,19 +234,26 @@ export function PollCard({ pollId, currentUserId, showResults = false }: PollCar
       </div>
 
       {/* View Results Button */}
-      {!showPollResults && hasVoted && (
+      {!effectiveShowResults && hasVoted && (
         <Button
           variant="ghost"
           size="sm"
           onClick={fetchPollData}
-          className="mt-4 w-full text-blue-600 dark:text-blue-400"
+          className="mt-4 w-full text-primary hover:text-primary/80"
         >
           View Results
         </Button>
       )}
 
+      {/* Creator can't vote in own poll message */}
+      {isCreator && (
+        <p className="mt-4 text-sm text-center text-muted-foreground">
+          You cannot vote in your own poll
+        </p>
+      )}
+
       {/* Login Prompt */}
-      {!currentUserId && !showPollResults && (
+      {!currentUserId && !effectiveShowResults && !isCreator && (
         <p className="mt-4 text-sm text-center text-muted-foreground">
           Sign in to vote
         </p>

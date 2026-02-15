@@ -1135,7 +1135,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               transition={{ type: "spring", stiffness: 200 }}
               className="inline-block relative mb-2"
             >
-              <Avatar className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 border-8 border-background">
+              <Avatar className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 border-8 bg-card border-transparent">
                 <AvatarImage src={creatorDetails.avatar_url} alt={creatorDetails.display_name} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-5xl font-bold">
                   {creatorDetails.display_name?.[0]?.toUpperCase()}
