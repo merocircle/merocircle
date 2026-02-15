@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Crown,
@@ -450,10 +451,12 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             <Button
               variant="default"
               className="gap-2 rounded-xl"
-              onClick={() => setShowCreatePostModal(true)}
+              asChild
             >
-              <Plus className="w-4 h-4" />
-              Create Post
+              <Link href="/create-post">
+                <Plus className="w-4 h-4" />
+                Create Post
+              </Link>
             </Button>
             <Button
               variant={shareCopied ? "default" : "outline"}
