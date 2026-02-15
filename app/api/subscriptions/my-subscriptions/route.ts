@@ -28,8 +28,32 @@ export async function GET(request: NextRequest) {
       userId: user.id,
     });
 
-    // 1) Fetch user's subscriptions with enriched data
-    const { data: subscriptions, error: fetchError } = await supabase
+    // 1) Fetch active supporters first – source of truth for "current memberships"
+    const { data: supporters, error: supportersError } = await supabase
+      .from('supporters')
+      .select(`
+        id,
+        supporter_id,
+        creator_id,
+        tier_level,
+        amount,
+        created_at,
+        updated_at
+      `)
+      .eq('supporter_id', user.id)
+      .eq('is_active', true);
+
+    if (supportersError) {
+      logger.error('Failed to fetch supporters', 'MY_SUBSCRIPTIONS_API', {
+        error: supportersError.message,
+        userId: user.id,
+      });
+    }
+
+    const activeCreatorIds = new Set((supporters || []).map((s: any) => s.creator_id));
+
+    // 2) Fetch subscriptions only for creators the user is still an active supporter of
+    const { data: subscriptionsRaw, error: fetchError } = await supabase
       .from('subscriptions')
       .select(`
         id,
@@ -77,29 +101,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const subscriptionCreatorIds = new Set((subscriptions || []).map((s: any) => s.creator_id));
+    const subscriptions = (subscriptionsRaw || []).filter((s: any) =>
+      activeCreatorIds.has(s.creator_id)
+    );
 
-    // 2) Fetch active supporters (memberships) that don't have a subscription row
-    const { data: supporters, error: supportersError } = await supabase
-      .from('supporters')
-      .select(`
-        id,
-        supporter_id,
-        creator_id,
-        tier_level,
-        amount,
-        created_at,
-        updated_at
-      `)
-      .eq('supporter_id', user.id)
-      .eq('is_active', true);
-
-    if (supportersError) {
-      logger.error('Failed to fetch supporters', 'MY_SUBSCRIPTIONS_API', {
-        error: supportersError.message,
-        userId: user.id,
-      });
-    }
+    const subscriptionCreatorIds = new Set(subscriptions.map((s: any) => s.creator_id));
 
     const supporterOnly = (supporters || []).filter(
       (s: any) => !subscriptionCreatorIds.has(s.creator_id)

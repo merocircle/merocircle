@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { getOptionalUser, parsePaginationParams, handleApiError } from '@/lib/api-utils';
 
 // Balanced feed ranking formula
@@ -89,90 +89,125 @@ export async function GET(request: NextRequest) {
       supportedCreatorIds = (supporterData || []).map((s: any) => s.creator_id);
     }
 
-    // Build posts query - simplified without nested joins
-    let allPostsQuery = supabase
-      .from('posts')
-      .select(`
-        id,
-        title,
-        content,
-        image_url,
-        image_urls,
-        is_public,
-        tier_required,
-        post_type,
-        created_at,
-        updated_at,
-        creator_id,
-        likes_count,
-        comments_count,
-        polls(id, question, allows_multiple_answers, expires_at)
-      `)
-      .order('created_at', { ascending: false });
+    const postSelect = `
+      id,
+      title,
+      content,
+      image_url,
+      image_urls,
+      is_public,
+      tier_required,
+      post_type,
+      created_at,
+      updated_at,
+      creator_id,
+      likes_count,
+      comments_count,
+      polls(id, question, allows_multiple_answers, expires_at)
+    `;
+    const postOrder = { ascending: false };
+    const limitSupporter = 50;
+    const limitOther = 50;
 
-    // Exclude current user's own posts if authenticated
-    if (user) {
-      allPostsQuery = allPostsQuery.neq('creator_id', user.id);
-    }
+    let supporterPostsRaw: any[] = [];
+    let otherPostsRaw: any[] = [];
 
-    // Apply visibility filter
     if (user && supportedCreatorIds.length > 0) {
-      allPostsQuery = allPostsQuery.or(
-        `is_public.eq.true,creator_id.in.(${supportedCreatorIds.join(',')})`
-      );
+      // User supports some creators: fetch supporter posts (from supported creators, any visibility)
+      const { data: supporterData } = await supabase
+        .from('posts')
+        .select(postSelect)
+        .in('creator_id', supportedCreatorIds)
+        .order('created_at', postOrder)
+        .limit(limitSupporter);
+
+      supporterPostsRaw = supporterData || [];
+
+      // Other posts: from non-supported creators (public + supporters-only, for "Explore other")
+      const { data: otherData } = await supabase
+        .from('posts')
+        .select(postSelect)
+        .neq('creator_id', user.id)
+        .not('creator_id', 'in', `(${supportedCreatorIds.join(',')})`)
+        .order('created_at', postOrder)
+        .limit(limitOther);
+
+      otherPostsRaw = otherData || [];
     } else {
-      allPostsQuery = allPostsQuery.eq('is_public', true);
+      // No supports (or not logged in): all public posts + very few supporters-only (1–3) for discovery
+      // New users see every public post and a small highlight of supporters-only posts (blurred, with badge)
+      const SUPPORTERS_ONLY_SPRINKLE = 3;
+      let publicQuery = supabase
+        .from('posts')
+        .select(postSelect)
+        .eq('is_public', true)
+        .order('created_at', postOrder)
+        .limit(limitOther);
+      if (user) publicQuery = publicQuery.neq('creator_id', user.id);
+      const { data: publicData } = await publicQuery;
+
+      // Supporters-only: use admin client so we always get rows (no RLS/auth edge cases). Fallback to regular client if no service role.
+      let supportersOnlyData: any[] | null = null;
+      try {
+        const adminSupabase = createAdminClient();
+        let supportersOnlyQuery = adminSupabase
+          .from('posts')
+          .select(postSelect)
+          .eq('is_public', false)
+          .order('created_at', postOrder)
+          .limit(SUPPORTERS_ONLY_SPRINKLE);
+        if (user) supportersOnlyQuery = supportersOnlyQuery.neq('creator_id', user.id);
+        const result = await supportersOnlyQuery;
+        supportersOnlyData = result.data;
+      } catch {
+        let supportersOnlyQuery = supabase
+          .from('posts')
+          .select(postSelect)
+          .eq('is_public', false)
+          .order('created_at', postOrder)
+          .limit(SUPPORTERS_ONLY_SPRINKLE);
+        if (user) supportersOnlyQuery = supportersOnlyQuery.neq('creator_id', user.id);
+        const result = await supportersOnlyQuery;
+        supportersOnlyData = result.data;
+      }
+
+      const publicIds = new Set((publicData || []).map((p: any) => p.id));
+      const sprinkle = (supportersOnlyData || []).filter((p: any) => !publicIds.has(p.id));
+      const combined = [...(publicData || []), ...sprinkle].sort(
+        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      // Keep full combined list so the 1–3 supporters-only posts are never dropped by slice
+      otherPostsRaw = combined;
     }
 
-    // Apply pagination
-    const { data: allPosts, error: postsError } = await allPostsQuery.range(offset, offset + limit - 1);
-
-    if (postsError) {
-      console.error('Error fetching posts:', postsError);
-      return NextResponse.json({
-        error: 'Failed to fetch posts',
-        details: postsError.message
-      }, { status: 500 });
-    }
-
-    console.log(`Fetched ${allPosts?.length || 0} posts`);
-
-    // If no posts, return early
-    if (!allPosts || allPosts.length === 0) {
+    const allPosts = [...supporterPostsRaw, ...otherPostsRaw];
+    if (allPosts.length === 0) {
       return NextResponse.json({
         creators: formattedCreators,
-        posts: []
+        supporter_posts: [],
+        other_posts: []
       });
     }
 
-    // Get unique creator IDs from posts
     const creatorIds = [...new Set(allPosts.map((p: any) => p.creator_id))];
 
-    // Fetch user info for all creators in one query
     const { data: creators, error: usersError } = await supabase
       .from('users')
       .select('id, display_name, photo_url')
       .in('id', creatorIds);
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-    }
+    if (usersError) console.error('Error fetching users:', usersError);
 
-    // Fetch creator profiles for all creators
     const { data: creatorProfiles, error: profilesError } = await supabase
       .from('creator_profiles')
       .select('user_id, category, is_verified')
       .in('user_id', creatorIds);
 
-    if (profilesError) {
-      console.error('Error fetching creator profiles:', profilesError);
-    }
+    if (profilesError) console.error('Error fetching creator profiles:', profilesError);
 
-    // Create lookup maps
     const creatorsMap = new Map((creators || []).map((c: any) => [c.id, c]));
     const profilesMap = new Map((creatorProfiles || []).map((cp: any) => [cp.user_id, cp]));
 
-    // Fetch current user's likes for these posts
     let userLikedPostIds = new Set<string>();
     if (user) {
       const postIds = allPosts.map((p: any) => p.id);
@@ -184,12 +219,9 @@ export async function GET(request: NextRequest) {
       userLikedPostIds = new Set((userLikes || []).map((l: any) => l.post_id));
     }
 
-    // Format posts
-    const formattedPosts = allPosts.map((p: any) => {
+    const formatPost = (p: any, isSupporter: boolean) => {
       const creator = creatorsMap.get(p.creator_id);
       const profile = profilesMap.get(p.creator_id);
-      const isSupporter = user ? supportedCreatorIds.includes(p.creator_id) : false;
-
       return {
         id: p.id,
         title: p.title,
@@ -217,21 +249,29 @@ export async function GET(request: NextRequest) {
         comments_count: p.comments_count || 0,
         is_liked: user ? userLikedPostIds.has(p.id) : false,
         is_supporter: isSupporter,
-        engagement_score: 0
+        engagement_score: calculatePostScore(p)
       };
-    });
+    };
 
-    // Calculate scores and sort
-    const rankedPosts = formattedPosts
-      .map(post => ({
-        ...post,
-        engagement_score: calculatePostScore(post)
-      }))
+    const formattedSupporterPosts = supporterPostsRaw
+      .map((p) => formatPost(p, true))
+      .sort((a, b) => b.engagement_score - a.engagement_score);
+
+    // When user has no supports: show 1–3 supporters-only posts in feed with full content (is_supporter: true) so they can preview. When user has supports: other_posts are blurred (is_supporter: false).
+    const isSupportersOnlyPost = (p: any) =>
+      p.is_public === false || (p.tier_required && p.tier_required !== 'free');
+    const formattedOtherPosts = otherPostsRaw
+      .map((p) => {
+        const showFullContent =
+          supportedCreatorIds.length === 0 && isSupportersOnlyPost(p);
+        return formatPost(p, showFullContent);
+      })
       .sort((a, b) => b.engagement_score - a.engagement_score);
 
     return NextResponse.json({
       creators: formattedCreators,
-      posts: rankedPosts
+      supporter_posts: formattedSupporterPosts,
+      other_posts: formattedOtherPosts
     });
   } catch (error) {
     return handleApiError(error, 'UNIFIED_FEED_API', 'Failed to fetch unified feed');

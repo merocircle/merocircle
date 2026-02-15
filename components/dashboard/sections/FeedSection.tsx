@@ -2,7 +2,7 @@
 
 import { memo, useState, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Heart, Plus} from "lucide-react";
+import { Users, Plus, Compass } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useUnifiedDashboard } from "@/hooks/useQueries";
@@ -12,6 +12,7 @@ import { EmptyStateCard } from "@/components/common/EmptyStateCard";
 import { EnhancedPostCard } from "@/components/posts/EnhancedPostCard";
 import { TimelineFeed } from "@/components/posts/TimelineFeed";
 import { PostSkeleton } from "@/components/feed/PostSkeleton";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Note: individual post animation is handled by TimelinePost (fadeInUp)
@@ -110,19 +111,45 @@ const FeedSection = memo(function FeedSection() {
   const userId = session?.user?.id;
   const { data: feedData, isLoading } = useUnifiedDashboard();
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [showExploreOther, setShowExploreOther] = useState(false);
 
   useRealtimeFeed();
 
   const showSkeleton = isLoading && !feedData;
 
-  const filteredPosts = useMemo(() => {
-    if (!feedData?.posts) return [];
+  // New API returns supporter_posts + other_posts; fallback to legacy posts
+  const supporterPosts = useMemo(() => {
+    if (feedData?.supporter_posts) return feedData.supporter_posts;
+    return [];
+  }, [feedData?.supporter_posts]);
 
-    return [...feedData.posts].sort(
-      (a: any, b: any) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
-  }, [feedData?.posts]);
+  const otherPosts = useMemo(() => {
+    if (feedData?.other_posts) return feedData.other_posts;
+    if (feedData?.posts && !feedData?.supporter_posts) return feedData.posts;
+    return [];
+  }, [feedData?.other_posts, feedData?.posts, feedData?.supporter_posts]);
+
+  const supporterPostsSorted = useMemo(
+    () =>
+      [...supporterPosts].sort(
+        (a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      ),
+    [supporterPosts],
+  );
+
+  const otherPostsSorted = useMemo(
+    () =>
+      [...otherPosts].sort(
+        (a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      ),
+    [otherPosts],
+  );
+
+  const hasSupporterPosts = supporterPostsSorted.length > 0;
+  const hasOtherPosts = otherPostsSorted.length > 0;
+  const showExploreButton = hasSupporterPosts && hasOtherPosts;
 
   // Set ref for a post
   const setPostRef = useCallback(
@@ -150,41 +177,26 @@ const FeedSection = memo(function FeedSection() {
     }
   }, []);
 
-  // Custom timeline renderer with clickable dots
   const renderTimelinePosts = useMemo(() => {
-    if (filteredPosts.length === 0) return [];
-
     const result: React.ReactNode[] = [];
     let lastDate: string | null = null;
 
-    filteredPosts.forEach((post: any, index: number) => {
+    supporterPostsSorted.forEach((post: any, index: number) => {
       const postDate = new Date(post.created_at).toDateString();
       const showDate = postDate !== lastDate;
       lastDate = postDate;
-
-      const isLast = index === filteredPosts.length - 1;
-
       result.push(
-        <div
-          key={post.id}
-          ref={(el) => setPostRef(String(post.id), el)}
-          className="relative"
-        >
-          {/* Timeline track - hidden on mobile */}
+        <div key={`supporter-${post.id}`} className="relative" ref={(el) => setPostRef(String(post.id), el)}>
           <div className="hidden sm:flex gap-4">
-            {/* Timeline column */}
             <div className="flex flex-col items-center flex-shrink-0 w-12">
-              {/* Clickable dot */}
               <button
                 onClick={() => scrollToPost(String(post.id))}
                 className={cn(
                   "w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all hover:scale-125 hover:bg-primary cursor-pointer",
                   "bg-border dark:bg-border focus:outline-none focus:ring-2 focus:ring-primary/50",
                 )}
-                aria-label={`Jump to post from ${new Date(post.created_at).toLocaleDateString()}`}
+                aria-label={`Jump to post`}
               />
-
-              {/* Date label */}
               {showDate && (
                 <span className="mt-1.5 text-[9px] font-medium text-muted-foreground text-center max-w-[4rem] leading-tight">
                   {(() => {
@@ -192,37 +204,20 @@ const FeedSection = memo(function FeedSection() {
                     const today = new Date();
                     const yesterday = new Date(today);
                     yesterday.setDate(yesterday.getDate() - 1);
-
-                    if (d.toDateString() === today.toDateString())
-                      return "Today";
-                    if (d.toDateString() === yesterday.toDateString())
-                      return "Yesterday";
-                    return d.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    });
+                    if (d.toDateString() === today.toDateString()) return "Today";
+                    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+                    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                   })()}
                 </span>
               )}
-
-              {!isLast && (
+              {(index < supporterPostsSorted.length - 1) || showExploreButton || (showExploreOther && otherPostsSorted.length > 0) ? (
                 <div className="flex-1 min-h-[14px] w-[2px] mt-1.5 bg-border/50" />
-              )}
+              ) : null}
             </div>
-
-            {/* Post content */}
             <div className="flex-1 min-w-0 pb-3 sm:pb-4">
-              <EnhancedPostCard
-                post={post}
-                currentUserId={userId}
-                showActions={true}
-                isSupporter={post.is_supporter ?? false}
-                showAuthor={true}
-              />
+              <EnhancedPostCard post={post} currentUserId={userId} showActions={true} isSupporter={true} showAuthor={true} />
             </div>
           </div>
-
-          {/* Mobile: just the card with optional date separator */}
           <div className="sm:hidden">
             {showDate && (
               <div className="flex items-center gap-3 mb-3">
@@ -233,36 +228,180 @@ const FeedSection = memo(function FeedSection() {
                     const today = new Date();
                     const yesterday = new Date(today);
                     yesterday.setDate(yesterday.getDate() - 1);
-
-                    if (d.toDateString() === today.toDateString())
-                      return "Today";
-                    if (d.toDateString() === yesterday.toDateString())
-                      return "Yesterday";
-                    return d.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    });
+                    if (d.toDateString() === today.toDateString()) return "Today";
+                    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+                    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                   })()}
                 </span>
                 <div className="h-px flex-1 bg-border/30" />
               </div>
             )}
             <div className="pb-3">
-              <EnhancedPostCard
-                post={post}
-                currentUserId={userId}
-                showActions={true}
-                isSupporter={post.is_supporter ?? false}
-              />
+              <EnhancedPostCard post={post} currentUserId={userId} showActions={true} isSupporter={true} showAuthor={true} />
             </div>
           </div>
         </div>,
       );
     });
 
+    if (showExploreButton && !showExploreOther) {
+      result.push(
+        <div key="explore-other-btn" className="flex justify-center py-4 sm:py-6">
+          <Button
+            variant="outline"
+            size="lg"
+            className="rounded-full gap-2 shadow-sm"
+            onClick={() => setShowExploreOther(true)}
+          >
+            <Compass className="w-4 h-4" />
+            Explore other creators&apos; posts
+          </Button>
+        </div>,
+      );
+    }
+
+    if (showExploreOther && otherPostsSorted.length > 0) {
+      let otherLastDate: string | null = null;
+      otherPostsSorted.forEach((post: any, index: number) => {
+        const postDate = new Date(post.created_at).toDateString();
+        const showDate = postDate !== otherLastDate;
+        otherLastDate = postDate;
+        const isLast = index === otherPostsSorted.length - 1;
+        result.push(
+          <div key={`other-${post.id}`} className="relative" ref={(el) => setPostRef(String(post.id), el)}>
+            <div className="hidden sm:flex gap-4">
+              <div className="flex flex-col items-center flex-shrink-0 w-12">
+                <button
+                  onClick={() => scrollToPost(String(post.id))}
+                  className={cn(
+                    "w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all hover:scale-125 hover:bg-primary cursor-pointer",
+                    "bg-border dark:bg-border focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  )}
+                  aria-label={`Jump to post`}
+                />
+                {showDate && (
+                  <span className="mt-1.5 text-[9px] font-medium text-muted-foreground text-center max-w-[4rem] leading-tight">
+                    {(() => {
+                      const d = new Date(post.created_at);
+                      const today = new Date();
+                      const yesterday = new Date(today);
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      if (d.toDateString() === today.toDateString()) return "Today";
+                      if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+                      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    })()}
+                  </span>
+                )}
+                {!isLast && <div className="flex-1 min-h-[14px] w-[2px] mt-1.5 bg-border/50" />}
+              </div>
+              <div className="flex-1 min-w-0 pb-3 sm:pb-4">
+                <EnhancedPostCard post={post} currentUserId={userId} showActions={true} isSupporter={false} showAuthor={true} />
+              </div>
+            </div>
+            <div className="sm:hidden">
+              {showDate && (
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-px flex-1 bg-border/30" />
+                  <span className="text-[11px] font-medium text-muted-foreground px-3 py-1 bg-card rounded-full border border-border/40 shadow-xs">
+                    {(() => {
+                      const d = new Date(post.created_at);
+                      const today = new Date();
+                      const yesterday = new Date(today);
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      if (d.toDateString() === today.toDateString()) return "Today";
+                      if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+                      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                    })()}
+                  </span>
+                  <div className="h-px flex-1 bg-border/30" />
+                </div>
+              )}
+              <div className="pb-3">
+                <EnhancedPostCard post={post} currentUserId={userId} showActions={true} isSupporter={false} showAuthor={true} />
+              </div>
+            </div>
+          </div>,
+        );
+      });
+    }
+
+    if (!hasSupporterPosts && otherPostsSorted.length > 0) {
+      result.length = 0;
+      let last: string | null = null;
+      otherPostsSorted.forEach((post: any, index: number) => {
+        const postDate = new Date(post.created_at).toDateString();
+        const showDate = postDate !== last;
+        last = postDate;
+        const isLast = index === otherPostsSorted.length - 1;
+        result.push(
+          <div key={post.id} className="relative" ref={(el) => setPostRef(String(post.id), el)}>
+            <div className="hidden sm:flex gap-4">
+              <div className="flex flex-col items-center flex-shrink-0 w-12">
+                <button
+                  onClick={() => scrollToPost(String(post.id))}
+                  className={cn(
+                    "w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all hover:scale-125 hover:bg-primary cursor-pointer",
+                    "bg-border dark:bg-border focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  )}
+                  aria-label={`Jump to post`}
+                />
+                {showDate && (
+                  <span className="mt-1.5 text-[9px] font-medium text-muted-foreground text-center max-w-[4rem] leading-tight">
+                    {(() => {
+                      const d = new Date(post.created_at);
+                      const today = new Date();
+                      const yesterday = new Date(today);
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      if (d.toDateString() === today.toDateString()) return "Today";
+                      if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+                      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    })()}
+                  </span>
+                )}
+                {!isLast && <div className="flex-1 min-h-[14px] w-[2px] mt-1.5 bg-border/50" />}
+              </div>
+              <div className="flex-1 min-w-0 pb-3 sm:pb-4">
+                <EnhancedPostCard post={post} currentUserId={userId} showActions={true} isSupporter={post.is_supporter ?? false} showAuthor={true} />
+              </div>
+            </div>
+            <div className="sm:hidden">
+              {showDate && (
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-px flex-1 bg-border/30" />
+                  <span className="text-[11px] font-medium text-muted-foreground px-3 py-1 bg-card rounded-full border border-border/40 shadow-xs">
+                    {(() => {
+                      const d = new Date(post.created_at);
+                      const today = new Date();
+                      const yesterday = new Date(today);
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      if (d.toDateString() === today.toDateString()) return "Today";
+                      if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+                      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                    })()}
+                  </span>
+                  <div className="h-px flex-1 bg-border/30" />
+                </div>
+              )}
+              <div className="pb-3">
+                <EnhancedPostCard post={post} currentUserId={userId} showActions={true} isSupporter={post.is_supporter ?? false} showAuthor={true} />
+              </div>
+            </div>
+          </div>,
+        );
+      });
+    }
+
     return result;
-  }, [filteredPosts, userId, scrollToPost, setPostRef]);
+  }, [
+    supporterPostsSorted,
+    otherPostsSorted,
+    hasSupporterPosts,
+    showExploreButton,
+    showExploreOther,
+    userId,
+    scrollToPost,
+    setPostRef,
+  ]);
 
   return (
     <AnimatePresence mode="wait">
@@ -291,7 +430,7 @@ const FeedSection = memo(function FeedSection() {
 
           {/* ── Posts feed ── */}
           <div className="pt-2 min-w-0">
-            {filteredPosts.length > 0 ? (
+            {(hasSupporterPosts || hasOtherPosts) && renderTimelinePosts.length > 0 ? (
               <TimelineFeed>{renderTimelinePosts}</TimelineFeed>
             ) : (
               <motion.div
