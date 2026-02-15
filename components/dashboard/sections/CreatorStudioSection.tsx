@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Crown,
@@ -449,10 +450,10 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               New Post
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0" asChild>
-              <a href="/chat">
+              <Link href="/chat">
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Chat</span>
-              </a>
+              </Link>
             </Button>
             <Button
               variant={shareCopied ? "default" : "outline"}

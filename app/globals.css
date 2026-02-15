@@ -898,48 +898,56 @@ section:has(+ .rounded-section),
 
 /* ===========================================
    STREAM CHAT - CREATOR MESSAGE HIGHLIGHT
+   Full-width themed row background for creator messages
    =========================================== */
-.creator-message-highlight {
+.creator-message-row {
   position: relative;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary) / 0.06) 0%,
+    hsl(var(--primary) / 0.10) 50%,
+    hsl(var(--primary) / 0.06) 100%
+  );
+  border-left: 3px solid hsl(var(--primary) / 0.5);
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
-.creator-message-highlight .str-chat__message-bubble {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.04)) !important;
-  border: 1px solid hsl(var(--primary) / 0.2) !important;
-  box-shadow: 0 1px 4px hsl(var(--primary) / 0.08);
+.creator-message-indicator {
+  display: none;
 }
 
-.creator-message-highlight .str-chat__message-text-inner {
-  color: hsl(var(--foreground));
-}
-
-.creator-badge-container {
-  display: flex;
-  margin-bottom: 2px;
-  padding-left: 40px;
-}
-
-.creator-badge {
+.creator-message-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 8px;
+  padding: 1px 10px 1px 8px;
+  margin-left: 40px;
+  margin-bottom: -2px;
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.1);
-  border-radius: 9999px;
-  border: 1px solid hsl(var(--primary) / 0.15);
+  background: hsl(var(--primary) / 0.12);
+  border-radius: 0 0 6px 6px;
 }
 
-/* Dark mode adjustments */
-.dark .creator-message-highlight .str-chat__message-bubble {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(var(--primary) / 0.06)) !important;
-  border: 1px solid hsl(var(--primary) / 0.25) !important;
+/* Dark mode: stronger highlight on dark backgrounds */
+.dark .creator-message-row {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary) / 0.08) 0%,
+    hsl(var(--primary) / 0.14) 50%,
+    hsl(var(--primary) / 0.08) 100%
+  );
+  border-left-color: hsl(var(--primary) / 0.6);
 }
 
-.dark .creator-badge {
-  background: hsl(var(--primary) / 0.15);
-  border-color: hsl(var(--primary) / 0.2);
+.dark .creator-message-tag {
+  background: hsl(var(--primary) / 0.18);
 }
