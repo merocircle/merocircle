@@ -885,7 +885,7 @@ export default function CreatePostPage() {
               animate={{ opacity: 1, x: 0 }}
               className={cn('lg:block', showPreview ? 'block' : 'hidden')}
             >
-              <div className="lg:max-w-xl">
+              <div className="lg:max-w-xl min-w-xl">
                 <Card className="p-5 sm:p-6 bg-muted/30">
                   <PreviewPost
                     title={title}
