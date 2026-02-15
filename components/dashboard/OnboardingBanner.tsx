@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Check, X, ExternalLink, Sparkles } from 'lucide-react';
+import { Calendar, X, ExternalLink, Sparkles } from 'lucide-react';
 
 interface OnboardingBannerProps {
   onDismiss: () => void;
@@ -13,32 +13,10 @@ interface OnboardingBannerProps {
 
 export function OnboardingBanner({ onDismiss, creatorId }: OnboardingBannerProps) {
   const [isVisible, setIsVisible] = useState(true);
-  const [isDismissing, setIsDismissing] = useState(false);
 
-  const handleDismiss = async () => {
-    setIsDismissing(true);
-
-    try {
-      // Update onboarding status in database
-      const response = await fetch(`/api/creator/${creatorId}/onboarding`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: true })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update onboarding status');
-      }
-
-      // Animate out
-      setIsVisible(false);
-      setTimeout(() => {
-        onDismiss();
-      }, 300);
-    } catch (error) {
-      console.error('Failed to dismiss onboarding banner:', error);
-      setIsDismissing(false);
-    }
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(() => onDismiss(), 300);
   };
 
   return (
@@ -84,29 +62,11 @@ export function OnboardingBanner({ onDismiss, creatorId }: OnboardingBannerProps
                       </Button>
                     </a>
 
-                    <Button
-                      variant="outline"
-                      onClick={handleDismiss}
-                      disabled={isDismissing}
-                      className="border-gray-300 dark:border-gray-600"
-                    >
-                      {isDismissing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100 mr-2" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Already Done
-                        </>
-                      )}
-                    </Button>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setIsVisible(false)}
+                  onClick={handleClose}
                   className="flex-shrink-0 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   aria-label="Close banner"
                 >
