@@ -489,7 +489,7 @@ export function EnhancedPostCard({
         {shouldBlur && (
           <div
             className={cn(
-              "relative w-full overflow-hidden cursor-pointer rounded-lg",
+              "relative w-[calc(100% - 40px)] mx-4 overflow-hidden cursor-pointer rounded-lg",
               "aspect-[16/10] bg-gradient-to-br from-muted to-muted/50",
               showAuthor ? "mx-4 sm:mx-5 mt-4" : "mx-4 sm:mx-5 mt-4 sm:mt-5"
             )}

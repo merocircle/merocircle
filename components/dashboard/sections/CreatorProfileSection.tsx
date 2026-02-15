@@ -1224,7 +1224,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   className="gap-2 px-8 py-6 text-base hover:shadow-lg shadow-primary/20 font-semibold"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Support Creator
+                  Join Circle 
                 </Button>
               )}
               <Button
