@@ -14,9 +14,10 @@ export function useUnifiedDashboard() {
     // Enable as soon as auth state is determined (loading finished)
     // This allows public posts to be shown even when not logged in
     enabled: !authLoading,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 3 * 60 * 1000, // 3 minutes before data is considered stale
     refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
-    refetchIntervalInBackground: true, // Refresh even when tab not focused
+    refetchIntervalInBackground: false, // Only refresh when user is active
+    refetchOnWindowFocus: false, // Don't refetch on every tab switch
   });
 }
 

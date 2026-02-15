@@ -526,12 +526,23 @@ export async function syncSupporterToChannels(
 
     const supabase = await createClient();
 
-    // Get supporter's user info
-    const { data: supporterUser, error: supporterError } = await supabase
-      .from('users')
-      .select('id, display_name, photo_url')
-      .eq('id', supporterId)
-      .single();
+    // Get supporter's and creator's user info in parallel
+    const [supporterResult, creatorResult] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id, display_name, photo_url')
+        .eq('id', supporterId)
+        .single(),
+      supabase
+        .from('users')
+        .select('id, display_name, photo_url')
+        .eq('id', creatorId)
+        .single(),
+    ]);
+
+    const supporterUser = supporterResult.data;
+    const supporterError = supporterResult.error;
+    const creatorUser = creatorResult.data;
 
     if (supporterError || !supporterUser) {
       logger.error('Supporter not found', 'STREAM_CHANNEL_ENGINE', {
@@ -617,13 +628,29 @@ export async function syncSupporterToChannels(
         // Add the supporter as a member
         await streamChannel.addMembers([supporterId]);
 
-        // Send system message if requested
+        // Send system join message and automated welcome message
         if (sendSystemMessages) {
+          // System announcement that the user joined
           await streamChannel.sendMessage({
-            text: `${supporterUser.display_name} has joined the channel`,
+            text: `${supporterUser.display_name || 'A new supporter'} has joined the circle!`,
             user_id: supporterId,
             type: 'system',
           });
+
+          // Send automated welcome message from the creator
+          try {
+            await streamChannel.sendMessage({
+              text: `Welcome to the circle, ${supporterUser.display_name || 'friend'}! Thank you for joining. Feel free to say hello and connect with everyone here.`,
+              user_id: creatorId,
+              custom: { is_welcome_message: true },
+            });
+          } catch (welcomeErr) {
+            logger.warn('Failed to send welcome message', 'STREAM_CHANNEL_ENGINE', {
+              error: welcomeErr instanceof Error ? welcomeErr.message : 'Unknown',
+              supporterId,
+              creatorId,
+            });
+          }
         }
 
         addedToChannels.push({

@@ -153,7 +153,7 @@ export default function DynamicPostCard({
               {post.creator?.photo_url ? (
                 <img 
                   src={post.creator.photo_url} 
-                  alt={post.creator.display_name}
+                  alt={post.creator?.display_name || 'Creator'}
                   className={cn(responsive.avatarSmall, effects.rounded.full, 'object-cover')}
                 />
               ) : (

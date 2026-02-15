@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useDiscoveryFeed, useCreatorSearch } from '@/hooks/useSocial';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { CreatorCard } from '@/components/explore/CreatorCard';
-import { cn } from '@/lib/utils';
+import { cn, getValidAvatarUrl } from '@/lib/utils';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -92,7 +92,7 @@ const ExploreSection = memo(function ExploreSection() {
   return (
     <div className="space-y-6 pb-8 pt-8">
       {/* ── Search + Categories sticky header ── */}
-      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 pb-0 border-b border-border/20 safe-area-top">
+      <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-0 border-b border-border/20 safe-area-top">
         <div className="relative mb-3">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -208,15 +208,15 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.button
                         key={creator.user_id}
                         variants={itemVariants}
-                        onClick={() => router.push(`/creator/${creator.user_id}`)}
+                        onClick={() => router.push(`/creator/${creator.vanity_username || creator.user_id}`)}
                         className="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 group"
                       >
                         <div className="w-14 h-14 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all overflow-hidden bg-muted">
-                          {creator.avatar_url ? (
-                            <img src={creator.avatar_url} alt={creator.display_name} className="w-full h-full object-cover" />
+                          {getValidAvatarUrl(creator.avatar_url) ? (
+                            <img src={getValidAvatarUrl(creator.avatar_url)!} alt={creator.display_name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                              <span className="text-lg font-semibold text-primary">{creator.display_name.charAt(0)}</span>
+                              <span className="text-lg font-semibold text-primary">{creator.display_name.charAt(0).toUpperCase()}</span>
                             </div>
                           )}
                         </div>
@@ -246,8 +246,8 @@ const ExploreSection = memo(function ExploreSection() {
                 </div>
 
                 {trendingCreators.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                    {trendingCreators.slice(0, 4).map((creator: any, index: number) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {trendingCreators.slice(0, 6).map((creator: any, index: number) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <CreatorCard
                           creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
@@ -314,7 +314,7 @@ const ExploreSection = memo(function ExploreSection() {
                   <h3 className="text-sm font-semibold text-foreground">Categories</h3>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {categories.slice(1).map((category) => {
                     const Icon = category.icon;
                     const isSelected = selectedCategory === category.id;

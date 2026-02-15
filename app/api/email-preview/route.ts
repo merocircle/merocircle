@@ -24,10 +24,9 @@ export async function GET(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   const allTypes = [
+    'welcome',
     'post',
     'poll',
-    'welcome',
-    'welcome-supporter',
     'payment-success',
     'payment-failed',
     'subscription-confirmation',
@@ -99,23 +98,7 @@ export async function GET(request: NextRequest) {
       case 'welcome':
         html = await render(
           WelcomeEmail({
-            userName: 'Bhuwan Joshi',
-            userRole: 'creator',
-            profileUrl: `${appUrl}/profile`,
-            exploreUrl: `${appUrl}/explore`,
-            settingsUrl: `${appUrl}/settings`,
-            helpUrl: `${appUrl}/help`,
-            appUrl,
-          })
-        );
-        break;
-
-      case 'welcome-supporter':
-        html = await render(
-          WelcomeEmail({
-            userName: 'Sita Sharma',
-            userRole: 'supporter',
-            profileUrl: `${appUrl}/profile`,
+            firstName: 'Sita',
             exploreUrl: `${appUrl}/explore`,
             settingsUrl: `${appUrl}/settings`,
             helpUrl: `${appUrl}/help`,

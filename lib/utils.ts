@@ -27,4 +27,15 @@ export function slugifyDisplayName(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 }
+
+/**
+ * Returns a valid image URL or undefined.
+ * Prevents broken images by filtering out null, empty, and invalid URLs.
+ */
+export function getValidAvatarUrl(url: string | null | undefined): string | undefined {
+  if (!url || url.trim() === '') return undefined;
+  // Filter out obviously broken placeholder paths
+  if (url === '/undefined' || url === '/null' || url === 'null' || url === 'undefined') return undefined;
+  return url;
+}
  
