@@ -45,7 +45,7 @@ export function BottomNav({
   const currentActiveView = getActiveViewFromPath();
 
   const isCreatorStudioActive = pathname === '/creator-studio';
-  const isSignupCreatorActive = pathname === '/signup/creator';
+  const isSettingsActive = pathname === '/settings';
 
   return (
     <motion.nav
@@ -65,7 +65,7 @@ export function BottomNav({
       <BottomNavIcon icon={Home} label="Home" isActive={currentActiveView === 'home'} href="/home" />
       <BottomNavIcon icon={Search} label="Explore" isActive={currentActiveView === 'explore'} href="/explore" />
 
-      {/* Center: Creator Studio (creators) or Join as creator (non-creators) */}
+      {/* Center: Creator Studio (creators) or Settings (non-creators) */}
       <div className="relative -mt-4">
         {isCreator ? (
           <Link
@@ -82,14 +82,14 @@ export function BottomNav({
           </Link>
         ) : (
           <Link
-            href="/signup/creator"
+            href="/settings"
             className={cn(
               'w-11 h-11 rounded-full flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform',
-              isSignupCreatorActive
-                ? 'bg-muted text-muted-foreground ring-2 ring-border ring-offset-2 ring-offset-card'
+              isSettingsActive
+                ? 'bg-primary/90 text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-card'
                 : 'bg-muted text-foreground border border-border/60',
             )}
-            aria-label="Join as creator"
+            aria-label="Settings"
           >
             <Settings className="w-5 h-5" strokeWidth={2} />
           </Link>

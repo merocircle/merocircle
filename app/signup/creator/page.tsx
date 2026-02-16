@@ -552,10 +552,10 @@ export default function CreatorSignupPage() {
             <span className="text-xl font-bold">MeroCircle</span>
           </Link>
           
-          <Link href="/signup">
+          <Link href="/settings">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Signup
+              Back to Settings
             </Button>
           </Link>
         </div>
