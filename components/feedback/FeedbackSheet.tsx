@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Send, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -30,10 +31,14 @@ export function FeedbackSheet({ open, onOpenChange, userId, displayName, isCreat
   const [answer, setAnswer] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => setMounted(true), []);
 
   const question = useMemo(() => {
     return FEEDBACK_QUESTIONS[Math.floor(Math.random() * FEEDBACK_QUESTIONS.length)];
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSubmit = async () => {
     if (!answer.trim()) return;
@@ -63,10 +68,10 @@ export function FeedbackSheet({ open, onOpenChange, userId, displayName, isCreat
     }
   };
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100]" onClick={() => onOpenChange(false)}>
+  const content = (
+    <div className="fixed inset-0 z-[9999]" onClick={() => onOpenChange(false)}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
 
@@ -137,4 +142,6 @@ export function FeedbackSheet({ open, onOpenChange, userId, displayName, isCreat
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
