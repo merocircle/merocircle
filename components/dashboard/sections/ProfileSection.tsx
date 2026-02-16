@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import {
   Settings,
   Heart,
@@ -20,8 +21,6 @@ import {
   Camera,
   Edit,
   Save,
-  Grid3X3,
-  List,
   Loader2,
   MessageCircle,
   Eye,
@@ -33,6 +32,11 @@ import {
   Copy,
   ImagePlus,
 } from 'lucide-react';
+import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
+import { TimelineFeed } from '@/components/posts/TimelineFeed';
+import { TimelinePost } from '@/components/posts/TimelinePost';
+import { staggerContainer, fadeInUp } from '@/components/animations/variants';
+import { isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
 
@@ -60,6 +64,8 @@ export default function ProfileSection() {
     category: ''
   });
 
+  const creatorDetails = useCreatorDetails(user?.id || null)
+
   // Fetch user's posts (only for creators)
   useEffect(() => {
     const fetchPosts = async () => {
@@ -70,7 +76,8 @@ export default function ProfileSection() {
             .select(`
               *,
               post_likes(id),
-              post_comments(id)
+              post_comments(id),
+              polls(id, question, allows_multiple_answers, expires_at)
             `)
             .eq('creator_id', user.id)
             .order('created_at', { ascending: false })
@@ -80,7 +87,8 @@ export default function ProfileSection() {
             setPosts(data.map((post: any) => ({
               ...post,
               likes_count: post.post_likes?.length || 0,
-              comments_count: post.post_comments?.length || 0
+              comments_count: post.post_comments?.length || 0,
+              poll: post.polls || null
             })));
           }
         } catch (error) {

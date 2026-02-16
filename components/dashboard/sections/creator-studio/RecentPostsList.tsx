@@ -44,7 +44,7 @@ export function RecentPostsList({
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-foreground">Recent Posts</h3>
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0 max-w-[830px] mx-auto">
         {posts.map((post) => {
           // Normalize both IDs for comparison (case-insensitive, trimmed)
           const normalizedHighlightedId = highlightedPostId ? String(highlightedPostId).trim().toLowerCase() : null;

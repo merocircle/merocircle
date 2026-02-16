@@ -1,8 +1,8 @@
 /* Product / Dashboard section - reference design */
 .product-section {
   padding: 12rem 2rem;
-  background: rgba(249, 250, 251, 0.5);
-  border-top: 1px solid rgb(243 244 246);
+  background: var(--background);
+  border-top: 1px solid var(--border);
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
 }
 
@@ -27,7 +27,7 @@
   margin: 0 auto 4rem;
 }
 .product-section-eyebrow {
-  color: #990000;
+  color: var(--primary);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.4em;
@@ -39,7 +39,7 @@
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 1.1;
-  color: #1a1a1a;
+  color: var(--foreground);
   margin: 0 0 1rem;
 }
 @media (min-width: 768px) {
@@ -49,7 +49,7 @@
 }
 .product-section-description {
   font-size: 1.125rem;
-  color: rgb(107 114 128);
+  color: var(--muted-foreground);
   font-weight: 500;
   line-height: 1.6;
   margin: 0;
@@ -63,7 +63,7 @@
   border-radius: 2rem;
   overflow: hidden;
   box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgb(243 244 246);
+  border: 1px solid var(--border);
 }
 .product-section-image {
   width: 100%;

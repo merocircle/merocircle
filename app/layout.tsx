@@ -70,9 +70,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/logo/logo-favicon.svg", type: "image/svg+xml" },
-      { url: "/logo/logo-small.png", sizes: "192x192", type: "image/png" },
+      { url: "/logo/logo-favicon.svg", sizes: "192x192", type: "image/png" },
     ],
-    apple: { url: "/logo/logo-small.png", sizes: "180x180" },
+    apple: { url: "/logo/logo-favicon.svg", sizes: "180x180" },
     shortcut: "/logo/logo-favicon.svg",
   },
   openGraph: {

@@ -44,7 +44,7 @@
 
 .process-section-description {
   font-size: 0.875rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 @media (min-width: 640px) {
@@ -78,8 +78,8 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1.5rem;
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--card);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   transition: border-color 0.5s;
   min-width: 0;
@@ -104,13 +104,13 @@
 
 .process-step-card:hover,
 .process-step-card:active {
-  border-color: #ff4000;
+  border-color: var(--primary);
 }
 
 .process-step-number {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #d1d5db;
+  color: var(--muted-foreground);
   transition: color 0.5s;
   flex-shrink: 0;
 }
@@ -129,7 +129,7 @@
 
 .process-step-card:hover .process-step-number,
 .process-step-card:active .process-step-number {
-  color: #ff4000;
+  color: var(--primary);
 }
 
 .process-step-content {
@@ -142,7 +142,7 @@
   font-weight: 700;
   letter-spacing: -0.025em;
   margin-bottom: 0.25rem;
-  color: #000;
+  color: var(--foreground);
 }
 
 @media (min-width: 640px) {
@@ -159,7 +159,7 @@
 
 .process-step-description {
   font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.7);
+  color: var(--muted-foreground);
   line-height: 1.625;
 }
 
@@ -183,7 +183,7 @@
   flex-shrink: 0;
   height: 1.25rem;
   width: 1.25rem;
-  color: #000;
+  color: var(--foreground);
 }
 
 @media (min-width: 640px) {

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { LandingNav } from "@/components/landing";
 import "./about-page.css";
 
+import { Logo } from '@/components/ui/logo';
+
 const TEAM = [
   {
     name: "Shaswot Lamichhane",
@@ -41,13 +43,7 @@ export default function AboutPage() {
         {/* Hero: logo + name + tagline */}
         <header className="about-hero">
           <Link href="/" className="about-hero-brand">
-            <Image
-              src="/logo/logo-light.png"
-              alt=""
-              width={80}
-              height={80}
-              className="about-hero-logo"
-            />
+            <Logo className="w-6 h-6 text-primary object-contain"/>
             <span className="about-hero-name">MeroCircle</span>
           </Link>
           <p className="about-hero-tagline">

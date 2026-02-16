@@ -68,10 +68,9 @@ export function NavIcon({
         <Icon
           size={iconSizes[size]}
           className={cn(
-            'transition-all duration-200',
-            isActive ? 'stroke-[1.5]' : 'stroke-2'
+            'transition-all duration-200 stroke-2'
           )}
-          fill={isActive ? 'currentColor' : 'transparent'}
+          fill={'transparent'}
         />
 
         {/* Badge */}

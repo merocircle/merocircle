@@ -37,8 +37,8 @@ import { EditProfilePricingModal } from './EditProfilePricingModal';
 
 // Tab configuration
 const tabs = [
-  { id: 'overview', label: 'Overview', icon: BarChart3 },
-  { id: 'supporters', label: 'Supporters', icon: Users }
+  { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "supporters", label: "Supporters", icon: Users },
 ];
 
 const CreatorStudioSection = memo(function CreatorStudioSection() {
@@ -55,16 +55,16 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const highlightedPostRef = useRef<HTMLDivElement | null>(null);
   const scrollAttemptedRef = useRef(false);
 
-  const [newPostTitle, setNewPostTitle] = useState('');
-  const [newPostDescription, setNewPostDescription] = useState('');
+  const [newPostTitle, setNewPostTitle] = useState("");
+  const [newPostDescription, setNewPostDescription] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [postVisibility, setPostVisibility] = useState('public');
   const [postType, setPostType] = useState<'post' | 'poll'>('post');
   const [notifyByEmail, setNotifyByEmail] = useState(true);
 
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [allowsMultipleAnswers, setAllowsMultipleAnswers] = useState(false);
   const [pollDuration, setPollDuration] = useState<number | null>(null);
 
@@ -81,8 +81,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
     scrollAttemptedRef.current = false;
 
-    if (activeTab !== 'overview') {
-      setActiveTab('overview');
+    if (activeTab !== "overview") {
+      setActiveTab("overview");
     }
 
     // Normalize post ID (remove any whitespace, convert to lowercase for comparison)
@@ -91,7 +91,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     // Function to attempt scrolling
     const attemptScroll = (attempt: number = 1) => {
       // Only scroll if we're on the overview tab
-      if (activeTab !== 'overview') {
+      if (activeTab !== "overview") {
         if (attempt < 5) {
           setTimeout(() => attemptScroll(attempt + 1), 200);
         }
@@ -102,7 +102,9 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       const posts = dashboardData?.posts || [];
 
       const matchingPost = posts.find((p: any) => {
-        const postId = String(p.id || '').trim().toLowerCase();
+        const postId = String(p.id || "")
+          .trim()
+          .toLowerCase();
         return postId === normalizedPostId;
       });
 
@@ -114,24 +116,24 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
       if (matchingPost && !scrollAttemptedRef.current) {
         scrollAttemptedRef.current = true;
-        
+
         // Use requestAnimationFrame to ensure DOM is updated
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (highlightedPostRef.current) {
-              highlightedPostRef.current.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center',
-                inline: 'nearest'
+              highlightedPostRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "nearest",
               });
             } else {
               // Retry once more after a longer delay
               setTimeout(() => {
                 if (highlightedPostRef.current) {
-                  highlightedPostRef.current.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center',
-                    inline: 'nearest'
+                  highlightedPostRef.current.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                    inline: "nearest",
                   });
                 }
               }, 500);
@@ -160,14 +162,23 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       clearTimeout(scrollTimer4);
       clearTimeout(clearTimer);
     };
-  }, [highlightedPostId, dashboardLoading, dashboardData, activeTab, setHighlightedPostId]);
+  }, [
+    highlightedPostId,
+    dashboardLoading,
+    dashboardData,
+    activeTab,
+    setHighlightedPostId,
+  ]);
 
   const [shareCopied, setShareCopied] = useState(false);
 
   const handleShareProfile = useCallback(async () => {
-    if (!user?.id || typeof window === 'undefined') return;
+    if (!user?.id || typeof window === "undefined") return;
     // Prefer vanity URL: creator_profiles.vanity_username, else users.username (email prefix), else id
-    const slug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user.id;
+    const slug =
+      creatorProfile?.vanity_username?.trim() ||
+      userProfile?.username ||
+      user.id;
     const path = `/creator/${slug}`;
     const url = `${window.location.origin}${path}`;
     try {
@@ -176,7 +187,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       setTimeout(() => setShareCopied(false), 2000);
       if (navigator.share) {
         await navigator.share({
-          title: `Support ${userProfile?.display_name || 'this creator'}`,
+          title: `Support ${userProfile?.display_name || "this creator"}`,
           url,
         });
       }
@@ -184,7 +195,12 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     }
-  }, [user?.id, userProfile?.display_name, userProfile?.username, creatorProfile?.vanity_username]);
+  }, [
+    user?.id,
+    userProfile?.display_name,
+    userProfile?.username,
+    creatorProfile?.vanity_username,
+  ]);
 
   useEffect(() => {
     if (dashboardData) {
@@ -199,131 +215,154 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     setTimeout(() => setShowErrorMessage(null), 3000);
   }, []);
 
-  const prepareFileForUpload = useCallback(async (file: File): Promise<File> => {
-    const fileExt = file.name.split('.').pop()?.toLowerCase();
-    const isHeic = fileExt === 'heic' || fileExt === 'heif' || 
-                   file.type?.toLowerCase().includes('heic') || 
-                   file.type?.toLowerCase().includes('heif');
-    
-    if (!isHeic) {
-      return file;
-    }
+  const prepareFileForUpload = useCallback(
+    async (file: File): Promise<File> => {
+      const fileExt = file.name.split(".").pop()?.toLowerCase();
+      const isHeic =
+        fileExt === "heic" ||
+        fileExt === "heif" ||
+        file.type?.toLowerCase().includes("heic") ||
+        file.type?.toLowerCase().includes("heif");
 
-    try {
-      const heic2anyModule = await import('heic2any');
-      const heic2any = heic2anyModule.default || heic2anyModule;
-      
-      if (!heic2any) {
-        throw new Error('heic2any library not available');
+      if (!isHeic) {
+        return file;
       }
-      
-      const convertedBlob = await heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: 0.95,
-      });
 
-      const jpegBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-      
-      if (!jpegBlob) {
-        throw new Error('Conversion returned no blob');
-      }
-      
-      const typedBlob = jpegBlob instanceof Blob ? jpegBlob : new Blob([jpegBlob], { type: 'image/jpeg' });
-      const jpegFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-      const jpegFile = new File([typedBlob], jpegFileName, {
-        type: 'image/jpeg',
-        lastModified: file.lastModified,
-      });
-      
-      return jpegFile;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to convert HEIC image: ${errorMessage}. Please convert it to JPEG or PNG before uploading.`);
-    }
-  }, []);
+      try {
+        const heic2anyModule = await import("heic2any");
+        const heic2any = heic2anyModule.default || heic2anyModule;
 
-  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+        if (!heic2any) {
+          throw new Error("heic2any library not available");
+        }
 
-    if (uploadedImages.length + files.length > 10) {
-      showError('Maximum 10 images allowed per post.');
-      return;
-    }
-
-    const maxSize = 50 * 1024 * 1024;
-    const oversizedFiles = Array.from(files).filter(file => file.size > maxSize);
-    if (oversizedFiles.length > 0) {
-      showError(`Some files are too large. Maximum file size is 50MB.`);
-      return;
-    }
-
-    setIsUploadingImage(true);
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const fileToUpload = await prepareFileForUpload(file);
-        
-        const formData = new FormData();
-        formData.append('file', fileToUpload, fileToUpload.name);
-        formData.append('folder', 'posts');
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.95,
         });
 
-        if (!response.ok) {
-          const result = await response.json().catch(() => ({ error: 'Upload failed' }));
-          const errorMsg = result.error || `Upload failed with status ${response.status}`;
-          throw new Error(errorMsg);
+        const jpegBlob = Array.isArray(convertedBlob)
+          ? convertedBlob[0]
+          : convertedBlob;
+
+        if (!jpegBlob) {
+          throw new Error("Conversion returned no blob");
         }
 
-        const result = await response.json();
-        if (result.success) {
-          return result.url;
-        } else {
-          throw new Error(result.error || 'File upload failed.');
-        }
-      });
+        const typedBlob =
+          jpegBlob instanceof Blob
+            ? jpegBlob
+            : new Blob([jpegBlob], { type: "image/jpeg" });
+        const jpegFileName = file.name.replace(/\.(heic|heif)$/i, ".jpg");
+        const jpegFile = new File([typedBlob], jpegFileName, {
+          type: "image/jpeg",
+          lastModified: file.lastModified,
+        });
 
-      const newUrls = await Promise.all(uploadPromises);
-      setUploadedImages(prev => [...prev, ...newUrls]);
-    } catch (error) {
-      console.error('Upload error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'File upload failed.';
-      showError(errorMessage);
-    } finally {
-      setIsUploadingImage(false);
-      event.target.value = '';
-    }
-  }, [uploadedImages.length, showError, prepareFileForUpload]);
+        return jpegFile;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        throw new Error(
+          `Failed to convert HEIC image: ${errorMessage}. Please convert it to JPEG or PNG before uploading.`,
+        );
+      }
+    },
+    [],
+  );
 
-  const handlePublishPost = useCallback(() => {
-    if (postType === 'poll') {
-      if (!pollQuestion.trim()) {
-        showError('Poll question is required.');
+  const handleImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      if (uploadedImages.length + files.length > 10) {
+        showError("Maximum 10 images allowed per post.");
         return;
       }
-      const validOptions = pollOptions.filter(opt => opt.trim());
+
+      const maxSize = 50 * 1024 * 1024;
+      const oversizedFiles = Array.from(files).filter(
+        (file) => file.size > maxSize,
+      );
+      if (oversizedFiles.length > 0) {
+        showError(`Some files are too large. Maximum file size is 50MB.`);
+        return;
+      }
+
+      setIsUploadingImage(true);
+      try {
+        const uploadPromises = Array.from(files).map(async (file) => {
+          const fileToUpload = await prepareFileForUpload(file);
+
+          const formData = new FormData();
+          formData.append("file", fileToUpload, fileToUpload.name);
+          formData.append("folder", "posts");
+
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const result = await response
+              .json()
+              .catch(() => ({ error: "Upload failed" }));
+            const errorMsg =
+              result.error || `Upload failed with status ${response.status}`;
+            throw new Error(errorMsg);
+          }
+
+          const result = await response.json();
+          if (result.success) {
+            return result.url;
+          } else {
+            throw new Error(result.error || "File upload failed.");
+          }
+        });
+
+        const newUrls = await Promise.all(uploadPromises);
+        setUploadedImages((prev) => [...prev, ...newUrls]);
+      } catch (error) {
+        console.error("Upload error:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "File upload failed.";
+        showError(errorMessage);
+      } finally {
+        setIsUploadingImage(false);
+        event.target.value = "";
+      }
+    },
+    [uploadedImages.length, showError, prepareFileForUpload],
+  );
+
+  const handlePublishPost = useCallback(() => {
+    if (postType === "poll") {
+      if (!pollQuestion.trim()) {
+        showError("Poll question is required.");
+        return;
+      }
+      const validOptions = pollOptions.filter((opt) => opt.trim());
       if (validOptions.length < 2) {
-        showError('Poll must have at least 2 options.');
+        showError("Poll must have at least 2 options.");
         return;
       }
     } else {
       if (!newPostTitle.trim()) {
-        showError('Title is required.');
+        showError("Title is required.");
         return;
       }
       if (!newPostDescription.trim()) {
-        showError('Description is required.');
+        showError("Description is required.");
         return;
       }
     }
 
     const body: any = {
-      title: postType === 'poll' ? pollQuestion.trim() : newPostTitle.trim(),
-      content: postType === 'poll' ? pollQuestion.trim() : newPostDescription.trim(),
+      title: postType === "poll" ? pollQuestion.trim() : newPostTitle.trim(),
+      content:
+        postType === "poll" ? pollQuestion.trim() : newPostDescription.trim(),
       image_urls: uploadedImages.length > 0 ? uploadedImages : [],
       is_public: postVisibility === 'public',
       tier_required: postVisibility === 'public' ? 'free' : postVisibility,
@@ -331,13 +370,17 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       sendNotifications: notifyByEmail,
     };
 
-    if (postType === 'poll') {
-      const validOptions = pollOptions.filter(opt => opt.trim());
+    if (postType === "poll") {
+      const validOptions = pollOptions.filter((opt) => opt.trim());
       body.poll_data = {
         question: pollQuestion.trim(),
         options: validOptions,
         allows_multiple_answers: allowsMultipleAnswers,
-        expires_at: pollDuration ? new Date(Date.now() + pollDuration * 24 * 60 * 60 * 1000).toISOString() : null
+        expires_at: pollDuration
+          ? new Date(
+              Date.now() + pollDuration * 24 * 60 * 60 * 1000,
+            ).toISOString()
+          : null,
       };
     }
 
@@ -347,8 +390,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         setNewPostTitle('');
         setNewPostDescription('');
         setUploadedImages([]);
-        setPollQuestion('');
-        setPollOptions(['', '']);
+        setPollQuestion("");
+        setPollOptions(["", ""]);
         setAllowsMultipleAnswers(false);
         setPollDuration(null);
         setPostVisibility('public');
@@ -368,48 +411,58 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         }, 100);
       },
       onError: (error: any) => {
-        showError(error.message || 'Failed to publish.');
-      }
+        showError(error.message || "Failed to publish.");
+      },
     });
   }, [postType, newPostTitle, newPostDescription, uploadedImages, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, notifyByEmail, publishPost, showError]);
 
   const handlePostTypeChange = useCallback((type: 'post' | 'poll') => {
     setPostType(type);
-    if (type === 'poll') {
-      setNewPostTitle('');
-      setNewPostDescription('');
+    if (type === "poll") {
+      setNewPostTitle("");
+      setNewPostDescription("");
     } else {
-      setPollQuestion('');
-      setPollOptions(['', '']);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
     }
   }, []);
 
   const addPollOption = useCallback(() => {
     if (pollOptions.length < 10) {
-      setPollOptions([...pollOptions, '']);
+      setPollOptions([...pollOptions, ""]);
     }
   }, [pollOptions]);
 
-  const removePollOption = useCallback((index: number) => {
-    if (pollOptions.length > 2) {
-      setPollOptions(pollOptions.filter((_, i) => i !== index));
-    }
-  }, [pollOptions]);
+  const removePollOption = useCallback(
+    (index: number) => {
+      if (pollOptions.length > 2) {
+        setPollOptions(pollOptions.filter((_, i) => i !== index));
+      }
+    },
+    [pollOptions],
+  );
 
-  const updatePollOption = useCallback((index: number, value: string) => {
-    const updated = [...pollOptions];
-    updated[index] = value;
-    setPollOptions(updated);
-  }, [pollOptions]);
+  const updatePollOption = useCallback(
+    (index: number, value: string) => {
+      const updated = [...pollOptions];
+      updated[index] = value;
+      setPollOptions(updated);
+    },
+    [pollOptions],
+  );
 
-  const stats = useMemo(() => analyticsData?.stats || {
-    totalEarnings: 0,
-    supporters: 0,
-    posts: 0,
-    likes: 0,
-    currentMonthEarnings: 0,
-    earningsGrowth: 0
-  }, [analyticsData]);
+  const stats = useMemo(
+    () =>
+      analyticsData?.stats || {
+        totalEarnings: 0,
+        supporters: 0,
+        posts: 0,
+        likes: 0,
+        currentMonthEarnings: 0,
+        earningsGrowth: 0,
+      },
+    [analyticsData],
+  );
 
   if (analyticsLoading || dashboardLoading) {
     return (
@@ -633,7 +686,9 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               onAddPollOption={addPollOption}
               onRemovePollOption={removePollOption}
               onImageUpload={handleImageUpload}
-              onRemoveImage={(index) => setUploadedImages(prev => prev.filter((_, i) => i !== index))}
+              onRemoveImage={(index) =>
+                setUploadedImages((prev) => prev.filter((_, i) => i !== index))
+              }
               onPublish={handlePublishPost}
               onNotifyByEmailChange={setNotifyByEmail}
             />

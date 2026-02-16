@@ -179,7 +179,7 @@ export function CreateChannelModal({ onClose, onCreate }: CreateChannelModalProp
                       )}
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-medium text-foreground text-sm">
+                      <div className="font-bold text-foreground text-sm">
                         {supporter.user.display_name}
                       </div>
                       <div className="text-xs text-muted-foreground">

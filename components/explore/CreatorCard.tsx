@@ -139,8 +139,8 @@ export function CreatorCard({
             )}
           </div>
 
-          <button className="w-full mt-1 py-1.5 text-xs font-medium rounded-full border border-border/50 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all">
-            View
+          <button className="w-full bg-primary mt-1 py-1.5 text-xs font-medium rounded-full border border-border/50 text-background dark:text-foreground group-hover:bg-primary/80 group-hover:border-primary transition-all">
+            View Creator
           </button>
         </div>
       </div>

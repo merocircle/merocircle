@@ -192,6 +192,11 @@ export function PostCreationForm({
                 )}
               </div>
             ))}
+            {pollOptions.length >= 5 && pollOptions.length < 10 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Options 6-10 will be hidden by default. Users will need to press "Show more" to see them.
+              </p>
+            )}
             {pollOptions.length < 10 && (
               <Button variant="outline" size="sm" onClick={onAddPollOption} className="w-full border-dashed">
                 <Plus className="w-4 h-4 mr-2" />

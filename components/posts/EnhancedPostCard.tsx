@@ -28,6 +28,7 @@ import {
   Clock,
   Share2,
   UsersRound,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -115,7 +116,7 @@ export function EnhancedPostCard({
   onShare,
   showActions = true,
   isSupporter = false,
-  showAuthor = false,
+  showAuthor = true,
   onNavigateToMembership,
   creatorSlug,
 }: EnhancedPostCardProps) {
@@ -473,7 +474,7 @@ export function EnhancedPostCard({
                         e.stopPropagation();
                         setCurrentImageIndex((i) => i - 1);
                       }}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 hover:bg-card text-foreground shadow-lg transition-all z-10 backdrop-blur-sm"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-card/80 hover:bg-card text-foreground shadow-lg transition-all z-10 backdrop-blur-sm"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
@@ -484,7 +485,7 @@ export function EnhancedPostCard({
                         e.stopPropagation();
                         setCurrentImageIndex((i) => i + 1);
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 hover:bg-card text-foreground shadow-lg transition-all z-10 backdrop-blur-sm"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-card/80 hover:bg-card text-foreground shadow-lg transition-all z-10 backdrop-blur-sm"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -498,7 +499,7 @@ export function EnhancedPostCard({
         {shouldBlur && (
           <div
             className={cn(
-              "relative w-full overflow-hidden cursor-pointer rounded-lg",
+              "relative w-[calc(100% - 40px)] mx-4 overflow-hidden cursor-pointer rounded-lg",
               "aspect-[16/10] bg-gradient-to-br from-muted to-muted/50",
               showAuthor ? "mx-4 sm:mx-5 mt-4" : "mx-4 sm:mx-5 mt-4 sm:mt-5"
             )}
@@ -516,7 +517,7 @@ export function EnhancedPostCard({
             )}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center p-6 max-w-xs space-y-3">
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-card/90 border border-border shadow-lg">
+                <div className="inline-flex items-center justify-center w-11 h-11 bg-card/90 border border-border shadow-lg rounded-full">
                   <UsersRound className="w-4.5 h-4.5 text-primary" />
                 </div>
                 <div>
@@ -530,48 +531,30 @@ export function EnhancedPostCard({
                 {onNavigateToMembership ? (
                   <Button
                     size="sm"
-                    className="rounded-full px-5 shadow-md shadow-primary/15"
+                    className=" px-5 shadow-md shadow-primary/15"
                     onClick={(e) => {
                       e.stopPropagation();
                       onNavigateToMembership();
                     }}
                   >
-                    Support Creator
+                    <Sparkles />
+                    Join Circle
                   </Button>
                 ) : (
                   <Button
                     size="sm"
-                    className="rounded-full px-5 shadow-md shadow-primary/15"
+                    className=" px-5 shadow-md shadow-primary/15"
                     asChild
                   >
                     <Link
                       href={creatorProfileLink}
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <Sparkles />
                       Join Circle
                     </Link>
                   </Button>
                 )}
-              </div>
-              <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-card/80 text-foreground text-xs font-medium z-10 backdrop-blur-sm shadow-sm">
-                {currentImageIndex + 1}/{allImages.length}
-              </div>
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {allImages.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentImageIndex(idx);
-                    }}
-                    className={cn(
-                      "h-1.5 rounded-full transition-all",
-                      idx === currentImageIndex
-                        ? "bg-primary w-4"
-                        : "bg-foreground/30 w-1.5 hover:bg-foreground/50",
-                    )}
-                  />
-                ))}
               </div>
             </div>
           </div>
@@ -598,7 +581,7 @@ export function EnhancedPostCard({
           )}
 
           {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
-            <div className="mb-4" onClick={shouldBlur ? onNavigateToMembership : undefined}>
+            <div className="mb-4" onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}>
               {shouldBlur ? (
                 <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] cursor-pointer">
                   Subscribe to access this post.
@@ -649,7 +632,7 @@ export function EnhancedPostCard({
                   <MessageCircle className="w-4 h-4" />
                   {!shouldBlur ? (
                     <span>{commentsCount > 0 ? commentsCount : "Comment"}</span>
-                  ): (
+                  ) : (
                     <span>Comment</span>
                   )}
                 </motion.button>
@@ -705,7 +688,7 @@ export function EnhancedPostCard({
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Write a comment..."
-                        className="w-full bg-card border border-border/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
+                        className="w-full bg-card border border-border/60 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
@@ -713,7 +696,7 @@ export function EnhancedPostCard({
                       type="submit"
                       disabled={!newComment.trim() || commentMutation.isPending}
                       className={cn(
-                        "text-sm font-semibold px-3 py-2 rounded-full transition-all",
+                        "text-sm font-semibold px-3 py-2 transition-all",
                         newComment.trim()
                           ? "text-primary-foreground bg-primary hover:bg-primary/90"
                           : "text-muted-foreground bg-muted cursor-not-allowed",

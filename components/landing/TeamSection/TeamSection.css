@@ -1,8 +1,8 @@
 /* Team section – same theme as landing (crimson, cream, Plus Jakarta) */
 .team-section {
   padding: 8rem 2rem;
-  background: rgba(249, 250, 251, 0.6);
-  border-top: 1px solid rgb(243 244 246);
+  background: var(--background);
+  border-top: 1px solid var(--border);
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
 }
 
@@ -27,7 +27,7 @@
   margin: 0 auto 4rem;
 }
 .team-section-eyebrow {
-  color: #990000;
+  color: var(--primary);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.35em;
@@ -39,7 +39,7 @@
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 1.15;
-  color: #1a1a1a;
+  color: var(--foreground);
   margin: 0 0 0.75rem;
 }
 @media (min-width: 768px) {
@@ -49,7 +49,7 @@
 }
 .team-section-description {
   font-size: 1rem;
-  color: rgb(107 114 128);
+  color: var(--muted-foreground);
   font-weight: 500;
   line-height: 1.5;
   margin: 0;
@@ -81,15 +81,15 @@
 
 .team-card {
   height: 100%;
-  background: #fff;
+  background: var(--card);
   border-radius: 2rem;
-  border: 1px solid rgb(243 244 246);
+  border: 1px solid var(--border);
   overflow: hidden;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .team-card:hover {
-  border-color: rgba(153, 0, 0, 0.15);
+  border-color: rgba(215, 122, 106, 0.15);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 .team-card-placeholder {
@@ -98,7 +98,7 @@
 
 .team-card-image-wrap {
   aspect-ratio: 1;
-  background: rgb(249 250 251);
+  background: var(--muted);
   position: relative;
   overflow: hidden;
 }
@@ -112,12 +112,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(153, 0, 0, 0.06);
+  background: rgba(215, 122, 106, 0.06);
 }
 .team-card-placeholder-initials {
   font-size: 2.5rem;
   font-weight: 900;
-  color: rgba(153, 0, 0, 0.4);
+  color: rgba(215, 122, 106, 0.4);
   letter-spacing: -0.05em;
 }
 
@@ -128,7 +128,7 @@
   font-size: 1.25rem;
   font-weight: 900;
   letter-spacing: -0.03em;
-  color: #1a1a1a;
+  color: var(--foreground);
   margin: 0 0 0.25rem;
 }
 .team-card-role {
@@ -136,22 +136,22 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: #990000;
+  color: var(--primary);
   margin: 0 0 0.375rem;
 }
 .team-card-current {
   font-size: 0.8125rem;
-  color: rgb(107 114 128);
+  color: var(--muted-foreground);
   font-weight: 500;
   margin: 0 0 1rem;
   line-height: 1.4;
 }
 .team-card-words {
   font-size: 0.9375rem;
-  color: rgb(75 85 99);
+  color: var(--secondary-foreground);
   line-height: 1.55;
   font-style: italic;
   margin: 0;
-  border-left: 3px solid rgba(153, 0, 0, 0.3);
+  border-left: 3px solid rgba(215, 122, 106, 0.3);
   padding-left: 1rem;
 }

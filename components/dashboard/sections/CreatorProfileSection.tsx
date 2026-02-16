@@ -1274,15 +1274,42 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
             >
-              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                <h1 className="text-lg sm:text-xl font-bold text-foreground leading-tight tracking-tight">
-                  {creatorDetails.display_name}
-                </h1>
-                {creatorDetails.category && (
-                  <Badge variant="outline" className="px-2 py-0.5 text-[10px] text-primary border-primary/30 bg-primary/5 rounded-full font-medium">
-                    {creatorDetails.category}
-                  </Badge>
-                )}
+              <div className="flex items-start justify-between gap-3 flex-wrap mb-0.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg sm:text-xl font-bold text-foreground leading-tight tracking-tight">
+                    {creatorDetails.display_name}
+                  </h1>
+                  {creatorDetails.category && (
+                    <Badge variant="outline" className="px-2 py-0.5 text-[10px] text-primary border-primary/30 bg-primary/5 rounded-full font-medium">
+                      {creatorDetails.category}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* CTA */}
+                <div className="flex items-center gap-2">
+                  {isOwnProfile ? (
+                    <Button variant="outline" size="sm" asChild className="rounded-full h-9 gap-1.5">
+                      <a href="/settings">
+                        <Settings className="w-3.5 h-3.5" />
+                        Settings
+                      </a>
+                    </Button>
+                  ) : isSupporter ? (
+                    <Badge className="gap-1.5 px-3.5 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-sm font-medium rounded-full">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      In the Circle
+                    </Badge>
+                  ) : (
+                    <Button
+                      onClick={() => setActiveTab('membership')}
+                      className="gap-2 px-5 h-9 text-sm font-semibold shadow-md shadow-primary/15"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Join Circle
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="text-xs text-muted-foreground mb-1.5">
                 @{creatorDetails.username}
@@ -1306,32 +1333,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     <span className="text-xs">posts</span>
                   </span>
                 </div>
-
-                <div className="ml-auto flex items-center gap-2">
-                  {isOwnProfile ? (
-                    <>
-                      <Button variant="outline" size="sm" asChild className="rounded-full h-9 gap-1.5">
-                        <a href="/settings">
-                          <Settings className="w-3.5 h-3.5" />
-                          Settings
-                        </a>
-                      </Button>
-                    </>
-                  ) : isSupporter ? (
-                    <Badge className="gap-1.5 px-3.5 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-sm font-medium rounded-full">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      In the Circle
-                    </Badge>
-                  ) : (
-                    <Button
-                      onClick={() => setActiveTab('membership')}
-                      className="gap-2 px-5 h-9 text-sm font-semibold shadow-md shadow-primary/15 rounded-full"
-                    >
-                      <Heart className="w-3.5 h-3.5" />
-                      Join Circle
-                    </Button>
-                  )}
-                </div>
               </div>
             </motion.div>
           </div>
@@ -1341,27 +1342,27 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       {/* Tabs Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/30 -mx-4 sm:-mx-6 px-4 sm:px-6">
-            <TabsList className="w-full h-11 bg-transparent border-0 shadow-none p-0 gap-0 justify-start overflow-x-auto scrollbar-hide">
-              <TabsTrigger value="posts" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/30 -mx-4 p-4">
+            <TabsList className="w-full h-11 bg-muted border-0 shadow-none p-1 gap-0 justify-start overflow-x-auto scrollbar-hide rounded-md">
+              <TabsTrigger value="posts" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <FileText className="w-3.5 h-3.5 mr-1.5" />
                 Posts
               </TabsTrigger>
               {!isOwnProfile && (
-              <TabsTrigger value="membership" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="membership" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                 Membership
               </TabsTrigger>
               )}
-              <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="chat" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="shop" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="shop" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
                 Shop
               </TabsTrigger>
-              <TabsTrigger value="about" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="about" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Info className="w-3.5 h-3.5 mr-1.5" />
                 About
               </TabsTrigger>

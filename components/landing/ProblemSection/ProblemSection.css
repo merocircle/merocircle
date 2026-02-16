@@ -1,8 +1,8 @@
 /* Why MeroCircle - reference design */
 .problem-section {
   padding: 12rem 2rem;
-  background: rgba(249, 250, 251, 0.5);
-  border-top: 1px solid rgb(243 244 246);
+  background: var(--background);
+  border-top: 1px solid var(--border);
   position: relative;
   overflow: hidden;
   font-family: var(--font-plus-jakarta-sans), var(--font-sans);
@@ -40,7 +40,7 @@
   }
 }
 .problem-section-eyebrow {
-  color: #990000;
+  color: var(--primary);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.4em;
@@ -57,7 +57,7 @@
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 1.1;
-  color: #1a1a1a;
+  color: var(--foreground);
   margin: 0 0 1.5rem;
 }
 @media (max-width: 767px) {
@@ -67,7 +67,7 @@
 }
 .problem-section-description {
   font-size: 1.5rem;
-  color: rgb(107 114 128);
+  color: var(--muted-foreground);
   font-weight: 500;
   line-height: 1.625;
   margin: 0;
@@ -101,9 +101,9 @@
 .problem-section-card {
   height: 100%;
   padding: 3rem;
-  background: white;
+  background: var(--card);
   border-radius: 3.5rem;
-  border: 1px solid rgb(243 244 246);
+  border: 1px solid var(--border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: border-color 0.2s, box-shadow 0.2s;
   position: relative;
@@ -116,7 +116,7 @@
   }
 }
 .problem-section-card:hover {
-  border-color: rgba(153, 0, 0, 0.2);
+  border-color: rgba(215, 122, 106, 0.2);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 .problem-section-card-corner {
@@ -125,43 +125,43 @@
   right: 0;
   width: 6rem;
   height: 6rem;
-  background: rgba(153, 0, 0, 0.05);
+  background: rgba(215, 122, 106, 0.05);
   border-radius: 0 0 0 100%;
   transform: translate(2rem, -2rem);
   transition: background 0.2s;
 }
 .problem-section-card:hover .problem-section-card-corner {
-  background: rgba(153, 0, 0, 0.1);
+  background: rgba(215, 122, 106, 0.1);
 }
 
 .problem-section-card-icon {
   width: 3.5rem;
   height: 3.5rem;
-  background: rgba(153, 0, 0, 0.05);
+  background: rgba(215, 122, 106, 0.05);
   border-radius: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #990000;
+  color: var(--primary);
   margin-bottom: 2.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: background 0.5s, color 0.5s;
 }
 .problem-section-card:hover .problem-section-card-icon {
-  background: #990000;
-  color: white;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .problem-section-card-title {
   font-size: 1.5rem;
   font-weight: 900;
   letter-spacing: -0.025em;
-  color: #1a1a1a;
+  color: var(--foreground);
   margin: 0 0 1.25rem;
 }
 .problem-section-card-desc {
   font-size: 1rem;
-  color: rgb(156 163 175);
+  color: var(--muted-foreground);
   line-height: 1.625;
   font-weight: 500;
   margin: 0;
