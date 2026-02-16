@@ -40,10 +40,27 @@ import { detectEmbeds } from "@/lib/embeds";
 import { getBlurDataURL, imageSizes } from "@/lib/image-utils";
 import { RichContent } from "./RichContent";
 import { useAuth } from "@/contexts/auth-context";
-import { useLikePost, useAddComment } from "@/hooks/useQueries";
+import { useLikePost, useAddComment, useDeletePost } from "@/hooks/useQueries";
 import ThreadedComments from "./ThreadedComments";
 import { ShareModal } from "./ShareModal";
 import { PostDetailModal } from "./PostDetailModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2, Eye } from "lucide-react";
 
 const PollCard = dynamic(
   () => import("./PollCard").then((mod) => ({ default: mod.PollCard })),
@@ -83,6 +100,7 @@ interface Post {
   likes?: Array<{ id: string; user_id: string }>;
   likes_count?: number;
   comments_count?: number;
+  views_count?: number;
   is_liked?: boolean;
   poll?: { id: string };
 }
@@ -124,7 +142,9 @@ export function EnhancedPostCard({
   const [, startTransition] = useTransition();
   const likeMutation = useLikePost();
   const commentMutation = useAddComment();
+  const deleteMutation = useDeletePost();
   const { user: currentUser } = useAuth();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Safely default creator to prevent null access crashes
   const creator = post.creator || {
@@ -134,6 +154,8 @@ export function EnhancedPostCard({
     vanity_username: null,
     role: 'creator',
   };
+
+  const isPostCreator = !!(currentUserId && creator.id && currentUserId === creator.id);
 
   const initialIsLiked =
     post.is_liked ??
@@ -232,6 +254,14 @@ export function EnhancedPostCard({
     setShowShareModal(true);
     onShare?.(post.id);
   };
+
+  const handleDelete = useCallback(() => {
+    deleteMutation.mutate(post.id, {
+      onSuccess: () => {
+        setShowDeleteConfirm(false);
+      },
+    });
+  }, [deleteMutation, post.id]);
 
   useEffect(() => {
     if (post.is_liked !== undefined) {
@@ -636,9 +666,67 @@ export function EnhancedPostCard({
                     <span>Comment</span>
                   )}
                 </motion.button>
+
+                <motion.button
+                  onClick={handleShare}
+                  whileTap={{ scale: 0.9 }}
+                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Share</span>
+                </motion.button>
+
+                {post.views_count !== undefined && isPostCreator && (
+                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Eye className="w-4 h-4" />
+                    <span>{post.views_count}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1">
+                {isPostCreator && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Post
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
           )}
+
+          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your post and all its comments.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
         <AnimatePresence>
           {showComments && (

@@ -273,6 +273,46 @@ export function useMarkAllNotificationsRead() {
   });
 }
 
+// Delete post mutation
+export function useDeletePost() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete post');
+      return res.json();
+    },
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ['dashboard', 'unified', user?.id] });
+      const previous = queryClient.getQueryData(['dashboard', 'unified', user?.id]);
+
+      queryClient.setQueryData(['dashboard', 'unified', user?.id], (old: any) => {
+        if (!old?.posts) return old;
+        return {
+          ...old,
+          posts: old.posts.filter((p: any) => p.id !== postId),
+        };
+      });
+
+      return { previous };
+    },
+    onError: (err, postId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['dashboard', 'unified', user?.id], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'unified', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['creator', 'dashboard', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['creator', 'analytics', user?.id] });
+    },
+  });
+}
+
 // Optimistic like/unlike mutation
 export function useLikePost() {
   const queryClient = useQueryClient();

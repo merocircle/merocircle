@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { isAdmin } from '@/lib/admin-middleware';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { PageLayout } from '@/components/common/PageLayout';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -26,11 +27,17 @@ export default function AdminPage() {
 
   if (loading || !isAuthorized) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <PageLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </PageLayout>
     );
   }
 
-  return <AdminDashboard />;
+  return (
+    <PageLayout fullWidth>
+      <AdminDashboard />
+    </PageLayout>
+  );
 }

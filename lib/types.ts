@@ -40,6 +40,7 @@ export interface Post {
   comments?: PostComment[];
   likes_count?: number;
   comments_count?: number;
+  views_count?: number;
 }
 
 export interface PostLike {

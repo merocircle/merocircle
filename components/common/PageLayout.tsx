@@ -95,6 +95,7 @@ function PageLayoutInner({
     if (pathname === '/settings') return 'settings';
     if (pathname === '/profile') return 'profile';
     if (pathname === '/creator-studio') return 'creator-studio';
+    if (pathname === '/admin') return 'home'; // Admin doesn't have a specific view, use home
     return 'home';
   };
 

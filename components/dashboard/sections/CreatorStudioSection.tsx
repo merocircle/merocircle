@@ -16,6 +16,12 @@ import {
   MessageCircle,
   ExternalLink,
   Pencil,
+  Inbox,
+  TrendingUp,
+  Eye,
+  Heart,
+  MessageSquare,
+  Bell,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -23,7 +29,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
+import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost, useNotificationsData } from '@/hooks/useQueries';
 import {
   StatsCards,
   AnalyticsCharts,
@@ -34,18 +40,21 @@ import {
   SupportersList,
 } from './creator-studio';
 import { EditProfilePricingModal } from './EditProfilePricingModal';
+import { formatDistanceToNow } from 'date-fns';
 
 // Tab configuration
 const tabs = [
-  { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "posts", label: "Posts", icon: FileText },
+  { id: "analytics", label: "Analytics", icon: TrendingUp },
   { id: "supporters", label: "Supporters", icon: Users },
+  { id: "inbox", label: "Inbox", icon: Inbox },
 ];
 
 const CreatorStudioSection = memo(function CreatorStudioSection() {
   const { user, userProfile, creatorProfile } = useAuth();
   const dashboardView = useDashboardViewSafe();
   const { highlightedPostId, setHighlightedPostId } = dashboardView;
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('posts');
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -70,6 +79,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
   const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
   const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
+  const { data: notificationsData } = useNotificationsData();
   const queryClient = useQueryClient();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
 
@@ -81,8 +91,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
     scrollAttemptedRef.current = false;
 
-    if (activeTab !== "overview") {
-      setActiveTab("overview");
+    if (activeTab !== "posts") {
+      setActiveTab("posts");
     }
 
     // Normalize post ID (remove any whitespace, convert to lowercase for comparison)
@@ -90,8 +100,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
     // Function to attempt scrolling
     const attemptScroll = (attempt: number = 1) => {
-      // Only scroll if we're on the overview tab
-      if (activeTab !== "overview") {
+      // Only scroll if we're on the posts tab
+      if (activeTab !== "posts") {
         if (attempt < 5) {
           setTimeout(() => attemptScroll(attempt + 1), 200);
         }
@@ -401,8 +411,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         setSuccessMessage('Post published!');
         setTimeout(() => setSuccessMessage(null), 3000);
 
-        // Ensure we're on the overview tab, then scroll to the new post
-        setActiveTab('overview');
+        // Ensure we're on the posts tab, then scroll to the new post
+        setActiveTab('posts');
         // Reset scroll state so the effect can trigger
         scrollAttemptedRef.current = false;
         // Set the highlighted post ID after a brief delay to allow tab switch
@@ -498,43 +508,51 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
           </div>
 
           {/* Quick actions */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
             <Button
               variant="default"
-              className="gap-2 rounded-xl"
+              size="sm"
+              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm"
               asChild
             >
               <Link href="/create-post">
-                <Plus className="w-4 h-4" />
-                Create Post
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Post</span>
               </Link>
             </Button>
             <Button
               variant={shareCopied ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0"
+              size="icon"
+              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0"
               onClick={handleShareProfile}
             >
               {shareCopied ? (
-                <><CheckCircle2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Copied!</span></>
+                <CheckCircle2 className="w-3.5 h-3.5" />
               ) : (
-                <><Share2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Share</span></>
+                <Share2 className="w-3.5 h-3.5" />
               )}
+              <span className="hidden sm:inline">{shareCopied ? 'Copied!' : 'Share'}</span>
             </Button>
-            <Button variant="ghost" size="sm" className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0" asChild>
+            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0" asChild>
               <a href={`/creator/${creatorSlug}`}>
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">View Profile</span>
+                <span className="hidden sm:inline">View</span>
               </a>
             </Button>
             <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0"
+              variant="ghost"
+              size="icon"
+              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0"
               onClick={() => setShowEditProfilePricingModal(true)}
             >
               <Pencil className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Edit profile & pricing</span>
+              <span className="hidden sm:inline">Edit</span>
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0" asChild>
+              <Link href="/chat">
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Chat</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -574,89 +592,245 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         errorMessage={showErrorMessage}
       />
 
-      {/* Stats Cards */}
+      {/* Tab Navigation */}
       <div className="mb-5">
-        <StatsCards stats={stats} />
+        <div className="flex gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/30 overflow-x-auto scrollbar-hide">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActiveTab = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap',
+                  isActiveTab
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
+                {tab.id === 'inbox' && notificationsData?.unreadCount > 0 && (
+                  <span className="ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1">
+                    {notificationsData.unreadCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Main Content: Two-column on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left Column - Charts & Analytics (wider) */}
-        <div className="lg:col-span-2 space-y-5">
-          <AnalyticsCharts
-            earningsData={analyticsData?.charts.earnings}
-            supporterFlowData={analyticsData?.charts.supporterFlow}
-          />
-        </div>
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
+        {/* Posts Tab */}
+        {activeTab === 'posts' && (
+          <motion.div
+            key="posts"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* Quick Stats Row */}
+            <div className="flex items-center gap-4 mb-5 flex-wrap">
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <FileText className="w-4 h-4" />
+                <span className="font-medium text-foreground">{stats.posts}</span> posts
+              </div>
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Heart className="w-4 h-4" />
+                <span className="font-medium text-foreground">{stats.likes}</span> likes
+              </div>
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Users className="w-4 h-4" />
+                <span className="font-medium text-foreground">{stats.supporters}</span> supporters
+              </div>
+            </div>
 
-        {/* Right Column - Top Supporters */}
-        <div className="space-y-5">
-          <TopSupporters supporters={analyticsData?.topSupporters || []} />
-        </div>
-      </div>
+            {/* Create Post CTA */}
+            <Link href="/create-post" className="block mb-5">
+              <div className="flex items-center gap-3 p-4 rounded-xl border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Plus className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Share something with your circle</p>
+                  <p className="text-xs text-muted-foreground">Create a post, poll, or share media</p>
+                </div>
+              </div>
+            </Link>
 
-      {/* Tab navigation for Posts / Supporters */}
-      <div className="mt-6 border-t border-border/40 pt-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/30">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActiveTab = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all',
-                    isActiveTab
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+            <RecentPostsList
+              posts={dashboardData?.posts || []}
+              highlightedPostId={highlightedPostId}
+              currentUserId={user?.id}
+              onboardingCompleted={onboardingCompleted}
+              highlightedPostRef={highlightedPostRef}
+              creatorSlug={creatorSlug || undefined}
+            />
+          </motion.div>
+        )}
 
-        <AnimatePresence mode="wait">
-          {activeTab === 'overview' && (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <RecentPostsList
-                posts={dashboardData?.posts || []}
-                highlightedPostId={highlightedPostId}
-                currentUserId={user?.id}
-                onboardingCompleted={onboardingCompleted}
-                highlightedPostRef={highlightedPostRef}
-                creatorSlug={creatorSlug || undefined}
-              />
-            </motion.div>
-          )}
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <motion.div
+            key="analytics"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-5"
+          >
+            {/* Stats Cards */}
+            <StatsCards stats={stats} />
 
-          {activeTab === 'supporters' && (
-            <motion.div
-              key="supporters"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <SupportersList
-                supporters={dashboardData?.supporters || []}
-                totalCount={stats.supporters}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            {/* Charts & Top Supporters */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div className="lg:col-span-2 space-y-5">
+                <AnalyticsCharts
+                  earningsData={analyticsData?.charts.earnings}
+                  supporterFlowData={analyticsData?.charts.supporterFlow}
+                />
+              </div>
+              <div className="space-y-5">
+                <TopSupporters supporters={analyticsData?.topSupporters || []} />
+              </div>
+            </div>
+
+            {/* Engagement breakdown */}
+            {analyticsData?.charts?.engagement && (
+              <div className="rounded-xl border border-border/40 bg-card p-5">
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  Engagement (Last 30 Days)
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {(() => {
+                    const engagementData = analyticsData.charts.engagement || [];
+                    const totalLikes = engagementData.reduce((sum: number, d: any) => sum + (d.likes || 0), 0);
+                    const totalComments = engagementData.reduce((sum: number, d: any) => sum + (d.comments || 0), 0);
+                    return (
+                      <>
+                        <div className="text-center p-3 rounded-lg bg-muted/30">
+                          <p className="text-2xl font-bold text-foreground">{totalLikes + totalComments}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Total interactions</p>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-muted/30">
+                          <p className="text-2xl font-bold text-rose-500">{totalLikes}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Likes</p>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-muted/30">
+                          <p className="text-2xl font-bold text-blue-500">{totalComments}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Comments</p>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-muted/30">
+                          <p className="text-2xl font-bold text-foreground">
+                            {engagementData.length > 0 ? Math.round((totalLikes + totalComments) / engagementData.length) : 0}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">Daily average</p>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Supporters Tab */}
+        {activeTab === 'supporters' && (
+          <motion.div
+            key="supporters"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <SupportersList
+              supporters={dashboardData?.supporters || []}
+              totalCount={stats.supporters}
+            />
+          </motion.div>
+        )}
+
+        {/* Inbox Tab */}
+        {activeTab === 'inbox' && (
+          <motion.div
+            key="inbox"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-5"
+          >
+            {/* Recent Notifications */}
+            <div className="rounded-xl border border-border/40 bg-card">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-primary" />
+                  Recent Activity
+                </h3>
+                <Link href="/notifications" className="text-xs text-primary hover:underline">
+                  View all
+                </Link>
+              </div>
+              <div className="divide-y divide-border/30">
+                {notificationsData?.notifications?.length > 0 ? (
+                  notificationsData.notifications.slice(0, 8).map((notif: any) => (
+                    <div key={notif.id} className={cn(
+                      "px-5 py-3 flex items-start gap-3 text-sm",
+                      !notif.read && "bg-primary/5"
+                    )}>
+                      <div className={cn(
+                        "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
+                        !notif.read ? "bg-primary" : "bg-transparent"
+                      )} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-foreground line-clamp-2">
+                          <span className="font-medium">{notif.actor?.display_name || 'Someone'}</span>{' '}
+                          {notif.type === 'like' && 'liked your post'}
+                          {notif.type === 'comment' && 'commented on your post'}
+                          {notif.type === 'follow' && 'started following you'}
+                          {notif.type === 'payment' && 'joined your circle'}
+                          {notif.type === 'mention' && 'mentioned you'}
+                          {!['like', 'comment', 'follow', 'payment', 'mention'].includes(notif.type) && notif.type}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+                    No recent activity
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Chat Access */}
+            <div className="rounded-xl border border-border/40 bg-card p-5">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                <MessageCircle className="w-4 h-4 text-primary" />
+                Messages
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Chat with your supporters and manage community conversations.
+              </p>
+              <Button variant="outline" size="sm" className="gap-1.5 rounded-lg" asChild>
+                <Link href="/chat">
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  Open Chat
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Create Post Modal */}
       <Dialog open={showCreatePostModal} onOpenChange={setShowCreatePostModal}>

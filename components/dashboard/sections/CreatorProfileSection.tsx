@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ import {
   Settings,
   Edit,
   ExternalLink,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
@@ -1528,6 +1530,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               </TabsContent>
 
               <TabsContent value="posts" className="mt-3">
+                {isOwnProfile && (
+                  <Link href="/create-post" className="block mb-4">
+                    <div className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Share something with your circle</p>
+                        <p className="text-xs text-muted-foreground hidden sm:block">Create a post, poll, or share media</p>
+                      </div>
+                    </div>
+                  </Link>
+                )}
                 {recentPosts.length > 0 ? (
                   <>
                     <TimelineFeed
