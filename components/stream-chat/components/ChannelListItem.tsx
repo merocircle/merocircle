@@ -57,13 +57,9 @@ export function ChannelListItem({
         ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
       `}
     >
-      {/* Channel icon / server avatar */}
-      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center overflow-hidden ring-1 ring-border/30">
-        {serverImage ? (
-          <img src={serverImage} alt={serverName || channel.name} className="w-full h-full object-cover" />
-        ) : (
-          <Hash className="h-3 w-3 text-muted-foreground" />
-        )}
+      {/* Channel icon — hash to distinguish from server (which uses creator photo) */}
+      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center ring-1 ring-border/30">
+        <Hash className="h-3 w-3 text-muted-foreground" />
       </div>
 
       {/* Name + last message */}
