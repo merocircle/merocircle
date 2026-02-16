@@ -24,8 +24,9 @@ import {
   Clock,
   UsersRound,
   BarChart3,
-  Users,
   Circle,
+  CheckCircle2,
+  ChevronDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -189,58 +190,59 @@ function PreviewPost({
             {/* Poll Preview - 1:1 match with PollCard */}
             {postType === 'poll' && (
               <div className="mb-3">
-                <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                <div className="p-5 rounded-xl border border-border/50 bg-card">
                   {/* Poll Question */}
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="p-2 bg-blue-500 rounded-lg">
-                      <Users className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-foreground mb-1">
-                        {pollQuestion || 'Poll Question'}
-                      </h3>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>0 votes</span>
-                      </div>
+                  <div className="mb-4">
+                    <h3 className="text-base font-semibold text-foreground mb-1.5">
+                      {pollQuestion || 'Poll Question'}
+                    </h3>
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground flex-wrap">
+                      <span className="font-medium">0 votes</span>
                     </div>
                   </div>
 
                   {/* Poll Options */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {validPollOptions.length > 0 ? (
                       <>
                         {displayPollOptions.map((option, index) => (
                           <div
                             key={index}
-                            className="w-full p-4 rounded-lg border-2 text-left border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-3"
+                            className="w-full p-3 rounded-lg border border-border/50 bg-background flex items-center gap-2.5"
                           >
-                            <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                            <span className="font-medium">{option}</span>
+                            <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                            <span className="text-sm font-medium">{option}</span>
                           </div>
                         ))}
-                        {hasMorePollOptions && !showAllPollOptions && (
+                        {hasMorePollOptions && (
                           <button
-                            onClick={() => setShowAllPollOptions(true)}
-                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                            onClick={() => setShowAllPollOptions(!showAllPollOptions)}
+                            className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-medium text-primary hover:text-primary/80 transition-colors rounded-lg hover:bg-primary/5"
                           >
-                            Show {validPollOptions.length - 5} more options
+                            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showAllPollOptions && "rotate-180")} />
+                            {showAllPollOptions ? 'Show less' : `Show ${validPollOptions.length - 5} more`}
                           </button>
                         )}
                       </>
                     ) : (
                       <>
-                        <div className="w-full p-4 rounded-lg border-2 text-left border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-3">
-                          <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                          <span className="font-medium text-muted-foreground">Option 1</span>
+                        <div className="w-full p-3 rounded-lg border border-border/50 bg-background flex items-center gap-2.5">
+                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                          <span className="text-sm font-medium text-muted-foreground">Option 1</span>
                         </div>
-                        <div className="w-full p-4 rounded-lg border-2 text-left border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center gap-3">
-                          <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                          <span className="font-medium text-muted-foreground">Option 2</span>
+                        <div className="w-full p-3 rounded-lg border border-border/50 bg-background flex items-center gap-2.5">
+                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                          <span className="text-sm font-medium text-muted-foreground">Option 2</span>
                         </div>
                       </>
                     )}
                   </div>
-                </Card>
+
+                  {/* Creator message */}
+                  <p className="mt-3 text-xs text-center text-muted-foreground">
+                    You cannot vote in your own poll
+                  </p>
+                </div>
               </div>
             )}
             {postType !== 'poll' && content && (
@@ -447,6 +449,11 @@ export default function CreatePostPage() {
         showError('Poll must have at least 2 options.');
         return;
       }
+      const uniqueOptions = new Set(validOptions.map((opt) => opt.trim().toLowerCase()));
+      if (uniqueOptions.size !== validOptions.length) {
+        showError('Poll options must be unique.');
+        return;
+      }
     } else {
       if (!title.trim()) {
         showError('Title is required.');
@@ -518,11 +525,21 @@ export default function CreatePostPage() {
 
   const updatePollOption = useCallback(
     (index: number, value: string) => {
+      const trimmedValue = value.trim();
+      if (trimmedValue) {
+        const isDuplicate = pollOptions.some(
+          (opt, i) => i !== index && opt.trim().toLowerCase() === trimmedValue.toLowerCase()
+        );
+        if (isDuplicate) {
+          showError('This option already exists');
+          return;
+        }
+      }
       const updated = [...pollOptions];
       updated[index] = value;
       setPollOptions(updated);
     },
-    [pollOptions]
+    [pollOptions, showError]
   );
 
   // Redirect if not logged in
@@ -641,7 +658,7 @@ export default function CreatePostPage() {
                     </h3>
                   </div>
 
-                  <div className="flex gap-1 p-1 bg-muted/50 rounded-xl">
+                  <div className="flex gap-1 p-1 bg-muted rounded-xl">
                     <button
                       onClick={() => setPostType('post')}
                       className={cn(

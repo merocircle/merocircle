@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, Clock, BarChart3, ChevronDown } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ChevronDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -42,7 +41,6 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
   const [voting, setVoting] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [showAllOptions, setShowAllOptions] = useState(false);
-  const [creatorViewResults, setCreatorViewResults] = useState(false);
 
   useEffect(() => {
     fetchPollData();
@@ -69,7 +67,7 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
   };
 
   const handleVote = async (optionId: string) => {
-    if (!currentUserId || hasExpired || voting) return;
+    if (!currentUserId || hasExpired || voting || isCreator) return;
 
     setVoting(true);
 
@@ -124,7 +122,7 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
   if (!poll) return null;
 
   const hasVoted = userVotes.length > 0;
-  const showPollResults = showResults || hasVoted || hasExpired || creatorViewResults;
+  const showPollResults = showResults || hasVoted || hasExpired || isCreator;
 
   return (
     <div className="p-5 rounded-xl border border-border/50 bg-card">
@@ -200,33 +198,22 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
               );
             } else {
               return (
-                <motion.button
+                <motion.div
                   key={option.id}
-                  onClick={() => handleVote(option.id)}
-                  disabled={voting || !currentUserId}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className={cn(
-                    "w-full p-3 rounded-lg border text-left transition-all",
-                    "hover:border-primary/40 hover:bg-primary/5",
-                    isSelected
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-border/50 bg-background",
-                    voting && "opacity-50 cursor-not-allowed"
-                  )}
+                  className="relative"
                 >
-                  <div className="flex items-center gap-2.5">
-                    {isSelected ? (
-                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
-                    ) : (
+                  <div
+                    className="w-full p-3 rounded-lg border border-border/50 bg-background text-left cursor-default"
+                  >
+                    <div className="flex items-center gap-2.5">
                       <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                    )}
-                    <span className="text-sm font-medium">{option.option_text}</span>
+                      <span className="text-sm font-medium">{option.option_text}</span>
+                    </div>
                   </div>
-                </motion.button>
+                </motion.div>
               );
             }
           })}
@@ -243,27 +230,10 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
         )}
       </div>
 
-      {isCreator && !showPollResults && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCreatorViewResults(true)}
-          className="mt-3 w-full text-primary gap-2 h-8 text-xs"
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          View Results
-        </Button>
-      )}
-
-      {isCreator && creatorViewResults && !hasVoted && !hasExpired && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCreatorViewResults(false)}
-          className="mt-3 w-full text-muted-foreground gap-2 h-8 text-xs"
-        >
-          Hide Results
-        </Button>
+      {isCreator && (
+        <p className="mt-3 text-xs text-center text-muted-foreground">
+          You cannot vote in your own poll
+        </p>
       )}
 
       {!currentUserId && !showPollResults && (
