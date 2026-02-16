@@ -11,30 +11,51 @@ import Image from 'next/image';
 import gsap from 'gsap';
 import './auth-theme.css';
 
-// Creator showcase cards data
-const creatorShowcase = [
+// Fallback creator data in case API fails
+const fallbackCreators = [
   {
     name: "Aayush Sharma",
     category: "Tech Creator",
-    supporters: "2.4K supporters",
+    bio: "",
+    supporters: 0,
     profileImage: "/auth-page/tech_front.jpeg",
-    backgroundImage: "/auth-page/tech_back.png"
+    coverImage: "/auth-page/tech_back.png",
+    vanityUsername: null,
   },
   {
     name: "Nishar Miya",
     category: "Content Creator",
-    supporters: "3.5K supporters",
+    bio: "",
+    supporters: 0,
     profileImage: "/auth-page/creator_profile.jpg",
-    backgroundImage: "/auth-page/creator_back.jpg"
+    coverImage: "/auth-page/creator_back.jpg",
+    vanityUsername: null,
   },
   {
     name: "Priya Thapa",
     category: "Artist",
-    supporters: "1.8K supporters",
+    bio: "",
+    supporters: 0,
     profileImage: "/auth-page/musician_profile.jpg",
-    backgroundImage: "/auth-page/musician_back.jpeg"
+    coverImage: "/auth-page/musician_back.jpeg",
+    vanityUsername: null,
   }
 ];
+
+type CreatorCard = {
+  name: string;
+  category: string;
+  bio: string;
+  supporters: number;
+  profileImage: string | null;
+  coverImage: string | null;
+  vanityUsername: string | null;
+};
+
+function formatSupporters(count: number): string {
+  if (count >= 1000) return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}K supporters`;
+  return `${count} supporter${count !== 1 ? 's' : ''}`;
+}
 
 function AuthPageContent() {
   const [loading, setLoading] = useState(false);
@@ -43,10 +64,29 @@ function AuthPageContent() {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
+  const [creatorShowcase, setCreatorShowcase] = useState<CreatorCard[]>([]);
+  const [creatorsLoaded, setCreatorsLoaded] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const { userProfile, loading: authLoading } = useAuth();
+
+  // Fetch top creators from API
+  useEffect(() => {
+    fetch('/api/public/top-creators')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.creators && data.creators.length >= 3) {
+          setCreatorShowcase(data.creators);
+        } else {
+          setCreatorShowcase(fallbackCreators);
+        }
+      })
+      .catch(() => {
+        setCreatorShowcase(fallbackCreators);
+      })
+      .finally(() => setCreatorsLoaded(true));
+  }, []);
   
   const leftSideRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
@@ -122,7 +162,7 @@ function AuthPageContent() {
 
   // Auto-slide cards
   useEffect(() => {
-    if (isDragging) return;
+    if (isDragging || creatorShowcase.length === 0) return;
     
     autoPlayRef.current = setInterval(() => {
       setCurrentCard((prev) => (prev + 1) % creatorShowcase.length);
@@ -133,20 +173,18 @@ function AuthPageContent() {
         clearInterval(autoPlayRef.current);
       }
     };
-  }, [isDragging]);
+  }, [isDragging, creatorShowcase.length]);
 
   // Card transition animation
   useEffect(() => {
-    if (!cardsRef.current || isDragging) return;
+    if (!cardsRef.current || isDragging || creatorShowcase.length === 0) return;
 
     const cards = document.querySelectorAll('.creator-card-item');
     const totalCards = creatorShowcase.length;
     
     cards.forEach((card, index) => {
-      // Calculate distance with wrapping for infinite effect
       let distance = index - currentCard;
       
-      // Wrap distance to always show closest path
       if (distance > totalCards / 2) {
         distance -= totalCards;
       } else if (distance < -totalCards / 2) {
@@ -165,7 +203,7 @@ function AuthPageContent() {
         ease: 'power3.out'
       });
     });
-  }, [currentCard, dragOffset, isDragging]);
+  }, [currentCard, dragOffset, isDragging, creatorShowcase.length]);
 
   // Mouse drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -290,7 +328,7 @@ function AuthPageContent() {
             <Button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="auth-btn-primary w-full h-12 font-medium text-base transition-all shadow-sm hover:shadow-md rounded-xl"
+              className="w-full h-14 font-semibold text-base rounded-2xl bg-[#1a1a1a] hover:bg-[#111] text-white border-0 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -300,30 +338,17 @@ function AuthPageContent() {
               ) : (
                 <div className="flex items-center gap-3">
                   <GoogleIcon />
-                  <span>Sign in with Google</span>
+                  <span>Continue with Google</span>
                 </div>
               )}
             </Button>
           </div>
 
           {/* Footer */}
-          <div className="auth-footer space-y-6 pt-4">
-            <p className="auth-footer-text text-sm">
-              By continuing, you agree to MeroCircle's{' '}
-              <Link href="/terms" className="auth-link hover:no-underline">
-                Terms of Service
-              </Link>
-              {' '}and{' '}
-              <Link href="/privacy" className="auth-link hover:no-underline">
-                Privacy Policy
-              </Link>
+          <div className="auth-footer pt-6">
+            <p className="auth-footer-text text-sm text-center">
+              All users start as supporters. You can become a creator anytime from your dashboard.
             </p>
-
-            <div className="auth-divider pt-6 border-t">
-              <p className="auth-footer-text text-sm">
-                All users start as supporters. You can become a creator anytime from your dashboard.
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -333,6 +358,11 @@ function AuthPageContent() {
 
         {/* Cards Container */}
         <div className="relative w-full flex items-center justify-center p-12">
+          {!creatorsLoaded || creatorShowcase.length === 0 ? (
+            <div className="flex items-center justify-center h-[500px]">
+              <Loader2 className="w-8 h-8 animate-spin text-white/40" />
+            </div>
+          ) : (
           <div 
             ref={cardsRef}
             className="relative w-full max-w-md h-[500px] flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
@@ -350,37 +380,52 @@ function AuthPageContent() {
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 overflow-hidden shadow-2xl transition-all">
                   {/* Image */}
                   <div className="h-80 relative overflow-hidden">
-                    {/* Background Image */}
-                    <Image
-                      src={creator.backgroundImage}
-                      alt={creator.name}
-                      fill
-                      className="object-cover"
-                      draggable={false}
-                    />
+                    {/* Background / Cover Image */}
+                    {creator.coverImage ? (
+                      <Image
+                        src={creator.coverImage}
+                        alt={creator.name}
+                        fill
+                        className="object-cover"
+                        draggable={false}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-pink-500/30 to-purple-600/40" />
+                    )}
                     {/* Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                     
                     {/* Content */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white p-8">
-                      <div className="relative w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-white/40 shadow-xl">
-                        <Image
-                          src={creator.profileImage}
-                          alt={creator.name}
-                          fill
-                          className="object-cover"
-                          draggable={false}
-                        />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2 drop-shadow-lg">{creator.name}</h3>
-                      <p className="text-white/90 drop-shadow-md">{creator.category}</p>
+                      {creator.profileImage ? (
+                        <div className="relative w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-white/40 shadow-xl">
+                          <Image
+                            src={creator.profileImage}
+                            alt={creator.name}
+                            fill
+                            className="object-cover"
+                            draggable={false}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 rounded-full mb-4 border-4 border-white/40 shadow-xl bg-white/20 flex items-center justify-center text-3xl font-bold">
+                          {creator.name[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <h3 className="text-2xl font-bold mb-1 drop-shadow-lg">{creator.name}</h3>
+                      <p className="text-white/80 text-sm drop-shadow-md mb-2">{creator.category}</p>
+                      {creator.bio && (
+                        <p className="text-white/60 text-xs leading-relaxed line-clamp-2 max-w-[220px]">
+                          {creator.bio}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   {/* Info */}
-                  <div className="p-6 text-white">
+                  <div className="p-5 text-white">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{creator.supporters}</span>
+                      <span className="text-sm font-medium">{formatSupporters(creator.supporters)}</span>
                       <ArrowRight className="w-5 h-5" />
                     </div>
                   </div>
@@ -402,6 +447,7 @@ function AuthPageContent() {
               ))}
             </div>
           </div>
+          )}
         </div>
 
         {/* Top Beta Neon */}
@@ -411,12 +457,6 @@ function AuthPageContent() {
           </span>
         </div>
 
-        {/* Bottom Text */}
-        <div className="absolute bottom-8 left-8 right-8 text-center">
-          <p className="auth-right-bottom text-lg font-medium">
-            Join 10,000+ supporters making a difference
-          </p>
-        </div>
       </div>
     </div>
   );
