@@ -90,3 +90,36 @@
 .auth-theme .auth-dot-inactive {
   background: rgba(255, 255, 255, 0.35);
 }
+
+/* Beta neon badge */
+@keyframes neonPulse {
+  0%, 100% {
+    text-shadow: 0 0 4px currentColor, 0 0 8px currentColor, 0 0 16px currentColor;
+    box-shadow: 0 0 4px currentColor, 0 0 8px currentColor, inset 0 0 4px currentColor;
+  }
+  50% {
+    text-shadow: 0 0 2px currentColor, 0 0 4px currentColor, 0 0 8px currentColor;
+    box-shadow: 0 0 2px currentColor, 0 0 4px currentColor, inset 0 0 2px currentColor;
+  }
+}
+
+.beta-neon {
+  color: #d4a5a5;
+  border: 1.5px solid #d4a5a5;
+  animation: neonPulse 2s ease-in-out infinite;
+}
+
+.beta-neon-bright {
+  color: #ff6b6b;
+  border: 1.5px solid #ff6b6b;
+  animation: neonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes floatBadge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.beta-float {
+  animation: floatBadge 3s ease-in-out infinite;
+}

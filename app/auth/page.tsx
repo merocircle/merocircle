@@ -236,8 +236,8 @@ function AuthPageContent() {
         className="auth-left w-full lg:w-1/2 min-h-[100dvh] flex items-center justify-center p-4 sm:p-6 lg:p-8 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]"
       >
         <div className="w-full max-w-md space-y-6 sm:space-y-8 overflow-hidden">
-          {/* Logo */}
-          <div className="auth-logo flex justify-center">
+          {/* Logo + Beta */}
+          <div className="auth-logo flex flex-col items-center gap-2">
             <Link href="/" className="inline-block">
               <Image
                 src="/logo/logo-light.png"
@@ -247,6 +247,9 @@ function AuthPageContent() {
                 className="object-contain"
               />
             </Link>
+            <span className="beta-neon beta-float text-[10px] font-bold tracking-[0.2em] uppercase px-3 py-1 rounded-full">
+              BETA
+            </span>
           </div>
 
           {/* Motto (mobile: center of page feel) */}
@@ -261,6 +264,16 @@ function AuthPageContent() {
             </h1>
             <p className="auth-description text-sm sm:text-base lg:text-lg">
               Create an account to start supporting creators and join exclusive communities
+            </p>
+          </div>
+
+          {/* Free Beta Banner */}
+          <div className="rounded-xl p-3 bg-[var(--auth-accent-soft)] border border-[var(--auth-accent)]/30 text-center">
+            <p className="text-sm font-semibold text-[var(--auth-text)]">
+              Everything is free to test for now
+            </p>
+            <p className="text-xs text-[var(--auth-text-muted)] mt-0.5">
+              We are in beta. Explore all features at no cost.
             </p>
           </div>
 
@@ -389,6 +402,13 @@ function AuthPageContent() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Top Beta Neon */}
+        <div className="absolute top-6 right-6 z-20">
+          <span className="beta-neon-bright beta-float text-[11px] font-bold tracking-[0.25em] uppercase px-4 py-1.5 rounded-full bg-black/30 backdrop-blur-sm">
+            BETA
+          </span>
         </div>
 
         {/* Bottom Text */}
