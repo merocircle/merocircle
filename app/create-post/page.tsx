@@ -748,10 +748,10 @@ export default function CreatePostPage() {
                         onChange={(e) => setContent(e.target.value)}
                         rows={8}
                         className="bg-muted resize-none border-border rounded-md"
-                        maxLength={5000}
+                        maxLength={20000}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        {content.length}/5000 characters
+                        {content.length}/20000 characters
                       </p>
                     </div>
 
