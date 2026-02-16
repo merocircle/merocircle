@@ -73,22 +73,22 @@ function PreviewPost({
   const hasMorePollOptions = validPollOptions.length > 5;
 
   return (
-    <div className="sticky top-4">
+    <div className="sticky top-4 w-full min-w-0 max-w-full overflow-hidden">
       <div className="flex items-center gap-2 mb-3">
-        <Eye className="w-4 h-4 text-muted-foreground" />
+        <Eye className="w-4 h-4 text-muted-foreground shrink-0" />
         <h3 className="text-sm font-medium text-muted-foreground">Live Preview</h3>
       </div>
 
       <div
         className={cn(
-          'rounded-md transition-all duration-300',
+          'rounded-md transition-all duration-300 w-full min-w-0 max-w-full',
           isSupportersOnly &&
             'p-[3px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_16px_rgba(234,88,12,0.22),0_0_40px_rgba(234,88,12,0.12),0_0_72px_rgba(234,88,12,0.06)]'
         )}
       >
         <div
           className={cn(
-            'bg-card overflow-hidden transition-all duration-300 relative',
+            'bg-card overflow-hidden transition-all duration-300 relative w-full min-w-0',
             isSupportersOnly ? 'rounded-[10px]' : 'rounded-md border border-border/50 hover:border-border/80'
           )}
         >
@@ -246,8 +246,8 @@ function PreviewPost({
               </div>
             )}
             {postType !== 'poll' && content && (
-              <div>
-                <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px]">
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] break-words">
                   {content.length > 300 ? content.slice(0, 300) + '...' : content}
                 </p>
                 {content.length > 300 && (
@@ -634,13 +634,13 @@ export default function CreatePostPage() {
         )}
 
         {/* Main Content */}
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        <div className="w-full max-w-full min-w-0 px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center overflow-x-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 w-full max-w-full min-w-0">
             {/* Form Section */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
+              className="space-y-6 w-full min-w-0"
             >
               <Card className="p-5 sm:p-6">
                 {/* Post Type Selector */}
@@ -900,10 +900,10 @@ export default function CreatePostPage() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className={cn('lg:block', showPreview ? 'block' : 'hidden')}
+              className={cn('lg:block w-full min-w-0 max-w-full', showPreview ? 'block' : 'hidden')}
             >
-              <div className="lg:max-w-xl min-w-xl">
-                <Card className="p-5 sm:p-6 bg-muted/30">
+              <div className="w-full min-w-0 max-w-full lg:max-w-xl">
+                <Card className="p-4 sm:p-5 lg:p-6 bg-muted/30 w-full min-w-0 overflow-hidden">
                   <PreviewPost
                     title={title}
                     content={content}

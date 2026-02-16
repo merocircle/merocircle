@@ -138,7 +138,7 @@ export function OnboardingTab() {
           <div className="space-y-4">
             {creators.map((creator) => (
               <Card key={creator.id} className="border-border/50">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start gap-4">
                     {/* Avatar */}
                     <Avatar className="w-16 h-16">

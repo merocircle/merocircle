@@ -247,12 +247,12 @@ export default function SubscriptionsManagement() {
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
           <div>
             <h3 className="text-lg font-semibold">Your Subscriptions</h3>
             <p className="text-sm text-gray-500">Manage all your creator subscriptions</p>
           </div>
-          <Button onClick={fetchSubscriptions} variant="ghost" size="sm">
+          <Button onClick={fetchSubscriptions} variant="ghost" size="sm" className="self-start sm:self-auto">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -269,19 +269,19 @@ export default function SubscriptionsManagement() {
               </Avatar>
 
               {/* Subscription Details */}
-              <div className="flex-1">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h4 className="font-semibold text-lg">{subscription.creator.displayName}</h4>
-                    <p className="text-sm text-gray-600">{subscription.tier.name}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-base sm:text-lg truncate">{subscription.creator.displayName}</h4>
+                    <p className="text-sm text-gray-600 truncate">{subscription.tier.name}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap flex-shrink-0">
                     {getStatusBadge(subscription)}
                     {getGatewayBadge(subscription.paymentGateway)}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 text-sm">
                   <div className="flex items-center gap-2 text-gray-600">
                     <CreditCard className="w-4 h-4" />
                     <span>{subscription.currency} {subscription.amount.toLocaleString()}/month</span>
@@ -308,7 +308,7 @@ export default function SubscriptionsManagement() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mt-4">
                   {subscription.state !== 'cancelled' && (
                     <>
                       {(subscription.state === 'expired' || subscription.state === 'expiring_soon') && 
@@ -318,8 +318,9 @@ export default function SubscriptionsManagement() {
                           disabled={renewingId === subscription.id}
                           size="sm"
                           variant="default"
+                          className="text-xs sm:text-sm"
                         >
-                          <RefreshCw className={`w-4 h-4 mr-2 ${renewingId === subscription.id ? 'animate-spin' : ''}`} />
+                          <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${renewingId === subscription.id ? 'animate-spin' : ''}`} />
                           Renew Now
                         </Button>
                       )}
@@ -328,8 +329,9 @@ export default function SubscriptionsManagement() {
                         onClick={() => handleUnsubscribeClick(subscription)}
                         size="sm"
                         variant="destructive"
+                        className="text-xs sm:text-sm"
                       >
-                        <X className="w-4 h-4 mr-2" />
+                        <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         Unsubscribe
                       </Button>
                     </>

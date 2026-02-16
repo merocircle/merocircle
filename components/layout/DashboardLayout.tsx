@@ -117,11 +117,11 @@ export function DashboardLayout({
           'min-h-[100dvh] overflow-x-hidden w-full md:pt-0',
           !shouldHideMobileHeader && 'pt-[calc(3rem+env(safe-area-inset-top))]',
           contextView !== 'chat' && 'overflow-y-auto',
-          contextView === 'chat' && 'h-[calc(100dvh-4rem)] md:h-[100dvh] overflow-hidden'
+          contextView === 'chat' && 'h-[calc(100dvh-3.5rem)] md:h-[100dvh] overflow-hidden'
         )}>
           <div className={cn(
-            'h-full min-h-0 mx-auto pb-16',
-            !isFullWidth && 'max-w-[830px] w-full px-3 sm:px-4',
+            'h-full min-h-0 mx-auto pb-[calc(3.5rem+1rem)] md:pb-0',
+            !isFullWidth && 'max-w-[830px] w-full px-3 sm:px-4 md:px-6',
             contextView === 'chat' && 'overflow-hidden max-w-none px-0 sm:px-0'
           )}>
             <AnimatePresence mode="wait">

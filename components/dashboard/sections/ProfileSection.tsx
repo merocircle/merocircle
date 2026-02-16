@@ -503,7 +503,7 @@ export default function ProfileSection() {
 
   // ── Full Creator Profile ──
   return (
-    <div className="max-w-4xl mx-auto overflow-y-auto h-full">
+    <div className="max-w-full sm:max-w-3xl lg:max-w-4xl mx-auto overflow-y-auto h-full">
       {/* Cover Image + Avatar Hero */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -511,7 +511,7 @@ export default function ProfileSection() {
         className="relative"
       >
         {/* Cover Image */}
-        <div className="relative h-44 sm:h-52 md:h-60 overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-pink-500/20">
+        <div className="relative h-32 sm:h-44 md:h-52 lg:h-60 overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-pink-500/20">
           {coverImageUrl && (
             <Image
               src={coverImageUrl}
@@ -557,7 +557,7 @@ export default function ProfileSection() {
 
         {/* Profile info overlapping cover */}
         <div className="px-4 sm:px-6 lg:px-8 pb-6">
-          <div className="relative -mt-14 sm:-mt-16">
+          <div className="relative -mt-10 sm:-mt-14 lg:-mt-16">
             {/* Avatar */}
             <div className="flex items-end gap-4 sm:gap-5">
               <div className="relative flex-shrink-0">
@@ -680,34 +680,34 @@ export default function ProfileSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-3 gap-3 sm:gap-4 mb-8"
+            className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-8"
           >
-            <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
-              <FileText className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground tabular-nums">{stats.posts}</p>
-              <p className="text-xs text-muted-foreground">Posts</p>
+            <Card className="p-3 sm:p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1 sm:mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums">{stats.posts}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Posts</p>
             </Card>
-            <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
-              <Users className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground tabular-nums">{stats.supporters}</p>
-              <p className="text-xs text-muted-foreground">Supporters</p>
+            <Card className="p-3 sm:p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1 sm:mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums">{stats.supporters}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Supporters</p>
             </Card>
-            <Card className="p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
-              <Heart className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground tabular-nums">{stats.likes}</p>
-              <p className="text-xs text-muted-foreground">Likes</p>
+            <Card className="p-3 sm:p-4 text-center border-border/50 hover:border-primary/30 transition-colors">
+              <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1 sm:mb-2" />
+              <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums">{stats.likes}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Likes</p>
             </Card>
           </motion.div>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl w-fit mb-6 border border-border/30">
+        <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl w-fit mb-6 border border-border/30 overflow-x-auto scrollbar-hide max-w-full">
           {creatorTabs.map((tab) => (
             <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'px-5 py-2.5 rounded-xl text-sm font-medium transition-all',
+                'px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap',
                 activeTab === tab.id
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -759,7 +759,7 @@ export default function ProfileSection() {
                 </div>
               ) : posts.length > 0 ? (
                 viewMode === 'grid' ? (
-                  <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
+                  <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-1.5">
                     {posts.map((post) => (
                       <motion.div
                         key={post.id}

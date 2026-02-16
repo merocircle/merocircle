@@ -24,6 +24,8 @@
   line-height: 1.15;
   letter-spacing: -0.035em;
   color: #0f0f0f;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .final-cta-accent {
@@ -38,6 +40,7 @@
   line-height: 1.65;
   color: #6b7280;
   font-weight: 430;
+  word-wrap: break-word;
 }
 
 .final-cta-btn {

@@ -63,6 +63,8 @@
 @media (max-width: 767px) {
   .problem-section-title {
     font-size: 2rem;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
   }
 }
 .problem-section-description {
@@ -71,6 +73,7 @@
   font-weight: 500;
   line-height: 1.625;
   margin: 0;
+  word-wrap: break-word;
 }
 @media (max-width: 767px) {
   .problem-section-description {

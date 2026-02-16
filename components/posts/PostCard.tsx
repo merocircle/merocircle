@@ -187,18 +187,18 @@ export default function PostCard({
               </Avatar>
             </Link>
             
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className={cn(layout.flexRow, 'space-x-2')}>
                 <Link 
                   href={creatorProfileLink}
-                  className="hover:text-blue-600 transition-colors"
+                  className="hover:text-blue-600 transition-colors min-w-0 flex-1"
                 >
-                  <h4 className={cn('font-semibold cursor-pointer inline-block', colors.text.primary)}>
+                  <h4 className={cn('font-semibold cursor-pointer inline-block truncate max-w-[150px] sm:max-w-none', colors.text.primary)}>
                     {post.creator?.display_name || 'Creator'}
                   </h4>
                 </Link>
                 {post.creator_profile?.is_verified && (
-                  <span className={cn('h-4 w-4', effects.rounded.full, 'bg-blue-500', layout.flexCenter)}>
+                  <span className={cn('h-4 w-4 flex-shrink-0', effects.rounded.full, 'bg-blue-500', layout.flexCenter)}>
                     <span className="text-white text-xs">✓</span>
                   </span>
                 )}
@@ -249,12 +249,12 @@ export default function PostCard({
       <CardContent className={cn('pt-0', spacing.card)}>
         <div className={layout.gapLarge}>
           <Link href={`/posts/${post.id}`}>
-            <h2 className={cn('text-xl font-bold hover:text-blue-600 cursor-pointer line-clamp-2', colors.text.primary)}>
+            <h2 className={cn('text-lg sm:text-xl font-bold hover:text-blue-600 cursor-pointer line-clamp-2 break-words', colors.text.primary)}>
               {post.title}
             </h2>
           </Link>
 
-          <div className={cn('text-gray-700 whitespace-pre-wrap')}>
+          <div className={cn('text-sm sm:text-base text-gray-700 whitespace-pre-wrap break-words overflow-wrap-anywhere')}>
             {post.content && formatContent(post.content)}
             {post.content && post.content.length > 300 && (
               <Link href={`/posts/${post.id}`} className="text-blue-600 hover:underline ml-1">
@@ -265,7 +265,7 @@ export default function PostCard({
 
           {/* Post Image */}
           {post.image_url && (
-            <div className="relative w-full h-64 md:h-80 rounded-lg overflow-hidden">
+            <div className="relative w-full h-48 sm:h-64 md:h-80 rounded-lg overflow-hidden">
               <Image
                 src={post.image_url}
                 alt={post.title}
@@ -277,36 +277,36 @@ export default function PostCard({
 
           {showActions && (
             <div className={cn(layout.flexBetween, 'pt-4 border-t')}>
-              <div className={cn(layout.flexRow, 'space-x-6')}>
+              <div className={cn(layout.flexRow, 'space-x-2 sm:space-x-4 md:space-x-6')}>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLike}
-                  className={cn(layout.flexRow, 'space-x-2', isLiked ? 'text-red-500' : colors.text.muted)}
+                  className={cn(layout.flexRow, 'space-x-1 sm:space-x-2', isLiked ? 'text-red-500' : colors.text.muted)}
                   disabled={!currentUserId}
                 >
                   <Heart className={cn(responsive.icon, isLiked ? 'fill-current' : '')} />
-                  <span>{likesCount}</span>
+                  <span className="text-xs sm:text-sm">{likesCount}</span>
                 </Button>
 
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowComments(!showComments)}
-                  className={cn(layout.flexRow, 'space-x-2', colors.text.muted)}
+                  className={cn(layout.flexRow, 'space-x-1 sm:space-x-2', colors.text.muted)}
                 >
                   <MessageCircle className={responsive.icon} />
-                  <span>{post.comments_count || post.comments?.length || 0}</span>
+                  <span className="text-xs sm:text-sm">{post.comments_count || post.comments?.length || 0}</span>
                 </Button>
 
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleShare}
-                  className={cn(layout.flexRow, 'space-x-2', colors.text.muted)}
+                  className={cn(layout.flexRow, 'space-x-1 sm:space-x-2', colors.text.muted)}
                 >
                   <Share2 className={responsive.icon} />
-                  <span>Share</span>
+                  <span className="hidden sm:inline">Share</span>
                 </Button>
               </div>
             </div>
@@ -359,16 +359,16 @@ export default function PostCard({
                         </div>
                       )}
                     </Avatar>
-                    <div className="flex-1 bg-gray-50 rounded-lg p-3">
+                    <div className="flex-1 bg-gray-50 rounded-lg p-3 min-w-0">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-sm text-gray-900">
+                        <span className="font-medium text-sm text-gray-900 truncate">
                           {comment.user.display_name}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 flex-shrink-0">
                           {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700">{comment.content}</p>
+                      <p className="text-sm text-gray-700 break-words whitespace-pre-wrap">{comment.content}</p>
                     </div>
                   </div>
                 ))}

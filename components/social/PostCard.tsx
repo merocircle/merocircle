@@ -64,14 +64,14 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
               </div>
             </div>
 
-            <div>
+            <div className="min-w-0 flex-1">
               <h4
                 onClick={handleCreatorClick}
-                className="font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+                className="font-semibold text-sm sm:text-base text-gray-900 hover:text-blue-600 transition-colors cursor-pointer truncate"
               >
                 {post.creator?.display_name || 'Creator'}
               </h4>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
               </p>
             </div>
@@ -88,7 +88,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
         {/* Text Content */}
         {post.content && (
           <div className="mb-4">
-            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm sm:text-base text-gray-800 leading-relaxed whitespace-pre-wrap break-words">
               {post.content}
             </p>
           </div>
@@ -96,20 +96,20 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
 
         {/* Image Content */}
         {post.image_url && (
-          <div className="mb-4 rounded-lg overflow-hidden bg-gray-100">
+          <div className="mb-4 rounded-lg overflow-hidden bg-gray-100 relative w-full aspect-video">
             <Image
               src={post.image_url}
               alt="Post image"
-              width={600}
-              height={400}
-              className="w-full h-auto object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 630px"
             />
           </div>
         )}
 
         {/* Engagement Actions */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
             {/* Like Button */}
             <Button
               variant="ghost"

@@ -72,7 +72,7 @@ export function PostCreationForm({
 }: PostCreationFormProps) {
   return (
     <Card className={cn(
-      "p-6 transition-all border-border/50",
+      "p-4 sm:p-6 transition-all border-border/50",
       onboardingCompleted ? "hover:border-primary/30" : "opacity-60"
     )}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">

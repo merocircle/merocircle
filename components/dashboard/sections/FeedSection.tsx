@@ -30,10 +30,10 @@ function CirclesStrip() {
 
   if (isLoading) {
     return (
-      <div className="flex gap-3.5 px-1 py-4 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 sm:gap-3 px-1 py-4 overflow-x-auto scrollbar-hide">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <div className="w-[52px] h-[52px] rounded-full bg-muted animate-pulse" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-muted animate-pulse" />
             <div className="w-9 h-2 bg-muted rounded animate-pulse" />
           </div>
         ))}
@@ -62,14 +62,14 @@ function CirclesStrip() {
 
   return (
     <div className="py-3 border-b border-border/15">
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide px-1 scroll-smooth-touch">
+      <div className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-hide px-1 scroll-smooth-touch">
         {/* Explore button */}
         <button
           onClick={() => router.push('/explore')}
-          className="flex flex-col items-center gap-1 flex-shrink-0 w-[60px]"
+          className="flex flex-col items-center gap-1 flex-shrink-0 w-14 sm:w-[60px]"
         >
-          <div className="w-[52px] h-[52px] rounded-full border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20 hover:bg-muted/40 transition-colors">
-            <Plus className="w-4.5 h-4.5 text-muted-foreground" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20 hover:bg-muted/40 transition-colors">
+            <Plus className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-muted-foreground" />
           </div>
           <span className="text-[10px] font-medium text-muted-foreground">Explore</span>
         </button>
@@ -78,10 +78,10 @@ function CirclesStrip() {
           <button
             key={creator.id}
             onClick={() => router.push(`/creator/${creator.slug}`)}
-            className="flex flex-col items-center gap-1 flex-shrink-0 w-[60px] group"
+            className="flex flex-col items-center gap-1 flex-shrink-0 w-14 sm:w-[60px] group"
           >
             <div className={cn(
-              "w-[52px] h-[52px] rounded-full overflow-hidden transition-all",
+              "w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden transition-all",
               creator.hasNew
                 ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 : "ring-1.5 ring-border/30 ring-offset-1 ring-offset-background group-hover:ring-primary/40"

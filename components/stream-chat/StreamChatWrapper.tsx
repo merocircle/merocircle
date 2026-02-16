@@ -743,8 +743,16 @@ export function StreamChatWrapper({
           ) : (
             <Users className="h-6 w-6 text-primary" />
           )}
-          <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
         </div>
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-foreground truncate block">{server.name}</span>
+          {totalUnread > 0 && (
+            <span className="inline-flex min-w-[20px] h-5 px-1.5 mt-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full items-center justify-center">
+              {totalUnread > 99 ? "99+" : totalUnread}
+            </span>
+          )}
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
       </button>
     );
   }, [channelUnreadCounts, selectServerMobile]);
@@ -1109,11 +1117,11 @@ export function StreamChatWrapper({
               <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0">
                 <button
                   onClick={goBackToServers}
-                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
                 >
                   <ArrowLeft className="h-5 w-5 text-foreground" />
                 </button>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                     {selectedServer.image ? (
                       <img
@@ -1125,7 +1133,7 @@ export function StreamChatWrapper({
                       <Users className="h-4 w-4 text-primary" />
                     )}
                   </div>
-                  <h2 className="text-lg font-semibold text-foreground truncate">
+                  <h2 className="text-lg font-semibold text-foreground truncate min-w-0 flex-1">
                     {selectedServer.name}
                   </h2>
                 </div>

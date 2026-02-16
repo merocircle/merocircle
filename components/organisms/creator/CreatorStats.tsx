@@ -59,7 +59,7 @@ export const CreatorStats = memo(function CreatorStats({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <Card className={cn("p-6 hover:shadow-lg transition-shadow", className)}>
+      <Card className={cn("p-4 sm:p-6 hover:shadow-lg transition-shadow", className)}>
         <motion.h3
           className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground"
           initial={{ opacity: 0 }}

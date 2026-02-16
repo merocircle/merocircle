@@ -224,10 +224,10 @@ export default function DynamicPostCard({
 
       {/* Post Content */}
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 break-words">
           {post.title}
         </h3>
-        <p className="text-gray-700 dark:text-gray-300 mb-4">
+        <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-4 break-words whitespace-pre-wrap">
           {post.content}
         </p>
 
@@ -249,7 +249,7 @@ export default function DynamicPostCard({
             <video 
               src={post.media_url} 
               controls
-              className="w-full rounded-lg max-h-96"
+              className="w-full rounded-lg max-h-48 sm:max-h-64 md:max-h-96"
             >
               Your browser does not support the video tag.
             </video>
@@ -259,46 +259,46 @@ export default function DynamicPostCard({
 
       {/* Engagement Actions */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
           <button
             onClick={handleLike}
-            disabled={isLiking || !user}
-            className={`flex items-center space-x-2 transition-colors ${
+            disabled={isLiking || !userId}
+            className={`flex items-center space-x-1 sm:space-x-2 transition-colors ${
               isLiked 
                 ? 'text-red-500 hover:text-red-600' 
                 : 'text-gray-500 hover:text-red-500'
-            } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            } ${!userId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             {isLiking ? (
               <div className="w-4 h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin" />
             ) : (
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
             )}
-            <span className="text-sm">{likesCount}</span>
+            <span className="text-xs sm:text-sm">{likesCount}</span>
           </button>
           
           <button
             onClick={() => setShowComments(!showComments)}
-            disabled={!user}
-            className={`flex items-center space-x-2 transition-colors ${
+            disabled={!userId}
+            className={`flex items-center space-x-1 sm:space-x-2 transition-colors ${
               showComments 
                 ? 'text-blue-500 hover:text-blue-600' 
                 : 'text-gray-500 hover:text-blue-500'
-            } ${!user ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            } ${!userId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <MessageCircle className="w-4 h-4" />
-            <span className="text-sm">{post.comments_count || 0}</span>
+            <span className="text-xs sm:text-sm">{post.comments_count || 0}</span>
           </button>
           
-          <div className="flex items-center space-x-2 text-gray-500">
+          <div className="flex items-center space-x-1 sm:space-x-2 text-gray-500">
             <Eye className="w-4 h-4" />
-            <span className="text-sm">0</span>
+            <span className="text-xs sm:text-sm">0</span>
           </div>
         </div>
         
         <Button variant="ghost" size="sm" className="flex items-center space-x-1">
           <Share2 className="w-4 h-4" />
-          <span>Share</span>
+          <span className="hidden sm:inline">Share</span>
         </Button>
       </div>
 
@@ -306,10 +306,10 @@ export default function DynamicPostCard({
       {showComments && (
         <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
           {/* Add Comment Form */}
-          {user && (
-            <form onSubmit={handleComment} className="flex space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
-                {user.email?.[0]?.toUpperCase() || 'U'}
+          {userId && (
+            <form onSubmit={handleComment} className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+              <div className="hidden sm:flex w-8 h-8 bg-gradient-to-r from-red-500 to-pink-600 rounded-full items-center justify-center flex-shrink-0">
+                U
               </div>
               <div className="flex-1 space-y-2">
                 <textarea

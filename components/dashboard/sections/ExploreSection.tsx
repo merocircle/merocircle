@@ -107,8 +107,8 @@ const ExploreSection = memo(function ExploreSection() {
           )}
         </div>
 
-        {/* Category pills */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2.5 -mx-1 px-1 scroll-smooth-touch no-select">
+        {/* Category pills — horizontal scroll, pills don't shrink so text never overflows */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-2.5 -mx-1 px-1 scroll-smooth-touch no-select min-w-0">
           {categories.map((category) => {
             const Icon = category.icon;
             const isSelected = selectedCategory === category.id;
@@ -117,14 +117,15 @@ const ExploreSection = memo(function ExploreSection() {
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
                 className={cn(
-                  'flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all border',
+                  'flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all border flex-shrink-0',
                   isSelected
                     ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                     : 'bg-card text-muted-foreground border-border/40 hover:border-primary/30 hover:text-foreground'
                 )}
+                title={category.label}
               >
-                <Icon className="h-3 w-3" />
-                {category.label}
+                <Icon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+                <span>{category.label}</span>
               </button>
             );
           })}

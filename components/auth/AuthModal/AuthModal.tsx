@@ -42,7 +42,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md w-full p-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl" showCloseButton={false}>
+      <DialogContent className="sm:max-w-md w-full p-4 sm:p-6 md:p-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl max-h-[90vh] overflow-y-auto" showCloseButton={false}>
         {/* Custom Close Button */}
         <button
           onClick={() => onOpenChange(false)}
@@ -105,7 +105,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               onClick={handleGoogleSignIn}
               disabled={loading}
               size="lg"
-              className="w-full h-12 text-base font-medium bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
+              className="w-full h-10 sm:h-12 text-sm sm:text-base font-medium bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
             >
               {loading ? (
                 <div className="flex items-center gap-3">

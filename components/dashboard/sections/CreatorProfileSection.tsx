@@ -1481,33 +1481,33 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       {/* Tabs Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/30 -mx-4 p-4">
-            <TabsList className="w-full h-11 bg-muted border-0 shadow-none p-1 gap-0 justify-start overflow-x-auto scrollbar-hide rounded-md">
-              <TabsTrigger value="posts" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
-                <FileText className="w-3.5 h-3.5 mr-1.5" />
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-0 min-w-0">
+            <TabsList className="inline-flex w-full min-w-0 h-11 bg-muted border-0 shadow-none p-1 gap-1 flex-nowrap justify-start overflow-x-auto scrollbar-hide rounded-md">
+              <TabsTrigger value="posts" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <FileText className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Posts
               </TabsTrigger>
               {!isOwnProfile && (
-              <TabsTrigger value="membership" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              <TabsTrigger value="membership" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <Sparkles className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Membership
               </TabsTrigger>
               )}
-              <TabsTrigger value="chat" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
-                <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
+              <TabsTrigger value="chat" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <MessageCircle className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="shop" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
-                <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
+              <TabsTrigger value="shop" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <ShoppingBag className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Shop
               </TabsTrigger>
-              <TabsTrigger value="about" className="data-[state=active]:bg-card data-[state=active]:shadow-none  data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
-                <Info className="w-3.5 h-3.5 mr-1.5" />
+              <TabsTrigger value="about" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <Info className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 About
               </TabsTrigger>
               {isOwnProfile && (
-                <TabsTrigger value="edit" className="data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
-                  <Edit className="w-3.5 h-3.5 mr-1.5" />
+                <TabsTrigger value="edit" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                  <Edit className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                   Edit Profile
                 </TabsTrigger>
               )}
@@ -1518,14 +1518,14 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 <div className="relative">
                   {isSupporter ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
-                      <div className="h-[600px]">
+                      <div className="h-[400px] sm:h-[500px] lg:h-[600px]">
                         <StreamCommunitySection creatorId={creatorId} />
                       </div>
                     </Card>
                   ) : (
                     <div className="relative">
                       <Card className="border-border/50 overflow-hidden">
-                        <div className="h-[600px] relative">
+                        <div className="h-[400px] sm:h-[500px] lg:h-[600px] relative">
                           <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                             <div className="absolute inset-0 opacity-20 blur-xl">
                               <div className="p-4 space-y-4">

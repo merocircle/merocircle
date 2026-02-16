@@ -65,7 +65,7 @@ export function TierSelection({
   return (
     <div className="space-y-6">
       {/* Tier Cards - Horizontal 3-Column Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {tiers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No tiers available. Please check back later.
@@ -162,7 +162,7 @@ export function TierSelection({
                   </div>
 
                   {/* Content */}
-                  <div className={`flex-1 flex flex-col p-6 ${isCurrent ? 'opacity-60' : ''}`}>
+                  <div className={`flex-1 flex flex-col p-4 sm:p-6 ${isCurrent ? 'opacity-60' : ''}`}>
                     {/* Title and Price */}
                     <div className="mb-6">
                       <h3 className="text-xl font-bold text-foreground mb-1">

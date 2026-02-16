@@ -40,7 +40,7 @@ export function RichContent({ content, className, truncateLength = 280, onClickE
     <div className={cn('space-y-3', className)}>
       {/* Text with clickable links */}
       {displayText && (
-        <div className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px]">
+        <div className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] break-words overflow-wrap-anywhere">
           <LinkifyText text={displayText} />
           {shouldTruncate && (
             <>

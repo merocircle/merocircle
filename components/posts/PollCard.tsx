@@ -125,10 +125,10 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
   const showPollResults = showResults || hasVoted || hasExpired || isCreator;
 
   return (
-    <div className="p-5 rounded-xl border border-border/50 bg-card">
+    <div className="p-4 sm:p-5 rounded-xl border border-border/50 bg-card">
       {/* Poll Question */}
       <div className="mb-4">
-        <h3 className="text-base font-semibold text-foreground mb-1.5">{poll.question}</h3>
+        <h3 className="text-sm sm:text-base font-semibold text-foreground mb-1.5 break-words">{poll.question}</h3>
         <div className="flex items-center gap-2.5 text-xs text-muted-foreground flex-wrap">
           <span className="font-medium">{totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}</span>
           {poll.expires_at && (
@@ -180,11 +180,11 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
                       style={{ width: `${option.percentage}%` }}
                     />
                     <div className="relative flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         {hasUserVoted && (
                           <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                         )}
-                        <span className="text-sm font-medium truncate">{option.option_text}</span>
+                        <span className="text-xs sm:text-sm font-medium truncate">{option.option_text}</span>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs text-muted-foreground">{option.votes}</span>
@@ -216,7 +216,7 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
                   >
                     <div className="flex items-center gap-2.5">
                       <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                      <span className="text-sm font-medium">{option.option_text}</span>
+                      <span className="text-xs sm:text-sm font-medium break-words">{option.option_text}</span>
                     </div>
                   </button>
                 </motion.div>

@@ -404,7 +404,7 @@ export function PostDetailModal({
               </div>
             )}
 
-            <div className="flex-1 px-4 sm:px-5 py-4 pb-32">
+            <div className="flex-1 px-4 sm:px-5 py-4 pb-20 sm:pb-24">
               <Link
                 href={creatorProfileLink}
                 className="flex items-center gap-2.5 mb-4 hover:opacity-80 transition-opacity"
@@ -428,7 +428,7 @@ export function PostDetailModal({
               </Link>
 
               {post.title && post.post_type !== "poll" && (
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight mb-3">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight mb-3 break-words">
                   {post.title}
                 </h1>
               )}
@@ -508,7 +508,7 @@ export function PostDetailModal({
           </div>
 
           {currentUserId && shouldStickCommentInput && (
-            <div className="absolute bottom-[72px] left-0 right-0 px-4 sm:px-5 py-3 border-t border-border/40 bg-card/95 backdrop-blur-sm z-30">
+            <div className="absolute bottom-16 sm:bottom-[72px] left-0 right-0 px-4 sm:px-5 py-3 border-t border-border/40 bg-card/95 backdrop-blur-sm z-30">
               <form
                 onSubmit={handleSubmitComment}
                 className="flex items-center gap-3"

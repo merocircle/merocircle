@@ -622,7 +622,7 @@ export function EnhancedPostCard({
         <div className="p-4 sm:p-5 pt-4">
           {post.title && post.post_type !== "poll" && (
             <h2
-              className="text-lg sm:text-xl font-bold text-foreground leading-tight mb-3 cursor-pointer"
+              className="text-lg sm:text-xl font-bold text-foreground leading-tight mb-3 cursor-pointer line-clamp-2 break-words"
               onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}
             >
               {post.title}
@@ -662,7 +662,7 @@ export function EnhancedPostCard({
               data-actions-section
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
                 <motion.button
                   onClick={handleLike}
                   disabled={!currentUserId || likeMutation.isPending || shouldBlur}
@@ -768,7 +768,7 @@ export function EnhancedPostCard({
               data-comments-section
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-4 sm:px-5 py-3 max-h-80 overflow-y-auto">
+              <div className="px-4 sm:px-5 py-3 max-h-48 sm:max-h-64 md:max-h-80 overflow-y-auto">
                 {loadingComments ? (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

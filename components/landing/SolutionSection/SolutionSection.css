@@ -61,6 +61,11 @@
 @media (max-width: 767px) {
   .solution-section-title {
     font-size: 2rem;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+  .solution-section {
+    padding: 3rem 1rem 2rem;
   }
 }
 @media (min-width: 1024px) {
@@ -74,6 +79,7 @@
   font-weight: 500;
   line-height: 1.625;
   margin: 0 0 2rem;
+  word-wrap: break-word;
 }
 @media (max-width: 767px) {
   .solution-section-description {

@@ -174,7 +174,7 @@ export function PostCard({
           </div>
 
           {/* Lock overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-transparent flex flex-col items-center justify-center p-6">
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-transparent flex flex-col items-center justify-center p-4 sm:p-6">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}

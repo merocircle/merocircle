@@ -93,7 +93,7 @@ export function CreatorCard({
         className={cn(
           "group overflow-hidden rounded-xl border border-border/40 bg-card transition-all",
           "hover:border-primary/20 hover:shadow-sm",
-          "p-3.5",
+          "p-3 sm:p-3.5",
           className,
         )}
       >
@@ -139,7 +139,7 @@ export function CreatorCard({
             )}
           </div>
 
-          <button className="w-full bg-primary mt-1 py-1.5 text-xs font-medium rounded-full border border-border/50 text-background dark:text-foreground group-hover:bg-primary/80 group-hover:border-primary transition-all">
+          <button className="w-full bg-primary mt-1 py-1.5 text-xs sm:text-sm font-medium rounded-full border border-border/50 text-background dark:text-foreground group-hover:bg-primary/80 group-hover:border-primary transition-all">
             View Creator
           </button>
         </div>

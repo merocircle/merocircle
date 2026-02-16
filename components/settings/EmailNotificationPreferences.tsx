@@ -58,9 +58,9 @@ export default function EmailNotificationPreferences() {
   }
 
   return (
-    <Card className="p-6">
-      <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
-        <Mail className="w-5 h-5" />
+    <Card className="p-4 sm:p-6">
+      <h2 className="text-base sm:text-lg font-semibold mb-1 flex items-center gap-2">
+        <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
         Email and Notification Preferences
       </h2>
       <p className="text-sm text-muted-foreground mb-6">
@@ -77,11 +77,12 @@ export default function EmailNotificationPreferences() {
             checked={prefs.email_everyone_mentions}
             onCheckedChange={(v) => updatePref('email_everyone_mentions', v)}
             disabled={saving}
+            className="flex-shrink-0 self-start sm:self-auto"
           />
         </div>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="username">Receive emails for @username mentions</Label>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="space-y-0.5 flex-1 min-w-0">
+            <Label htmlFor="username" className="text-sm">Receive emails for @username mentions</Label>
             <p className="text-xs text-muted-foreground">When someone mentions you (@your username)</p>
           </div>
           <Switch

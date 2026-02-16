@@ -181,7 +181,7 @@ export function ShareModal({
           {/* Platform Buttons */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-foreground mb-3">Share on Social Media</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {platforms.map((platform) => {
                 const Icon = platform.icon;
                 return (
@@ -191,17 +191,17 @@ export function ShareModal({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className={cn(
-                      'flex flex-col items-center justify-center gap-2 p-5 rounded-xl',
+                      'flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-xl',
                       'bg-gradient-to-br text-white transition-all',
-                      'shadow-md hover:shadow-lg min-h-[100px]',
+                      'shadow-md hover:shadow-lg min-h-[80px] sm:min-h-[100px]',
                       platform.color,
                       platform.hoverColor
                     )}
                   >
-                    <Icon className="w-7 h-7" />
-                    <span className="text-xs font-semibold">{platform.name}</span>
+                    <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                    <span className="text-xs font-semibold text-center">{platform.name}</span>
                     {platform.note && (
-                      <span className="text-[10px] opacity-90 mt-1">{platform.note}</span>
+                      <span className="text-[10px] opacity-90 mt-1 text-center">{platform.note}</span>
                     )}
                   </motion.button>
                 );

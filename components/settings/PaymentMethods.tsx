@@ -13,9 +13,9 @@ export default function PaymentMethods() {
   const [savedMethods] = useState<Array<{ id: string; label: string; last4?: string }>>([]);
 
   return (
-    <Card className="p-6">
-      <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
-        <CreditCard className="w-5 h-5" />
+    <Card className="p-4 sm:p-6">
+      <h2 className="text-base sm:text-lg font-semibold mb-1 flex items-center gap-2">
+        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
         Payment Methods
       </h2>
       <p className="text-sm text-muted-foreground mb-6">
@@ -23,9 +23,9 @@ export default function PaymentMethods() {
       </p>
 
       {savedMethods.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center">
-          <CreditCard className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-          <p className="font-medium text-foreground">No saved payment methods</p>
+        <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 sm:p-8 text-center">
+          <CreditCard className="w-8 h-8 sm:w-10 sm:h-10 mx-auto text-muted-foreground mb-3" />
+          <p className="font-medium text-sm sm:text-base text-foreground">No saved payment methods</p>
           <p className="text-sm text-muted-foreground mt-1 mb-4">
             Payment methods are stored securely with our payment provider. You can add one when you subscribe to a creator or make a payment.
           </p>
