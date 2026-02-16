@@ -590,7 +590,7 @@ export default function CreatePostPage() {
 
                 <Button
                   onClick={handlePublish}
-                  disabled={!onboardingCompleted || isPublishing}
+                  disabled={!onboardingCompleted || isPublishing || isUploading}
                   className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-full px-6"
                 >
                   {isPublishing ? (
