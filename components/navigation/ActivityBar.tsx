@@ -1,27 +1,26 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Home,
+  Compass,
   MessageCircle,
   Bell,
   BarChart3,
   Settings,
-  Heart,
   User,
   Sun,
   Moon,
-  Compass,
-  Calendar,
+  Monitor,
   Shield
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+import { cn, getValidAvatarUrl } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth-context';
 import { type DashboardView } from '@/contexts/dashboard-context';
@@ -42,6 +41,7 @@ interface ActivityBarProps {
     id: string;
     display_name: string;
     photo_url: string | null;
+    vanity_username?: string | null;
   }>;
   onCreatorClick?: (creatorId: string) => void;
   className?: string;
@@ -66,15 +66,19 @@ export function ActivityBar({
   className
 }: ActivityBarProps) {
   const pathname = usePathname();
-  const { isCreator } = useAuth();
+  const { isCreator, creatorProfile } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isAdminUser = user?.id ? isAdmin(user.id) : false;
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    // Cycle: system -> light -> dark -> system
+    if (theme === 'system') setTheme('light');
+    else if (theme === 'light') setTheme('dark');
+    else setTheme('system');
   };
 
-  // Map view to route
   const getRoute = (view: DashboardView | undefined): string => {
     switch (view) {
       case 'home': return '/home';
@@ -88,7 +92,6 @@ export function ActivityBar({
     }
   };
 
-  // Get active view from pathname
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
@@ -96,14 +99,13 @@ export function ActivityBar({
     if (pathname === '/notifications') return 'notifications';
     if (pathname === '/settings') return 'settings';
     if (pathname === '/profile') return 'profile';
+    if (isCreator && creatorProfile?.vanity_username && pathname === `/creator/${creatorProfile.vanity_username}`) return 'profile';
     if (pathname === '/creator-studio') return 'creator-studio';
-    if (pathname === '/admin') return 'home'; // Admin page doesn't have a view
     return 'home';
   };
 
   const currentActiveView = getActiveViewFromPath();
 
-  // Main navigation items
   const navItems: NavItem[] = [
     { id: 'home', icon: Home, label: 'Home', view: 'home' },
     { id: 'explore', icon: Compass, label: 'Explore', view: 'explore' },
@@ -111,22 +113,13 @@ export function ActivityBar({
     { id: 'notifications', icon: Bell, label: 'Notifications', view: 'notifications', badge: unreadNotifications },
   ];
 
-  // Creator-only navigation item
   const creatorNavItem: NavItem | null = isCreator
     ? { id: 'creator-studio', icon: BarChart3, label: 'Creator Studio', view: 'creator-studio' }
     : null;
 
-  // Admin-only navigation item
   const adminNavItem: NavItem | null = isAdminUser
     ? { id: 'admin', icon: Shield, label: 'Admin' }
     : null;
-
-  // Events navigation item (coming soon)
-  const eventsNavItem: NavItem = {
-    id: 'events',
-    icon: Calendar,
-    label: 'Events'
-  };
 
   const isActive = (item: NavItem) => {
     return item.view === currentActiveView;
@@ -142,10 +135,10 @@ export function ActivityBar({
     <TooltipProvider delayDuration={0}>
       <motion.aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen w-16 flex-col items-center py-4 border-r border-border/50 bg-card/50 backdrop-blur-xl',
+          'fixed left-0 top-0 z-50 flex h-screen w-[68px] flex-col items-center py-4 border-r border-border/40 bg-card/80 backdrop-blur-xl',
           className
         )}
-        initial={{ x: -64, opacity: 0 }}
+        initial={{ x: -68, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       >
@@ -154,7 +147,7 @@ export function ActivityBar({
           <TooltipTrigger asChild>
             <Link href="/home" prefetch={true}>
               <motion.div
-                className="mb-6 flex items-center justify-center w-10 h-10 cursor-pointer"
+                className="mb-5 flex items-center justify-center w-10 h-10 cursor-pointer"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -162,13 +155,13 @@ export function ActivityBar({
               </motion.div>
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right">
+          <TooltipContent side="right" sideOffset={8}>
             <p>MeroCircle</p>
           </TooltipContent>
         </Tooltip>
 
         {/* Main Navigation */}
-        <nav className="flex flex-col items-center gap-2">
+        <nav className="flex flex-col items-center gap-1">
           {navItems.map((item) => (
             <Tooltip key={item.id}>
               <TooltipTrigger asChild>
@@ -182,13 +175,13 @@ export function ActivityBar({
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side="right" sideOffset={8}>
                 <p>{item.label}</p>
               </TooltipContent>
             </Tooltip>
           ))}
 
-          {/* Creator Studio - Only for creators */}
+          {/* Creator Studio */}
           {creatorNavItem && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -201,13 +194,13 @@ export function ActivityBar({
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side="right" sideOffset={8}>
                 <p>{creatorNavItem.label}</p>
               </TooltipContent>
             </Tooltip>
           )}
 
-          {/* Admin - Only for admins */}
+          {/* Admin */}
           {adminNavItem && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -220,38 +213,19 @@ export function ActivityBar({
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side="right" sideOffset={8}>
                 <p>{adminNavItem.label}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Events - Coming Soon */}
-          {creatorNavItem && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <NavIcon
-                    icon={eventsNavItem.icon}
-                    label={eventsNavItem.label}
-                    badgeText="Soon"
-                    disabled={true}
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{eventsNavItem.label} - Coming Soon</p>
               </TooltipContent>
             </Tooltip>
           )}
         </nav>
 
         {/* Divider */}
-        <div className="my-4 w-8 h-px bg-border" />
+        <div className="my-3 w-7 h-px bg-border/60" />
 
         {/* Favorite Creators */}
         {favoriteCreators.length > 0 && (
-          <div className="flex flex-col items-center gap-2 flex-1 overflow-y-auto scrollbar-hide">
+          <div className="flex flex-col items-center gap-1.5 flex-1 overflow-y-auto scrollbar-hide px-1">
             {favoriteCreators.slice(0, 5).map((creator) => (
               <Tooltip key={creator.id}>
                 <TooltipTrigger asChild>
@@ -259,39 +233,35 @@ export function ActivityBar({
                     <motion.button
                       onClick={() => handleCreatorClick(creator.id)}
                       className="relative"
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={{ scale: 1.08 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Avatar className="w-9 h-9 ring-2 ring-background">
-                        <AvatarImage src={creator.photo_url || undefined} alt={creator.display_name} />
-                        <AvatarFallback className="text-xs">
+                      <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all">
+                        <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
+                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                           {creator.display_name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      {/* Online indicator */}
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full" />
                     </motion.button>
                   ) : (
-                    <Link href={`/creator/${creator.id}`} prefetch={true}>
+                    <Link href={`/creator/${creator.vanity_username || creator.id}`} prefetch={true}>
                       <motion.div
                         className="relative"
-                        whileHover={{ scale: 1.1 }}
+                        whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <Avatar className="w-9 h-9 ring-2 ring-background">
-                          <AvatarImage src={creator.photo_url || undefined} alt={creator.display_name} />
-                          <AvatarFallback className="text-xs">
+                        <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all">
+                          <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
+                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                             {creator.display_name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        {/* Online indicator */}
-                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-background rounded-full" />
                       </motion.div>
                     </Link>
                   )}
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>@{creator.display_name}</p>
+                <TooltipContent side="right" sideOffset={8}>
+                  <p>{creator.display_name}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -299,15 +269,15 @@ export function ActivityBar({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <motion.button
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-muted text-muted-foreground text-xs font-medium"
-                    whileHover={{ scale: 1.1 }}
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-muted/50 text-muted-foreground text-[10px] font-semibold hover:bg-muted transition-colors"
+                    whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     +{favoriteCreators.length - 5}
                   </motion.button>
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{favoriteCreators.length - 5} more creators</p>
+                <TooltipContent side="right" sideOffset={8}>
+                  <p>{favoriteCreators.length - 5} more</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -318,25 +288,21 @@ export function ActivityBar({
         <div className="flex-1" />
 
         {/* Bottom Section */}
-        <div className="flex flex-col items-center gap-3 mt-auto">
+        <div className="flex flex-col items-center gap-1.5 mt-auto">
           {/* Theme Toggle */}
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
                 onClick={toggleTheme}
                 className="flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {theme === 'dark' ? (
-                  <Sun size={20} />
-                ) : (
-                  <Moon size={20} />
-                )}
+                {!mounted ? <Monitor size={18} /> : theme === 'system' ? <Monitor size={18} /> : theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </motion.button>
             </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</p>
+            <TooltipContent side="right" sideOffset={8}>
+              <p>{!mounted ? 'Theme' : theme === 'system' ? 'System Theme' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -352,7 +318,7 @@ export function ActivityBar({
                 />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side="right" sideOffset={8}>
               <p>Settings</p>
             </TooltipContent>
           </Tooltip>
@@ -360,29 +326,26 @@ export function ActivityBar({
           {/* Profile */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href="/profile" prefetch={true}>
+              <Link href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} prefetch={true}>
                 <motion.div
                   className={cn(
-                    "relative rounded-xl p-0.5",
-                    currentActiveView === 'profile' && "bg-gradient-to-br from-primary to-pink-500"
+                    "relative rounded-full p-0.5 mt-1",
+                    currentActiveView === 'profile' && "ring-2 ring-primary ring-offset-2 ring-offset-card"
                   )}
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Avatar className={cn(
-                    "w-10 h-10",
-                    currentActiveView === 'profile' ? "ring-2 ring-background" : "ring-2 ring-primary/20"
-                  )}>
-                    <AvatarImage src={user?.photo_url || undefined} alt={user?.display_name} />
-                    <AvatarFallback>
-                      {user?.display_name?.slice(0, 2).toUpperCase() || 'ME'}
+                  <Avatar className="w-9 h-9">
+                    <AvatarImage src={getValidAvatarUrl(user?.photo_url)} alt={user?.display_name} />
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
+                      {user?.display_name?.slice(0, 2).toUpperCase() || <User className="w-4 h-4" />}
                     </AvatarFallback>
                   </Avatar>
                 </motion.div>
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Your Profile</p>
+            <TooltipContent side="right" sideOffset={8}>
+              <p>Profile</p>
             </TooltipContent>
           </Tooltip>
         </div>

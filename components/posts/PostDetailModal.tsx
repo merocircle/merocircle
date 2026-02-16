@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useLikePost, useAddComment } from "@/hooks/useQueries";
 import ThreadedComments from "./ThreadedComments";
 import { ShareModal } from "./ShareModal";
+import { RichContent } from "./RichContent";
 import dynamic from "next/dynamic";
 
 const PollCard = dynamic(
@@ -148,7 +149,7 @@ export function PostDetailModal({
       post.is_public === false ||
       (post.tier_required && post.tier_required !== "free");
     if (!isSupporterOnly) return false;
-    if (isSupporter || currentUserId === post.creator.id) return false;
+    if (isSupporter || currentUserId === post.creator?.id) return false;
     return true;
   }, [post, isSupporter, currentUserId]);
 
@@ -409,14 +410,14 @@ export function PostDetailModal({
                 className="flex items-center gap-2.5 mb-4 hover:opacity-80 transition-opacity"
               >
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src={post.creator.photo_url || undefined} alt={post.creator.display_name} />
+                  <AvatarImage src={post.creator?.photo_url || undefined} alt={post.creator?.display_name || 'Creator'} />
                   <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                    {post.creator.display_name.charAt(0).toUpperCase()}
+                    {(post.creator?.display_name || 'C').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    {post.creator.display_name}
+                    {post.creator?.display_name || 'Creator'}
                   </p>
                   {post.creator_profile?.category && (
                     <p className="text-xs text-muted-foreground">
@@ -463,6 +464,7 @@ export function PostDetailModal({
                       <PollCard
                         pollId={poll.id}
                         currentUserId={currentUserId}
+                        isCreator={currentUserId === post.creator?.id}
                       />
                     </div>
                   ) : null;
@@ -470,9 +472,13 @@ export function PostDetailModal({
 
               {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
                 <div className="mb-6">
-                  <p className="text-foreground/85 leading-relaxed whitespace-pre-wrap text-[15px]">
-                    {shouldBlur ? "Subscribe to access this post." : post.content}
-                  </p>
+                  {shouldBlur ? (
+                    <p className="text-foreground/85 leading-relaxed whitespace-pre-wrap text-[15px]">
+                      Subscribe to access this post.
+                    </p>
+                  ) : (
+                    <RichContent content={post.content} truncateLength={9999} />
+                  )}
                 </div>
               )}
 
@@ -629,7 +635,7 @@ export function PostDetailModal({
         postTitle={post.title}
         postContent={post.content}
         creatorSlug={creatorSlug}
-        creatorId={post.creator.id}
+        creatorId={post.creator?.id || ''}
       />
     </>
   );

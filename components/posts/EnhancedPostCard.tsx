@@ -33,10 +33,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, getValidAvatarUrl } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { extractVideoIdFromContent, getYouTubeEmbedUrl } from "@/lib/youtube";
+import { extractVideoIdFromContent } from "@/lib/youtube";
+import { detectEmbeds } from "@/lib/embeds";
 import { getBlurDataURL, imageSizes } from "@/lib/image-utils";
+import { RichContent } from "./RichContent";
 import { useAuth } from "@/contexts/auth-context";
 import { useLikePost, useAddComment } from "@/hooks/useQueries";
 import ThreadedComments from "./ThreadedComments";
@@ -66,10 +68,12 @@ interface Post {
   tier_required: string;
   post_type?: "post" | "poll";
   created_at: string;
+  creator_id?: string;
   creator: {
     id: string;
     display_name: string;
     photo_url?: string;
+    vanity_username?: string | null;
     role: string;
   };
   creator_profile?: {
@@ -122,6 +126,15 @@ export function EnhancedPostCard({
   const commentMutation = useAddComment();
   const { user: currentUser } = useAuth();
 
+  // Safely default creator to prevent null access crashes
+  const creator = post.creator || {
+    id: post.creator_id || '',
+    display_name: 'Creator',
+    photo_url: undefined,
+    vanity_username: null,
+    role: 'creator',
+  };
+
   const initialIsLiked =
     post.is_liked ??
     (currentUserId
@@ -141,7 +154,6 @@ export function EnhancedPostCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
-  const [showFullContent, setShowFullContent] = useState(false);
 
   const allImages = useMemo(() => {
     if (post.image_urls && post.image_urls.length > 0) return post.image_urls;
@@ -170,20 +182,20 @@ export function EnhancedPostCard({
       post.is_public === false ||
       (post.tier_required && post.tier_required !== "free");
     if (!isSupporterOnly) return false;
-    if (isSupporter || currentUserId === post.creator.id) return false;
+    if (isSupporter || currentUserId === creator.id) return false;
     return true;
   }, [
     post.is_public,
     post.tier_required,
     isSupporter,
     currentUserId,
-    post.creator.id,
+    creator.id,
   ]);
 
   const creatorProfileLink =
-    currentUserId === post.creator.id
+    currentUserId === creator.id
       ? "/profile"
-      : `/creator/${post.creator.id}`;
+      : `/creator/${creator.vanity_username || creator.id}`;
 
   const handlePrefetch = useCallback(() => {
     router.prefetch(creatorProfileLink);
@@ -309,9 +321,12 @@ export function EnhancedPostCard({
   const contentLength = post.content?.length || 0;
   const CONTENT_PREVIEW_LENGTH = 280;
 
+  const contentEmbeds = useMemo(() => detectEmbeds(post.content), [post.content]);
+  const hasEmbeds = contentEmbeds.length > 0;
+
   const postContentType = useMemo(() => {
     if (post.post_type === "poll") return "poll";
-    if (youtubeVideoId) return "video";
+    if (youtubeVideoId || hasEmbeds) return "video";
     if (allImages.length > 0) return "image";
     if (post.content) {
       const trimmed = post.content.trim();
@@ -319,7 +334,7 @@ export function EnhancedPostCard({
       if (urlPattern.test(trimmed)) return "link";
     }
     return "text";
-  }, [post.post_type, youtubeVideoId, allImages.length, post.content]);
+  }, [post.post_type, youtubeVideoId, hasEmbeds, allImages.length, post.content]);
 
   const postTypeConfig = useMemo(() => {
     switch (postContentType) {
@@ -364,12 +379,6 @@ export function EnhancedPostCard({
   const PostTypeIcon = postTypeConfig.icon;
 
   const DESCRIPTION_PREVIEW_LENGTH = 200;
-  const shouldTruncateContent =
-    post.content && post.content.length > DESCRIPTION_PREVIEW_LENGTH;
-  const displayedContent =
-    showFullContent || !shouldTruncateContent
-      ? post.content
-      : `${post.content.slice(0, DESCRIPTION_PREVIEW_LENGTH)}...`;
 
   const isSupportersOnlyPost = isSupporterOnly || post.is_public === false;
 
@@ -379,7 +388,7 @@ export function EnhancedPostCard({
         className={cn(
           "rounded-xl transition-all duration-300",
           isSupportersOnlyPost &&
-            "p-[3px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_16px_rgba(234,88,12,0.22),0_0_40px_rgba(234,88,12,0.12),0_0_72px_rgba(234,88,12,0.06)] hover:shadow-[0_0_20px_rgba(234,88,12,0.28),0_0_48px_rgba(234,88,12,0.14),0_0_88px_rgba(234,88,12,0.08)]"
+            "p-[2px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.2),0_0_48px_rgba(234,88,12,0.12),0_0_96px_rgba(234,88,12,0.08),0_0_160px_rgba(234,88,12,0.04)] hover:shadow-[0_0_28px_rgba(234,88,12,0.26),0_0_64px_rgba(234,88,12,0.14),0_0_120px_rgba(234,88,12,0.09),0_0_200px_rgba(234,88,12,0.05)]"
         )}
       >
         <div
@@ -415,14 +424,14 @@ export function EnhancedPostCard({
               className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
             >
               <Avatar className="h-9 w-9">
-                <AvatarImage src={post.creator.photo_url || undefined} alt={post.creator.display_name} />
+                <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                  {post.creator.display_name.charAt(0).toUpperCase()}
+                  {(creator.display_name || 'C').charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">
-                  {post.creator.display_name}
+                  {creator.display_name}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1">
@@ -563,26 +572,28 @@ export function EnhancedPostCard({
 
           {post.post_type === "poll" && pollData?.id && (
             <div className="mb-3">
-              <PollCard pollId={pollData.id} currentUserId={currentUserId} creatorId={post.creator.id} />
+              <PollCard
+                pollId={pollData.id}
+                currentUserId={currentUserId}
+                isCreator={currentUserId === creator.id}
+              />
             </div>
           )}
 
           {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
-            <div className="mb-4 cursor-pointer" onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}>
-              <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px]">
-                {shouldBlur ? "Subscribe to access this post." : displayedContent}
-                {!shouldBlur && shouldTruncateContent && !showFullContent && (
-                  <span className="text-muted-foreground">...</span>
-                )}
-                {!shouldBlur && shouldTruncateContent && (
-                  <button
-                    onClick={handlePostClick}
-                    className="text-primary font-medium hover:underline ml-1"
-                  >
-                    Show more
-                  </button>
-                )}
-              </p>
+            <div className="mb-4" onClick={shouldBlur ? onNavigateToMembership : undefined}>
+              {shouldBlur ? (
+                <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] cursor-pointer">
+                  Subscribe to access this post.
+                </p>
+              ) : (
+                <RichContent
+                  content={post.content}
+                  truncateLength={DESCRIPTION_PREVIEW_LENGTH}
+                  onClickExpand={handlePostClick}
+                  linksOnly={allImages.length > 0}
+                />
+              )}
             </div>
           )}
 
@@ -666,7 +677,7 @@ export function EnhancedPostCard({
                     className="flex items-center gap-3"
                   >
                     <Avatar className="h-8 w-8 flex-shrink-0">
-                      <AvatarImage src={currentUser?.photo_url || undefined} alt={currentUser?.display_name} />
+                      <AvatarImage src={getValidAvatarUrl(currentUser?.photo_url)} alt={currentUser?.display_name} />
                       <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
                         {currentUser?.display_name?.charAt(0).toUpperCase() || currentUserId?.charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -719,7 +730,7 @@ export function EnhancedPostCard({
         postTitle={post.title}
         postContent={post.content}
         creatorSlug={creatorSlug}
-        creatorId={post.creator.id}
+        creatorId={creator.id}
       />
 
       <PostDetailModal

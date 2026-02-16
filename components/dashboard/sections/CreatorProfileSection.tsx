@@ -32,7 +32,11 @@ import {
   Star,
   MessageCircle,
   TrendingUp,
-  MoreVertical
+  Camera,
+  ImagePlus,
+  Settings,
+  Edit,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
@@ -43,8 +47,7 @@ import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TimelineFeed, withTimeline } from '@/components/posts/TimelineFeed';
 import { TierSelection } from '@/components/creator/TierSelection';
 import { fadeInUp, staggerContainer } from '@/components/animations/variants';
-import { slugifyDisplayName } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { cn, getValidAvatarUrl, slugifyDisplayName } from '@/lib/utils';
 import { SocialLinksCard } from '@/components/organisms/creator';
 import { SupportBanner } from '@/components/creator/SupportBanner';
 
@@ -320,6 +323,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   } | null>(null);
   const [showConfirmFreeSupport, setShowConfirmFreeSupport] = useState<{ message?: string } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+
+  // Own-profile edit states
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [showTiers, setShowTiers] = useState(false);
   const [showSupportBanner, setShowSupportBanner] = useState(false);
 
@@ -340,12 +347,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     return () => window.removeEventListener('scroll', handleScroll);
   }, [activeTab, isSupporter]);
 
-  const isOwnProfile = user && user.id === creatorId && isWithinProvider;
-  useEffect(() => {
-    if (isOwnProfile) {
-      router.push('/profile');
-    }
-  }, [isOwnProfile, router]);
+  const isOwnProfile = user && user.id === creatorId;
 
   const handlePayment = useCallback(async (tierLevel: number, amount: number, message?: string) => {
     if (!user) {
@@ -745,6 +747,57 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     router.back();
   }, [closeCreatorProfile, isWithinProvider, router, user]);
 
+  // ── Own-profile upload handlers ──
+  const handleAvatarUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isOwnProfile) return;
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'avatars');
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) {
+        await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photo_url: uploadData.url }),
+        });
+        refreshCreatorDetails();
+      }
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }, [isOwnProfile, refreshCreatorDetails]);
+
+  const handleCoverUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isOwnProfile) return;
+    setIsUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'covers');
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) {
+        await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cover_image_url: uploadData.url }),
+        });
+        refreshCreatorDetails();
+      }
+    } catch (err) {
+      console.error('Cover upload error:', err);
+    } finally {
+      setIsUploadingCover(false);
+    }
+  }, [isOwnProfile, refreshCreatorDetails]);
+
   const transformPost = useCallback((post: Record<string, unknown>) => {
     const postId = String(post.id || '');
     const likes = post.likes as Array<Record<string, unknown>> | undefined;
@@ -1074,18 +1127,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     );
   }
 
-  if (isOwnProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10">
-        <div className="max-w-6xl mx-auto px-4 py-20">
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (error || !creatorDetails) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/10 flex items-center justify-center p-6">
@@ -1107,10 +1148,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/5">
-      {/* New Header Design - Matching Second Image */}
-      <div className="relative bg-card p-4 pb-2 rounded-md">
-        {/* Cover Image Section */}
-        <div className="relative h-56 sm:h-56 md:h-56 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden rounded-md">
+      {/* Profile Header */}
+      <div className="relative bg-card overflow-hidden">
+        {/* Cover Image */}
+        <div className="relative h-36 sm:h-44 md:h-52 overflow-hidden">
           {creatorDetails.cover_image_url ? (
             <Image
               src={creatorDetails.cover_image_url}
@@ -1120,170 +1161,214 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               priority
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-pink-500/10 to-purple-500/20 rounded-md" />
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-pink-500/20" />
+              {/* Decorative circles for default cover */}
+              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full border border-white/10" />
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full border border-white/10" />
+              <div className="absolute top-1/2 left-1/3 w-24 h-24 rounded-full border border-white/5" />
+            </>
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 rounded-md" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
+
+          {/* Floating buttons on cover */}
+          <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between z-10">
+            {!isOwnProfile ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                className="bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md h-9 w-9 border border-white/10"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            ) : (
+              <div /> /* spacer */
+            )}
+
+            <div className="flex items-center gap-2">
+              {isOwnProfile && (
+                <>
+                  <label htmlFor="cover-upload-profile" className="cursor-pointer">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white text-xs font-medium backdrop-blur-md border border-white/10 transition-colors">
+                      {isUploadingCover ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ImagePlus className="w-3.5 h-3.5" />
+                      )}
+                      {creatorDetails.cover_image_url ? 'Change Cover' : 'Add Cover'}
+                    </div>
+                  </label>
+                  <input
+                    type="file"
+                    id="cover-upload-profile"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleCoverUpload}
+                    disabled={isUploadingCover}
+                  />
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+                className="bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md h-9 w-9 border border-white/10"
+              >
+                {shareCopied ? <CheckCircle2 className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* Centered Profile Section */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative -mt-24 sm:-mt-32 text-center">
+        {/* Profile info */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-4">
+          <div className="relative -mt-12 sm:-mt-14">
             {/* Avatar */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
-              className="inline-block relative mb-2"
+              className="relative inline-block mb-2"
             >
-              <Avatar className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 border-8 bg-card border-transparent">
-                <AvatarImage src={creatorDetails.avatar_url} alt={creatorDetails.display_name} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-5xl font-bold">
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-[3px] border-background shadow-xl ring-2 ring-background">
+                <AvatarImage src={getValidAvatarUrl(creatorDetails.avatar_url)} alt={creatorDetails.display_name} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-3xl font-bold">
                   {creatorDetails.display_name?.[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              {creatorDetails.is_verified && (
+              {isOwnProfile && (
+                <>
+                  <label htmlFor="avatar-upload-profile" className="absolute bottom-0 right-0 p-2 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors shadow-lg border-2 border-background z-10">
+                    {isUploadingAvatar ? (
+                      <Loader2 className="w-3.5 h-3.5 text-primary-foreground animate-spin" />
+                    ) : (
+                      <Camera className="w-3.5 h-3.5 text-primary-foreground" />
+                    )}
+                  </label>
+                  <input
+                    type="file"
+                    id="avatar-upload-profile"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingAvatar}
+                  />
+                </>
+              )}
+              {!isOwnProfile && creatorDetails.is_verified && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.3, type: "spring" }}
-                  className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-2 shadow-lg border-2 border-background"
+                  className="absolute -bottom-0.5 -right-0.5 bg-primary rounded-full p-1.5 shadow-lg border-2 border-background"
                 >
-                  <CheckCircle2 className="w-6 h-6 text-white" />
+                  <CheckCircle2 className="w-4 h-4 text-white" />
                 </motion.div>
               )}
             </motion.div>
 
-            {/* Creator Name & Username */}
+            {/* Name, username, bio */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mb-4"
+              transition={{ delay: 0.15 }}
             >
-              <h1 className="text-2xl sm:text-2xl md:text-2xl font-bold text-foreground">
-                {creatorDetails.display_name}
-              </h1>
-              <p className="text-md font-medium text-muted-foreground mb-2">
+              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground leading-tight tracking-tight">
+                  {creatorDetails.display_name}
+                </h1>
+                {creatorDetails.category && (
+                  <Badge variant="outline" className="px-2 py-0.5 text-[10px] text-primary border-primary/30 bg-primary/5 rounded-full font-medium">
+                    {creatorDetails.category}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mb-1.5">
                 @{creatorDetails.username}
               </p>
-            </motion.div>
 
-            {/* Stats Row */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex items-center justify-center gap-8 mb-4"
-            >
-              <div className="text-center flex items-center justify-center gap-1">
-                <p className="text-sm text-foreground">
-                  <span className='font-bold'>{creatorDetails.supporter_count || 0}</span> supporters 
-                  <span className='mx-2'>•</span>
-                  <span className='font-bold'>{creatorDetails.posts_count || 0}</span> posts
+              {creatorDetails.bio && (
+                <p className="text-[13px] text-muted-foreground/80 max-w-lg mb-3 leading-relaxed">
+                  {creatorDetails.bio}
                 </p>
-              </div>
-            </motion.div>
-
-            {/* Category Badge */}
-            {creatorDetails.category && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="mb-4"
-              >
-                <Badge variant="outline" className="px-4 py-2 text-sm text-primary border-2 border-primary/50 bg-primary/10 rounded-full">
-                  <Star className="w-4 h-4 text-primary mr-0.5" />
-                  {creatorDetails.category}
-                </Badge>
-              </motion.div>
-            )}
-
-            {creatorDetails.bio && (
-              <p className="text-base sm:text-md text-muted-foreground max-w-xl mx-auto mb-4">
-                {creatorDetails.bio}
-              </p>
-            )}
-
-            {/* Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="flex items-center justify-center gap-3 mb-8"
-            >
-              {isSupporter ? (
-                <Badge className="gap-2 px-5 py-2.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-base">
-                  <CheckCircle2 className="w-4 h-4" />
-                  In the Circle
-                </Badge>
-              ) : (
-                <Button
-                  size="lg"
-                  onClick={() => setActiveTab('membership')}
-                  className="gap-2 px-8 py-6 text-base hover:shadow-lg shadow-primary/20 font-semibold"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  Join Circle 
-                </Button>
               )}
-              <Button
-                variant={shareCopied ? "default" : "outline"}
-                size="lg"
-                onClick={handleShare}
-                className="px-6 py-6"
-              >
-                {shareCopied ? (
-                  <CheckCircle2 className="w-5 h-5" />
-                ) : (
-                  <Share2 className="w-5 h-5" />
-                )}
-              </Button>
-              {/* <Button
-                variant="outline"
-                size="lg"
-                className="px-6 py-6"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </Button> */}
+
+              {/* Stats + CTA / Actions row */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-muted-foreground">
+                    <span className="font-semibold text-foreground tabular-nums">{creatorDetails.supporter_count || 0}</span>{' '}
+                    <span className="text-xs">supporters</span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    <span className="font-semibold text-foreground tabular-nums">{creatorDetails.posts_count || 0}</span>{' '}
+                    <span className="text-xs">posts</span>
+                  </span>
+                </div>
+
+                <div className="ml-auto flex items-center gap-2">
+                  {isOwnProfile ? (
+                    <>
+                      <Button variant="outline" size="sm" asChild className="rounded-full h-9 gap-1.5">
+                        <a href="/settings">
+                          <Settings className="w-3.5 h-3.5" />
+                          Settings
+                        </a>
+                      </Button>
+                    </>
+                  ) : isSupporter ? (
+                    <Badge className="gap-1.5 px-3.5 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-sm font-medium rounded-full">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      In the Circle
+                    </Badge>
+                  ) : (
+                    <Button
+                      onClick={() => setActiveTab('membership')}
+                      className="gap-2 px-5 h-9 text-sm font-semibold shadow-md shadow-primary/15 rounded-full"
+                    >
+                      <Heart className="w-3.5 h-3.5" />
+                      Join Circle
+                    </Button>
+                  )}
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
       </div>
 
       {/* Tabs Section */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid h-12 bg-background backdrop-blur-lg border border-border/50 shadow-sm mb-8 p-1">
-                <TabsTrigger value="posts" className="data-[state=active]:bg-card/95">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Posts
-                </TabsTrigger>
-                <TabsTrigger value="membership" className="data-[state=active]:bg-card/95">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Membership
-                </TabsTrigger>
-                <TabsTrigger value="chat" className="data-[state=active]:bg-card/95">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Chat
-                </TabsTrigger>
-                <TabsTrigger value="shop" className="data-[state=active]:bg-card/95">
-                  <ShoppingBag className="w-4 h-4 mr-2" />
-                  Shop
-                </TabsTrigger>
-                <TabsTrigger value="about" className="data-[state=active]:bg-card/95">
-                  <Info className="w-4 h-4 mr-2" />
-                  About
-                </TabsTrigger>
-              </TabsList>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/30 -mx-4 sm:-mx-6 px-4 sm:px-6">
+            <TabsList className="w-full h-11 bg-transparent border-0 shadow-none p-0 gap-0 justify-start overflow-x-auto scrollbar-hide">
+              <TabsTrigger value="posts" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                Posts
+              </TabsTrigger>
+              {!isOwnProfile && (
+              <TabsTrigger value="membership" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Membership
+              </TabsTrigger>
+              )}
+              <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
+                Chat
+              </TabsTrigger>
+              <TabsTrigger value="shop" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
+                Shop
+              </TabsTrigger>
+              <TabsTrigger value="about" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <Info className="w-3.5 h-3.5 mr-1.5" />
+                About
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-              <TabsContent value="chat" className="mt-6">
+              <TabsContent value="chat" className="mt-3">
                 <div className="relative">
                   {isSupporter ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
@@ -1354,8 +1439,30 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </div>
               </TabsContent>
 
-              <TabsContent value="membership" className="mt-6">
+              <TabsContent value="membership" className="mt-3">
                 <div className="max-w-4xl mx-auto">
+                  {isOwnProfile ? (
+                    <Card className="border-border/50 p-12 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                          <Shield className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-foreground mb-2">This is your own profile</h3>
+                          <p className="text-muted-foreground max-w-md mx-auto">
+                            You can&apos;t subscribe to yourself. Visit your settings to manage your membership tiers and pricing.
+                          </p>
+                        </div>
+                        <Button variant="outline" size="sm" asChild className="rounded-full mt-2 gap-1.5">
+                          <a href="/settings">
+                            <Settings className="w-3.5 h-3.5" />
+                            Manage Tiers
+                          </a>
+                        </Button>
+                      </div>
+                    </Card>
+                  ) : (
+                    <>
                   <div className="text-center mb-8">
                     <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                       Join {creatorDetails.display_name}&apos;s Circle
@@ -1413,10 +1520,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                       loading={paymentLoading}
                     />
                   )}
+                    </>
+                  )}
                 </div>
               </TabsContent>
 
-              <TabsContent value="posts" className="mt-6">
+              <TabsContent value="posts" className="mt-3">
                 {recentPosts.length > 0 ? (
                   <>
                     <TimelineFeed
@@ -1428,13 +1537,13 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     {showSupportBanner && <div className="h-24" />}
                   </>
                 ) : (
-                  <Card className="p-16 text-center border-dashed border-2 border-border/50">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted">
-                        <FileText className="w-8 h-8 text-muted-foreground" />
+                  <Card className="p-8 sm:p-12 text-center border-dashed border-2 border-border/50">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
+                        <FileText className="w-6 h-6 text-muted-foreground" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground mb-2">No Posts Yet</h3>
+                        <h3 className="text-base font-semibold text-foreground mb-1">No Posts Yet</h3>
                         <p className="text-muted-foreground">
                           This creator hasn&apos;t shared any content yet. Check back soon!
                         </p>
@@ -1444,7 +1553,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 )}
               </TabsContent>
 
-              <TabsContent value="shop" className="mt-6">
+              <TabsContent value="shop" className="mt-3">
                 <Card className="p-16 text-center border-border/50">
                   <div className="flex flex-col items-center gap-4">
                     <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
@@ -1460,7 +1569,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </Card>
               </TabsContent>
 
-              <TabsContent value="about" className="mt-6">
+              <TabsContent value="about" className="mt-3">
                 <Card className="border-border/50 shadow-lg">
                   <div className="p-6 space-y-6">
                     {creatorDetails.bio && (
@@ -1523,9 +1632,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   </div>
                 </Card>
               </TabsContent>
-            </Tabs>
-          </motion.div>
-        </div>
+        </Tabs>
       </div>
 
       {pendingPayment && user && (
@@ -1600,10 +1707,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         </DialogContent>
       </Dialog>
 
-      {!isSupporter && activeTab === 'posts' && (
+      {!isSupporter && !isOwnProfile && activeTab === 'posts' && (
         <SupportBanner
           creatorName={creatorDetails.display_name}
-          creatorAvatar={creatorDetails.avatar_url}
+          creatorAvatar={getValidAvatarUrl(creatorDetails.avatar_url) || ''}
           supporterCount={creatorDetails.supporter_count || 0}
           onJoinClick={() => setActiveTab('membership')}
           show={showSupportBanner}

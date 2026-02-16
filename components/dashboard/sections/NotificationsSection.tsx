@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useNotificationsData, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useQueries';
@@ -58,6 +58,18 @@ const NotificationsSection = memo(function NotificationsSection() {
   const handleMarkAllAsRead = useCallback(() => {
     markAllAsRead();
   }, [markAllAsRead]);
+
+  // Auto-mark all notifications as read immediately when content loads
+  const hasAutoMarked = useRef(false);
+  useEffect(() => {
+    if (!isLoading && data && !hasAutoMarked.current) {
+      const unreadCount = data?.unreadCount || 0;
+      if (unreadCount > 0) {
+        hasAutoMarked.current = true;
+        markAllAsRead();
+      }
+    }
+  }, [isLoading, data, markAllAsRead]);
 
   const handleNotificationClick = useCallback((notification: any) => {
     if (notification.link) {

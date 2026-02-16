@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { cn, getValidAvatarUrl } from "@/lib/utils";
 import { ChevronRight, Users } from "lucide-react";
 
 interface CreatorCardProps {
@@ -11,6 +11,7 @@ interface CreatorCardProps {
     id?: string;
     display_name: string;
     avatar_url?: string | null;
+    vanity_username?: string | null;
     bio?: string | null;
     supporter_count?: number;
     creator_profile?: {
@@ -37,11 +38,12 @@ export function CreatorCard({
   className,
 }: CreatorCardProps) {
   const creatorId = creator.user_id || creator.id || "";
+  const creatorSlug = creator.vanity_username || creatorId;
   const isCompact = variant === "compact";
 
   if (isCompact) {
     return (
-      <Link href={`/creator/${creatorId}`}>
+      <Link href={`/creator/${creatorSlug}`}>
         <div
           className={cn(
             "group flex items-center gap-3 p-2.5 rounded-xl transition-all",
@@ -51,7 +53,7 @@ export function CreatorCard({
         >
           <div className="relative flex-shrink-0">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={creator.avatar_url || undefined} alt={creator.display_name} />
+              <AvatarImage src={getValidAvatarUrl(creator.avatar_url)} alt={creator.display_name} />
               <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                 {(creator.display_name || "CR").slice(0, 2).toUpperCase()}
               </AvatarFallback>
@@ -86,7 +88,7 @@ export function CreatorCard({
 
   // Full card variant
   return (
-    <Link href={`/creator/${creatorId}`}>
+    <Link href={`/creator/${creatorSlug}`}>
       <div
         className={cn(
           "group overflow-hidden rounded-xl border border-border/40 bg-card transition-all",
@@ -98,7 +100,7 @@ export function CreatorCard({
         <div className="flex flex-col items-center text-center gap-2">
           <div className="relative">
             <Avatar className="h-14 w-14 ring-2 ring-background">
-              <AvatarImage src={creator.avatar_url || undefined} alt={creator.display_name} />
+              <AvatarImage src={getValidAvatarUrl(creator.avatar_url)} alt={creator.display_name} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {(creator.display_name || "CR").slice(0, 2).toUpperCase()}
               </AvatarFallback>

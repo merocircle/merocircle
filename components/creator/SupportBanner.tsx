@@ -59,33 +59,33 @@ export function SupportBanner({
         >
           <div
             className={cn(
-              'bg-background/95 backdrop-blur-md border-t border-border shadow-2xl',
-              'cursor-pointer hover:bg-background/98 transition-colors'
+              'bg-gradient-to-t from-background via-background/98 to-background/90 backdrop-blur-md border-t border-border shadow-2xl',
+              'cursor-pointer transition-colors'
             )}
             onClick={onJoinClick}
           >
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex items-center justify-between gap-4">
-                {/* Left side - Creator info */}
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-primary/20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                {/* Creator info */}
+                <div className="flex items-center gap-4 flex-1 min-w-0 w-full sm:w-auto">
+                  <Avatar className="h-14 w-14 flex-shrink-0 ring-2 ring-primary/30 shadow-lg">
                     <AvatarImage src={creatorAvatar} alt={creatorName} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-white font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-white font-semibold text-lg">
                       {creatorName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
+                    <p className="text-base font-bold text-foreground truncate">
                       Join {creatorName}&apos;s Circle
                     </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="truncate">Get closer access to exclusive content</span>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                      <span className="truncate">Get exclusive content, chat, and a real connection</span>
                       {supporterCount > 0 && (
                         <>
                           <span className="hidden sm:inline">·</span>
-                          <span className="hidden sm:flex items-center gap-1">
-                            <Users className="w-3 h-3" />
+                          <span className="hidden sm:flex items-center gap-1 font-medium">
+                            <Users className="w-3.5 h-3.5" />
                             {supporterCount} in the circle
                           </span>
                         </>
@@ -94,23 +94,23 @@ export function SupportBanner({
                   </div>
                 </div>
 
-                {/* Right side - CTA */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                {/* CTA */}
+                <div className="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto">
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
                       onJoinClick();
                     }}
-                    className="gap-2 rounded-full shadow-lg shadow-primary/20 px-5"
+                    size="lg"
+                    className="gap-2 rounded-full shadow-lg shadow-primary/25 px-8 h-12 text-base font-semibold flex-1 sm:flex-initial"
                   >
-                    <Sparkles className="w-4 h-4" />
-                    <span className="hidden sm:inline">Join Circle</span>
-                    <span className="sm:hidden">Join</span>
+                    <Sparkles className="w-5 h-5" />
+                    Join Circle
                   </Button>
                   
                   <button
                     onClick={handleDismiss}
-                    className="p-2 rounded-full hover:bg-muted transition-colors"
+                    className="p-2.5 rounded-full hover:bg-muted transition-colors flex-shrink-0"
                     title="Dismiss"
                   >
                     <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />

@@ -43,7 +43,8 @@ export function ShareModal({
     ? `${window.location.origin}/creator/${creatorSlug || creatorId}?post=${postId}`
     : '';
 
-  const shareText = `${postTitle}\n\n${postContent.substring(0, 100)}${postContent.length > 100 ? '...' : ''}`;
+  const safeContent = postContent || '';
+  const shareText = `${postTitle || ''}\n\n${safeContent.substring(0, 100)}${safeContent.length > 100 ? '...' : ''}`;
 
   const handleCopyLink = async () => {
     try {

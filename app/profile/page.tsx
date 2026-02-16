@@ -13,14 +13,21 @@ const ProfileSection = dynamic(() => import('@/components/dashboard/sections/Pro
 });
 
 export default function ProfilePage() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, isCreator, creatorProfile, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/auth');
+      return;
     }
-  }, [isAuthenticated, authLoading, router]);
+
+    // For creators, redirect to their public creator page (with vanity URL)
+    if (!authLoading && isAuthenticated && isCreator && user?.id) {
+      const slug = creatorProfile?.vanity_username || user.id;
+      router.replace(`/creator/${slug}`);
+    }
+  }, [isAuthenticated, authLoading, isCreator, creatorProfile?.vanity_username, user?.id, router]);
 
   if (authLoading) {
     return <PageLayout loading />;
@@ -30,6 +37,16 @@ export default function ProfilePage() {
     return null;
   }
 
+  // Creators will be redirected; show loading until redirect completes
+  if (isCreator) {
+    return (
+      <PageLayout>
+        <FeedSkeleton />
+      </PageLayout>
+    );
+  }
+
+  // Non-creators (supporters) get the simpler profile view
   return (
     <PageLayout>
       <ProfileSection />

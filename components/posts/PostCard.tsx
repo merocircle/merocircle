@@ -93,12 +93,12 @@ export default function PostCard({
     setLikesCount(post.likes_count || post.likes?.length || 0);
   }, [post.likes, post.likes_count, currentUserId]);
 
-  const isOwner = currentUserId === post.creator.id;
+  const isOwner = currentUserId === post.creator?.id;
   
   // Determine profile link - if viewing own post, go to own profile
-  const creatorProfileLink = currentUserId === post.creator.id 
+  const creatorProfileLink = currentUserId === post.creator?.id 
     ? '/profile' 
-    : `/creator/${post.creator.id}`;
+    : `/creator/${post.creator?.id || ''}`;
 
   const handleLike = async () => {
     if (!currentUserId) return;
@@ -148,7 +148,7 @@ export default function PostCard({
     if (navigator.share) {
       await navigator.share({
         title: post.title,
-        text: post.content.substring(0, 100) + '...',
+        text: (post.content || '').substring(0, 100) + '...',
         url
       });
     } else {
@@ -171,17 +171,17 @@ export default function PostCard({
               className="flex-shrink-0 hover:opacity-80 transition-opacity"
             >
               <Avatar className={cn(responsive.avatar, 'cursor-pointer')}>
-                {post.creator.photo_url ? (
+                {post.creator?.photo_url ? (
                   <Image 
                     src={post.creator.photo_url} 
-                    alt={post.creator.display_name}
+                    alt={post.creator?.display_name || 'Creator'}
                     width={48}
                     height={48}
                     className="rounded-full object-cover"
                   />
                 ) : (
                   <div className={cn(effects.gradient.blue, 'text-white font-semibold text-lg', layout.flexCenter, 'h-full w-full', effects.rounded.full)}>
-                    {post.creator.display_name.charAt(0).toUpperCase()}
+                    {(post.creator?.display_name || 'C').charAt(0).toUpperCase()}
                   </div>
                 )}
               </Avatar>
@@ -194,7 +194,7 @@ export default function PostCard({
                   className="hover:text-blue-600 transition-colors"
                 >
                   <h4 className={cn('font-semibold cursor-pointer inline-block', colors.text.primary)}>
-                    {post.creator.display_name}
+                    {post.creator?.display_name || 'Creator'}
                   </h4>
                 </Link>
                 {post.creator_profile?.is_verified && (
@@ -255,8 +255,8 @@ export default function PostCard({
           </Link>
 
           <div className={cn('text-gray-700 whitespace-pre-wrap')}>
-            {formatContent(post.content)}
-            {post.content.length > 300 && (
+            {post.content && formatContent(post.content)}
+            {post.content && post.content.length > 300 && (
               <Link href={`/posts/${post.id}`} className="text-blue-600 hover:underline ml-1">
                 Read more
               </Link>

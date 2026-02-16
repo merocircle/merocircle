@@ -5,11 +5,12 @@ import { Sparkles, X } from 'lucide-react';
 
 interface ToastMessagesProps {
   showSuccess: boolean;
+  successMessage?: string;
   showError: boolean;
   errorMessage: string | null;
 }
 
-export function ToastMessages({ showSuccess, showError, errorMessage }: ToastMessagesProps) {
+export function ToastMessages({ showSuccess, successMessage = 'Post published!', showError, errorMessage }: ToastMessagesProps) {
   return (
     <AnimatePresence>
       {showSuccess && (
@@ -20,7 +21,7 @@ export function ToastMessages({ showSuccess, showError, errorMessage }: ToastMes
           className="fixed top-4 right-4 z-50 flex items-center gap-3 bg-green-500 text-white px-5 py-3 rounded-2xl shadow-lg"
         >
           <Sparkles className="w-5 h-5" />
-          Post published!
+          {successMessage}
         </motion.div>
       )}
       {showError && errorMessage && (

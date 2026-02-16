@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -21,7 +21,9 @@ import {
   Plus,
   X,
   Calculator,
-  TrendingUp
+  TrendingUp,
+  Camera,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSession, signIn } from 'next-auth/react';
@@ -72,12 +74,67 @@ export default function CreatorSignupPage() {
     tier2: '20',
     tier3: '10'
   });
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
   const [addedSocialPlatforms, setAddedSocialPlatforms] = useState<string[]>([]);
   const [selectedPlatformToAdd, setSelectedPlatformToAdd] = useState<string>('');
+  const lastAddedLinkInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { data: session, status } = useSession();
   const { user, userProfile, createCreatorProfile } = useAuth();
+
+  const DRAFT_KEY = 'creator-signup-draft';
+
+  // Restore draft when component mounts (user may have gone back or refreshed)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as {
+        step?: string;
+        creatorData?: typeof creatorData;
+        tierPrices?: typeof tierPrices;
+        tierExtraPerks?: typeof tierExtraPerks;
+        estimatedSupporters?: typeof estimatedSupporters;
+        profilePhotoUrl?: string | null;
+        addedSocialPlatforms?: string[];
+      };
+      if (draft.step && draft.step !== 'signup') {
+        if (draft.creatorData) setCreatorData(draft.creatorData);
+        if (draft.tierPrices) setTierPrices(draft.tierPrices);
+        if (draft.tierExtraPerks) setTierExtraPerks(draft.tierExtraPerks);
+        if (draft.estimatedSupporters) setEstimatedSupporters(draft.estimatedSupporters);
+        if (draft.profilePhotoUrl !== undefined) setProfilePhotoUrl(draft.profilePhotoUrl);
+        if (draft.addedSocialPlatforms) setAddedSocialPlatforms(draft.addedSocialPlatforms);
+        if (draft.step === 'creator-details' || draft.step === 'tier-pricing') setStep(draft.step as any);
+      }
+    } catch (_) {}
+  }, []);
+
+  // Persist draft whenever we're on creator-details or tier-pricing and key state changes
+  useEffect(() => {
+    if (typeof window === 'undefined' || step === 'signup' || step === 'complete') return;
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        step,
+        creatorData,
+        tierPrices,
+        tierExtraPerks,
+        estimatedSupporters,
+        profilePhotoUrl,
+        addedSocialPlatforms,
+      }));
+    } catch (_) {}
+  }, [step, creatorData, tierPrices, tierExtraPerks, estimatedSupporters, profilePhotoUrl, addedSocialPlatforms]);
+
+  // Focus the newly added social link input when a platform is added
+  useEffect(() => {
+    if (addedSocialPlatforms.length === 0) return;
+    const t = setTimeout(() => lastAddedLinkInputRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, [addedSocialPlatforms.length]);
 
   /** Vanity username: 3–30 chars, lowercase letters, numbers, underscores only */
   const USERNAME_REGEX = /^[a-z0-9_]{3,30}$/;
@@ -242,8 +299,8 @@ export default function CreatorSignupPage() {
             .single();
 
           if (!data) {
-            // Creator profile doesn't exist, show setup form
-            setStep('creator-details');
+            // Creator profile doesn't exist: only move to creator-details if we're still on signup (don't overwrite restored draft step)
+            setStep((s) => (s === 'signup' ? 'creator-details' : s));
           } else {
             // Creator profile exists, redirect to Creator Studio
             router.push('/creator-studio');
@@ -252,11 +309,61 @@ export default function CreatorSignupPage() {
 
         checkCreatorProfile();
       } else {
-        // User is a supporter wanting to become a creator - show creator setup form
-        setStep('creator-details');
+        // User is a supporter wanting to become a creator - only set step if still on signup
+        setStep((s) => (s === 'signup' ? 'creator-details' : s));
       }
     }
   }, [user, userProfile, router]);
+
+  const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+    // Max 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'avatars');
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      const data = await res.json();
+      setProfilePhotoUrl(data.url);
+
+      // Also update the user's photo_url in the database
+      await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_url: data.url }),
+      });
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     try {
@@ -279,6 +386,12 @@ export default function CreatorSignupPage() {
 
   const handleCreatorSetup = async () => {
     if (!user || !creatorData.category) return;
+
+    // Require profile picture
+    if (!profilePhotoUrl && !user.user_metadata?.avatar_url) {
+      setError('Please upload a profile picture before continuing');
+      return;
+    }
 
     const trimmedUsername = creatorData.username.trim().toLowerCase();
     if (!trimmedUsername) {
@@ -345,25 +458,25 @@ export default function CreatorSignupPage() {
         { 
           tier_level: 1, 
           price: 0,
-          tier_name: 'One Star Supporter',
+          tier_name: 'Supporter',
           description: 'Access to supporter posts',
-          benefits: ['Access to exclusive posts', 'Support the creator'],
+          benefits: ['Access to exclusive posts', 'Community chat'],
           extra_perks: tierExtraPerks[1].filter(p => p.trim() !== '')
         },
         { 
           tier_level: 2, 
           price: parseFloat(tierPrices.tier2),
-          tier_name: 'Two Star Supporter',
+          tier_name: 'Inner Circle',
           description: 'Posts + Community chat access',
-          benefits: ['Access to exclusive posts', 'Join community chat'],
+          benefits: ['Access to exclusive posts', 'Community chat'],
           extra_perks: tierExtraPerks[2].filter(p => p.trim() !== '')
         },
         { 
           tier_level: 3, 
           price: parseFloat(tierPrices.tier3),
-          tier_name: 'Three Star Supporter',
+          tier_name: 'Core Member',
           description: 'Posts + Chat + Special perks',
-          benefits: ['Access to exclusive posts', 'Join community chat'],
+          benefits: ['Access to exclusive posts', 'Community chat', 'Special perks'],
           extra_perks: tierExtraPerks[3].filter(p => p.trim() !== '')
         }
       ];
@@ -413,6 +526,7 @@ export default function CreatorSignupPage() {
       }
 
       setStep('complete');
+      try { sessionStorage.removeItem(DRAFT_KEY); } catch (_) {}
 
       // Redirect to Creator Studio
       setTimeout(() => {
@@ -572,8 +686,60 @@ export default function CreatorSignupPage() {
               </div>
 
               <Card className="p-8">
-                {/* First line: Creator page URL (username), then Category, Bio, Social */}
                 <div className="space-y-6">
+                  {/* Profile Picture Upload */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Profile Picture *</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                      Your supporters will see this photo. A clear, recognizable image works best.
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border flex-shrink-0">
+                        {(profilePhotoUrl || user?.user_metadata?.avatar_url) ? (
+                          <img
+                            src={profilePhotoUrl || user?.user_metadata?.avatar_url}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                            <User className="w-8 h-8 text-muted-foreground/40" />
+                          </div>
+                        )}
+                        {uploadingPhoto && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-white animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          type="file"
+                          id="profile-photo-upload"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleProfilePhotoUpload}
+                          disabled={uploadingPhoto}
+                        />
+                        <label htmlFor="profile-photo-upload">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            disabled={uploadingPhoto}
+                          >
+                            <span className="cursor-pointer">
+                              <Camera className="w-4 h-4 mr-2" />
+                              {profilePhotoUrl || user?.user_metadata?.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                            </span>
+                          </Button>
+                        </label>
+                        <p className="text-[11px] text-muted-foreground mt-1.5">JPG, PNG. Max 5MB.</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">1. Creator page URL (username)</p>
                     <Label htmlFor="username" className="text-sm font-medium">
@@ -662,15 +828,16 @@ export default function CreatorSignupPage() {
                     
                     {/* Added Social Platforms */}
                     <div className="space-y-3 mb-4">
-                      {addedSocialPlatforms.map((platformId) => {
+                      {addedSocialPlatforms.map((platformId, index) => {
                         const platform = SOCIAL_PLATFORMS.find(p => p.id === platformId);
                         if (!platform) return null;
-                        
+                        const isLast = index === addedSocialPlatforms.length - 1;
                         return (
                           <div key={platform.id} className="flex items-center gap-3">
                             <span className="text-2xl flex-shrink-0">{platform.icon}</span>
                             <div className="flex-1">
                               <input
+                                ref={isLast ? lastAddedLinkInputRef : undefined}
                                 type="url"
                                 placeholder={`${platform.name} profile URL (e.g., https://facebook.com/yourpage)`}
                                 value={creatorData.socialLinks[platform.id] || ''}
@@ -768,7 +935,7 @@ export default function CreatorSignupPage() {
                   Set Your Support Tiers
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  The first tier (Supporter) is always free. Set the base price for Inner Circle and Core Member only.
+                  The first tier (Supporter) is always free. Set the <strong>base price per month</strong> (NPR) for Inner Circle and Core Member below.
                 </p>
               </div>
 
@@ -798,9 +965,10 @@ export default function CreatorSignupPage() {
                           </div>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium">Additional Perks</Label>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">Included: Access to posts, Community chat</p>
+                          <Label className="text-sm font-medium">Extra perks</Label>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            Add perks for your free tier (e.g., early access to posts, newsletter)
+                            Add more perks for your free tier (e.g., early access to posts, newsletter)
                           </p>
                           <div className="space-y-2">
                             {tierExtraPerks[1].map((perk, index) => (
@@ -845,28 +1013,28 @@ export default function CreatorSignupPage() {
                           <Check className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Two Star Supporter</h3>
-                          </div>
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Inner Circle</h3>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Community chat access</p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="tier2" className="text-sm font-medium">Base Price (NPR)</Label>
-                          <input
-                            id="tier2"
-                            type="number"
-                            min={Math.max(1, (parseInt(tierPrices.tier1) || 0) + 1)}
-                            value={tierPrices.tier2}
-                            onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
-                            className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
-                          />
+                          <Label htmlFor="tier2" className="text-sm font-medium">Base price per month (NPR)</Label>
+                          <div className="mt-2 flex items-center gap-2">
+                            <input
+                              id="tier2"
+                              type="number"
+                              min={Math.max(1, (parseInt(tierPrices.tier1) || 0) + 1)}
+                              value={tierPrices.tier2}
+                              onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
+                              className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                            />
+                            <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">per month</span>
+                          </div>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium">Extra Perks (Recommended)</Label>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">Included: Access to posts, Community chat</p>
+                          <Label className="text-sm font-medium">Extra perks</Label>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                             Add custom perks for this tier
                           </p>
@@ -917,25 +1085,29 @@ export default function CreatorSignupPage() {
                             <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                             <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                             <Check className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Three Star Supporter</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Core Member</h3>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Posts + Chat + Special perks</p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="tier3" className="text-sm font-medium">Base Price (NPR)</Label>
-                          <input
-                            id="tier3"
-                            type="number"
-                            min={parseInt(tierPrices.tier2) + 1}
-                            value={tierPrices.tier3}
-                            onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
-                            className="mt-2 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
-                          />
+                          <Label htmlFor="tier3" className="text-sm font-medium">Base price per month (NPR)</Label>
+                          <div className="mt-2 flex items-center gap-2">
+                            <input
+                              id="tier3"
+                              type="number"
+                              min={parseInt(tierPrices.tier2) + 1}
+                              value={tierPrices.tier3}
+                              onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
+                              className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none"
+                            />
+                            <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">per month</span>
+                          </div>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium">Extra Perks (Recommended)</Label>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">Included: Access to posts, Community chat, Special perks</p>
+                          <Label className="text-sm font-medium">Extra perks</Label>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                             Add custom perks for this tier
                           </p>
@@ -993,7 +1165,7 @@ export default function CreatorSignupPage() {
                     {/* Estimated Supporters Input */}
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="estTier1" className="text-sm font-medium">Estimated 1★ Supporters</Label>
+                        <Label htmlFor="estTier1" className="text-sm font-medium">Estimated Supporters (free tier)</Label>
                         <input
                           id="estTier1"
                           type="number"
@@ -1004,7 +1176,7 @@ export default function CreatorSignupPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="estTier2" className="text-sm font-medium">Estimated 2★ Supporters</Label>
+                        <Label htmlFor="estTier2" className="text-sm font-medium">Estimated Inner Circle supporters</Label>
                         <input
                           id="estTier2"
                           type="number"
@@ -1015,7 +1187,7 @@ export default function CreatorSignupPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="estTier3" className="text-sm font-medium">Estimated 3★ Supporters</Label>
+                        <Label htmlFor="estTier3" className="text-sm font-medium">Estimated Core Member supporters</Label>
                         <input
                           id="estTier3"
                           type="number"
@@ -1035,19 +1207,19 @@ export default function CreatorSignupPage() {
                       </div>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">1★ Tier Income:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Supporter (free):</span>
                           <span className="font-medium text-gray-900 dark:text-gray-100">
                             NPR 0
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">2★ Tier Income:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Inner Circle:</span>
                           <span className="font-medium text-gray-900 dark:text-gray-100">
                             NPR {((parseFloat(tierPrices.tier2) || 0) * (parseFloat(estimatedSupporters.tier2) || 0)).toLocaleString()}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">3★ Tier Income:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Core Member:</span>
                           <span className="font-medium text-gray-900 dark:text-gray-100">
                             NPR {((parseFloat(tierPrices.tier3) || 0) * (parseFloat(estimatedSupporters.tier3) || 0)).toLocaleString()}
                           </span>

@@ -14,6 +14,8 @@ import {
   Image as ImageIcon,
   ArrowUpRight,
   Loader2,
+  Mail,
+  BellOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +30,7 @@ interface PostCreationFormProps {
   pollOptions: string[];
   onboardingCompleted: boolean;
   isPublishing: boolean;
+  notifyByEmail: boolean;
   onPostTypeChange: (type: 'post' | 'poll') => void;
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
@@ -39,6 +42,7 @@ interface PostCreationFormProps {
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: (index: number) => void;
   onPublish: () => void;
+  onNotifyByEmailChange: (notify: boolean) => void;
 }
 
 export function PostCreationForm({
@@ -52,6 +56,7 @@ export function PostCreationForm({
   pollOptions,
   onboardingCompleted,
   isPublishing,
+  notifyByEmail,
   onPostTypeChange,
   onTitleChange,
   onDescriptionChange,
@@ -63,6 +68,7 @@ export function PostCreationForm({
   onImageUpload,
   onRemoveImage,
   onPublish,
+  onNotifyByEmailChange,
 }: PostCreationFormProps) {
   return (
     <Card className={cn(
@@ -236,6 +242,38 @@ export function PostCreationForm({
             </div>
           </div>
         )}
+
+        {/* Email notification toggle */}
+        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+          <div className="flex items-center gap-2.5">
+            {notifyByEmail ? (
+              <Mail className="w-4 h-4 text-primary" />
+            ) : (
+              <BellOff className="w-4 h-4 text-muted-foreground" />
+            )}
+            <div>
+              <span className="text-sm font-medium text-foreground">Notify supporters via email</span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {notifyByEmail ? 'Supporters will receive an email about this post' : 'No email notification will be sent'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNotifyByEmailChange(!notifyByEmail)}
+            className={cn(
+              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+              notifyByEmail ? "bg-primary" : "bg-muted-foreground/30"
+            )}
+          >
+            <span
+              className={cn(
+                "inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm",
+                notifyByEmail ? "translate-x-6" : "translate-x-1"
+              )}
+            />
+          </button>
+        </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-border/50">
           {postType === 'post' && (

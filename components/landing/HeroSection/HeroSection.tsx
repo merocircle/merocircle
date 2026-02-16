@@ -1,96 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, Camera, Sparkles, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import "./HeroSection.css";
-
-const HERO_IMAGE = "/MeroCircle_Hero_Oil_Painting.png";
 
 export function HeroSection() {
   return (
-    <section className="landing-hero">
-      <div className="landing-hero-bg" aria-hidden />
-      <div className="landing-hero-grid">
-        <div className="landing-hero-content">
-          <div className="landing-hero-heading-wrap">
-            <h1 className="landing-hero-title">
-              YOUR FAVORITE
-              <br />
-              CREATOR NOW
-              <br />
-              <span className="landing-hero-title-accent">
-                MORE CLOSER
-                <svg className="landing-hero-underline" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden>
-                  <path d="M0 5 Q 25 0, 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="3" />
-                </svg>
-              </span>
-              <br />
-              THAN EVER.
-            </h1>
-            <div className="landing-hero-quote">
-              <p className="landing-hero-quote-main">
-                The creator who inspires you, deserves your support.
-              </p>
-              <p className="landing-hero-quote-sub">
-                Every like, share, and moment of connection matters. Now you can directly support the creators who bring joy, knowledge, and inspiration to your life. Join their community. Be part of their journey.
-              </p>
-            </div>
-          </div>
+    <section className="hero">
+      {/* Animated connection lines background */}
+      <div className="hero-connections" aria-hidden>
+        <svg className="hero-connections-svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+          {/* Floating dots */}
+          <circle className="hero-dot hero-dot-1" cx="150" cy="200" r="3" />
+          <circle className="hero-dot hero-dot-2" cx="350" cy="120" r="2.5" />
+          <circle className="hero-dot hero-dot-3" cx="900" cy="180" r="3" />
+          <circle className="hero-dot hero-dot-4" cx="1050" cy="350" r="2" />
+          <circle className="hero-dot hero-dot-5" cx="200" cy="550" r="2.5" />
+          <circle className="hero-dot hero-dot-6" cx="750" cy="650" r="3" />
+          <circle className="hero-dot hero-dot-7" cx="600" cy="100" r="2" />
+          <circle className="hero-dot hero-dot-8" cx="450" cy="700" r="2.5" />
+          <circle className="hero-dot hero-dot-9" cx="1000" cy="600" r="2" />
+          <circle className="hero-dot hero-dot-10" cx="100" cy="400" r="2" />
 
-          <div className="landing-hero-actions">
-            <Link href="/auth" className="landing-hero-cta">
-              Start Supporting Creators <ArrowRight size={20} className="landing-hero-cta-icon" />
-            </Link>
-          </div>
-        </div>
+          {/* Connection lines between dots */}
+          <line className="hero-line hero-line-1" x1="150" y1="200" x2="350" y2="120" />
+          <line className="hero-line hero-line-2" x1="350" y1="120" x2="600" y2="100" />
+          <line className="hero-line hero-line-3" x1="600" y1="100" x2="900" y2="180" />
+          <line className="hero-line hero-line-4" x1="900" y1="180" x2="1050" y2="350" />
+          <line className="hero-line hero-line-5" x1="150" y1="200" x2="200" y2="550" />
+          <line className="hero-line hero-line-6" x1="200" y1="550" x2="450" y2="700" />
+          <line className="hero-line hero-line-7" x1="750" y1="650" x2="1000" y2="600" />
+          <line className="hero-line hero-line-8" x1="600" y1="100" x2="750" y2="650" />
+          <line className="hero-line hero-line-9" x1="100" y1="400" x2="150" y2="200" />
+          <line className="hero-line hero-line-10" x1="1050" y1="350" x2="1000" y2="600" />
 
-        <div className="landing-hero-visual">
-          <div className="landing-hero-visual-inner animate-landing-float">
-            <div className="landing-hero-glow" aria-hidden />
-            <div className="landing-hero-float-camera animate-landing-bounce-slow">
-              <Camera className="landing-hero-float-camera-icon" size={40} />
-              <span className="landing-hero-float-camera-label">Creation</span>
-            </div>
-            <div className="landing-hero-float-status animate-landing-float-slow">
-              <div className="landing-hero-float-status-dot" />
-              <div>
-                <p className="landing-hero-float-status-label">Status</p>
-                <p className="landing-hero-float-status-value">Directly Connected</p>
-              </div>
-            </div>
+          {/* Central glow pulse */}
+          <circle className="hero-pulse" cx="600" cy="400" r="120" />
+        </svg>
+      </div>
 
-            <div className="landing-hero-image-wrap">
-              <div className="landing-hero-frame landing-hero-frame-1" aria-hidden />
-              <div className="landing-hero-frame landing-hero-frame-2" aria-hidden />
-              <div className="landing-hero-image-container">
-                <Image
-                  src={HERO_IMAGE}
-                  alt="Creator with professional camera - oil painting style"
-                  width={560}
-                  height={560}
-                  className="landing-hero-image"
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 560px"
-                />
-                <div className="landing-hero-image-overlay">
-                  <div className="landing-hero-image-overlay-content">
-                    <div className="landing-hero-play-btn">
-                      <Play size={32} className="landing-hero-play-icon" />
-                    </div>
-                    <div>
-                      <p className="landing-hero-overlay-title">A Masterpiece in Progress</p>
-                      <p className="landing-hero-overlay-sub">Your support fuels the vision.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Subtle radial glow */}
+      <div className="hero-glow" aria-hidden />
 
-            <div className="landing-hero-float-sparkles animate-landing-spin-slow">
-              <Sparkles className="text-white" size={24} />
-            </div>
-          </div>
+      <div className="hero-inner">
+        {/* Headline */}
+        <h1 className="hero-title">
+          Your favorite creator,
+          <br />
+          <span className="hero-accent">closer than ever.</span>
+        </h1>
+
+        {/* Subheadline */}
+        <p className="hero-sub">
+          Join the inner circle of the creators who inspire you. Get exclusive
+          posts, private chats, and a real connection.
+        </p>
+
+        {/* Single CTA */}
+        <div className="hero-cta-wrap">
+          <Link href="/auth" className="hero-cta">
+            Get Started
+            <ArrowRight size={18} className="hero-cta-arrow" />
+          </Link>
         </div>
       </div>
     </section>

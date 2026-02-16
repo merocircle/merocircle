@@ -1,15 +1,9 @@
-"use client";
+'use client';
 
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  memo,
-  useRef,
-} from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import {
   Crown,
   BarChart3,
@@ -19,21 +13,17 @@ import {
   Loader2,
   CheckCircle2,
   Plus,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useAuth } from "@/contexts/auth-context";
-import { useDashboardViewSafe } from "@/contexts/dashboard-context";
-import { OnboardingBanner } from "@/components/dashboard/OnboardingBanner";
-import {
-  useCreatorAnalytics,
-  useCreatorDashboardData,
-  usePublishPost,
-} from "@/hooks/useQueries";
+  MessageCircle,
+  ExternalLink,
+  Pencil,
+} from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import { useDashboardViewSafe } from '@/contexts/dashboard-context';
+import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
 import {
   StatsCards,
   AnalyticsCharts,
@@ -42,7 +32,8 @@ import {
   PostCreationForm,
   RecentPostsList,
   SupportersList,
-} from "./creator-studio";
+} from './creator-studio';
+import { EditProfilePricingModal } from './EditProfilePricingModal';
 
 // Tab configuration
 const tabs = [
@@ -52,13 +43,15 @@ const tabs = [
 
 const CreatorStudioSection = memo(function CreatorStudioSection() {
   const { user, userProfile, creatorProfile } = useAuth();
-  const { highlightedPostId, setHighlightedPostId } = useDashboardViewSafe();
-  const [activeTab, setActiveTab] = useState("overview");
+  const dashboardView = useDashboardViewSafe();
+  const { highlightedPostId, setHighlightedPostId } = dashboardView;
+  const [activeTab, setActiveTab] = useState('overview');
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showErrorMessage, setShowErrorMessage] = useState<string | null>(null);
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [showEditProfilePricingModal, setShowEditProfilePricingModal] = useState(false);
   const highlightedPostRef = useRef<HTMLDivElement | null>(null);
   const scrollAttemptedRef = useRef(false);
 
@@ -66,18 +59,18 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const [newPostDescription, setNewPostDescription] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [postVisibility, setPostVisibility] = useState("public");
-  const [postType, setPostType] = useState<"post" | "poll">("post");
+  const [postVisibility, setPostVisibility] = useState('public');
+  const [postType, setPostType] = useState<'post' | 'poll'>('post');
+  const [notifyByEmail, setNotifyByEmail] = useState(true);
 
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [allowsMultipleAnswers, setAllowsMultipleAnswers] = useState(false);
   const [pollDuration, setPollDuration] = useState<number | null>(null);
 
-  const { data: analyticsData, isLoading: analyticsLoading } =
-    useCreatorAnalytics();
-  const { data: dashboardData, isLoading: dashboardLoading } =
-    useCreatorDashboardData();
+  const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
+  const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
+  const queryClient = useQueryClient();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
 
   useEffect(() => {
@@ -371,9 +364,10 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       content:
         postType === "poll" ? pollQuestion.trim() : newPostDescription.trim(),
       image_urls: uploadedImages.length > 0 ? uploadedImages : [],
-      is_public: postVisibility === "public",
-      tier_required: postVisibility === "public" ? "free" : postVisibility,
+      is_public: postVisibility === 'public',
+      tier_required: postVisibility === 'public' ? 'free' : postVisibility,
       post_type: postType,
+      sendNotifications: notifyByEmail,
     };
 
     if (postType === "poll") {
@@ -392,39 +386,37 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
     publishPost(body, {
       onSuccess: (createdPost: any) => {
-        setHighlightedPostId(createdPost?.id);
-        setNewPostTitle("");
-        setNewPostDescription("");
+        // Reset form state
+        setNewPostTitle('');
+        setNewPostDescription('');
         setUploadedImages([]);
         setPollQuestion("");
         setPollOptions(["", ""]);
         setAllowsMultipleAnswers(false);
         setPollDuration(null);
-        setPostVisibility("public");
+        setPostVisibility('public');
+        setNotifyByEmail(true);
         setShowCreatePostModal(false);
 
-        setShowSuccessMessage(true);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
+        setSuccessMessage('Post published!');
+        setTimeout(() => setSuccessMessage(null), 3000);
+
+        // Ensure we're on the overview tab, then scroll to the new post
+        setActiveTab('overview');
+        // Reset scroll state so the effect can trigger
+        scrollAttemptedRef.current = false;
+        // Set the highlighted post ID after a brief delay to allow tab switch
+        setTimeout(() => {
+          setHighlightedPostId(createdPost?.id);
+        }, 100);
       },
       onError: (error: any) => {
         showError(error.message || "Failed to publish.");
       },
     });
-  }, [
-    postType,
-    newPostTitle,
-    newPostDescription,
-    uploadedImages,
-    postVisibility,
-    pollQuestion,
-    pollOptions,
-    allowsMultipleAnswers,
-    pollDuration,
-    publishPost,
-    showError,
-  ]);
+  }, [postType, newPostTitle, newPostDescription, uploadedImages, postVisibility, pollQuestion, pollOptions, allowsMultipleAnswers, pollDuration, notifyByEmail, publishPost, showError]);
 
-  const handlePostTypeChange = useCallback((type: "post" | "poll") => {
+  const handlePostTypeChange = useCallback((type: 'post' | 'poll') => {
     setPostType(type);
     if (type === "poll") {
       setNewPostTitle("");
@@ -480,160 +472,197 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     );
   }
 
+  const creatorSlug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user?.id;
+
   return (
-    <div className="py-6 px-4 md:px-6 max-w-7xl mx-auto overflow-y-auto h-full">
+    <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto overflow-y-auto h-full">
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-5"
       >
-        <div className="flex items-center gap-4 mb-3">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg shadow-orange-500/25">
-            <Crown className="w-7 h-7 text-white" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Crown className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
+                Creator Studio
+              </h1>
+              <p className="text-muted-foreground text-xs sm:text-sm">
+                Welcome back, {userProfile?.display_name}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              Creator Studio
-            </h1>
-            <p className="text-muted-foreground text-sm md:text-base">
-              Welcome back, {userProfile?.display_name}!
-            </p>
+
+          {/* Quick actions */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <Button
+              variant="default"
+              className="gap-2 rounded-xl"
+              asChild
+            >
+              <Link href="/create-post">
+                <Plus className="w-4 h-4" />
+                Create Post
+              </Link>
+            </Button>
+            <Button
+              variant={shareCopied ? "default" : "outline"}
+              size="sm"
+              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0"
+              onClick={handleShareProfile}
+            >
+              {shareCopied ? (
+                <><CheckCircle2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Copied!</span></>
+              ) : (
+                <><Share2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Share</span></>
+              )}
+            </Button>
+            <Button variant="ghost" size="sm" className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0" asChild>
+              <a href={`/creator/${creatorSlug}`}>
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">View Profile</span>
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm flex-shrink-0"
+              onClick={() => setShowEditProfilePricingModal(true)}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Edit profile & pricing</span>
+            </Button>
           </div>
         </div>
       </motion.div>
 
-      {/* Modern Tab Navigation */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2 p-1.5 bg-muted/50 rounded-2xl w-fit">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <motion.button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </motion.button>
-            );
-          })}
-        </div>
+      <EditProfilePricingModal
+        open={showEditProfilePricingModal}
+        onOpenChange={setShowEditProfilePricingModal}
+        profile={{
+          ...(dashboardData?.profile ?? { bio: null, category: null, social_links: {}, vanity_username: null }),
+          display_name: user?.display_name ?? dashboardData?.profile?.display_name ?? null,
+        }}
+        tiers={dashboardData?.tiers ?? []}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['creator', 'dashboard', user?.id] });
+          setSuccessMessage('Profile & pricing updated!');
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }}
+      />
 
-        {user?.id && (
-          <div className="flex items-center gap-3">
-            {!showOnboardingBanner && (
-              <Button
-                variant="default"
-                className="gap-2 rounded-xl"
-                onClick={() => setShowCreatePostModal(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Create Post
-              </Button>
-            )}
-            <Button
-              variant={shareCopied ? "default" : "outline"}
-              className="gap-2 rounded-xl"
-              onClick={handleShareProfile}
-            >
-              {shareCopied ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-4 h-4" />
-                  Share your profile
-                </>
-              )}
-            </Button>
-          </div>
-        )}
+      {showOnboardingBanner && user && (
+        <div className="mb-5">
+          <OnboardingBanner
+            creatorId={user.id}
+            onDismiss={() => {
+              setShowOnboardingBanner(false);
+              setOnboardingCompleted(true);
+            }}
+          />
+        </div>
+      )}
+
+      <ToastMessages
+        showSuccess={!!successMessage}
+        successMessage={successMessage ?? undefined}
+        showError={!!showErrorMessage}
+        errorMessage={showErrorMessage}
+      />
+
+      {/* Stats Cards */}
+      <div className="mb-5">
+        <StatsCards stats={stats} />
       </div>
 
-      <AnimatePresence mode="wait">
-        {/* Overview Tab */}
-        {activeTab === "overview" && (
-          <motion.div
-            key="overview"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
-          >
-            {showOnboardingBanner && user && (
-              <OnboardingBanner
-                creatorId={user.id}
-                onDismiss={() => {
-                  setShowOnboardingBanner(false);
-                  setOnboardingCompleted(true);
-                }}
-              />
-            )}
+      {/* Main Content: Two-column on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left Column - Charts & Analytics (wider) */}
+        <div className="lg:col-span-2 space-y-5">
+          <AnalyticsCharts
+            earningsData={analyticsData?.charts.earnings}
+            supporterFlowData={analyticsData?.charts.supporterFlow}
+          />
+        </div>
 
-            <ToastMessages
-              showSuccess={showSuccessMessage}
-              showError={!!showErrorMessage}
-              errorMessage={showErrorMessage}
-            />
+        {/* Right Column - Top Supporters */}
+        <div className="space-y-5">
+          <TopSupporters supporters={analyticsData?.topSupporters || []} />
+        </div>
+      </div>
 
-            <StatsCards stats={stats} />
-            <AnalyticsCharts
-              earningsData={analyticsData?.charts.earnings}
-              supporterFlowData={analyticsData?.charts.supporterFlow}
-            />
-            <TopSupporters supporters={analyticsData?.topSupporters || []} />
+      {/* Tab navigation for Posts / Supporters */}
+      <div className="mt-6 border-t border-border/40 pt-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/30">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActiveTab = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all',
+                    isActiveTab
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-            {/* Posts Section */}
-            <div className="pt-6 border-t border-border/50">
+        <AnimatePresence mode="wait">
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
               <RecentPostsList
                 posts={dashboardData?.posts || []}
                 highlightedPostId={highlightedPostId}
                 currentUserId={user?.id}
                 onboardingCompleted={onboardingCompleted}
                 highlightedPostRef={highlightedPostRef}
-                creatorSlug={
-                  creatorProfile?.vanity_username?.trim() ||
-                  userProfile?.username ||
-                  undefined
-                }
+                creatorSlug={creatorSlug || undefined}
               />
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {/* Supporters Tab */}
-        {activeTab === "supporters" && (
-          <motion.div
-            key="supporters"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
-          >
-            <SupportersList
-              supporters={dashboardData?.supporters || []}
-              totalCount={stats.supporters}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {activeTab === 'supporters' && (
+            <motion.div
+              key="supporters"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <SupportersList
+                supporters={dashboardData?.supporters || []}
+                totalCount={stats.supporters}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Create Post Modal */}
       <Dialog open={showCreatePostModal} onOpenChange={setShowCreatePostModal}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Create New Post</DialogTitle>
+          <DialogHeader className="px-6 pt-6 pb-3">
+            <DialogTitle className="text-lg">Create New Post</DialogTitle>
           </DialogHeader>
           <div className="px-6 pb-6">
             <PostCreationForm
@@ -647,6 +676,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               pollOptions={pollOptions}
               onboardingCompleted={onboardingCompleted}
               isPublishing={isPublishing}
+              notifyByEmail={notifyByEmail}
               onPostTypeChange={handlePostTypeChange}
               onTitleChange={setNewPostTitle}
               onDescriptionChange={setNewPostDescription}
@@ -660,6 +690,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 setUploadedImages((prev) => prev.filter((_, i) => i !== index))
               }
               onPublish={handlePublishPost}
+              onNotifyByEmailChange={setNotifyByEmail}
             />
           </div>
         </DialogContent>

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar, CreditCard, AlertCircle, RefreshCw, ExternalLink, X } from 'lucide-react';
 import Link from 'next/link';
+import { getValidAvatarUrl } from '@/lib/utils';
 import { UnsubscribeDialog } from './UnsubscribeDialog';
 
 interface Subscription {
@@ -194,8 +195,12 @@ export default function SubscriptionsManagement() {
     );
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    // Guard against epoch / invalid dates
+    if (isNaN(date.getTime()) || date.getTime() < 86400000) return 'N/A';
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -257,7 +262,7 @@ export default function SubscriptionsManagement() {
             <div className="flex items-start gap-4">
               {/* Creator Avatar */}
               <Avatar className="w-16 h-16">
-                <AvatarImage src={subscription.creator.avatarUrl} alt={subscription.creator.displayName} />
+                <AvatarImage src={getValidAvatarUrl(subscription.creator.avatarUrl)} alt={subscription.creator.displayName} />
                 <AvatarFallback>
                   {subscription.creator.displayName.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -287,9 +292,11 @@ export default function SubscriptionsManagement() {
                       <span className="text-red-600">Expired {formatDate(subscription.currentPeriodEnd)}</span>
                     ) : subscription.state === 'cancelled' ? (
                       <span className="text-gray-500">Cancelled {subscription.cancelledAt ? formatDate(subscription.cancelledAt) : ''}</span>
+                    ) : !subscription.currentPeriodEnd ? (
+                      <span className="text-muted-foreground">Free tier (no expiry)</span>
                     ) : (
                       <span>
-                        Renews {formatDate(subscription.currentPeriodEnd)}
+                        Auto-renews {formatDate(subscription.currentPeriodEnd)}
                         {subscription.daysUntilExpiry !== null && subscription.daysUntilExpiry > 0 && (
                           <span className={subscription.state === 'expiring_soon' ? 'text-yellow-600 font-medium' : ''}>
                             {' '}({subscription.daysUntilExpiry} days)

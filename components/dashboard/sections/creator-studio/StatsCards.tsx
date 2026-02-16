@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   DollarSign,
   Users,
@@ -10,9 +9,7 @@ import {
   TrendingUp,
   TrendingDown,
   FileText,
-  Activity,
-  MessageCircle,
-  Eye,
+  ArrowUpRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,13 +17,13 @@ const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 }
+    transition: { staggerChildren: 0.08 }
   }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } }
+  hidden: { opacity: 0, y: 16, scale: 0.97 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 120, damping: 14 } }
 };
 
 interface Stats {
@@ -42,81 +39,107 @@ interface StatsCardsProps {
   stats: Stats;
 }
 
+const statConfig = [
+  {
+    key: 'earnings',
+    label: 'This Month',
+    sublabel: 'Revenue',
+    icon: DollarSign,
+    color: 'from-emerald-500 to-teal-600',
+    iconBg: 'bg-emerald-500/15',
+    iconColor: 'text-emerald-500',
+    format: (stats: Stats) => `NPR ${stats.currentMonthEarnings.toLocaleString()}`,
+    subtext: (stats: Stats) => `Total: NPR ${stats.totalEarnings.toLocaleString()}`,
+    growth: (stats: Stats) => stats.earningsGrowth,
+  },
+  {
+    key: 'supporters',
+    label: 'Supporters',
+    sublabel: 'In your circle',
+    icon: Users,
+    color: 'from-violet-500 to-purple-600',
+    iconBg: 'bg-violet-500/15',
+    iconColor: 'text-violet-500',
+    format: (stats: Stats) => stats.supporters.toLocaleString(),
+    subtext: () => null,
+    growth: () => null,
+  },
+  {
+    key: 'posts',
+    label: 'Posts',
+    sublabel: 'Published',
+    icon: FileText,
+    color: 'from-blue-500 to-indigo-600',
+    iconBg: 'bg-blue-500/15',
+    iconColor: 'text-blue-500',
+    format: (stats: Stats) => stats.posts.toLocaleString(),
+    subtext: () => null,
+    growth: () => null,
+  },
+  {
+    key: 'engagement',
+    label: 'Engagement',
+    sublabel: 'Likes & interactions',
+    icon: Heart,
+    color: 'from-rose-500 to-pink-600',
+    iconBg: 'bg-rose-500/15',
+    iconColor: 'text-rose-500',
+    format: (stats: Stats) => stats.likes.toLocaleString(),
+    subtext: () => null,
+    growth: () => null,
+  },
+];
+
 export function StatsCards({ stats }: StatsCardsProps) {
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+      className="grid grid-cols-2 lg:grid-cols-4 gap-3"
     >
-      <motion.div variants={itemVariants}>
-        <Card className="p-5 h-full bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 hover:border-blue-500/40 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-xl bg-blue-500/20">
-              <DollarSign className="w-5 h-5 text-blue-500" />
-            </div>
-            <Badge
-              variant={stats.earningsGrowth >= 0 ? 'default' : 'destructive'}
-              className={cn(
-                'text-xs',
-                stats.earningsGrowth >= 0
-                  ? 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
-                  : 'bg-red-500/20 text-red-600 hover:bg-red-500/30'
+      {statConfig.map((cfg) => {
+        const Icon = cfg.icon;
+        const growth = cfg.growth(stats);
+        const subtext = cfg.subtext(stats);
+
+        return (
+          <motion.div key={cfg.key} variants={itemVariants}>
+            <Card className="relative overflow-hidden p-4 h-full border-border/40 hover:border-border/70 transition-all group">
+              {/* Subtle gradient accent */}
+              <div className={cn('absolute top-0 left-0 right-0 h-1 bg-gradient-to-r opacity-60 group-hover:opacity-100 transition-opacity', cfg.color)} />
+              
+              <div className="flex items-start justify-between mb-3">
+                <div className={cn('p-2 rounded-lg', cfg.iconBg)}>
+                  <Icon className={cn('w-4 h-4', cfg.iconColor)} />
+                </div>
+                {growth !== null && (
+                  <div className={cn(
+                    'flex items-center gap-0.5 text-xs font-semibold rounded-full px-2 py-0.5',
+                    growth >= 0
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                  )}>
+                    {growth >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    {Math.abs(growth)}%
+                  </div>
+                )}
+                {growth === null && (
+                  <ArrowUpRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                )}
+              </div>
+
+              <p className="text-xl sm:text-2xl font-bold text-foreground tracking-tight leading-none mb-1">
+                {cfg.format(stats)}
+              </p>
+              <p className="text-xs text-muted-foreground font-medium">{cfg.label}</p>
+              {subtext && (
+                <p className="text-[10px] text-muted-foreground/60 mt-1.5">{subtext}</p>
               )}
-            >
-              {stats.earningsGrowth >= 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
-              {Math.abs(stats.earningsGrowth)}%
-            </Badge>
-          </div>
-          <p className="text-2xl font-bold text-foreground">
-            NPR {stats.currentMonthEarnings.toLocaleString()}
-          </p>
-          <p className="text-sm text-muted-foreground">This Month</p>
-          <p className="text-xs text-muted-foreground/70 mt-2">
-            Total: NPR {stats.totalEarnings.toLocaleString()}
-          </p>
-        </Card>
-      </motion.div>
-
-      <motion.div variants={itemVariants}>
-        <Card className="p-5 h-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20 hover:border-purple-500/40 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-xl bg-purple-500/20">
-              <Users className="w-5 h-5 text-purple-500" />
-            </div>
-            <Activity className="w-4 h-4 text-purple-500" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{stats.supporters}</p>
-          <p className="text-sm text-muted-foreground">Total Supporters</p>
-        </Card>
-      </motion.div>
-
-      <motion.div variants={itemVariants}>
-        <Card className="p-5 h-full bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 hover:border-green-500/40 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-xl bg-green-500/20">
-              <FileText className="w-5 h-5 text-green-500" />
-            </div>
-            <Eye className="w-4 h-4 text-green-500" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{stats.posts}</p>
-          <p className="text-sm text-muted-foreground">Total Posts</p>
-        </Card>
-      </motion.div>
-
-      <motion.div variants={itemVariants}>
-        <Card className="p-5 h-full bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/20 hover:border-red-500/40 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 rounded-xl bg-red-500/20">
-              <Heart className="w-5 h-5 text-red-500" />
-            </div>
-            <MessageCircle className="w-4 h-4 text-red-500" />
-          </div>
-          <p className="text-2xl font-bold text-foreground">{stats.likes}</p>
-          <p className="text-sm text-muted-foreground">Total Engagement</p>
-        </Card>
-      </motion.div>
+            </Card>
+          </motion.div>
+        );
+      })}
     </motion.div>
   );
 }
