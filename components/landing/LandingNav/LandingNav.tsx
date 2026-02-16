@@ -13,6 +13,9 @@ export function LandingNav() {
         <Link href="/" className="landing-nav-logo">
           <Logo className="w-6 h-6 text-primary object-contain"/>
           <span className="landing-nav-logo-text">MeroCircle</span>
+          <span className="ml-2 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-full border border-primary/40 text-primary bg-primary/5 animate-pulse">
+            BETA
+          </span>
         </Link>
 
         <div className="landing-nav-right">

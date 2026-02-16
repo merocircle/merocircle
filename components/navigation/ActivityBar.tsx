@@ -165,7 +165,7 @@ export function ActivityBar({
         </Tooltip>
 
         {/* Beta Badge */}
-        <span className="text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 mb-3 select-none">
+        <span className="beta-neon-global text-[8px] font-bold tracking-[0.15em] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 mb-3 select-none">
           BETA
         </span>
 
