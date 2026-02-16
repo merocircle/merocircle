@@ -135,9 +135,10 @@ export async function GET(
       post_comments?: Array<{ id: string; content: string; created_at: string }>;
       polls?: { id: string; question: string; allows_multiple_answers: boolean; expires_at: string | null };
     }) => {
-      // Check if this is a supporter-only post and user is not a supporter
+      // Check if this is a supporter-only post
       const isSupporterOnly = !post.is_public || (post.tier_required && post.tier_required !== 'free');
-      const shouldHideContent = isSupporterOnly && !isSupporter;
+      // Allow access if: user is the creator themselves, or user is a supporter
+      const shouldHideContent = isSupporterOnly && !isSupporter && user?.id !== creatorId;
 
       return {
         id: post.id,
