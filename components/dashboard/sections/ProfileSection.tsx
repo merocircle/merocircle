@@ -31,6 +31,12 @@ import {
   ExternalLink,
   Copy,
   ImagePlus,
+  Plus,
+  Trash2,
+  Link as LinkIcon,
+  DollarSign,
+  Grid3X3,
+  List,
 } from 'lucide-react';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TimelineFeed } from '@/components/posts/TimelineFeed';
@@ -40,10 +46,31 @@ import { isToday, isYesterday } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
 
+const CATEGORIES = [
+  'Technology', 'Education', 'Entertainment', 'Music', 'Art & Design',
+  'Gaming', 'Photography', 'Writing', 'Business', 'Health & Fitness',
+  'Lifestyle', 'Travel', 'Food & Cooking', 'Fashion & Beauty', 'Comedy',
+  'Science', 'Sports', 'Politics & News', 'Religion & Spirituality', 'Other',
+];
+
+const SOCIAL_PLATFORMS = [
+  { id: 'facebook', name: 'Facebook', icon: '📘' },
+  { id: 'youtube', name: 'YouTube', icon: '📺' },
+  { id: 'instagram', name: 'Instagram', icon: '📷' },
+  { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
+  { id: 'twitter', name: 'Twitter (X)', icon: '🐦' },
+  { id: 'tiktok', name: 'TikTok', icon: '🎵' },
+  { id: 'website', name: 'Website', icon: '🌐' },
+  { id: 'other', name: 'Other', icon: '🔗' },
+];
+
+type Tier = { tier_level: number; price: number; tier_name: string; description: string | null; benefits: string[]; extra_perks: string[] };
+
 // Tab configuration (only for creators)
 const creatorTabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'posts', label: 'Posts' },
+  { id: 'edit', label: 'Edit Profile' },
 ];
 
 export default function ProfileSection() {
@@ -63,6 +90,18 @@ export default function ProfileSection() {
     bio: '',
     category: ''
   });
+
+  // Full edit state
+  const [vanityUsername, setVanityUsername] = useState('');
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
+  const [platformIds, setPlatformIds] = useState<string[]>([]);
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [tierPrices, setTierPrices] = useState<Record<number, string>>({});
+  const [extraPerks, setExtraPerks] = useState<Record<number, string[]>>({ 1: [], 2: [], 3: [] });
+  const [editStep, setEditStep] = useState<'profile' | 'pricing'>('profile');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
 
   const creatorDetails = useCreatorDetails(user?.id || null)
 
@@ -112,8 +151,38 @@ export default function ProfileSection() {
         category: creatorProfile?.category || ''
       });
       setCoverImageUrl(creatorProfile?.cover_image_url || null);
+      setVanityUsername(creatorProfile?.vanity_username || '');
+      const links = (creatorProfile as any)?.social_links || {};
+      setSocialLinks(links);
+      setPlatformIds(Object.keys(links));
     }
   }, [userProfile, creatorProfile]);
+
+  // Fetch tiers for creator
+  useEffect(() => {
+    const fetchTiers = async () => {
+      if (!user?.id || !isCreator) return;
+      try {
+        const res = await fetch(`/api/creator/${user.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          const fetchedTiers = data.tiers || [];
+          setTiers(fetchedTiers);
+          const prices: Record<number, string> = {};
+          const perks: Record<number, string[]> = { 1: [], 2: [], 3: [] };
+          fetchedTiers.forEach((t: Tier) => {
+            prices[t.tier_level] = String(t.price);
+            perks[t.tier_level] = Array.isArray(t.extra_perks) ? [...t.extra_perks] : [];
+          });
+          setTierPrices(prices);
+          setExtraPerks(perks);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tiers:', err);
+      }
+    };
+    fetchTiers();
+  }, [user?.id, isCreator]);
 
   const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -226,6 +295,82 @@ export default function ProfileSection() {
     const slug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user.id;
     window.open(`/creator/${slug}`, '_blank');
   }, [user?.id, userProfile?.username, creatorProfile?.vanity_username]);
+
+  // Full edit save (profile + pricing)
+  const handleFullSave = async () => {
+    setEditSaving(true);
+    setEditError(null);
+    setEditSuccess(false);
+    try {
+      const profileRes = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: editData.display_name.trim() || null,
+          bio: editData.bio.trim() || null,
+          category: editData.category || null,
+          vanity_username: vanityUsername.trim() || null,
+          social_links: Object.fromEntries(Object.entries(socialLinks).filter(([, v]) => (v ?? '').trim() !== '')),
+        }),
+      });
+      if (!profileRes.ok) {
+        const d = await profileRes.json().catch(() => ({}));
+        throw new Error(d.error || 'Failed to update profile');
+      }
+
+      // Save tiers
+      const payload = [1, 2, 3].map((level) => {
+        const t = tiers?.find((x) => x.tier_level === level);
+        return {
+          tier_level: level,
+          price: level === 1 ? 0 : parseFloat(tierPrices[level] ?? '0') || 0,
+          tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
+          description: t?.description ?? null,
+          benefits: t?.benefits ?? [],
+          extra_perks: (extraPerks[level] ?? []).filter((p) => p.trim() !== ''),
+        };
+      });
+
+      const tiersRes = await fetch('/api/creator/tiers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tiers: payload }),
+      });
+      if (!tiersRes.ok) {
+        const d = await tiersRes.json().catch(() => ({}));
+        throw new Error(d.error || 'Failed to update tiers');
+      }
+
+      await refreshProfile();
+      setEditSuccess(true);
+      setTimeout(() => setEditSuccess(false), 3000);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  // Social link helpers
+  const addPlatform = (id: string) => {
+    if (platformIds.includes(id)) return;
+    setPlatformIds([...platformIds, id]);
+  };
+
+  const removePlatform = (id: string) => {
+    setPlatformIds(platformIds.filter((x) => x !== id));
+    const next = { ...socialLinks };
+    delete next[id];
+    setSocialLinks(next);
+  };
+
+  const addPerk = (level: number) => {
+    setExtraPerks({ ...extraPerks, [level]: [...(extraPerks[level] ?? []), ''] });
+  };
+
+  const removePerk = (level: number, i: number) => {
+    setExtraPerks({ ...extraPerks, [level]: (extraPerks[level] ?? []).filter((_, j) => j !== i) });
+  };
 
   if (loading) {
     return (
@@ -459,38 +604,23 @@ export default function ProfileSection() {
 
               {/* Action buttons */}
               <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
-                {isEditing ? (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(false)} className="rounded-full h-9">
-                      <X className="w-4 h-4 mr-1" />
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleSaveProfile} disabled={isSaving} className="rounded-full h-9">
-                      {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-                      Save
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="rounded-full h-9 gap-1.5">
-                      <Edit className="w-3.5 h-3.5" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleShareProfile} className="rounded-full h-9 gap-1.5">
-                      {shareCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
-                      {shareCopied ? 'Copied!' : 'Share'}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleViewPublicProfile} className="rounded-full h-9 gap-1.5">
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      View Public
-                    </Button>
-                    <Button variant="ghost" size="icon" asChild className="rounded-full h-9 w-9">
-                      <Link href="/settings">
-                        <Settings className="w-4 h-4" />
-                      </Link>
-                    </Button>
-                  </>
-                )}
+                <Button variant="outline" size="sm" onClick={() => setActiveTab('edit')} className="rounded-full h-9 gap-1.5">
+                  <Edit className="w-3.5 h-3.5" />
+                  Edit
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleShareProfile} className="rounded-full h-9 gap-1.5">
+                  {shareCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                  {shareCopied ? 'Copied!' : 'Share'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleViewPublicProfile} className="rounded-full h-9 gap-1.5">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View Public
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="rounded-full h-9 w-9">
+                  <Link href="/settings">
+                    <Settings className="w-4 h-4" />
+                  </Link>
+                </Button>
               </div>
             </div>
 
@@ -513,43 +643,28 @@ export default function ProfileSection() {
 
               {/* Mobile actions */}
               <div className="flex items-center gap-2 mt-3 flex-wrap">
-                {isEditing ? (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(false)} className="rounded-full h-8 text-xs">
-                      <X className="w-3.5 h-3.5 mr-1" />
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleSaveProfile} disabled={isSaving} className="rounded-full h-8 text-xs">
-                      {isSaving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
-                      Save
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="rounded-full h-8 text-xs gap-1">
-                      <Edit className="w-3 h-3" />
-                      Edit
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleShareProfile} className="rounded-full h-8 text-xs gap-1">
-                      {shareCopied ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <Share2 className="w-3 h-3" />}
-                      Share
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleViewPublicProfile} className="rounded-full h-8 text-xs gap-1">
-                      <ExternalLink className="w-3 h-3" />
-                      Public
-                    </Button>
-                    <Button variant="ghost" size="icon" asChild className="rounded-full h-8 w-8">
-                      <Link href="/settings">
-                        <Settings className="w-3.5 h-3.5" />
-                      </Link>
-                    </Button>
-                  </>
-                )}
+                <Button variant="outline" size="sm" onClick={() => setActiveTab('edit')} className="rounded-full h-8 text-xs gap-1">
+                  <Edit className="w-3 h-3" />
+                  Edit
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleShareProfile} className="rounded-full h-8 text-xs gap-1">
+                  {shareCopied ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <Share2 className="w-3 h-3" />}
+                  Share
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleViewPublicProfile} className="rounded-full h-8 text-xs gap-1">
+                  <ExternalLink className="w-3 h-3" />
+                  Public
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="rounded-full h-8 w-8">
+                  <Link href="/settings">
+                    <Settings className="w-3.5 h-3.5" />
+                  </Link>
+                </Button>
               </div>
             </div>
 
             {/* Bio */}
-            {creatorProfile?.bio && !isEditing && (
+            {creatorProfile?.bio && (
               <p className="text-sm text-muted-foreground/80 max-w-lg mt-3 leading-relaxed">
                 {creatorProfile.bio}
               </p>
@@ -559,51 +674,6 @@ export default function ProfileSection() {
       </motion.div>
 
       <div className="px-4 sm:px-6 lg:px-8 pb-8">
-        {/* Edit Form */}
-        <AnimatePresence>
-          {isEditing && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-8"
-            >
-              <Card className="p-6 border-border/50">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Edit Profile</h3>
-                <p className="text-sm text-muted-foreground mb-4">Only information visible to others. Change profile picture and cover image above.</p>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Display Name</label>
-                    <Input
-                      value={editData.display_name}
-                      onChange={(e) => setEditData({ ...editData, display_name: e.target.value })}
-                      className="rounded-xl"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Bio</label>
-                    <Textarea
-                      value={editData.bio}
-                      onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
-                      rows={3}
-                      className="rounded-xl resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Category</label>
-                    <Input
-                      value={editData.category}
-                      onChange={(e) => setEditData({ ...editData, category: e.target.value })}
-                      placeholder="e.g., Music, Art, Gaming"
-                      className="rounded-xl"
-                    />
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Stats */}
         {stats && (
           <motion.div
@@ -802,6 +872,249 @@ export default function ProfileSection() {
                   </Button>
                 </div>
               </Card>
+            </motion.div>
+          )}
+
+          {activeTab === 'edit' && (
+            <motion.div
+              key="edit"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {/* Sub-tabs: Profile / Pricing */}
+              <div className="flex gap-2 p-1 bg-muted/50 rounded-xl w-fit border border-border/30">
+                <button
+                  onClick={() => setEditStep('profile')}
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5',
+                    editStep === 'profile'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  Profile
+                </button>
+                <button
+                  onClick={() => setEditStep('pricing')}
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5',
+                    editStep === 'pricing'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  Pricing
+                </button>
+              </div>
+
+              {/* Success / Error banners */}
+              {editSuccess && (
+                <div className="rounded-xl p-3 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-sm font-medium flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Profile updated successfully!
+                </div>
+              )}
+              {editError && (
+                <div className="rounded-xl p-3 bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-sm font-medium">
+                  {editError}
+                </div>
+              )}
+
+              {editStep === 'profile' && (
+                <div className="space-y-5">
+                  {/* Basic Info */}
+                  <Card className="p-5 border-border/50 space-y-4">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <Edit className="w-4 h-4 text-primary" />
+                      Basic Info
+                    </h3>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Display Name</label>
+                      <Input
+                        value={editData.display_name}
+                        onChange={(e) => setEditData({ ...editData, display_name: e.target.value.slice(0, 100) })}
+                        placeholder="Your name"
+                        className="rounded-xl"
+                        maxLength={100}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Category</label>
+                      <select
+                        value={editData.category}
+                        onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+                        className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                      >
+                        <option value="">Select category</option>
+                        {CATEGORIES.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Bio</label>
+                      <Textarea
+                        value={editData.bio}
+                        onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                        placeholder="Tell supporters about yourself..."
+                        rows={4}
+                        className="rounded-xl resize-none"
+                        maxLength={500}
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">{editData.bio.length}/500</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Creator Page URL</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">/creator/</span>
+                        <Input
+                          value={vanityUsername}
+                          onChange={(e) => setVanityUsername(e.target.value.replace(/[^a-z0-9_]/gi, '').toLowerCase().slice(0, 30))}
+                          placeholder="your_username"
+                          className="rounded-xl"
+                          maxLength={30}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Social Links */}
+                  <Card className="p-5 border-border/50 space-y-4">
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <LinkIcon className="w-4 h-4 text-primary" />
+                      Social Links
+                    </h3>
+                    <div className="space-y-3">
+                      {platformIds.map((id) => {
+                        const p = SOCIAL_PLATFORMS.find((x) => x.id === id);
+                        if (!p) return null;
+                        return (
+                          <div key={id} className="flex items-center gap-2">
+                            <span className="text-lg w-8 text-center flex-shrink-0">{p.icon}</span>
+                            <Input
+                              value={socialLinks[id] ?? ''}
+                              onChange={(e) => setSocialLinks({ ...socialLinks, [id]: e.target.value })}
+                              placeholder={`${p.name} URL`}
+                              className="rounded-xl flex-1"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removePlatform(id)}
+                              className="rounded-full h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-red-500"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                      {SOCIAL_PLATFORMS.filter((p) => !platformIds.includes(p.id)).length > 0 && (
+                        <select
+                          value=""
+                          onChange={(e) => { if (e.target.value) addPlatform(e.target.value); e.target.value = ''; }}
+                          className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                        >
+                          <option value="">+ Add social platform...</option>
+                          {SOCIAL_PLATFORMS.filter((p) => !platformIds.includes(p.id)).map((p) => (
+                            <option key={p.id} value={p.id}>{p.icon} {p.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {editStep === 'pricing' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Set your tier prices (NPR per month). Tier 1 is always free.</p>
+                  {[1, 2, 3].map((level) => {
+                    const t = tiers?.find((x) => x.tier_level === level);
+                    const name = t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
+                    return (
+                      <Card key={level} className="p-5 border-border/50">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-foreground">{name}</h4>
+                          <Badge variant="outline" className="rounded-full text-xs">Tier {level}</Badge>
+                        </div>
+                        {level === 1 ? (
+                          <p className="text-sm text-muted-foreground">Free tier — no payment required</p>
+                        ) : (
+                          <div className="flex items-center gap-2 mb-3">
+                            <Input
+                              type="number"
+                              min={0}
+                              value={tierPrices[level] ?? ''}
+                              onChange={(e) => setTierPrices({ ...tierPrices, [level]: e.target.value })}
+                              className="rounded-xl w-28"
+                            />
+                            <span className="text-sm text-muted-foreground">NPR / month</span>
+                          </div>
+                        )}
+                        <div className="mt-3">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Extra perks</p>
+                          {(extraPerks[level] ?? []).map((perk, i) => (
+                            <div key={i} className="flex items-center gap-2 mb-2">
+                              <Input
+                                value={perk}
+                                onChange={(e) => {
+                                  const arr = [...(extraPerks[level] ?? [])];
+                                  arr[i] = e.target.value;
+                                  setExtraPerks({ ...extraPerks, [level]: arr });
+                                }}
+                                placeholder="e.g. Early access"
+                                className="rounded-xl flex-1"
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removePerk(level, i)}
+                                className="rounded-full h-8 w-8 text-muted-foreground hover:text-red-500"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => addPerk(level)}
+                            className="text-primary text-xs rounded-full gap-1"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Add perk
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Save button */}
+              <div className="flex justify-end gap-3 pt-2 pb-4">
+                <Button
+                  onClick={handleFullSave}
+                  disabled={editSaving}
+                  className="rounded-full px-8"
+                >
+                  {editSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
