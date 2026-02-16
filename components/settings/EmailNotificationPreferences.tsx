@@ -67,9 +67,9 @@ export default function EmailNotificationPreferences() {
         Choose when you want to receive emails.
       </p>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="everyone">Receive emails for @everyone mentions</Label>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="space-y-0.5 flex-1 min-w-0">
+            <Label htmlFor="everyone" className="text-sm">Receive emails for @everyone mentions</Label>
             <p className="text-xs text-muted-foreground">When someone mentions @everyone in a channel you’re in</p>
           </div>
           <Switch
@@ -77,10 +77,10 @@ export default function EmailNotificationPreferences() {
             checked={prefs.email_everyone_mentions}
             onCheckedChange={(v) => updatePref('email_everyone_mentions', v)}
             disabled={saving}
-            className="flex-shrink-0 self-start sm:self-auto"
+            className="flex-shrink-0"
           />
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="space-y-0.5 flex-1 min-w-0">
             <Label htmlFor="username" className="text-sm">Receive emails for @username mentions</Label>
             <p className="text-xs text-muted-foreground">When someone mentions you (@your username)</p>
@@ -90,11 +90,12 @@ export default function EmailNotificationPreferences() {
             checked={prefs.email_username_mentions}
             onCheckedChange={(v) => updatePref('email_username_mentions', v)}
             disabled={saving}
+            className="flex-shrink-0"
           />
         </div>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="newmembers">Receive emails for new members</Label>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="space-y-0.5 flex-1 min-w-0">
+            <Label htmlFor="newmembers" className="text-sm">Receive emails for new members</Label>
             <p className="text-xs text-muted-foreground">When new members join channels or communities you’re part of</p>
           </div>
           <Switch
@@ -102,6 +103,7 @@ export default function EmailNotificationPreferences() {
             checked={prefs.email_new_members}
             onCheckedChange={(v) => updatePref('email_new_members', v)}
             disabled={saving}
+            className="flex-shrink-0"
           />
         </div>
       </div>

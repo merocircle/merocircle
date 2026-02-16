@@ -20,11 +20,13 @@ import {
   Trash2,
   AlertTriangle,
   Loader2,
+  MessageCircleHeart,
 } from 'lucide-react';
 import SubscriptionsManagement from '@/components/settings/SubscriptionsManagement';
 import EmailNotificationPreferences from '@/components/settings/EmailNotificationPreferences';
 import BillingHistory from '@/components/settings/BillingHistory';
 import PaymentMethods from '@/components/settings/PaymentMethods';
+import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
 
 type SettingsTab = 'notifications' | 'memberships' | 'billing' | 'payment-methods';
@@ -43,6 +45,7 @@ const SettingsSection = memo(function SettingsSection() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -106,6 +109,19 @@ const SettingsSection = memo(function SettingsSection() {
               <Separator className="my-3" />
 
               {/* Sign out in sidebar */}
+              {/* Feedback — mobile only (no navbar entry on mobile) */}
+              <div className="md:hidden">
+                <button
+                  onClick={() => setShowFeedback(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                >
+                  <MessageCircleHeart className="w-4 h-4 flex-shrink-0" />
+                  <span>Give feedback</span>
+                </button>
+              </div>
+
+              <Separator className="my-3 md:hidden" />
+
               <button
                 onClick={signOut}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-destructive hover:bg-destructive/10"
@@ -241,6 +257,14 @@ const SettingsSection = memo(function SettingsSection() {
           </div>
         </div>
       </div>
+
+      <FeedbackSheet
+        open={showFeedback}
+        onOpenChange={setShowFeedback}
+        userId={user?.id}
+        displayName={userProfile?.display_name}
+        isCreator={isCreator}
+      />
     </div>
   );
 });
