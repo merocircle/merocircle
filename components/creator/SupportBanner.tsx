@@ -55,7 +55,7 @@ export function SupportBanner({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="fixed left-0 right-0 z-40 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] md:bottom-0"
+          className="fixed left-0 right-0 z-40 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] md:bottom-0 hidden md:block"
         >
           <div
             className={cn(
