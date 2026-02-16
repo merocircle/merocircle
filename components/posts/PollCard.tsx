@@ -205,14 +205,20 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
                   exit={{ opacity: 0, height: 0 }}
                   className="relative"
                 >
-                  <div
-                    className="w-full p-3 rounded-lg border border-border/50 bg-background text-left cursor-default"
+                  <button
+                    onClick={() => handleVote(option.id)}
+                    disabled={!currentUserId || voting}
+                    className={cn(
+                      "w-full p-3 rounded-lg border border-border/50 bg-background text-left transition-colors",
+                      currentUserId && !voting && "hover:bg-accent cursor-pointer",
+                      (!currentUserId || voting) && "cursor-not-allowed opacity-70"
+                    )}
                   >
                     <div className="flex items-center gap-2.5">
                       <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
                       <span className="text-sm font-medium">{option.option_text}</span>
                     </div>
-                  </div>
+                  </button>
                 </motion.div>
               );
             }
