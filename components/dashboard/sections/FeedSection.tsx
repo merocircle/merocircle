@@ -1,17 +1,16 @@
 'use client';
 
-import { memo, useMemo, useState, useCallback } from 'react';
+import { memo, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Compass, Plus, RefreshCw, ChevronDown, Sparkles } from 'lucide-react';
+import { Users, Compass, Plus, RefreshCw } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { useUnifiedDashboard } from '@/hooks/useQueries';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
+import { useDiscoverFeed } from '@/hooks/useDiscoverFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
 import { TimelineFeed, withTimeline } from '@/components/posts/TimelineFeed';
-import { Button } from '@/components/ui/button';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
 
 // ── Circles strip — followed creators at the top ──
@@ -153,16 +152,122 @@ function FeedSkeleton() {
   );
 }
 
+/** From across the platform section — discover posts with infinite scroll */
+function FromOthersSection({
+  discoverPosts,
+  discoverHasMore,
+  discoverLoading,
+  loadDiscoverMore,
+  userId,
+}: {
+  discoverPosts: any[];
+  discoverHasMore: boolean;
+  discoverLoading: boolean;
+  loadDiscoverMore: () => void;
+  userId?: string;
+}) {
+  return (
+    <div className="mt-2">
+      <div className="flex items-center gap-2 px-1 py-4">
+        <div className="h-px flex-1 bg-border/40" />
+        <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-3">
+          <Compass className="w-3.5 h-3.5" />
+          From across the platform
+        </span>
+        <div className="h-px flex-1 bg-border/40" />
+      </div>
+      <TimelineFeed emptyMessage="">
+        {withTimeline(
+          discoverPosts,
+          (post: any) => (
+            <EnhancedPostCard
+              post={post}
+              currentUserId={userId}
+              showActions={true}
+              showAuthor={true}
+              isSupporter={false}
+            />
+          ),
+        )}
+      </TimelineFeed>
+      <ScrollLoadTrigger
+        onLoad={loadDiscoverMore}
+        hasMore={discoverHasMore}
+        isLoading={discoverLoading}
+      />
+      {!discoverHasMore && !discoverLoading && discoverPosts.length === 0 && (
+        <div className="text-center py-6 text-sm text-muted-foreground">
+          No more posts to discover right now.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Sentinel div that triggers loadMore when scrolled into view */
+function ScrollLoadTrigger({
+  onLoad,
+  hasMore,
+  isLoading,
+  disabled,
+}: {
+  onLoad: () => void;
+  hasMore: boolean;
+  isLoading: boolean;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const hasMoreRef = useRef(hasMore);
+  const isLoadingRef = useRef(isLoading);
+  hasMoreRef.current = hasMore;
+  isLoadingRef.current = isLoading;
+
+  useEffect(() => {
+    if (disabled) return;
+
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
+          onLoad();
+        }
+      },
+      { rootMargin: '200px', threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onLoad, disabled]);
+
+  if (!hasMore && !isLoading) return null;
+
+  return (
+    <div ref={ref} className="min-h-[1px] py-4 flex justify-center">
+      {isLoading && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          <span>Loading more...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Feed ──
 const FeedSection = memo(function FeedSection() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: feedData, isLoading, isFetching } = useUnifiedDashboard();
-  const [discoverPosts, setDiscoverPosts] = useState<any[]>([]);
-  const [showDiscover, setShowDiscover] = useState(false);
-  const [loadingDiscover, setLoadingDiscover] = useState(false);
+  const { data: feedData, isLoading } = useUnifiedDashboard();
+  const {
+    posts: discoverPosts,
+    hasMore: discoverHasMore,
+    isLoading: discoverLoading,
+    loadMore: loadDiscoverMore,
+  } = useDiscoverFeed();
 
   useRealtimeFeed();
 
@@ -170,48 +275,20 @@ const FeedSection = memo(function FeedSection() {
   const hasFollowing = feedData?.has_following || false;
   const showSkeleton = isLoading && !feedData;
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['dashboard', 'unified'] });
-  };
+  // Load discover on mount when no supporter posts (no supporters, or supporters but no posts)
+  const showDiscoverSection = !hasFollowing || posts.length === 0;
+  const shouldLoadDiscoverOnMount = showDiscoverSection;
 
-  const handleShowMore = useCallback(async () => {
-    if (showDiscover) return; // Already shown
-    setLoadingDiscover(true);
-    try {
-      const res = await fetch('/api/dashboard/discover?limit=20');
-      if (res.ok) {
-        const data = await res.json();
-        setDiscoverPosts(data.posts || []);
-      }
-    } catch (err) {
-      console.error('Failed to load discover posts:', err);
-    } finally {
-      setLoadingDiscover(false);
-      setShowDiscover(true);
+  useEffect(() => {
+    if (shouldLoadDiscoverOnMount && discoverPosts.length === 0 && !discoverLoading) {
+      loadDiscoverMore();
     }
-  }, [showDiscover]);
+  }, [shouldLoadDiscoverOnMount, discoverPosts.length, discoverLoading, loadDiscoverMore]);
 
   return (
     <div>
       {/* Circles strip — always visible */}
       <CirclesStrip />
-
-      {/* Refresh indicator */}
-      <AnimatePresence>
-        {isFetching && !isLoading && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
-              <RefreshCw className="w-3 h-3 animate-spin" />
-              <span>Refreshing...</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Feed content */}
       <AnimatePresence mode="wait">
@@ -233,10 +310,7 @@ const FeedSection = memo(function FeedSection() {
           >
             {posts.length > 0 ? (
               <div className="pt-3">
-                <TimelineFeed
-                  onRefresh={handleRefresh}
-                  emptyMessage="No new posts from your circles yet."
-                >
+                <TimelineFeed emptyMessage="No new posts from your circles yet.">
                   {withTimeline(
                     posts,
                     (post: any) => (
@@ -251,112 +325,91 @@ const FeedSection = memo(function FeedSection() {
                   )}
                 </TimelineFeed>
 
-                {/* Show More / Discover section */}
-                {!showDiscover ? (
-                  <div className="flex justify-center py-8">
-                    <Button
-                      variant="outline"
-                      onClick={handleShowMore}
-                      disabled={loadingDiscover}
-                      className="gap-2 rounded-full px-6 border-border/60 hover:border-primary/30 hover:bg-primary/5 transition-all"
-                    >
-                      {loadingDiscover ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4 text-primary" />
-                      )}
-                      {loadingDiscover ? 'Loading...' : 'Discover more from the platform'}
-                    </Button>
+                {/* From across the platform separator + discover posts with infinite scroll */}
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 px-1 py-4">
+                    <div className="h-px flex-1 bg-border/40" />
+                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-3">
+                      <Compass className="w-3.5 h-3.5" />
+                      From across the platform
+                    </span>
+                    <div className="h-px flex-1 bg-border/40" />
                   </div>
-                ) : discoverPosts.length > 0 ? (
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2 px-1 py-4">
-                      <div className="h-px flex-1 bg-border/40" />
-                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-3">
-                        <Compass className="w-3.5 h-3.5" />
-                        From across the platform
-                      </span>
-                      <div className="h-px flex-1 bg-border/40" />
+                  <TimelineFeed emptyMessage="">
+                    {withTimeline(
+                      discoverPosts,
+                      (post: any) => (
+                        <EnhancedPostCard
+                          post={post}
+                          currentUserId={userId}
+                          showActions={true}
+                          showAuthor={true}
+                          isSupporter={false}
+                        />
+                      ),
+                    )}
+                  </TimelineFeed>
+                  <ScrollLoadTrigger
+                    onLoad={loadDiscoverMore}
+                    hasMore={discoverHasMore}
+                    isLoading={discoverLoading}
+                  />
+                  {!discoverHasMore && !discoverLoading && discoverPosts.length === 0 && (
+                    <div className="text-center py-6 text-sm text-muted-foreground">
+                      No more posts to discover right now.
                     </div>
-                    <TimelineFeed emptyMessage="No discover posts available.">
-                      {withTimeline(
-                        discoverPosts,
-                        (post: any) => (
-                          <EnhancedPostCard
-                            post={post}
-                            currentUserId={userId}
-                            showActions={true}
-                            showAuthor={true}
-                            isSupporter={false}
-                          />
-                        ),
-                      )}
-                    </TimelineFeed>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-sm text-muted-foreground">
-                    No more posts to discover right now.
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : hasFollowing ? (
-              /* Following creators but no posts yet */
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="pt-12 pb-8"
-              >
-                <div className="text-center space-y-4 max-w-sm mx-auto px-4">
-                  <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-                    <Users className="w-6 h-6 text-muted-foreground" />
+              /* Following creators but no posts yet — show From across the platform below */
+              <div className="pt-3">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="pt-8 pb-6"
+                >
+                  <div className="text-center space-y-4 max-w-sm mx-auto px-4">
+                    <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                      <Users className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground mb-1">
+                        Your feed is quiet
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        The creators you follow haven&apos;t posted recently. Check back soon or explore new circles.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => router.push('/explore')}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors"
+                    >
+                      <Compass className="w-4 h-4" />
+                      Explore creators
+                    </button>
                   </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground mb-1">
-                      Your feed is quiet
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      The creators you follow haven&apos;t posted recently. Check back soon or explore new circles.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => router.push('/explore')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors"
-                  >
-                    <Compass className="w-4 h-4" />
-                    Explore creators
-                  </button>
-                </div>
-              </motion.div>
+                </motion.div>
+                <FromOthersSection
+                  discoverPosts={discoverPosts}
+                  discoverHasMore={discoverHasMore}
+                  discoverLoading={discoverLoading}
+                  loadDiscoverMore={loadDiscoverMore}
+                  userId={userId}
+                />
+              </div>
             ) : (
-              /* Not following anyone */
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="pt-12 pb-8"
-              >
-                <div className="text-center space-y-4 max-w-sm mx-auto px-4">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Compass className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground mb-1">
-                      Start building your circle
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Follow creators to see their posts here. Your feed is personal — only from people you care about.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => router.push('/explore')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:bg-primary/90 transition-colors"
-                  >
-                    <Compass className="w-4 h-4" />
-                    Find your people
-                  </button>
-                </div>
-              </motion.div>
+              /* Not following anyone — show From across the platform with infinite scroll */
+              <div className="pt-3">
+                <FromOthersSection
+                  discoverPosts={discoverPosts}
+                  discoverHasMore={discoverHasMore}
+                  discoverLoading={discoverLoading}
+                  loadDiscoverMore={loadDiscoverMore}
+                  userId={userId}
+                />
+              </div>
             )}
           </motion.div>
         )}
