@@ -72,39 +72,45 @@ export default function EmailNotificationPreferences() {
             <Label htmlFor="everyone" className="text-sm">Receive emails for @everyone mentions</Label>
             <p className="text-xs text-muted-foreground">When someone mentions @everyone in a channel you’re in</p>
           </div>
-          <Switch
-            id="everyone"
-            checked={prefs.email_everyone_mentions}
-            onCheckedChange={(v) => updatePref('email_everyone_mentions', v)}
-            disabled={saving}
-            className="flex-shrink-0"
-          />
+          <div className="flex justify-end sm:justify-start">
+            <Switch
+              id="everyone"
+              checked={prefs.email_everyone_mentions}
+              onCheckedChange={(v) => updatePref('email_everyone_mentions', v)}
+              disabled={saving}
+              className="flex-shrink-0"
+            />
+          </div>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="space-y-0.5 flex-1 min-w-0">
             <Label htmlFor="username" className="text-sm">Receive emails for @username mentions</Label>
             <p className="text-xs text-muted-foreground">When someone mentions you (@your username)</p>
           </div>
-          <Switch
-            id="username"
-            checked={prefs.email_username_mentions}
-            onCheckedChange={(v) => updatePref('email_username_mentions', v)}
-            disabled={saving}
-            className="flex-shrink-0"
-          />
+          <div className="flex justify-end sm:justify-start">
+            <Switch
+              id="username"
+              checked={prefs.email_username_mentions}
+              onCheckedChange={(v) => updatePref('email_username_mentions', v)}
+              disabled={saving}
+              className="flex-shrink-0"
+            />
+          </div>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="space-y-0.5 flex-1 min-w-0">
             <Label htmlFor="newmembers" className="text-sm">Receive emails for new members</Label>
             <p className="text-xs text-muted-foreground">When new members join channels or communities you’re part of</p>
           </div>
-          <Switch
-            id="newmembers"
-            checked={prefs.email_new_members}
-            onCheckedChange={(v) => updatePref('email_new_members', v)}
-            disabled={saving}
-            className="flex-shrink-0"
-          />
+          <div className="flex justify-end sm:justify-start">
+            <Switch
+              id="newmembers"
+              checked={prefs.email_new_members}
+              onCheckedChange={(v) => updatePref('email_new_members', v)}
+              disabled={saving}
+              className="flex-shrink-0"
+            />
+          </div>
         </div>
       </div>
     </Card>
