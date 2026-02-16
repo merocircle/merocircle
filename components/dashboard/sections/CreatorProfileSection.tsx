@@ -809,6 +809,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       content: String(post.content || ''),
       image_url: post.image_url ? String(post.image_url) : undefined,
       media_url: post.media_url ? String(post.media_url) : undefined,
+      is_public: typeof post.is_public === 'boolean' ? post.is_public : true,
       tier_required: String(post.tier_required || 'free'),
       post_type: String(post.post_type || 'post'),
       created_at: String(post.created_at || post.createdAt || ''),
