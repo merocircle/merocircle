@@ -29,6 +29,8 @@ import { useAuth } from '@/contexts/auth-context';
 import { useSession, signIn } from 'next-auth/react';
 import { supabase } from '@/lib/supabase';
 
+import { Logo } from '@/components/ui/logo';
+
 const CREATOR_CATEGORIES = [
   'Technology', 'Education', 'Entertainment', 'Music', 'Art & Design',
   'Gaming', 'Photography', 'Writing', 'Business', 'Health & Fitness',
@@ -546,7 +548,7 @@ export default function CreatorSignupPage() {
       <header className="relative z-10 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
-            <Heart className="h-8 w-8 text-red-500" />
+            <Logo className="w-6 h-6 text-primary object-contain"/>
             <span className="text-xl font-bold">MeroCircle</span>
           </Link>
           
