@@ -146,8 +146,6 @@ export function EnhancedPostCard({
   const { user: currentUser } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const isPostCreator = currentUserId && creator.id && currentUserId === creator.id;
-
   // Safely default creator to prevent null access crashes
   const creator = post.creator || {
     id: post.creator_id || '',
@@ -156,6 +154,8 @@ export function EnhancedPostCard({
     vanity_username: null,
     role: 'creator',
   };
+
+  const isPostCreator = !!(currentUserId && creator.id && currentUserId === creator.id);
 
   const initialIsLiked =
     post.is_liked ??
