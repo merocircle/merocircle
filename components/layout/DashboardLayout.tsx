@@ -120,7 +120,7 @@ export function DashboardLayout({
           contextView === 'chat' && 'h-[calc(100dvh-4rem)] md:h-[100dvh] overflow-hidden'
         )}>
           <div className={cn(
-            'h-full min-h-0 mx-auto',
+            'h-full min-h-0 mx-auto pb-16',
             !isFullWidth && 'max-w-[830px] w-full px-3 sm:px-4',
             contextView === 'chat' && 'overflow-hidden max-w-none px-0 sm:px-0'
           )}>
