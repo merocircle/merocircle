@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     if (user) {
       const postIds = allPosts.map((p: any) => p.id);
       const { data: userLikes } = await supabase
-        .from('likes')
+        .from('post_likes')
         .select('post_id')
         .eq('user_id', user.id)
         .in('post_id', postIds);

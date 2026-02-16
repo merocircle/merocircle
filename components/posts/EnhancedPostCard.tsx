@@ -240,11 +240,32 @@ export function EnhancedPostCard({
       return;
     }
     const action = isLiked ? "unlike" : "like";
+    const previousIsLiked = isLiked;
+    const previousLikesCount = likesCount;
+    
+    // Optimistic update
     setIsLiked(!isLiked);
     setLikesCount((prev) => (isLiked ? Math.max(0, prev - 1) : prev + 1));
-    likeMutation.mutate({ postId: post.id, action });
+    
+    likeMutation.mutate(
+      { postId: post.id, action },
+      {
+        onError: () => {
+          // Revert on error
+          setIsLiked(previousIsLiked);
+          setLikesCount(previousLikesCount);
+        },
+        onSuccess: (data) => {
+          // Sync with server response
+          if (data?.likesCount !== undefined) {
+            setLikesCount(data.likesCount);
+          }
+          setIsLiked(action === 'like');
+        },
+      }
+    );
     onLike?.(post.id);
-  }, [currentUserId, isLiked, router, post.id, likeMutation, onLike]);
+  }, [currentUserId, isLiked, likesCount, router, post.id, likeMutation, onLike]);
 
   const handlePostClick = useCallback(() => {
     setShowPostModal(true);
@@ -264,12 +285,20 @@ export function EnhancedPostCard({
   }, [deleteMutation, post.id]);
 
   useEffect(() => {
+    // Sync is_liked state from post prop
     if (post.is_liked !== undefined) {
       setIsLiked(post.is_liked);
     } else if (currentUserId && post.likes) {
       setIsLiked(post.likes.some((like) => like.user_id === currentUserId));
     }
-  }, [post.is_liked, post.likes, currentUserId]);
+    
+    // Sync likes_count from post prop
+    if (post.likes_count !== undefined) {
+      setLikesCount(post.likes_count);
+    } else if (post.likes && Array.isArray(post.likes)) {
+      setLikesCount(post.likes.length);
+    }
+  }, [post.is_liked, post.likes, post.likes_count, currentUserId]);
 
   useEffect(() => {
     if (showComments) {

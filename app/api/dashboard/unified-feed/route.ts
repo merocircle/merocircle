@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
     // Fetch likes in parallel too
     if (user) {
       parallelQueries.push(
-        supabase.from('likes').select('post_id').eq('user_id', user.id).in('post_id', postIds)
+        supabase.from('post_likes').select('post_id').eq('user_id', user.id).in('post_id', postIds)
       );
     }
 
