@@ -28,6 +28,7 @@ import { type DashboardView } from '@/contexts/dashboard-context';
 import { isAdmin } from '@/lib/admin-middleware';
 import { Logo } from '@/components/ui/logo';
 import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
+import { PeriodicFeedbackDialog } from '@/components/feedback/PeriodicFeedbackDialog';
 
 interface ActivityBarProps {
   user?: {
@@ -379,6 +380,11 @@ export function ActivityBar({
       <FeedbackSheet
         open={showFeedback}
         onOpenChange={setShowFeedback}
+        userId={user?.id}
+        displayName={user?.display_name}
+        isCreator={isCreator}
+      />
+      <PeriodicFeedbackDialog
         userId={user?.id}
         displayName={user?.display_name}
         isCreator={isCreator}
