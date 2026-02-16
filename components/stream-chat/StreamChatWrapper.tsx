@@ -744,11 +744,11 @@ export function StreamChatWrapper({
             <Users className="h-6 w-6 text-primary" />
           )}
           <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-        </button>
-      );
-    },
-    [channelUnreadCounts, selectServerMobile],
-  );
+        </div>
+      </button>
+    );
+  }, [channelUnreadCounts, selectServerMobile]);
+
 
   // Loading/Error states
   if (isConnecting) {

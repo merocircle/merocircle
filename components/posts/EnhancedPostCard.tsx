@@ -581,7 +581,7 @@ export function EnhancedPostCard({
           )}
 
           {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
-            <div className="mb-4" onClick={shouldBlur ? onNavigateToMembership : undefined}>
+            <div className="mb-4" onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}>
               {shouldBlur ? (
                 <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] cursor-pointer">
                   Subscribe to access this post.
