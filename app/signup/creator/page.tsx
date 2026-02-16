@@ -383,12 +383,6 @@ export default function CreatorSignupPage() {
   const handleCreatorSetup = async () => {
     if (!user || !creatorData.category) return;
 
-    // Require profile picture
-    if (!profilePhotoUrl && !user.user_metadata?.avatar_url) {
-      setError('Please upload a profile picture before continuing');
-      return;
-    }
-
     const trimmedUsername = creatorData.username.trim().toLowerCase();
     if (!trimmedUsername) {
       setError('Please choose a username for your creator page');
@@ -684,7 +678,7 @@ export default function CreatorSignupPage() {
                   <div>
                     <p className="text-sm font-semibold text-foreground mb-1">Profile Picture *</p>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Your supporters will see this photo. A clear, recognizable image works best.
+                      Optional. Your supporters will see this photo — you can add or change it anytime in profile settings.
                     </p>
                     <div className="flex items-center gap-4">
                       <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border flex-shrink-0">
