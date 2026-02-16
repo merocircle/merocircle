@@ -3,13 +3,14 @@
 import { useState, memo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, Sparkles, Users, Music, Camera, Palette, Code, Gamepad2, BookOpen, Loader2, Crown } from 'lucide-react';
+import { Search, TrendingUp, Sparkles, Users, Loader2, Crown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useDiscoveryFeed, useCreatorSearch } from '@/hooks/useSocial';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { CreatorCard } from '@/components/explore/CreatorCard';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
+import { EXPLORE_CATEGORY_OPTIONS } from '@/lib/constants';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -28,15 +29,7 @@ const itemVariants = {
   },
 };
 
-const categories = [
-  { id: 'all', label: 'All', icon: Sparkles },
-  { id: 'music', label: 'Music', icon: Music },
-  { id: 'photography', label: 'Photo', icon: Camera },
-  { id: 'art', label: 'Art', icon: Palette },
-  { id: 'tech', label: 'Tech', icon: Code },
-  { id: 'gaming', label: 'Gaming', icon: Gamepad2 },
-  { id: 'education', label: 'Learn', icon: BookOpen },
-];
+const categories = EXPLORE_CATEGORY_OPTIONS;
 
 const ExploreSection = memo(function ExploreSection() {
   const router = useRouter();
@@ -66,9 +59,7 @@ const ExploreSection = memo(function ExploreSection() {
 
   const filterByCategory = (creators: any[]) => {
     if (selectedCategory === 'all') return creators;
-    return creators.filter((c: any) =>
-      c.creator_profile?.category?.toLowerCase() === selectedCategory.toLowerCase()
-    );
+    return creators.filter((c: any) => c.creator_profile?.category === selectedCategory);
   };
 
   const supportedCreators = (supportedCreatorsData?.creators || []).map((creator: any) => ({

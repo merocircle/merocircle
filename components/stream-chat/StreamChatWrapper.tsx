@@ -1141,20 +1141,27 @@ export function StreamChatWrapper({
 
               <div className="flex-1 overflow-y-auto p-4 min-h-0">
                 <div className="space-y-1">
-                  {selectedServer.channels.map((channel) => (
-                    <ChannelListItem
-                      key={channel.id}
-                      channel={channel}
-                      isActive={activeChannel?.id === channel.stream_channel_id}
-                      isDisabled={!channel.stream_channel_id}
-                      unreadCount={
-                        channel.stream_channel_id
-                          ? channelUnreadCounts[channel.stream_channel_id] || 0
-                          : 0
-                      }
-                      onClick={() => selectChannel(channel)}
-                    />
-                  ))}
+                  {selectedServer.channels.map((channel) => {
+                    const lastMsg = getChannelLastMessage(channel.stream_channel_id);
+                    return (
+                      <ChannelListItem
+                        key={channel.id}
+                        channel={channel}
+                        isActive={activeChannel?.id === channel.stream_channel_id}
+                        isDisabled={!channel.stream_channel_id}
+                        unreadCount={
+                          channel.stream_channel_id
+                            ? channelUnreadCounts[channel.stream_channel_id] || 0
+                            : 0
+                        }
+                        onClick={() => selectChannel(channel)}
+                        serverImage={selectedServer.image}
+                        serverName={selectedServer.name}
+                        lastMessage={lastMsg.text}
+                        lastMessageTime={lastMsg.time}
+                      />
+                    );
+                  })}
 
                   {selectedServer.id === myServer?.id && isCreator && (
                     <button
