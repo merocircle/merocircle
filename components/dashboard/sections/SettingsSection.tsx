@@ -17,6 +17,9 @@ import {
   ChevronRight,
   Shield,
   User,
+  Trash2,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import SubscriptionsManagement from '@/components/settings/SubscriptionsManagement';
 import EmailNotificationPreferences from '@/components/settings/EmailNotificationPreferences';
@@ -36,6 +39,10 @@ const tabs = [
 const SettingsSection = memo(function SettingsSection() {
   const { user, userProfile, isCreator, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>('notifications');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -118,6 +125,7 @@ const SettingsSection = memo(function SettingsSection() {
                 Your account is secured with Google authentication. Manage your Google account settings to update your password or security options.
               </p>
             </Card>
+
           </div>
 
           {/* Content area */}
@@ -153,6 +161,82 @@ const SettingsSection = memo(function SettingsSection() {
 
             {activeTab === 'payment-methods' && (
               <PaymentMethods />
+            )}
+
+            {activeTab === 'billing' && (
+              <div className="mt-8 pt-6 border-t border-border/30">
+                <Card className="p-5 border-destructive/20 bg-destructive/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <h3 className="text-sm font-semibold text-destructive">Delete Account</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                    Permanently delete your account and all associated data including posts, memberships, and transactions. This action cannot be undone.
+                  </p>
+
+                  {!showDeleteConfirm ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="rounded-full text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete My Account
+                    </Button>
+                  ) : (
+                    <div className="space-y-3 p-4 rounded-xl border border-destructive/30 bg-background">
+                      <p className="text-xs text-muted-foreground">
+                        Type <span className="font-mono font-bold text-destructive">DELETE</span> to confirm
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="DELETE"
+                        className="w-full rounded-lg border border-destructive/30 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-destructive focus:border-destructive outline-none"
+                      />
+                      {deleteError && (
+                        <p className="text-xs text-destructive">{deleteError}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteError(null); }}
+                          className="rounded-full"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteConfirmText !== 'DELETE' || deleting}
+                          onClick={async () => {
+                            setDeleting(true);
+                            setDeleteError(null);
+                            try {
+                              const res = await fetch('/api/account/delete', { method: 'DELETE' });
+                              if (!res.ok) {
+                                const data = await res.json().catch(() => ({}));
+                                throw new Error(data.error || 'Failed to delete account');
+                              }
+                              signOut();
+                            } catch (e) {
+                              setDeleteError(e instanceof Error ? e.message : 'Something went wrong');
+                              setDeleting(false);
+                            }
+                          }}
+                          className="rounded-full gap-1.5"
+                        >
+                          {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                          {deleting ? 'Deleting...' : 'Permanently Delete'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </div>
             )}
           </div>
         </div>

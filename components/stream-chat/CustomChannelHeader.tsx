@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useChannelStateContext } from 'stream-chat-react';
-import { Users, Hash, Info, Search, X } from 'lucide-react';
+import { Hash, Info, Search, X } from 'lucide-react';
 
 interface CustomChannelData {
   name?: string;
@@ -19,7 +19,6 @@ interface CustomChannelHeaderProps {
 
 export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChannelHeaderProps) {
   const { channel } = useChannelStateContext();
-  const [showMembers, setShowMembers] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -106,15 +105,6 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
           >
             <Search className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => setShowMembers(!showMembers)}
-            className={`p-2 rounded-lg transition-colors ${
-              showMembers ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-            }`}
-            title="Show Members"
-          >
-            <Users className="h-4 w-4" />
-          </button>
           {onToggleInfo && (
             <button
               onClick={onToggleInfo}
@@ -170,85 +160,9 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
         </div>
       )}
 
-      {showMembers && (
-        <MembersSidebar channel={channel} onClose={() => setShowMembers(false)} />
-      )}
     </>
   );
 }
 
-function MembersSidebar({ channel, onClose }: { channel: any; onClose: () => void }) {
-  const members = Object.values(channel.state.members || {}) as any[];
-  const onlineMembers = members.filter(m => m.user?.online);
-  const offlineMembers = members.filter(m => !m.user?.online);
-
-  return (
-    <div className="fixed inset-y-0 right-0 w-72 bg-card shadow-xl z-50 flex flex-col border-l border-border">
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <h3 className="font-semibold text-foreground text-sm">Members</h3>
-        <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-2">
-        {onlineMembers.length > 0 && (
-          <div className="mb-4">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1.5">
-              Online ({onlineMembers.length})
-            </p>
-            {onlineMembers.map((member: any) => (
-              <MemberItem key={member.user_id} member={member} />
-            ))}
-          </div>
-        )}
-
-        {offlineMembers.length > 0 && (
-          <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1.5">
-              Offline ({offlineMembers.length})
-            </p>
-            {offlineMembers.map((member: any) => (
-              <MemberItem key={member.user_id} member={member} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function MemberItem({ member }: { member: any }) {
-  const user = member.user;
-
-  return (
-    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer">
-      <div className="relative">
-        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-          {user?.image ? (
-            <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-xs font-semibold text-primary">
-              {(user?.name || 'U')[0].toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div
-          className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-[1.5px] border-card ${
-            user?.online ? 'bg-green-500' : 'bg-muted-foreground/40'
-          }`}
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-foreground truncate">
-          {user?.name || 'Unknown User'}
-        </p>
-        {member.role && member.role !== 'member' && (
-          <p className="text-[10px] text-primary capitalize">{member.role}</p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default CustomChannelHeader;
