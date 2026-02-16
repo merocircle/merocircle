@@ -81,7 +81,7 @@ function PreviewPost({
 
       <div
         className={cn(
-          'rounded-xl transition-all duration-300',
+          'rounded-md transition-all duration-300',
           isSupportersOnly &&
             'p-[3px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_16px_rgba(234,88,12,0.22),0_0_40px_rgba(234,88,12,0.12),0_0_72px_rgba(234,88,12,0.06)]'
         )}
@@ -89,7 +89,7 @@ function PreviewPost({
         <div
           className={cn(
             'bg-card overflow-hidden transition-all duration-300 relative',
-            isSupportersOnly ? 'rounded-[10px]' : 'rounded-xl border border-border/50 hover:border-border/80'
+            isSupportersOnly ? 'rounded-[10px]' : 'rounded-md border border-border/50 hover:border-border/80'
           )}
         >
           {/* Supporters only badge – top right */}
@@ -190,7 +190,7 @@ function PreviewPost({
             {/* Poll Preview - 1:1 match with PollCard */}
             {postType === 'poll' && (
               <div className="mb-3">
-                <div className="p-5 rounded-xl border border-border/50 bg-card">
+                <div className="p-5 rounded-md border border-border/50 bg-card">
                   {/* Poll Question */}
                   <div className="mb-4">
                     <h3 className="text-base font-semibold text-foreground mb-1.5">
@@ -612,7 +612,7 @@ export default function CreatePostPage() {
             animate={{ opacity: 1, y: 0 }}
             className="w-full px-4 sm:px-6 lg:px-8 mt-4"
           >
-            <div className="bg-green-500/10 border border-green-500/20 text-green-600 px-4 py-3 rounded-xl flex items-center gap-2">
+            <div className="bg-green-500/10 border border-green-500/20 text-green-600 px-4 py-3 rounded-md flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               <span>Post published successfully! Redirecting...</span>
             </div>
@@ -626,7 +626,7 @@ export default function CreatePostPage() {
             animate={{ opacity: 1, y: 0 }}
             className="w-full px-4 sm:px-6 lg:px-8 mt-4"
           >
-            <div className="bg-red-500/10 border border-red-500/20 text-red-600 px-4 py-3 rounded-xl flex items-center gap-2">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-600 px-4 py-3 rounded-md flex items-center gap-2">
               <X className="w-4 h-4" />
               <span>{error}</span>
             </div>
@@ -646,7 +646,7 @@ export default function CreatePostPage() {
                 {/* Post Type Selector */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-primary/10">
+                    <div className="p-2.5 rounded-md bg-primary/10">
                       {postType === 'post' ? (
                         <FileText className="w-5 h-5 text-primary" />
                       ) : (
@@ -658,7 +658,7 @@ export default function CreatePostPage() {
                     </h3>
                   </div>
 
-                  <div className="flex gap-1 p-1 bg-muted rounded-xl">
+                  <div className="flex gap-1 p-1 bg-muted rounded-md">
                     <button
                       onClick={() => setPostType('post')}
                       className={cn(
@@ -687,7 +687,7 @@ export default function CreatePostPage() {
                 </div>
 
                 {/* Visibility Selector */}
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl mb-6">
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-md mb-6">
                   <span className="text-sm font-medium text-muted-foreground">Visibility:</span>
                   <div className="flex gap-2 flex-wrap">
                     <button
@@ -730,7 +730,7 @@ export default function CreatePostPage() {
                         placeholder="Enter post title..."
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="border-border rounded-xl"
+                        className="border-border rounded-md bg-muted"
                         maxLength={200}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -747,7 +747,7 @@ export default function CreatePostPage() {
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         rows={8}
-                        className="bg-input/30 resize-none border-border rounded-xl"
+                        className="bg-muted resize-none border-border rounded-md"
                         maxLength={5000}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -762,7 +762,7 @@ export default function CreatePostPage() {
                       </label>
 
                       {images.length > 0 && (
-                        <div className="p-3 rounded-xl border border-border bg-muted/30 mb-3">
+                        <div className="p-3 rounded-md border border-border bg-muted/30 mb-3">
                           <div className="flex items-center gap-2 mb-3">
                             <ImageIcon className="w-4 h-4 text-green-500" />
                             <span className="text-sm font-medium text-foreground">
@@ -809,7 +809,7 @@ export default function CreatePostPage() {
                         <label htmlFor="image-upload">
                           <Button
                             variant="outline"
-                            className="rounded-xl w-full sm:w-auto"
+                            className="rounded-md w-full sm:w-auto"
                             asChild
                             disabled={images.length >= 10 || isUploading}
                           >
@@ -841,7 +841,7 @@ export default function CreatePostPage() {
                         placeholder="Ask a question..."
                         value={pollQuestion}
                         onChange={(e) => setPollQuestion(e.target.value)}
-                        className="border-border rounded-xl"
+                        className="border-border rounded-md"
                       />
                     </div>
 
@@ -853,7 +853,7 @@ export default function CreatePostPage() {
                             placeholder={`Option ${index + 1}`}
                             value={option}
                             onChange={(e) => updatePollOption(index, e.target.value)}
-                            className="flex-1 border-border rounded-xl"
+                            className="flex-1 border-border rounded-md"
                           />
                           {pollOptions.length > 2 && (
                             <Button
@@ -872,7 +872,7 @@ export default function CreatePostPage() {
                           variant="outline"
                           size="sm"
                           onClick={addPollOption}
-                          className="w-full border-dashed rounded-xl"
+                          className="w-full border-dashed rounded-md"
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Add Option
@@ -884,7 +884,7 @@ export default function CreatePostPage() {
 
                 {/* Onboarding Warning */}
                 {!onboardingCompleted && (
-                  <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
                     <p className="text-sm text-amber-800">
                       Complete your onboarding to publish posts.{' '}
                       <Link href="/creator-studio" className="underline font-medium">
