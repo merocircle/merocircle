@@ -15,7 +15,8 @@ import {
   Sun,
   Moon,
   Monitor,
-  Shield
+  Shield,
+  MessageCircleHeart
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
@@ -26,6 +27,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { type DashboardView } from '@/contexts/dashboard-context';
 import { isAdmin } from '@/lib/admin-middleware';
 import { Logo } from '@/components/ui/logo';
+import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
 
 interface ActivityBarProps {
   user?: {
@@ -70,6 +72,7 @@ export function ActivityBar({
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isAdminUser = user?.id ? isAdmin(user.id) : false;
   const [mounted, setMounted] = React.useState(false);
+  const [showFeedback, setShowFeedback] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
   const toggleTheme = () => {
@@ -159,6 +162,11 @@ export function ActivityBar({
             <p>MeroCircle</p>
           </TooltipContent>
         </Tooltip>
+
+        {/* Beta Badge */}
+        <span className="text-[8px] font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 mb-3 select-none">
+          BETA
+        </span>
 
         {/* Main Navigation */}
         <nav className="flex flex-col items-center gap-1">
@@ -289,6 +297,23 @@ export function ActivityBar({
 
         {/* Bottom Section */}
         <div className="flex flex-col items-center gap-1.5 mt-auto">
+          {/* Feedback */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                onClick={() => setShowFeedback(true)}
+                className="flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <MessageCircleHeart size={18} />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              <p>Quick feedback</p>
+            </TooltipContent>
+          </Tooltip>
+
           {/* Theme Toggle */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -350,6 +375,14 @@ export function ActivityBar({
           </Tooltip>
         </div>
       </motion.aside>
+
+      <FeedbackSheet
+        open={showFeedback}
+        onOpenChange={setShowFeedback}
+        userId={user?.id}
+        displayName={user?.display_name}
+        isCreator={isCreator}
+      />
     </TooltipProvider>
   );
 }

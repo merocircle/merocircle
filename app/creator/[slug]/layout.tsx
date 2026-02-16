@@ -117,7 +117,7 @@ export async function generateMetadata({
 
     // Profile-level metadata
     const profileUrl = `${appUrl}${canonicalPath}`;
-    const profileTitle = `${creator.display_name}${category ? ` | ${category}` : ''} on MeroCircle`;
+    const profileTitle = `${creator.display_name}${category ? ` - ${category}` : ''} | MeroCircle`;
     // Use "summary" card for profiles so the profile picture appears as a square icon on WhatsApp/Twitter
     const ogImages = creator.photo_url
       ? [{ url: creator.photo_url, width: 400, height: 400, alt: creator.display_name }]
@@ -157,7 +157,7 @@ export async function generateMetadata({
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
-      title: 'MeroCircle - Support Local Creators',
+      title: 'Creator | MeroCircle',
       description: 'Discover and support amazing creators from Nepal',
     };
   }
