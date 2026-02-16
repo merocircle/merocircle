@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import "./Footer.css";
+import { Logo } from '@/components/ui/logo';
 
 export function Footer() {
   return (
@@ -10,13 +11,7 @@ export function Footer() {
       <div className="landing-footer-inner">
         <div className="landing-footer-top">
           <div className="landing-footer-brand">
-            <Image
-              src="/logo/logo-light.png"
-              alt="MeroCircle"
-              width={28}
-              height={28}
-              className="landing-footer-logo-img"
-            />
+            <Logo className="w-6 h-6 text-primary object-contain"/>
             <span className="landing-footer-brand-name">MeroCircle</span>
           </div>
 

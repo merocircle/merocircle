@@ -4,18 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import "./LandingNav.css";
 
+import { Logo } from '@/components/ui/logo';
+
 export function LandingNav() {
   return (
     <nav className="landing-nav">
       <div className="landing-nav-inner">
         <Link href="/" className="landing-nav-logo">
-          <Image
-            src="/logo/logo-light.png"
-            alt="MeroCircle"
-            width={32}
-            height={32}
-            className="landing-nav-logo-img"
-          />
+          <Logo className="w-6 h-6 text-primary object-contain"/>
           <span className="landing-nav-logo-text">MeroCircle</span>
         </Link>
 
