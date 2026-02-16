@@ -170,7 +170,8 @@ export async function GET(
         likes: post.post_likes || [],
         comments: post.post_comments || [],
         likes_count: post.post_likes?.length || 0,
-        comments_count: post.post_comments?.length || 0
+        comments_count: post.post_comments?.length || 0,
+        is_liked: !!user && (post.post_likes || []).some((like) => like.user_id === user.id)
       };
     });
 

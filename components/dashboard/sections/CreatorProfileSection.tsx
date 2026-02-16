@@ -805,11 +805,13 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     const likes = post.likes as Array<Record<string, unknown>> | undefined;
     const comments = post.comments as Array<Record<string, unknown>> | undefined;
 
+    const likesList = (likes || []).map((l: Record<string, unknown>) => ({ id: l.id, user_id: l.user_id }));
     return {
       id: postId,
       title: String(post.title || ''),
       content: String(post.content || ''),
       image_url: post.image_url ? String(post.image_url) : undefined,
+      image_urls: Array.isArray(post.image_urls) ? post.image_urls : undefined,
       media_url: post.media_url ? String(post.media_url) : undefined,
       is_public: typeof post.is_public === 'boolean' ? post.is_public : true,
       tier_required: String(post.tier_required || 'free'),
@@ -826,8 +828,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         is_verified: creatorDetails?.is_verified || false
       },
       poll: post.poll as Record<string, unknown> | undefined,
-      likes_count: (post.likes_count as number) || (likes?.length || 0),
-      comments_count: (post.comments_count as number) || (comments?.length || 0)
+      likes: likesList,
+      likes_count: (post.likes_count as number) || likesList.length,
+      comments_count: (post.comments_count as number) || (comments?.length || 0),
+      is_liked: typeof post.is_liked === 'boolean' ? post.is_liked : undefined
     };
   }, [creatorId, creatorDetails]);
 
