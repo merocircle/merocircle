@@ -66,7 +66,7 @@ function CirclesStrip() {
         {/* Explore button */}
         <button
           onClick={() => router.push('/explore')}
-          className="flex flex-col items-center gap-1 flex-shrink-0 w-14 sm:w-[60px]"
+          className="flex flex-col items-center gap-1 shrink-0 w-14 sm:w-[60px]"
         >
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20 hover:bg-muted/40 transition-colors">
             <Plus className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-muted-foreground" />
@@ -78,7 +78,7 @@ function CirclesStrip() {
           <button
             key={creator.id}
             onClick={() => router.push(`/creator/${creator.slug}`)}
-            className="flex flex-col items-center gap-1 flex-shrink-0 w-14 sm:w-[60px] group"
+            className="flex flex-col items-center gap-1 shrink-0 w-14 sm:w-[60px] group"
           >
             <div className={cn(
               "w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden transition-all",

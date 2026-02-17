@@ -282,8 +282,8 @@ export function PostDetailModal({
         <DialogContent
           className={cn(
             "p-0 bg-background border-0 shadow-2xl overflow-hidden gap-0 flex flex-col",
-            "!max-w-full !w-full h-[100dvh] rounded-none sm:rounded-2xl",
-            "sm:!max-w-4xl sm:!w-[90vw] sm:h-[90vh]",
+            "max-w-full w-full h-dvh rounded-none sm:rounded-2xl",
+            "sm:max-w-4xl sm:w-[90vw] sm:h-[90vh]",
           )}
           onPointerDownOutside={onClose}
         >
@@ -304,9 +304,9 @@ export function PostDetailModal({
             {!shouldBlur &&
               post.post_type !== "poll" &&
               allImages.length > 0 && (
-                <div className="p-4 sm:p-5 flex-shrink-0">
+                <div className="p-4 sm:p-5 shrink-0">
                   <div className="relative w-full bg-muted/30 rounded-xl overflow-hidden">
-                    <div className="relative w-full aspect-[16/10] sm:aspect-[16/9]">
+                    <div className="relative w-full aspect-16/10 sm:aspect-video">
                       <Image
                         src={allImages[currentImageIndex]}
                         alt={post.title || "Post image"}
@@ -364,7 +364,7 @@ export function PostDetailModal({
               post.post_type !== "poll" &&
               youtubeVideoId &&
               allImages.length === 0 && (
-                <div className="relative w-full aspect-video bg-black flex-shrink-0">
+                <div className="relative w-full aspect-video bg-black shrink-0">
                   <iframe
                     src={getYouTubeEmbedUrl(youtubeVideoId)}
                     title="YouTube video"
@@ -376,7 +376,7 @@ export function PostDetailModal({
               )}
 
             {shouldBlur && (
-              <div className="relative w-full aspect-[16/10] bg-gradient-to-br from-muted to-muted/50 flex-shrink-0">
+              <div className="relative w-full aspect-16/10 bg-linear-to-br from-muted to-muted/50 shrink-0">
                 {allImages.length > 0 && (
                   <Image
                     src={allImages[0]}
@@ -428,7 +428,7 @@ export function PostDetailModal({
               </Link>
 
               {post.title && post.post_type !== "poll" && (
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight mb-3 break-words">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight mb-3 wrap-break-word">
                   {post.title}
                 </h1>
               )}
@@ -513,7 +513,7 @@ export function PostDetailModal({
                 onSubmit={handleSubmitComment}
                 className="flex items-center gap-3"
               >
-                <Avatar className="h-8 w-8 flex-shrink-0">
+                <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={currentUser?.photo_url || undefined} alt={currentUser?.display_name} />
                   <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
                     {currentUser?.display_name?.charAt(0).toUpperCase() || currentUserId?.charAt(0).toUpperCase()}
@@ -546,7 +546,7 @@ export function PostDetailModal({
             </div>
           )}
 
-          <div className="flex-shrink-0 px-4 sm:px-5 py-4 border-t border-border/40 bg-card/50 backdrop-blur-sm z-40">
+          <div className="shrink-0 px-4 sm:px-5 py-4 border-t border-border/40 bg-card/50 backdrop-blur-sm z-40">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-5">
                 <motion.button
@@ -593,7 +593,7 @@ export function PostDetailModal({
                 onSubmit={handleSubmitComment}
                 className="flex items-center gap-3 mt-4 pt-3 border-t border-border/30"
               >
-                <Avatar className="h-8 w-8 flex-shrink-0">
+                <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={currentUser?.photo_url || undefined} alt={currentUser?.display_name} />
                   <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
                     {currentUser?.display_name?.charAt(0).toUpperCase() || currentUserId?.charAt(0).toUpperCase()}

@@ -32,46 +32,41 @@ export function BottomNav({
   className,
 }: BottomNavProps) {
   const pathname = usePathname();
-  const { isCreator, creatorProfile } = useAuth();
+  const { isCreator } = useAuth();
 
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
     if (pathname === '/chat') return 'chat';
-    if (pathname === '/profile' || (pathname.startsWith('/creator/') && pathname.includes(creatorProfile?.vanity_username || '___never___'))) return 'profile';
+    if (pathname === '/profile') return 'profile';
     return 'home';
   };
 
   const currentActiveView = getActiveViewFromPath();
 
   const isCreatorStudioActive = pathname === '/creator-studio';
-  const isSettingsActive = pathname === '/settings';
+  const isSignupCreatorActive = pathname === '/signup/creator';
 
   return (
     <motion.nav
       className={cn(
         'fixed bottom-0 left-0 right-0 z-50',
-        'flex items-end justify-around gap-0',
-        'h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-2 sm:px-4',
+        'flex items-center justify-around',
+        'h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]',
         'border-t border-border/20',
         'bg-card/98 backdrop-blur-2xl',
         'md:hidden',
-        'max-w-[100vw] overflow-hidden',
         className,
       )}
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
     >
-      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
-        <BottomNavIcon icon={Home} label="Home" isActive={currentActiveView === 'home'} href="/home" />
-      </div>
-      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
-        <BottomNavIcon icon={Search} label="Explore" isActive={currentActiveView === 'explore'} href="/explore" />
-      </div>
+      <BottomNavIcon icon={Home} label="Home" isActive={currentActiveView === 'home'} href="/home" />
+      <BottomNavIcon icon={Search} label="Explore" isActive={currentActiveView === 'explore'} href="/explore" />
 
-      {/* Center: Creator Studio (creators) or Settings (non-creators) */}
-      <div className="flex flex-col items-center justify-center flex-1 min-w-0 -mt-4">
+      {/* Center: Creator Studio (creators) or Join as creator (non-creators) */}
+      <div className="relative -mt-4">
         {isCreator ? (
           <Link
             href="/creator-studio"
@@ -87,26 +82,22 @@ export function BottomNav({
           </Link>
         ) : (
           <Link
-            href="/settings"
+            href="/signup/creator"
             className={cn(
               'w-11 h-11 rounded-full flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform',
-              isSettingsActive
-                ? 'bg-primary/90 text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-card'
+              isSignupCreatorActive
+                ? 'bg-muted text-muted-foreground ring-2 ring-border ring-offset-2 ring-offset-card'
                 : 'bg-muted text-foreground border border-border/60',
             )}
-            aria-label="Settings"
+            aria-label="Join as creator"
           >
             <Settings className="w-5 h-5" strokeWidth={2} />
           </Link>
         )}
       </div>
 
-      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
-        <BottomNavIcon icon={MessageCircle} label="Chat" isActive={currentActiveView === 'chat'} badge={unreadMessages} href="/chat" />
-      </div>
-      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
-        <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} />
-      </div>
+      <BottomNavIcon icon={MessageCircle} label="Chat" isActive={currentActiveView === 'chat'} badge={unreadMessages} href="/chat" />
+      <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href="/profile" />
     </motion.nav>
   );
 }
