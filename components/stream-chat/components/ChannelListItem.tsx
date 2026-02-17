@@ -49,7 +49,7 @@ export function ChannelListItem({
       onClick={onClick}
       disabled={isDisabled}
       className={`
-        w-full px-2.5 py-1.5 flex items-center gap-2 text-left rounded-lg transition-all duration-150
+        w-full min-w-0 px-3 sm:px-2.5 py-2 sm:py-1.5 flex items-center gap-2 text-left rounded-lg transition-all duration-150
         ${isActive
           ? 'bg-primary/10 ring-1 ring-primary/20'
           : 'hover:bg-muted/70'

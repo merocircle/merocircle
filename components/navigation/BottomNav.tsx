@@ -51,22 +51,27 @@ export function BottomNav({
     <motion.nav
       className={cn(
         'fixed bottom-0 left-0 right-0 z-50',
-        'flex items-center justify-around',
-        'h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]',
+        'flex items-end justify-around gap-0',
+        'h-[calc(3.5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-2 sm:px-4',
         'border-t border-border/20',
         'bg-card/98 backdrop-blur-2xl',
         'md:hidden',
+        'max-w-[100vw] overflow-hidden',
         className,
       )}
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
     >
-      <BottomNavIcon icon={Home} label="Home" isActive={currentActiveView === 'home'} href="/home" />
-      <BottomNavIcon icon={Search} label="Explore" isActive={currentActiveView === 'explore'} href="/explore" />
+      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
+        <BottomNavIcon icon={Home} label="Home" isActive={currentActiveView === 'home'} href="/home" />
+      </div>
+      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
+        <BottomNavIcon icon={Search} label="Explore" isActive={currentActiveView === 'explore'} href="/explore" />
+      </div>
 
       {/* Center: Creator Studio (creators) or Settings (non-creators) */}
-      <div className="relative -mt-4">
+      <div className="flex flex-col items-center justify-center flex-1 min-w-0 -mt-4">
         {isCreator ? (
           <Link
             href="/creator-studio"
@@ -96,8 +101,12 @@ export function BottomNav({
         )}
       </div>
 
-      <BottomNavIcon icon={MessageCircle} label="Chat" isActive={currentActiveView === 'chat'} badge={unreadMessages} href="/chat" />
-      <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} />
+      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
+        <BottomNavIcon icon={MessageCircle} label="Chat" isActive={currentActiveView === 'chat'} badge={unreadMessages} href="/chat" />
+      </div>
+      <div className="flex flex-col items-center justify-end flex-1 min-w-0 py-2">
+        <BottomNavIcon icon={User} label="Me" isActive={currentActiveView === 'profile'} href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} />
+      </div>
     </motion.nav>
   );
 }

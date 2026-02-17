@@ -35,7 +35,7 @@ function ElegantShapeWrapper({
 
 export function AppBackground({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen w-full bg-background">
+    <div className="relative min-h-screen w-full min-w-0 max-w-full overflow-x-hidden bg-background">
       {/* Animated Background Shapes */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <ElegantShapeWrapper
@@ -83,7 +83,7 @@ export function AppBackground({ children }: { children: React.ReactNode }) {
       </div>
       
       {/* Content Layer */}
-      <div className="relative z-10">
+      <div className="relative z-10 min-w-0 w-full max-w-full overflow-x-hidden">
         {children}
       </div>
     </div>

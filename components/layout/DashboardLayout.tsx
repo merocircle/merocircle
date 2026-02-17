@@ -93,7 +93,7 @@ export function DashboardLayout({
       {/* Desktop Grid: [ActivityBar | Content] */}
       <div
         className={cn(
-          'grid min-h-[100dvh]',
+          'grid min-h-[100dvh] min-w-0 w-full max-w-[100vw] overflow-x-hidden',
           // Mobile: single column (3.5rem nav + safe area)
           'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
           // Desktop: 2-column with activity bar
