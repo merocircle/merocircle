@@ -533,7 +533,7 @@ export default function CreatorSignupPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="relative z-10 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sticky top-0">
+      <header className="relative z-10 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 top-0">
         <div className="w-full max-w-6xl mx-auto flex h-14 sm:h-16 items-center justify-between gap-3 px-4 sm:px-6 min-w-0">
           <Link href="/" className="flex items-center gap-2 min-w-0 flex-shrink">
             <Logo className="w-6 h-6 text-primary object-contain flex-shrink-0"/>

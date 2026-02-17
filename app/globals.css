@@ -903,6 +903,18 @@ section:has(+ .rounded-section),
   margin-top: calc(var(--rounded-margin) * -1);
 }
 
+.str-chat__message-metadata .str-chat__message-simple-name {
+  font-weight: 600 !important;
+  margin-right: 2px !important;
+  color: var(--muted-foreground);
+}
+
+.str-chat__message-metadata .str-chat__message-status-read-by .str-chat__message-sender-avatar .str-chat__avatar-image {
+  transform: scale(0.4) !important;
+  margin-right: -16px !important;
+  transform-origin: center !important;
+}
+
 /* ===========================================
    STREAM CHAT - CREATOR MESSAGE HIGHLIGHT
    Full-width themed row background for creator messages.
@@ -910,13 +922,21 @@ section:has(+ .rounded-section),
    =========================================== */
 .creator-message-row {
   position: relative;
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.05) 0%,
-    hsl(var(--primary) / 0.09) 40%,
-    hsl(var(--primary) / 0.05) 100%
-  );
-  border-left: 3px solid hsl(var(--primary) / 0.5);
+  background: color-mix(in srgb, var(--primary) 10%, transparent 90%) !important;
+  border-left: 2px solid var(--primary);
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  border-radius: 0;
+}
+
+.creator-message-row--my {
+  position: relative;
+  background: color-mix(in srgb, var(--primary) 10%, transparent 90%) !important;
+  border-left: 2px solid var(--primary);
   margin-left: -16px;
   margin-right: -16px;
   padding-left: 16px;
@@ -933,9 +953,9 @@ section:has(+ .rounded-section),
   left: 0;
   top: 0;
   bottom: 0;
-  width: 3px;
-  background: hsl(var(--primary));
-  box-shadow: 0 0 8px hsl(var(--primary) / 0.3);
+  width: 2px;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
 }
 
 .creator-message-indicator {
@@ -953,28 +973,13 @@ section:has(+ .rounded-section),
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.12);
-  border-radius: 0 0 6px 6px;
+  color: var(--primary);
 }
 
 /* Dark mode: stronger highlight */
 .dark .creator-message-row {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.08) 0%,
-    hsl(var(--primary) / 0.14) 50%,
-    hsl(var(--primary) / 0.08) 100%
-  );
-  border-left-color: hsl(var(--primary) / 0.7);
-}
-
-.dark .creator-message-row::before {
-  box-shadow: 0 0 12px hsl(var(--primary) / 0.4);
-}
-
-.dark .creator-message-tag {
-  background: hsl(var(--primary) / 0.18);
+  background: color-mix(in srgb, var(--primary) 5%, transparent 95%) !important;
+  border-left-color: var(--primary);
 }
 
 /* Global beta neon pulse */

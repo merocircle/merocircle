@@ -1479,34 +1479,34 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       </div>
 
       {/* Tabs Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-16">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-0 min-w-0">
-            <TabsList className="inline-flex w-full min-w-0 h-11 bg-muted border-0 shadow-none p-1 gap-1 flex-nowrap justify-start overflow-x-auto scrollbar-hide rounded-md">
-              <TabsTrigger value="posts" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+            <TabsList className="inline-flex w-full min-w-0 h-11 bg-muted border-0 shadow-none p-1 gap-1 flex-nowrap justify-start lg:justify-center overflow-x-auto lg:scrollbar-hide rounded-md">
+              <TabsTrigger value="posts" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <FileText className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Posts
               </TabsTrigger>
               {!isOwnProfile && (
-              <TabsTrigger value="membership" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="membership" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Sparkles className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Membership
               </TabsTrigger>
               )}
-              <TabsTrigger value="chat" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="chat" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <MessageCircle className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="shop" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="shop" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <ShoppingBag className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Shop
               </TabsTrigger>
-              <TabsTrigger value="about" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="about" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Info className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 About
               </TabsTrigger>
               {isOwnProfile && (
-                <TabsTrigger value="edit" className="flex-none data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <TabsTrigger value="edit" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                   <Edit className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                   Edit Profile
                 </TabsTrigger>
@@ -1585,7 +1585,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </div>
               </TabsContent>
 
-              <TabsContent value="membership" className="mt-3">
+              <TabsContent value="membership" className="pt-6">
                 <div className="max-w-4xl mx-auto">
                   {isOwnProfile ? (
                     <Card className="border-border/50 p-12 text-center">
