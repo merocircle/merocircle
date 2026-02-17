@@ -340,6 +340,26 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     }
   }, [highlightedPostId, isWithinProvider, activeTab]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const postId = urlParams.get('post');
+    
+    if (postId && !loading && recentPosts.length > 0) {
+      const element = document.querySelector(`[data-post-id="${postId}"]`) as HTMLElement;
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.style.scrollMarginTop = '20px';
+        
+        // Clean URL parameter after handling
+        const url = new URL(window.location.href);
+        url.searchParams.delete('post');
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+    }
+  }, [loading, recentPosts]);
+
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showGatewaySelector, setShowGatewaySelector] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -1481,7 +1501,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       {/* Tabs Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-16">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-0 min-w-0">
+          <div className="sticky top-0.5 z-30 bg-background/50 rounded-lg backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-4 min-w-0">
             <TabsList className="inline-flex w-full min-w-0 h-11 bg-muted border-0 shadow-none p-1 gap-1 flex-nowrap justify-start lg:justify-center overflow-x-auto lg:scrollbar-hide rounded-md">
               <TabsTrigger value="posts" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <FileText className="w-3.5 h-3.5 mr-1.5 shrink-0" />
@@ -1846,7 +1866,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               value={editData.display_name}
                               onChange={(e) => setEditData({ ...editData, display_name: e.target.value.slice(0, 100) })}
                               placeholder="Your name"
-                              className="rounded-xl"
+                              className="rounded-md bg-muted"
                               maxLength={100}
                             />
                           </div>
@@ -1855,7 +1875,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                             <select
                               value={editData.category}
                               onChange={(e) => setEditData({ ...editData, category: e.target.value })}
-                              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                              className="w-full rounded-md border border-input bg-muted px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                             >
                               <option value="">Select category</option>
                               {CATEGORIES.map((c) => (
@@ -1870,7 +1890,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
                               placeholder="Tell supporters about yourself..."
                               rows={4}
-                              className="rounded-xl resize-none"
+                              className="rounded-md resize-none bg-muted"
                               maxLength={500}
                             />
                             <p className="mt-1 text-xs text-muted-foreground">{editData.bio.length}/500</p>
@@ -1883,7 +1903,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                 value={editVanityUsername}
                                 onChange={(e) => setEditVanityUsername(e.target.value.replace(/[^a-z0-9_]/gi, '').toLowerCase().slice(0, 30))}
                                 placeholder="your_username"
-                                className="rounded-xl"
+                                className="rounded-md bg-muted"
                                 maxLength={30}
                               />
                             </div>
@@ -1908,13 +1928,13 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                     value={editSocialLinks[id] ?? ''}
                                     onChange={(e) => setEditSocialLinks({ ...editSocialLinks, [id]: e.target.value })}
                                     placeholder={`${p.name} URL`}
-                                    className="rounded-xl flex-1"
+                                    className="rounded-md flex-1 bg-muted"
                                   />
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => removeEditPlatform(id)}
-                                    className="rounded-full h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-red-500"
+                                    className="rounded-md h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-red-500"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
@@ -1925,7 +1945,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               <select
                                 value=""
                                 onChange={(e) => { if (e.target.value) addEditPlatform(e.target.value); e.target.value = ''; }}
-                                className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                                className="w-full mt-4 rounded-md border border-input bg-muted px-3 py-2.5 text-sm text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                               >
                                 <option value="">+ Add social platform...</option>
                                 {SOCIAL_PLATFORMS.filter((p) => !editPlatformIds.includes(p.id)).map((p) => (
