@@ -71,27 +71,27 @@ export const PaymentSuccessModal = ({
         ) : (
           <>
             {showAnimation && <BalloonBurst />}
-            <div className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-6">
-              <Card className="p-8 text-center">
+            <div className="bg-card p-6">
+              <Card className="p-8 text-center border-border/50">
                 <div className="flex justify-center mb-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
                     <CheckCircle className="w-12 h-12 text-white" />
                   </div>
                 </div>
 
                 <DialogHeader>
-                  <DialogTitle className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  <DialogTitle className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
                     Congratulations! 🎉
                   </DialogTitle>
-                  <DialogDescription className="text-xl text-gray-600 dark:text-gray-400 mb-6">
-                    You have successfully supported <span className="font-semibold">{creatorName}</span>!
+                  <DialogDescription className="text-lg sm:text-xl text-muted-foreground mb-6">
+                    You have successfully supported <span className="font-semibold text-foreground">{creatorName}</span>!
                   </DialogDescription>
                 </DialogHeader>
 
                 {transaction && (
-                  <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg p-6 mb-6">
-                    <p className="text-green-100 text-sm mb-1">Amount Paid via {gateway}</p>
-                    <p className="text-3xl font-bold">NPR {transaction.amount}</p>
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 mb-6">
+                    <p className="text-primary text-sm mb-1 font-medium">Amount Paid via {gateway}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-foreground">NPR {transaction.amount}</p>
                   </div>
                 )}
 

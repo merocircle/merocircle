@@ -4,7 +4,8 @@ import { Suspense, lazy } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
 
 // Lazy load the explore component
-const ExploreSection = lazy(() => import('@/components/dashboard/sections/ExploreSection'));
+import ExploreSection from '@/components/dashboard/sections/ExploreSection';
+// const ExploreSection = lazy(() => import('@/components/dashboard/sections/ExploreSection'));
 
 function ExploreLoadingSkeleton() {
   return (

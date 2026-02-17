@@ -83,7 +83,7 @@ const ExploreSection = memo(function ExploreSection() {
   return (
     <div className="space-y-6 pb-8 pt-8">
       {/* ── Search + Categories sticky header ── */}
-      <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 pt-3 pb-0 border-b border-border/20 safe-area-top">
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 py-4 border-b border-border/20">
         <div className="relative mb-3">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -108,14 +108,14 @@ const ExploreSection = memo(function ExploreSection() {
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
                 className={cn(
-                  'flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all border flex-shrink-0',
+                  'flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all border shrink-0',
                   isSelected
                     ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                     : 'bg-card text-muted-foreground border-border/40 hover:border-primary/30 hover:text-foreground'
                 )}
                 title={category.label}
               >
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+                <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span>{category.label}</span>
               </button>
             );
@@ -125,11 +125,7 @@ const ExploreSection = memo(function ExploreSection() {
 
       {/* Search Results */}
       {showSearchResults && (
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-3"
-        >
+        <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
           <h2 className="text-sm font-semibold text-foreground">Results</h2>
           {searchLoading ? (
             <div className="flex items-center justify-center py-8">
@@ -201,7 +197,7 @@ const ExploreSection = memo(function ExploreSection() {
                         key={creator.user_id}
                         variants={itemVariants}
                         onClick={() => router.push(`/creator/${creator.vanity_username || creator.user_id}`)}
-                        className="flex flex-col items-center gap-1.5 flex-shrink-0 w-16 group"
+                        className="flex flex-col items-center gap-1.5 shrink-0 w-16 group"
                       >
                         <div className="w-14 h-14 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all overflow-hidden bg-muted">
                           {getValidAvatarUrl(creator.avatar_url) ? (

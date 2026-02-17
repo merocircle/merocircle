@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import { MessageSimple, useChannelStateContext, useMessageContext } from 'stream-chat-react';
+import {
+  MessageSimple,
+  useChannelStateContext,
+  useMessageContext,
+  useChatContext,
+} from 'stream-chat-react';
 import { Crown } from 'lucide-react';
 
 /**
@@ -12,12 +17,18 @@ import { Crown } from 'lucide-react';
 export function CustomMessage(props: any) {
   const { message } = useMessageContext();
   const { channel } = useChannelStateContext();
-  
+  const {client} = useChatContext();
+
   const channelCreatorId = channel?.data?.created_by?.id || (channel?.data as any)?.created_by_id;
   const isCreatorMessage = message?.user?.id === channelCreatorId;
   const isSystemMessage = message?.type === 'system';
+  const isMyMessage = message?.user?.id === client?.userID;
   
   if (isSystemMessage) {
+    return <MessageSimple {...props} />;
+  }
+
+  if (isMyMessage) {
     return <MessageSimple {...props} />;
   }
 
@@ -27,7 +38,7 @@ export function CustomMessage(props: any) {
         <div className="creator-message-indicator" />
         <div className="creator-message-tag">
           <Crown className="w-3 h-3" />
-          <span>Creator</span>
+          <span>Creator Message</span>
         </div>
         <MessageSimple {...props} />
       </div>
