@@ -81,7 +81,7 @@ export function DashboardLayout({
   const shouldHideMobileHeader = contextView !== 'explore';
 
   return (
-    <div className={cn('min-h-[100dvh] bg-background', className)}>
+    <div className={cn('min-h-dvh bg-background', className)}>
       {/* Mobile Header */}
       <MobileHeader
         title={mobileTitle}
@@ -93,7 +93,7 @@ export function DashboardLayout({
       {/* Desktop Grid: [ActivityBar | Content] */}
       <div
         className={cn(
-          'grid min-h-[100dvh] min-w-0 w-full max-w-[100vw] overflow-x-hidden',
+          'grid min-h-dvh',
           // Mobile: single column (3.5rem nav + safe area)
           'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
           // Desktop: 2-column with activity bar

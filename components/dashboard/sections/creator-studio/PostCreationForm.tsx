@@ -292,7 +292,7 @@ export function PostCreationForm({
           <Button
             onClick={onPublish}
             disabled={!onboardingCompleted || isPublishing}
-            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl"
+            className="bg-linear-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl"
           >
             {isPublishing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
             Publish

@@ -83,7 +83,7 @@ function PreviewPost({
         className={cn(
           'rounded-md transition-all duration-300 w-full min-w-0 max-w-full',
           isSupportersOnly &&
-            'p-[3px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_16px_rgba(234,88,12,0.22),0_0_40px_rgba(234,88,12,0.12),0_0_72px_rgba(234,88,12,0.06)]'
+            'p-[3px] bg-linear-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_16px_rgba(234,88,12,0.22),0_0_40px_rgba(234,88,12,0.12),0_0_72px_rgba(234,88,12,0.06)]'
         )}
       >
         <div
@@ -99,7 +99,7 @@ function PreviewPost({
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold',
                   'border-2 border-orange-400/60 dark:border-orange-500/50',
-                  'bg-gradient-to-r from-orange-400/15 via-red-400/10 to-red-500/15',
+                  'bg-linear-to-r from-orange-400/15 via-red-400/10 to-red-500/15',
                   'text-orange-800 dark:text-orange-200',
                   'shadow-[0_0_12px_rgba(234,88,12,0.15)]'
                 )}
@@ -141,7 +141,7 @@ function PreviewPost({
           {postType !== 'poll' && images.length > 0 && (
             <div className="px-4 sm:px-5 pt-4">
               <div className="relative w-full bg-muted/30 select-none cursor-pointer rounded-lg overflow-hidden">
-                <div className="relative w-full aspect-[16/10] sm:aspect-[16/9]">
+                <div className="relative w-full aspect-16/10 sm:aspect-video">
                   <img
                     src={images[currentImageIndex]}
                     alt={`Preview - Image ${currentImageIndex + 1}`}
@@ -210,7 +210,7 @@ function PreviewPost({
                             key={index}
                             className="w-full p-3 rounded-lg border border-border/50 bg-background flex items-center gap-2.5"
                           >
-                            <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                            <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />
                             <span className="text-sm font-medium">{option}</span>
                           </div>
                         ))}
@@ -227,11 +227,11 @@ function PreviewPost({
                     ) : (
                       <>
                         <div className="w-full p-3 rounded-lg border border-border/50 bg-background flex items-center gap-2.5">
-                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                          <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />
                           <span className="text-sm font-medium text-muted-foreground">Option 1</span>
                         </div>
                         <div className="w-full p-3 rounded-lg border border-border/50 bg-background flex items-center gap-2.5">
-                          <Circle className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                          <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />
                           <span className="text-sm font-medium text-muted-foreground">Option 2</span>
                         </div>
                       </>
@@ -247,7 +247,7 @@ function PreviewPost({
             )}
             {postType !== 'poll' && content && (
               <div className="min-w-0 overflow-hidden">
-                <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] break-words">
+                <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] warp-break-word">
                   {content.length > 300 ? content.slice(0, 300) + '...' : content}
                 </p>
                 {content.length > 300 && (
@@ -591,7 +591,7 @@ export default function CreatePostPage() {
                 <Button
                   onClick={handlePublish}
                   disabled={!onboardingCompleted || isPublishing || isUploading}
-                  className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-full px-6"
+                  className="bg-linear-to-r from-violet-600 to-fuchsia-600 text-white rounded-full px-6"
                 >
                   {isPublishing ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
