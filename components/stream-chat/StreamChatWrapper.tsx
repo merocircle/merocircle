@@ -1351,11 +1351,17 @@ export function StreamChatWrapper({
         /* Send button — circular, prominent */
         .str-chat__send-button {
           background: var(--primary) !important;
-          border-radius: 50% !important;
+          border-radius: 10px !important;
           width: 38px !important;
           height: 38px !important;
           transition: all 0.15s ease !important;
           flex-shrink: 0 !important;
+        }
+
+        .str-chat__message-textarea-container {
+          border-radius: 8px !important;
+          background: var(--muted) !important;
+          margin-right: 12px !important;
         }
 
         .str-chat__send-button svg path {

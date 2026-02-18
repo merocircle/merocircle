@@ -47,7 +47,7 @@ function ChatPageContent() {
   const channelId = searchParams.get('channel');
 
   return (
-    <div className="h-[calc(100vh-80px)] md:h-[100vh]">
+    <div className="h-[calc(100vh-60px)] md:h-screen">
       <StreamCommunitySection channelId={channelId || undefined} />
     </div>
   );
