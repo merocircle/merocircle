@@ -32,7 +32,7 @@ function CirclesStrip() {
     return (
       <div className="flex gap-2 sm:gap-3 px-1 py-4 overflow-x-auto scrollbar-hide">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+          <div key={i} className="flex flex-col items-center gap-1.5 shrink-0">
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-muted animate-pulse" />
             <div className="w-9 h-2 bg-muted rounded animate-pulse" />
           </div>
@@ -48,7 +48,7 @@ function CirclesStrip() {
           onClick={() => router.push('/explore')}
           className="flex items-center gap-3 w-full p-3 rounded-xl border border-dashed border-border/60 hover:border-primary/30 hover:bg-muted/30 transition-all group"
         >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/15 transition-colors">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
             <Compass className="w-5 h-5 text-primary" />
           </div>
           <div className="text-left">
@@ -245,7 +245,7 @@ function ScrollLoadTrigger({
   if (!hasMore && !isLoading) return null;
 
   return (
-    <div ref={ref} className="min-h-[1px] py-4 flex justify-center">
+    <div ref={ref} className="min-h-px py-4 flex justify-center">
       {isLoading && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <RefreshCw className="w-3.5 h-3.5 animate-spin" />

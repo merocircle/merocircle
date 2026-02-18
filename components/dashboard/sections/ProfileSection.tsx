@@ -406,7 +406,7 @@ export default function ProfileSection() {
           <div className="relative inline-block mb-4">
             <Avatar className="w-28 h-28 border-4 border-background shadow-xl">
               <AvatarImage src={getValidAvatarUrl(userProfile.photo_url)} />
-              <AvatarFallback className="text-3xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
+              <AvatarFallback className="text-3xl bg-linear-to-br from-primary to-primary/70 text-primary-foreground">
                 {userProfile.display_name?.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -477,9 +477,9 @@ export default function ProfileSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="p-6 border-border/50 bg-gradient-to-br from-primary/5 to-pink-500/5">
+          <Card className="p-6 border-border/50 bg-linear-to-br from-primary/5 to-pink-500/5">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-pink-500/20 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-full bg-linear-to-br from-primary/20 to-pink-500/20 flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">
@@ -488,7 +488,7 @@ export default function ProfileSection() {
               <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 Share your passion, build your community, and earn from your content. Start your creator journey today!
               </p>
-              <Button asChild className="bg-gradient-to-r from-primary to-pink-500 text-white rounded-xl px-8">
+              <Button asChild className="bg-linear-to-r from-primary to-pink-500 text-white rounded-xl px-8">
                 <Link href="/signup/creator">
                   <Crown className="w-4 h-4 mr-2" />
                   Get Started
@@ -511,7 +511,7 @@ export default function ProfileSection() {
         className="relative"
       >
         {/* Cover Image */}
-        <div className="relative h-32 sm:h-44 md:h-52 lg:h-60 overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-pink-500/20">
+        <div className="relative h-32 sm:h-44 md:h-52 lg:h-60 overflow-hidden bg-linear-to-br from-primary/25 via-primary/10 to-pink-500/20">
           {coverImageUrl && (
             <Image
               src={coverImageUrl}
@@ -521,7 +521,7 @@ export default function ProfileSection() {
               priority
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50" />
+          <div className="absolute inset-0 bg-linear-to-b from-black/10 via-transparent to-black/50" />
 
           {/* Decorative circles when no cover */}
           {!coverImageUrl && (
@@ -560,10 +560,10 @@ export default function ProfileSection() {
           <div className="relative -mt-10 sm:-mt-14 lg:-mt-16">
             {/* Avatar */}
             <div className="flex items-end gap-4 sm:gap-5">
-              <div className="relative flex-shrink-0">
+              <div className="relative shrink-0">
                 <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-[3px] border-background shadow-xl ring-2 ring-background">
                   <AvatarImage src={getValidAvatarUrl(userProfile.photo_url)} />
-                  <AvatarFallback className="text-3xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold">
+                  <AvatarFallback className="text-3xl bg-linear-to-br from-primary to-primary/70 text-primary-foreground font-bold">
                     {userProfile.display_name?.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -590,7 +590,7 @@ export default function ProfileSection() {
                   <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate">
                     {userProfile.display_name}
                   </h1>
-                  <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[11px] px-2 py-0.5 rounded-full">
+                  <Badge className="bg-linear-to-r from-yellow-500 to-orange-500 text-white text-[11px] px-2 py-0.5 rounded-full">
                     <Crown className="w-3 h-3 mr-1" />
                     Creator
                   </Badge>
@@ -603,7 +603,7 @@ export default function ProfileSection() {
               </div>
 
               {/* Action buttons */}
-              <div className="hidden sm:flex items-center gap-2 pb-1 flex-shrink-0">
+              <div className="hidden sm:flex items-center gap-2 pb-1 shrink-0">
                 <Button variant="outline" size="sm" onClick={() => setActiveTab('edit')} className="rounded-full h-9 gap-1.5">
                   <Edit className="w-3.5 h-3.5" />
                   Edit
@@ -630,7 +630,7 @@ export default function ProfileSection() {
                 <h1 className="text-xl font-bold text-foreground tracking-tight">
                   {userProfile.display_name}
                 </h1>
-                <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[11px] px-2 py-0.5 rounded-full">
+                <Badge className="bg-linear-to-r from-yellow-500 to-orange-500 text-white text-[11px] px-2 py-0.5 rounded-full">
                   <Crown className="w-3 h-3 mr-1" />
                   Creator
                 </Badge>
@@ -769,7 +769,7 @@ export default function ProfileSection() {
                         {post.image_url ? (
                           <Image src={post.image_url} alt={post.title || 'Post'} fill className="object-cover" sizes="33vw" />
                         ) : (
-                          <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/10 to-pink-500/10">
+                          <div className="flex items-center justify-center h-full bg-linear-to-br from-primary/10 to-pink-500/10">
                             <FileText className="w-8 h-8 text-muted-foreground/40" />
                           </div>
                         )}
@@ -858,7 +858,7 @@ export default function ProfileSection() {
               </Card>
 
               {/* Quick share card */}
-              <Card className="p-6 border-border/50 bg-gradient-to-br from-primary/5 to-transparent">
+              <Card className="p-6 border-border/50 bg-linear-to-br from-primary/5 to-transparent">
                 <h3 className="text-lg font-semibold text-foreground mb-2">Share Your Profile</h3>
                 <p className="text-sm text-muted-foreground mb-4">Let your audience know where to find you.</p>
                 <div className="flex gap-2 flex-wrap">
@@ -994,7 +994,7 @@ export default function ProfileSection() {
                         if (!p) return null;
                         return (
                           <div key={id} className="flex items-center gap-2">
-                            <span className="text-lg w-8 text-center flex-shrink-0">{p.icon}</span>
+                            <span className="text-lg w-8 text-center shrink-0">{p.icon}</span>
                             <Input
                               value={socialLinks[id] ?? ''}
                               onChange={(e) => setSocialLinks({ ...socialLinks, [id]: e.target.value })}
@@ -1005,7 +1005,7 @@ export default function ProfileSection() {
                               variant="ghost"
                               size="icon"
                               onClick={() => removePlatform(id)}
-                              className="rounded-full h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-red-500"
+                              className="rounded-full h-9 w-9 shrink-0 text-muted-foreground hover:text-red-500"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

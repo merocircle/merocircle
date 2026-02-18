@@ -1011,18 +1011,18 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           className="relative"
         >
           <div className="hidden sm:flex gap-4">
-            <div className="flex flex-col items-center flex-shrink-0 w-12">
+            <div className="flex flex-col items-center shrink-0 w-12">
               <button
                 onClick={() => scrollToPost(postId)}
                 className={cn(
-                  "w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all hover:scale-125 hover:bg-primary cursor-pointer",
+                  "w-2.5 h-2.5 rounded-full shrink-0 transition-all hover:scale-125 hover:bg-primary cursor-pointer",
                   "bg-border dark:bg-border focus:outline-none focus:ring-2 focus:ring-primary/50",
                 )}
                 aria-label={`Jump to post from ${new Date(post.created_at).toLocaleDateString()}`}
               />
 
               {showDate && (
-                <span className="mt-1.5 text-[9px] font-medium text-muted-foreground text-center max-w-[4rem] leading-tight">
+                <span className="mt-1.5 text-[9px] font-medium text-muted-foreground text-center max-w-16 leading-tight">
                   {(() => {
                     const d = new Date(post.created_at);
                     const today = new Date();
@@ -1274,7 +1274,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10">
+      <div className="min-h-screen bg-linear-to-b from-background to-muted/10">
         <div className="max-w-6xl mx-auto px-4 py-20">
           <div className="flex flex-col items-center justify-center space-y-6">
             <div className="relative">
@@ -1290,7 +1290,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   if (error || !creatorDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-linear-to-b from-background to-muted/10 flex items-center justify-center p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1308,7 +1308,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/5">
+    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/5">
       {/* Profile Header */}
       <div className="relative bg-card overflow-hidden">
         {/* Cover Image */}
@@ -1323,14 +1323,14 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             />
           ) : (
             <>
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-pink-500/20" />
+              <div className="absolute inset-0 bg-linear-to-br from-primary/30 via-primary/10 to-pink-500/20" />
               {/* Decorative circles for default cover */}
               <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full border border-white/10" />
               <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full border border-white/10" />
               <div className="absolute top-1/2 left-1/3 w-24 h-24 rounded-full border border-white/5" />
             </>
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
+          <div className="absolute inset-0 bg-linear-to-b from-black/10 via-transparent to-black/60" />
 
           {/* Floating buttons on cover */}
           <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between z-10">
@@ -1394,7 +1394,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             >
               <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-[3px] border-background shadow-xl ring-2 ring-background">
                 <AvatarImage src={getValidAvatarUrl(creatorDetails.avatar_url)} alt={creatorDetails.display_name} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-3xl font-bold">
+                <AvatarFallback className="bg-linear-to-br from-primary to-primary/70 text-primary-foreground text-3xl font-bold">
                   {creatorDetails.display_name?.[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -1502,31 +1502,31 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-16">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="sticky top-0.5 z-30 bg-background/50 rounded-lg backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-4 min-w-0">
-            <TabsList className="inline-flex w-full min-w-0 h-11 bg-muted border-0 shadow-none p-1 gap-1 flex-nowrap justify-start lg:justify-center overflow-x-auto lg:scrollbar-hide rounded-md">
-              <TabsTrigger value="posts" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+            <TabsList className="inline-flex w-full min-w-0 h-11 bg-muted border-0 shadow-none p-1 gap-1 justify-start lg:justify-center overflow-x-auto scrollbar-hide rounded-md">
+              <TabsTrigger value="posts" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <FileText className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Posts
               </TabsTrigger>
               {!isOwnProfile && (
-              <TabsTrigger value="membership" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="membership" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Sparkles className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Membership
               </TabsTrigger>
               )}
-              <TabsTrigger value="chat" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="chat" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <MessageCircle className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="shop" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="shop" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <ShoppingBag className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Shop
               </TabsTrigger>
-              <TabsTrigger value="about" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="about" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Info className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 About
               </TabsTrigger>
               {isOwnProfile && (
-                <TabsTrigger value="edit" className="flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <TabsTrigger value="edit" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                   <Edit className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                   Edit Profile
                 </TabsTrigger>
@@ -1546,7 +1546,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     <div className="relative">
                       <Card className="border-border/50 overflow-hidden">
                         <div className="h-[400px] sm:h-[500px] lg:h-[600px] relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                          <div className="absolute inset-0 bg-linear-to-br from-muted to-muted/50 overflow-hidden">
                             <div className="absolute inset-0 opacity-20 blur-xl">
                               <div className="p-4 space-y-4">
                                 <div className="h-12 bg-foreground/20 rounded" />
@@ -1693,7 +1693,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 {isOwnProfile && (
                   <Link href="/create-post" className="block mb-4">
                     <div className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors shrink-0">
                         <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                       </div>
                       <div>
@@ -1923,7 +1923,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                               if (!p) return null;
                               return (
                                 <div key={id} className="flex items-center gap-2">
-                                  <span className="text-lg w-8 text-center flex-shrink-0">{p.icon}</span>
+                                  <span className="text-lg w-8 text-center shrink-0">{p.icon}</span>
                                   <Input
                                     value={editSocialLinks[id] ?? ''}
                                     onChange={(e) => setEditSocialLinks({ ...editSocialLinks, [id]: e.target.value })}
@@ -1934,7 +1934,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => removeEditPlatform(id)}
-                                    className="rounded-md h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-red-500"
+                                    className="rounded-md h-9 w-9 shrink-0 text-muted-foreground hover:text-red-500"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
@@ -2105,7 +2105,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           <Button
             onClick={handleAuthContinue}
             disabled={authLoading}
-            className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="w-full h-12 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
           >
             {authLoading ? (
               <div className="flex items-center">

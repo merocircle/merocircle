@@ -46,7 +46,7 @@ export function TopSupporters({ supporters }: TopSupportersProps) {
             </div>
             <Avatar className="w-10 h-10">
               <AvatarImage src={supporter.photo_url || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-sm">
+              <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-primary-foreground text-sm">
                 {supporter.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>

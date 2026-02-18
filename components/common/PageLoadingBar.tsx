@@ -26,12 +26,12 @@ function LoadingBarContent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none"
+          className="fixed top-0 left-0 right-0 z-9999 pointer-events-none"
           style={{ height: '2px' }}
         >
           {/* Main loading bar with gradient */}
           <motion.div
-            className="w-full h-full bg-gradient-to-r from-red-500 via-pink-500 to-purple-500"
+            className="w-full h-full bg-linear-to-r from-red-500 via-pink-500 to-purple-500"
             initial={{ scaleX: 0, transformOrigin: 'left' }}
             animate={{ 
               scaleX: [0, 0.3, 0.7, 1],

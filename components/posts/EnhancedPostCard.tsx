@@ -447,7 +447,7 @@ export function EnhancedPostCard({
         className={cn(
           "rounded-xl transition-all duration-300",
           isSupportersOnlyPost &&
-            "p-[2px] bg-gradient-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.2),0_0_48px_rgba(234,88,12,0.12),0_0_96px_rgba(234,88,12,0.08),0_0_160px_rgba(234,88,12,0.04)] hover:shadow-[0_0_28px_rgba(234,88,12,0.26),0_0_64px_rgba(234,88,12,0.14),0_0_120px_rgba(234,88,12,0.09),0_0_200px_rgba(234,88,12,0.05)]"
+            "p-[2px] bg-linear-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.2),0_0_48px_rgba(234,88,12,0.12),0_0_96px_rgba(234,88,12,0.08),0_0_160px_rgba(234,88,12,0.04)] hover:shadow-[0_0_28px_rgba(234,88,12,0.26),0_0_64px_rgba(234,88,12,0.14),0_0_120px_rgba(234,88,12,0.09),0_0_200px_rgba(234,88,12,0.05)]"
         )}
       >
         <div
@@ -465,7 +465,7 @@ export function EnhancedPostCard({
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold",
                   "border-2 border-orange-400/60 dark:border-orange-500/50",
-                  "bg-gradient-to-r from-orange-400/15 via-red-400/10 to-red-500/15",
+                  "bg-linear-to-r from-orange-400/15 via-red-400/10 to-red-500/15",
                   "text-orange-800 dark:text-orange-200",
                   "shadow-[0_0_12px_rgba(234,88,12,0.15)]"
                 )}
@@ -511,7 +511,7 @@ export function EnhancedPostCard({
               className="relative w-full bg-muted/30 select-none cursor-pointer rounded-lg overflow-hidden"
               onClick={handlePostClick}
             >
-              <div className="relative w-full aspect-[16/10] sm:aspect-[16/9]">
+              <div className="relative w-full aspect-16/10 sm:aspect-video">
                 <Image
                   src={allImages[currentImageIndex]}
                   alt={`${post.title || "Post"} - Image ${currentImageIndex + 1}`}
@@ -559,7 +559,7 @@ export function EnhancedPostCard({
           <div
             className={cn(
               "relative w-[calc(100% - 40px)] mx-4 overflow-hidden cursor-pointer rounded-lg",
-              "aspect-[16/10] bg-gradient-to-br from-muted to-muted/50",
+              "aspect-16/10 bg-linear-to-br from-muted to-muted/50",
               showAuthor ? "mx-4 sm:mx-5 mt-4" : "mx-4 sm:mx-5 mt-4 sm:mt-5"
             )}
             data-blurred-section
@@ -622,7 +622,7 @@ export function EnhancedPostCard({
         <div className="p-4 sm:p-5 pt-4">
           {post.title && post.post_type !== "poll" && (
             <h2
-              className="text-lg sm:text-xl font-bold text-foreground leading-tight mb-3 cursor-pointer line-clamp-2 break-words"
+              className="text-lg sm:text-xl font-bold text-foreground leading-tight mb-3 cursor-pointer line-clamp-2 wrap-break-word"
               onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}
             >
               {post.title}
@@ -793,7 +793,7 @@ export function EnhancedPostCard({
                     onSubmit={handleSubmitComment}
                     className="flex items-center gap-3"
                   >
-                    <Avatar className="h-8 w-8 flex-shrink-0">
+                    <Avatar className="h-8 w-8 shrink-0">
                       <AvatarImage src={getValidAvatarUrl(currentUser?.photo_url)} alt={currentUser?.display_name} />
                       <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
                         {currentUser?.display_name?.charAt(0).toUpperCase() || currentUserId?.charAt(0).toUpperCase()}

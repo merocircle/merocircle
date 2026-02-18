@@ -107,7 +107,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
           <motion.div key={cfg.key} variants={itemVariants}>
             <Card className="relative overflow-hidden p-4 h-full border-border/40 hover:border-border/70 transition-all group">
               {/* Subtle gradient accent */}
-              <div className={cn('absolute top-0 left-0 right-0 h-1 bg-gradient-to-r opacity-60 group-hover:opacity-100 transition-opacity', cfg.color)} />
+              <div className={cn('absolute top-0 left-0 right-0 h-1 bg-linear-to-r opacity-60 group-hover:opacity-100 transition-opacity', cfg.color)} />
               
               <div className="flex items-start justify-between mb-3">
                 <div className={cn('p-2 rounded-lg', cfg.iconBg)}>
