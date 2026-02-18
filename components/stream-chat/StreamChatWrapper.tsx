@@ -2033,10 +2033,17 @@ export function StreamChatWrapper({
           opacity: 1;
         }
 
-        /* ── Touch devices: always show message options ── */
-        @media (hover: none) {
+        /* ── Touch devices: always show message options (desktop / tablet only) ── */
+        @media (hover: none) and (min-width: 769px) {
           .str-chat__message-options-wrapper {
             opacity: 1 !important;
+          }
+        }
+
+        /* ── Mobile: hide message options (long-press menu used instead) ── */
+        @media (max-width: 768px) {
+          .str-chat__message-options-wrapper {
+            display: none !important;
           }
         }
 
