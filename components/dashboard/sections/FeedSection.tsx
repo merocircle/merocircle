@@ -90,7 +90,7 @@ function CirclesStrip() {
                 <img
                   src={getValidAvatarUrl(creator.photo)!}
                   alt={creator.name}
-                  className="w-full h-full object-cover"
+                  className="w-12 h-12 object-cover"
                   loading="lazy"
                 />
               ) : (
