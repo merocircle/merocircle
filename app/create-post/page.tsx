@@ -45,7 +45,7 @@ interface PreviewPostProps {
   title: string;
   content: string;
   images: string[];
-  visibility: string;
+  visibility: string | string[];
   userProfile: any;
   postType: 'post' | 'poll';
   pollQuestion: string;
@@ -65,7 +65,7 @@ function PreviewPost({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showAllPollOptions, setShowAllPollOptions] = useState(false);
 
-  const isSupportersOnly = visibility === 'supporters';
+  const isSupportersOnly = visibility !== 'public' && (Array.isArray(visibility) ? visibility.length > 0 : visibility === 'supporters');
   const validPollOptions = pollOptions.filter((opt) => opt.trim());
   const displayPollOptions = showAllPollOptions
     ? validPollOptions
@@ -327,7 +327,7 @@ export default function CreatePostPage() {
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [visibility, setVisibility] = useState('public');
+  const [visibility, setVisibility] = useState<string | string[]>('public');
   const [showPreview, setShowPreview] = useState(true);
 
   // Poll states
@@ -465,12 +465,17 @@ export default function CreatePostPage() {
       }
     }
 
+    // Determine visibility settings
+    const isPublic = visibility === 'public';
+    const requiredTiers = Array.isArray(visibility) ? visibility : (visibility === 'public' ? undefined : [visibility]);
+    
     const body: any = {
       title: postType === 'poll' ? pollQuestion.trim() : title.trim(),
       content: postType === 'poll' ? pollQuestion.trim() : content.trim(),
       image_urls: images.length > 0 ? images : [],
-      is_public: visibility === 'public',
-      tier_required: visibility === 'public' ? 'free' : visibility,
+      is_public: isPublic,
+      tier_required: isPublic ? 'free' : (Array.isArray(visibility) ? '1' : visibility), // Backward compatibility
+      required_tiers: requiredTiers,
       post_type: postType,
     };
 
@@ -687,7 +692,7 @@ export default function CreatePostPage() {
                 </div>
 
                 {/* Visibility Selector */}
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-md mb-6">
+                <div className="space-y-3 p-3 bg-muted/30 rounded-md mb-6">
                   <span className="text-sm font-medium text-muted-foreground">Visibility:</span>
                   <div className="flex gap-2 flex-wrap">
                     <button
@@ -705,10 +710,20 @@ export default function CreatePostPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setVisibility('supporters')}
+                      onClick={() => {
+                        const currentTiers = Array.isArray(visibility) ? visibility : [];
+                        const tier1Selected = currentTiers.includes('1');
+                        if (tier1Selected) {
+                          const newTiers = currentTiers.filter(t => t !== '1');
+                          setVisibility(newTiers.length > 0 ? newTiers : 'public');
+                        } else {
+                          const newTiers = [...currentTiers.filter(t => t !== 'public'), '1'];
+                          setVisibility(newTiers);
+                        }
+                      }}
                       className={cn(
                         'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
-                        visibility === 'supporters'
+                        (Array.isArray(visibility) && visibility.includes('1')) || visibility === 'supporters'
                           ? 'bg-purple-500/20 text-purple-600 border border-purple-500/30'
                           : 'bg-background text-muted-foreground hover:text-foreground border border-border'
                       )}
@@ -716,7 +731,63 @@ export default function CreatePostPage() {
                       <Lock className="w-3.5 h-3.5" />
                       Supporters Only
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentTiers = Array.isArray(visibility) ? visibility : [];
+                        const tier2Selected = currentTiers.includes('2');
+                        if (tier2Selected) {
+                          const newTiers = currentTiers.filter(t => t !== '2');
+                          setVisibility(newTiers.length > 0 ? newTiers : 'public');
+                        } else {
+                          const newTiers = [...currentTiers.filter(t => t !== 'public'), '2'];
+                          setVisibility(newTiers);
+                        }
+                      }}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                        Array.isArray(visibility) && visibility.includes('2')
+                          ? 'bg-blue-500/20 text-blue-600 border border-blue-500/30'
+                          : 'bg-background text-muted-foreground hover:text-foreground border border-border'
+                      )}
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      Inner Circle Only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentTiers = Array.isArray(visibility) ? visibility : [];
+                        const tier3Selected = currentTiers.includes('3');
+                        if (tier3Selected) {
+                          const newTiers = currentTiers.filter(t => t !== '3');
+                          setVisibility(newTiers.length > 0 ? newTiers : 'public');
+                        } else {
+                          const newTiers = [...currentTiers.filter(t => t !== 'public'), '3'];
+                          setVisibility(newTiers);
+                        }
+                      }}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                        Array.isArray(visibility) && visibility.includes('3')
+                          ? 'bg-amber-500/20 text-amber-600 border border-amber-500/30'
+                          : 'bg-background text-muted-foreground hover:text-foreground border border-border'
+                      )}
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      Core Member Only
+                    </button>
                   </div>
+                  {Array.isArray(visibility) && visibility.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Selected tiers: {visibility.map(t => {
+                        if (t === '1') return 'Supporters Only';
+                        if (t === '2') return 'Inner Circle';
+                        if (t === '3') return 'Core Member';
+                        return t;
+                      }).join(', ')}
+                    </p>
+                  )}
                 </div>
 
                 {/* Post Form Fields */}

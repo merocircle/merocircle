@@ -159,3 +159,60 @@ export function parsePaginationParams(searchParams: URLSearchParams): {
 
   return { page, limit, offset };
 }
+
+/**
+ * Check if a user has access to a post based on visibility settings
+ * @param post - Post object with is_public, required_tiers, tier_required, and creator_id
+ * @param userId - User ID to check access for (null if not authenticated)
+ * @param creatorId - Creator ID of the post
+ * @param supporterTierLevel - User's tier level for this creator (0 if not a supporter)
+ * @returns true if user has access, false otherwise
+ */
+export function checkPostAccess(
+  post: {
+    is_public: boolean;
+    required_tiers?: string[] | null;
+    tier_required?: string | null;
+    creator_id: string;
+  },
+  userId: string | null,
+  creatorId: string,
+  supporterTierLevel: number
+): boolean {
+  // Creator always has access to their own posts
+  if (userId === creatorId) {
+    return true;
+  }
+
+  // Public posts are accessible to everyone
+  if (post.is_public && (!post.required_tiers || post.required_tiers.length === 0)) {
+    return true;
+  }
+
+  // If post has required_tiers, check if user's tier matches
+  if (post.required_tiers && post.required_tiers.length > 0) {
+    // Convert tier strings to numbers for comparison
+    const requiredTierNumbers = post.required_tiers
+      .map((t) => parseInt(t, 10))
+      .filter((n) => !isNaN(n) && n >= 1 && n <= 3);
+    
+    // User must be a supporter with one of the required tiers
+    return supporterTierLevel > 0 && requiredTierNumbers.includes(supporterTierLevel);
+  }
+
+  // Backward compatibility: check tier_required
+  if (post.tier_required && post.tier_required !== 'free') {
+    const requiredTier = parseInt(post.tier_required, 10);
+    if (!isNaN(requiredTier) && requiredTier >= 1 && requiredTier <= 3) {
+      return supporterTierLevel >= requiredTier;
+    }
+  }
+
+  // If is_public=false and no tier requirements specified, default to tier 1+ (supporters only)
+  if (!post.is_public) {
+    return supporterTierLevel >= 1;
+  }
+
+  // Default: no access
+  return false;
+}

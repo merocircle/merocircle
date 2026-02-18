@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { handleApiError, getOptionalUser } from '@/lib/api-utils';
+import { handleApiError, getOptionalUser, checkPostAccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
 export async function GET(
@@ -126,6 +126,7 @@ export async function GET(
       media_url: string | null;
       is_public: boolean;
       tier_required: string | null;
+      required_tiers?: string[] | null;
       post_type?: string;
       created_at: string;
       updated_at: string;
@@ -135,10 +136,19 @@ export async function GET(
       post_comments?: Array<{ id: string; content: string; created_at: string }>;
       polls?: { id: string; question: string; allows_multiple_answers: boolean; expires_at: string | null };
     }) => {
-      // Check if this is a supporter-only post
-      const isSupporterOnly = !post.is_public || (post.tier_required && post.tier_required !== 'free');
-      // Allow access if: user is the creator themselves, or user is a supporter
-      const shouldHideContent = isSupporterOnly && !isSupporter && user?.id !== creatorId;
+      // Check if user has access to this post using the helper function
+      const hasAccess = checkPostAccess(
+        {
+          is_public: post.is_public,
+          required_tiers: post.required_tiers,
+          tier_required: post.tier_required,
+          creator_id: post.creator_id,
+        },
+        user?.id || null,
+        creatorId,
+        supporterTierLevel
+      );
+      const shouldHideContent = !hasAccess;
 
       return {
         id: post.id,
@@ -151,6 +161,7 @@ export async function GET(
         media_url: post.media_url,
         is_public: post.is_public,
         tier_required: post.tier_required || 'free',
+        required_tiers: post.required_tiers || null,
         post_type: post.post_type || 'post',
         created_at: post.created_at,
         updated_at: post.updated_at,

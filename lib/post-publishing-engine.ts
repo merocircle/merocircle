@@ -31,8 +31,10 @@ export interface PublishPostParams {
   image_urls?: string[];
   /** Whether post is public (default: true) */
   is_public?: boolean;
-  /** Tier required to view (default: 'free') */
+  /** Tier required to view (default: 'free') - DEPRECATED: use required_tiers instead */
   tier_required?: string;
+  /** Array of tier levels (1, 2, 3) that can access this post. If empty/null and is_public=false, defaults to tier 1 */
+  required_tiers?: string[];
   /** Post type: 'post' or 'poll' (default: 'post') */
   post_type?: 'post' | 'poll';
   /** Poll data (required if post_type is 'poll') */
@@ -73,6 +75,7 @@ export async function publishPost(
       image_urls,
       is_public = true,
       tier_required = 'free',
+      required_tiers,
       post_type = 'post',
       poll_data,
       sendNotifications = true,
@@ -114,6 +117,28 @@ export async function publishPost(
       finalImageUrls = [image_url];
     }
 
+    // Determine required_tiers: if provided, use it; otherwise derive from is_public and tier_required
+    let finalRequiredTiers: string[] | null = null;
+    if (required_tiers && required_tiers.length > 0) {
+      // Filter out invalid tier values and ensure they're strings
+      finalRequiredTiers = required_tiers
+        .filter((tier) => tier && ['1', '2', '3'].includes(String(tier)))
+        .map((tier) => String(tier));
+      // If all tiers were invalid, set to null
+      if (finalRequiredTiers.length === 0) {
+        finalRequiredTiers = null;
+      }
+    } else if (!is_public) {
+      // If is_public=false and no required_tiers specified, use tier_required for backward compatibility
+      if (tier_required && tier_required !== 'free') {
+        finalRequiredTiers = [tier_required];
+      } else {
+        // Default to tier 1 (supporters only) if is_public=false
+        finalRequiredTiers = ['1'];
+      }
+    }
+    // If is_public=true and no required_tiers, leave it as null (public post)
+
     // Create the post
     const { data: post, error: postError } = await supabase
       .from('posts')
@@ -124,7 +149,8 @@ export async function publishPost(
         image_url: finalImageUrls.length > 0 ? finalImageUrls[0] : null, // Keep first image in image_url for backward compatibility
         image_urls: finalImageUrls.length > 0 ? finalImageUrls : [],
         is_public: is_public ?? true,
-        tier_required: tier_required || 'free',
+        tier_required: tier_required || 'free', // Keep for backward compatibility
+        required_tiers: finalRequiredTiers,
         post_type: post_type || 'post',
       })
       .select('*, users!posts_creator_id_fkey(id, display_name, photo_url, role)')
@@ -271,10 +297,12 @@ async function sendPostNotificationsToSupporters(
   supabase: any
 ): Promise<void> {
   try {
-    const { data: supporters, error } = await supabase
+    // Build query for supporters
+    let supportersQuery = supabase
       .from('supporters')
       .select(`
         supporter_id,
+        tier_level,
         user:supporter_id!inner(
           id,
           email,
@@ -283,6 +311,22 @@ async function sendPostNotificationsToSupporters(
       `)
       .eq('creator_id', creatorId)
       .eq('is_active', true);
+
+    // If post has required_tiers, only notify supporters with matching tiers
+    if (post.required_tiers && Array.isArray(post.required_tiers) && post.required_tiers.length > 0) {
+      // Convert tier strings to numbers for comparison
+      const requiredTierNumbers = post.required_tiers
+        .map((t: string) => parseInt(t, 10))
+        .filter((n: number) => !isNaN(n) && n >= 1 && n <= 3);
+      
+      if (requiredTierNumbers.length > 0) {
+        // Only notify supporters whose tier_level is in the required tiers
+        supportersQuery = supportersQuery.in('tier_level', requiredTierNumbers);
+      }
+    }
+    // If post is public or has no required_tiers, notify all supporters
+
+    const { data: supporters, error } = await supportersQuery;
 
     if (error) {
       logger.error('Failed to fetch supporters for email notifications', 'POST_PUBLISHING_ENGINE', {

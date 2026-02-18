@@ -83,6 +83,7 @@ interface Post {
   media_url?: string;
   is_public?: boolean;
   tier_required: string;
+  required_tiers?: string[] | null;
   post_type?: "post" | "poll";
   created_at: string;
   creator_id?: string;
@@ -113,6 +114,7 @@ interface EnhancedPostCardProps {
   onShare?: (postId: string) => void;
   showActions?: boolean;
   isSupporter?: boolean;
+  supporterTierLevel?: number; // User's tier level for this creator (0 if not a supporter)
   showAuthor?: boolean;
   onNavigateToMembership?: () => void;
   creatorSlug?: string;
@@ -134,6 +136,7 @@ export function EnhancedPostCard({
   onShare,
   showActions = true,
   isSupporter = false,
+  supporterTierLevel = 0,
   showAuthor = true,
   onNavigateToMembership,
   creatorSlug,
@@ -196,20 +199,54 @@ export function EnhancedPostCard({
   }, [post]);
 
   const shouldBlur = useMemo(() => {
-    const isPublicAndFree =
-      (post.is_public === true || post.is_public === undefined) &&
-      (post.tier_required === "free" || !post.tier_required);
-    if (isPublicAndFree) return false;
-    const isSupporterOnly =
-      post.is_public === false ||
-      (post.tier_required && post.tier_required !== "free");
-    if (!isSupporterOnly) return false;
-    if (isSupporter || currentUserId === creator.id) return false;
-    return true;
+    // Creator always has access
+    if (currentUserId === creator.id) return false;
+
+    // Public posts with no tier requirements
+    if (post.is_public && (!post.required_tiers || post.required_tiers.length === 0) && 
+        (!post.tier_required || post.tier_required === 'free')) {
+      return false;
+    }
+
+    // Check if post has required_tiers
+    if (post.required_tiers && post.required_tiers.length > 0) {
+      // Convert tier strings to numbers
+      const requiredTierNumbers = post.required_tiers
+        .map((t) => parseInt(t, 10))
+        .filter((n) => !isNaN(n) && n >= 1 && n <= 3);
+      
+      // User must have one of the required tiers
+      if (supporterTierLevel > 0 && requiredTierNumbers.includes(supporterTierLevel)) {
+        return false;
+      }
+      // User doesn't have required tier
+      return true;
+    }
+
+    // Backward compatibility: check tier_required
+    if (post.tier_required && post.tier_required !== 'free') {
+      const requiredTier = parseInt(post.tier_required, 10);
+      if (!isNaN(requiredTier) && requiredTier >= 1 && requiredTier <= 3) {
+        // User must have at least the required tier level
+        if (supporterTierLevel >= requiredTier) {
+          return false;
+        }
+        return true;
+      }
+    }
+
+    // If is_public=false and no tier requirements, default to tier 1+ (supporters only)
+    if (!post.is_public) {
+      return supporterTierLevel < 1;
+    }
+
+    return false;
   }, [
     post.is_public,
     post.tier_required,
+    post.required_tiers,
     isSupporter,
+    supporterTierLevel,
     currentUserId,
     creator.id,
   ]);
@@ -375,7 +412,9 @@ export function EnhancedPostCard({
     );
   };
 
-  const isSupporterOnly = post.tier_required && post.tier_required !== "free";
+  const isSupporterOnly = (post.required_tiers && post.required_tiers.length > 0) || 
+    (post.tier_required && post.tier_required !== "free") || 
+    post.is_public === false;
   const hasMedia = allImages.length > 0 || youtubeVideoId;
   const contentLength = post.content?.length || 0;
   const CONTENT_PREVIEW_LENGTH = 280;
