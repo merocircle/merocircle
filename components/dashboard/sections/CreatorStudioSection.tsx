@@ -523,7 +523,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             <Button
               variant={shareCopied ? "default" : "outline"}
               size="icon"
-              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0"
+              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0"
               onClick={handleShareProfile}
             >
               {shareCopied ? (
@@ -533,7 +533,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               )}
               <span className="hidden sm:inline">{shareCopied ? 'Copied!' : 'Share'}</span>
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0" asChild>
+            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0" asChild>
               <a href={`/creator/${creatorSlug}`}>
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">View</span>
@@ -542,13 +542,13 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0"
+              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0"
               onClick={() => setShowEditProfilePricingModal(true)}
             >
               <Pencil className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Edit</span>
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 flex-shrink-0" asChild>
+            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0" asChild>
               <Link href="/chat">
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Chat</span>
@@ -785,7 +785,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                       !notif.read && "bg-primary/5"
                     )}>
                       <div className={cn(
-                        "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
+                        "w-2 h-2 rounded-full mt-1.5 shrink-0",
                         !notif.read ? "bg-primary" : "bg-transparent"
                       )} />
                       <div className="flex-1 min-w-0">

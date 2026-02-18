@@ -83,7 +83,7 @@ const SettingsSection = memo(function SettingsSection() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar navigation */}
-          <div className="lg:w-64 flex-shrink-0">
+          <div className="lg:w-64 shrink-0">
             <nav className="space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -99,9 +99,9 @@ const SettingsSection = memo(function SettingsSection() {
                         : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                     )}
                   >
-                    <Icon className={cn('w-4 h-4 flex-shrink-0', isActive && 'text-primary')} />
+                    <Icon className={cn('w-4 h-4 shrink-0', isActive && 'text-primary')} />
                     <span className="flex-1 truncate">{tab.label}</span>
-                    {isActive && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+                    {isActive && <ChevronRight className="w-4 h-4 shrink-0" />}
                   </button>
                 );
               })}
@@ -115,7 +115,7 @@ const SettingsSection = memo(function SettingsSection() {
                   onClick={() => setShowFeedback(true)}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 >
-                  <MessageCircleHeart className="w-4 h-4 flex-shrink-0" />
+                  <MessageCircleHeart className="w-4 h-4 shrink-0" />
                   <span>Give feedback</span>
                 </button>
               </div>
@@ -126,7 +126,7 @@ const SettingsSection = memo(function SettingsSection() {
                 onClick={signOut}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-destructive hover:bg-destructive/10"
               >
-                <LogOut className="w-4 h-4 flex-shrink-0" />
+                <LogOut className="w-4 h-4 shrink-0" />
                 <span>Sign Out</span>
               </button>
             </nav>

@@ -53,7 +53,7 @@ export const CreatorHero = memo(function CreatorHero({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="relative h-64 bg-gradient-to-r from-primary/80 via-pink-600 to-red-500 overflow-hidden"
+        className="relative h-64 bg-linear-to-r from-primary/80 via-pink-600 to-red-500 overflow-hidden"
       >
         {coverImageUrl && (
           <Image
@@ -64,11 +64,11 @@ export const CreatorHero = memo(function CreatorHero({
             priority
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent" />
 
         {/* Animated gradient overlay */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent"
           initial={{ x: '-100%' }}
           animate={{ x: '100%' }}
           transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
@@ -94,7 +94,7 @@ export const CreatorHero = memo(function CreatorHero({
             >
               <Avatar className="w-32 h-32 border-4 border-background shadow-xl ring-4 ring-background">
                 <AvatarImage src={avatarUrl} alt={displayName} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-4xl font-bold">
+                <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-primary-foreground text-4xl font-bold">
                   {displayName?.[0]?.toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>

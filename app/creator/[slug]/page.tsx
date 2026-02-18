@@ -91,7 +91,7 @@ function CreatorProfileContent() {
   if (invalid || !creatorId) {
     return (
       <PageLayout>
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center p-6">
+        <div className="min-h-screen bg-linear-to-b from-background to-muted/20 flex items-center justify-center p-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

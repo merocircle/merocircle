@@ -369,7 +369,7 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
               </div>
 
               {/* Right: Income calculator */}
-              <div className="rounded-lg border border-emerald-200 bg-gradient-to-b from-emerald-50/80 to-teal-50/80 p-4 dark:border-emerald-800 dark:from-emerald-950/30 dark:to-teal-950/30 md:sticky md:top-0">
+              <div className="rounded-lg border border-emerald-200 bg-linear-to-b from-emerald-50/80 to-teal-50/80 p-4 dark:border-emerald-800 dark:from-emerald-950/30 dark:to-teal-950/30 md:sticky md:top-0">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="text-lg">🧮</span>
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Income calculator</h3>
