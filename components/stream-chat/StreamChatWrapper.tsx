@@ -25,7 +25,7 @@ import { CustomMessage } from './CustomMessage';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send,
-  Search, Info, X
+  Search, Info, X, Hash
 } from 'lucide-react';
 import { useChannels, useDMChannels, useUnreadCounts } from './hooks';
 import { 
@@ -78,6 +78,8 @@ export function StreamChatWrapper({
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   // Custom hooks
   const { otherServers, myServer, loading, fetchChannels } = useChannels(user);
@@ -140,6 +142,30 @@ export function StreamChatWrapper({
     initialExpandDoneRef.current = true;
     setExpandedServers(allIds);
   }, [loading, filteredOtherServers, filteredMyServer]);
+
+  // Ensure selectedServer is set when activeChannel changes (fallback for timing issues)
+  useEffect(() => {
+    if (!activeChannel || selectedServer || mobileView !== 'chat') return;
+    
+    // Find which server this channel belongs to
+    const allServers = [
+      ...(filteredMyServer ? [filteredMyServer] : []),
+      ...filteredOtherServers,
+    ];
+    
+    const activeChannelId = (activeChannel.data as any)?.id;
+    if (!activeChannelId) return;
+
+    for (const server of allServers) {
+      const channel = server.channels.find(
+        (ch: SupabaseChannel) => ch.stream_channel_id === activeChannelId
+      );
+      if (channel) {
+        setSelectedServer(server);
+        break;
+      }
+    }
+  }, [activeChannel, selectedServer, mobileView, filteredMyServer, filteredOtherServers]);
 
   // Listen for new messages (debounced to prevent rate limiting)
   useEffect(() => {
@@ -304,12 +330,6 @@ export function StreamChatWrapper({
     });
   }, []);
 
-  const selectServerMobile = useCallback((server: Server) => {
-    setSelectedServer(server);
-    setMobileView("channels");
-    setExpandedServers((prev) => new Set([...prev, server.id]));
-  }, []);
-
   const goBackToServers = useCallback(() => {
     setMobileView("servers");
     setSelectedServer(null);
@@ -319,6 +339,33 @@ export function StreamChatWrapper({
     setMobileView("channels");
     setActiveChannel(null);
   }, []);
+
+  // Touch gesture handlers for swipe-to-go-back
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaX = touchEndX - touchStartX.current;
+    const deltaY = touchEndY - touchStartY.current;
+
+    // Swipe threshold: deltaX > 60px AND less than 40px vertical drift
+    if (deltaX > 60 && Math.abs(deltaY) < 40) {
+      if (mobileView === 'chat') {
+        goBackToServers();
+      } else if (mobileView === 'channels') {
+        goBackToServers();
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  }, [mobileView, goBackToServers]);
 
   const selectChannel = useCallback(
     async (channel: SupabaseChannel, isRetry = false) => {
@@ -399,11 +446,25 @@ export function StreamChatWrapper({
     [chatClient, fetchUnreadCounts, fetchChannels],
   );
 
+  const selectServerMobile = useCallback(async (server: Server) => {
+    setSelectedServer(server);
+    setExpandedServers((prev) => new Set([...prev, server.id]));
+    const firstChannel = server.channels.find(ch => ch.stream_channel_id);
+    if (firstChannel) {
+      // Use requestAnimationFrame to ensure selectedServer state is applied before selectChannel completes
+      await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
+      await selectChannel(firstChannel); // sets mobileView = "chat" internally
+    } else {
+      setMobileView("channels"); // fallback: no channels yet
+    }
+  }, [selectChannel]);
+
   const selectDMChannel = useCallback(
     async (dmChannel: DMChannel) => {
       try {
         await dmChannel.channel.watch();
         setActiveChannel(dmChannel.channel);
+        setSelectedServer(null); // Clear server when opening DM
         setMobileView("chat");
         await dmChannel.channel.markRead();
         fetchUnreadCounts();
@@ -604,6 +665,7 @@ export function StreamChatWrapper({
         await channel.create();
         await channel.watch();
         setActiveChannel(channel);
+        setSelectedServer(null); // Clear server when starting DM
         setSelectedUser(null);
         setMobileView("chat");
         fetchDMChannels();
@@ -671,7 +733,7 @@ export function StreamChatWrapper({
           onClick={() => toggleServer(server.id)}
           className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left hover:bg-muted/50 rounded-lg transition-colors group"
         >
-          <div className="shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/30">
+          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/30">
             {server.image ? (
               <img
                 src={server.image}
@@ -686,9 +748,9 @@ export function StreamChatWrapper({
             {server.name}
           </span>
           {isExpanded ? (
-            <ChevronDown className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+            <ChevronDown className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
           ) : (
-            <ChevronRight className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
           )}
         </button>
 
@@ -737,7 +799,7 @@ export function StreamChatWrapper({
         onClick={() => selectServerMobile(server)}
         className="w-full p-4 flex items-center gap-3 text-left hover:bg-muted rounded-lg transition-colors border border-border bg-card mb-2"
       >
-        <div className="shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
           {server.image ? (
             <img src={server.image} alt={server.name} className="w-full h-full object-cover" />
           ) : (
@@ -752,7 +814,7 @@ export function StreamChatWrapper({
             </span>
           )}
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
       </button>
     );
   }, [channelUnreadCounts, selectServerMobile]);
@@ -837,9 +899,9 @@ export function StreamChatWrapper({
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full overflow-hidden">
           {/* Sidebar */}
-          <div className="w-80 border-r border-border shrink-0 bg-card/50 backdrop-blur-sm flex flex-col overflow-hidden">
+          <div className="w-80 border-r border-border flex-shrink-0 bg-card/50 backdrop-blur-sm flex flex-col overflow-hidden">
             {/* Sidebar Header */}
-            <div className="px-4 pt-4 pb-3 shrink-0">
+            <div className="px-4 pt-4 pb-3 flex-shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1000,7 +1062,7 @@ export function StreamChatWrapper({
         <div className="md:hidden h-full flex flex-col overflow-hidden min-w-0 w-full max-w-[100vw]">
           {mobileView === "servers" && (
             <div className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full">
-              <div className="px-4 sm:px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm shrink-0 min-w-0">
+              <div className="px-4 sm:px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm flex-shrink-0 min-w-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                     <MessageCircle className="h-4 w-4 text-primary" />
@@ -1060,7 +1122,7 @@ export function StreamChatWrapper({
                               onClick={() => selectDMChannel(dm)}
                               className="w-full p-4 flex items-center gap-3 text-left hover:bg-muted rounded-lg transition-colors border border-border bg-card mb-2"
                             >
-                              <div className="shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                                 {dm.otherUser.image ? (
                                   <img
                                     src={dm.otherUser.image}
@@ -1082,11 +1144,11 @@ export function StreamChatWrapper({
                                 </p>
                               </div>
                               {dm.unreadCount > 0 && (
-                                <span className="shrink-0 min-w-[24px] h-6 px-2 bg-primary text-primary-foreground text-sm font-medium rounded-full flex items-center justify-center">
+                                <span className="flex-shrink-0 min-w-[24px] h-6 px-2 bg-primary text-primary-foreground text-sm font-medium rounded-full flex items-center justify-center">
                                   {dm.unreadCount > 99 ? "99+" : dm.unreadCount}
                                 </span>
                               )}
-                              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                             </button>
                           );
                         })}
@@ -1113,16 +1175,20 @@ export function StreamChatWrapper({
           )}
 
           {mobileView === "channels" && selectedServer && (
-            <div className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full">
-              <div className="p-4 border-b border-border bg-card flex items-center gap-3 shrink-0 min-w-0">
+            <div 
+              className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0 min-w-0">
                 <button
                   onClick={goBackToServers}
-                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors shrink-0"
+                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
                 >
                   <ArrowLeft className="h-5 w-5 text-foreground" />
                 </button>
                 <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                     {selectedServer.image ? (
                       <img
                         src={selectedServer.image}
@@ -1178,7 +1244,11 @@ export function StreamChatWrapper({
           )}
 
           {mobileView === "chat" && activeChannel && (
-            <div className="h-full flex flex-col overflow-hidden min-w-0 w-full">
+            <div 
+              className="h-full flex flex-col overflow-hidden min-w-0 w-full"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               <Channel
                 channel={activeChannel}
                 CustomMessageActionsList={CustomMessageActionsList}
@@ -1188,15 +1258,44 @@ export function StreamChatWrapper({
                 Message={CustomMessage}
               >
                 <Window>
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card shrink-0">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
                     <button
-                      onClick={goBackToChannels}
-                      className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+                      onClick={goBackToServers}
+                      className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
                     >
                       <ArrowLeft className="h-5 w-5 text-foreground" />
                     </button>
-                    <MobileChannelHeader />
+                    <MobileChannelHeader selectedServer={selectedServer} />
                   </div>
+                  {/* Horizontal channel switcher strip */}
+                  {selectedServer && selectedServer.channels.length > 1 && (
+                    <div className="flex overflow-x-auto gap-1.5 px-3 py-2 border-b border-border bg-card/40 flex-shrink-0 channel-strip-scroll">
+                      {selectedServer.channels.map(ch => {
+                        const isActive = activeChannel?.id === ch.stream_channel_id;
+                        const unread = ch.stream_channel_id ? channelUnreadCounts[ch.stream_channel_id] || 0 : 0;
+                        return (
+                          <button
+                            key={ch.id}
+                            onClick={() => selectChannel(ch)}
+                            disabled={!ch.stream_channel_id}
+                            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                              isActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            } ${!ch.stream_channel_id ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <Hash className="h-2.5 w-2.5" />
+                            {ch.name}
+                            {unread > 0 && (
+                              <span className="ml-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-destructive text-white text-[9px] flex items-center justify-center">
+                                {unread > 99 ? '99+' : unread}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                   <MessageList />
                   <MessageInput focus />
                 </Window>
@@ -1207,7 +1306,7 @@ export function StreamChatWrapper({
 
           {mobileView === "chat" && channelError && (
             <div className="h-full flex flex-col bg-background overflow-hidden">
-              <div className="p-4 border-b border-border bg-card flex items-center gap-3 shrink-0">
+              <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0">
                 <button
                   onClick={goBackToChannels}
                   className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
@@ -1303,6 +1402,105 @@ export function StreamChatWrapper({
           box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
         }
 
+        /* ── Message slide-in animations ── */
+        @keyframes slideInFromRight {
+          0% {
+            opacity: 0;
+            transform: translateX(20px) scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
+        }
+
+        @keyframes slideInFromLeft {
+          0% {
+            opacity: 0;
+            transform: translateX(-20px) scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
+        }
+
+        /* Apply animation to new messages with ease-out timing (coming into view) */
+        .str-chat__message-list .str-chat__li {
+          animation-duration: 0.35s;
+          animation-timing-function: ease-out;
+          animation-fill-mode: both;
+        }
+
+        /* My messages slide in from right */
+        .str-chat__message-simple--me {
+          animation-name: slideInFromRight;
+        }
+
+        /* Other messages slide in from left */
+        .str-chat__message-simple:not(.str-chat__message-simple--me):not(.str-chat__message--system) {
+          animation-name: slideInFromLeft;
+        }
+
+        /* Prevent animation on system messages */
+        .str-chat__message--system {
+          animation: none !important;
+        }
+
+        /* Smooth transition for message bubbles */
+        .str-chat__message-bubble {
+          transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+
+        /* Subtle scale effect on hover for better interactivity */
+        .str-chat__li:hover .str-chat__message-bubble {
+          transform: scale(1.01);
+        }
+
+        /* ── Mobile view transitions ── */
+        @media (max-width: 768px) {
+          /* Smooth transitions for mobile view containers */
+          .stream-chat-wrapper .md\\:hidden {
+            transition: transform 0.4s ease-out, opacity 0.3s ease-out;
+            will-change: transform, opacity;
+          }
+
+          /* Animate channel switcher strip appearance */
+          .channel-strip-scroll {
+            animation: slideDown 0.3s ease-out;
+          }
+
+          @keyframes slideDown {
+            0% {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          /* Smooth fade-in for message list when switching channels */
+          .str-chat__message-list {
+            animation: fadeIn 0.3s ease-out;
+          }
+
+          @keyframes fadeIn {
+            0% {
+              opacity: 0;
+            }
+            100% {
+              opacity: 1;
+            }
+          }
+
+          /* Smooth transitions for header elements */
+          .str-chat__channel-header {
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+          }
+        }
+
         /* ── Larger avatars in message list (36px) ── */
         .str-chat__message .str-chat__avatar {
           width: 36px !important;
@@ -1351,17 +1549,11 @@ export function StreamChatWrapper({
         /* Send button — circular, prominent */
         .str-chat__send-button {
           background: var(--primary) !important;
-          border-radius: 10px !important;
+          border-radius: 50% !important;
           width: 38px !important;
           height: 38px !important;
           transition: all 0.15s ease !important;
           flex-shrink: 0 !important;
-        }
-
-        .str-chat__message-textarea-container {
-          border-radius: 8px !important;
-          background: var(--muted) !important;
-          margin-right: 12px !important;
         }
 
         .str-chat__send-button svg path {
@@ -1820,6 +2012,18 @@ export function StreamChatWrapper({
           background: var(--border) !important;
         }
 
+        /* ── Hide date separators below messages on mobile ── */
+        @media (max-width: 768px) {
+          /* Hide the last date separator in the message list (the one near the bottom/input area) */
+          .str-chat__message-list .str-chat__date-separator:last-child {
+            display: none !important;
+          }
+          /* Hide date separators that come after the last message */
+          .str-chat__message-list > .str-chat__date-separator:last-of-type {
+            display: none !important;
+          }
+        }
+
         /* ── Message options (action icons) - show on hover ── */
         .str-chat__message-options-wrapper {
           opacity: 0;
@@ -1827,6 +2031,39 @@ export function StreamChatWrapper({
         }
         .str-chat__li:hover .str-chat__message-options-wrapper {
           opacity: 1;
+        }
+
+        /* ── Touch devices: always show message options ── */
+        @media (hover: none) {
+          .str-chat__message-options-wrapper {
+            opacity: 1 !important;
+          }
+        }
+
+        /* ── iOS safe-area insets for message input ── */
+        .str-chat__message-input {
+          padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+        }
+
+        /* ── Message bubble max-width on mobile ── */
+        @media (max-width: 640px) {
+          .str-chat__message-bubble {
+            max-width: 82vw !important;
+          }
+        }
+
+        /* ── Prevent overscroll bleed ── */
+        .str-chat__message-list {
+          overscroll-behavior: contain !important;
+        }
+
+        /* ── Channel strip scrollbar hiding ── */
+        .channel-strip-scroll {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+        }
+        .channel-strip-scroll::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
         }
       `}</style>
     </div>

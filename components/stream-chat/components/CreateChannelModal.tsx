@@ -79,8 +79,8 @@ export function CreateChannelModal({ onClose, onCreate }: CreateChannelModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card rounded-lg w-full max-w-lg mx-4 max-h-[80vh] flex flex-col border border-border">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+      <div className="bg-card rounded-t-2xl sm:rounded-lg w-full sm:max-w-lg sm:mx-4 max-h-[85vh] flex flex-col border border-border">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">Create Channel</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
