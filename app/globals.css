@@ -933,17 +933,10 @@ section:has(+ .rounded-section),
   border-radius: 0;
 }
 
-.creator-message-row--my {
-  position: relative;
-  background: color-mix(in srgb, var(--primary) 10%, transparent 90%) !important;
-  border-left: 2px solid var(--primary);
-  margin-left: -16px;
-  margin-right: -16px;
-  padding-left: 16px;
-  padding-right: 16px;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  border-radius: 0;
+.creator-message-row.right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* Subtle left-edge glow for creator messages */
@@ -967,7 +960,7 @@ section:has(+ .rounded-section),
   align-items: center;
   gap: 4px;
   padding: 1px 10px 1px 8px;
-  margin-left: 40px;
+  margin-left: auto;
   margin-bottom: -2px;
   font-size: 10px;
   font-weight: 700;

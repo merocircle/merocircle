@@ -28,13 +28,13 @@ export function CustomMessage(props: any) {
     return <MessageSimple {...props} />;
   }
 
-  if (isMyMessage) {
-    return <MessageSimple {...props} />;
-  }
+  // if (isMyMessage) {
+  //   return <MessageSimple {...props} />;
+  // }
 
   if (isCreatorMessage) {
     return (
-      <div className="creator-message-row">
+      <div className={`creator-message-row ${isMyMessage ? 'right' : ''}`}>
         <div className="creator-message-indicator" />
         <div className="creator-message-tag">
           <Crown className="w-3 h-3" />
