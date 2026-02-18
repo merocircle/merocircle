@@ -671,7 +671,7 @@ export function StreamChatWrapper({
           onClick={() => toggleServer(server.id)}
           className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left hover:bg-muted/50 rounded-lg transition-colors group"
         >
-          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/30">
+          <div className="shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-border/30">
             {server.image ? (
               <img
                 src={server.image}
@@ -686,9 +686,9 @@ export function StreamChatWrapper({
             {server.name}
           </span>
           {isExpanded ? (
-            <ChevronDown className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+            <ChevronDown className="h-3 w-3 text-muted-foreground/60 shrink-0" />
           ) : (
-            <ChevronRight className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground/60 shrink-0" />
           )}
         </button>
 
@@ -737,7 +737,7 @@ export function StreamChatWrapper({
         onClick={() => selectServerMobile(server)}
         className="w-full p-4 flex items-center gap-3 text-left hover:bg-muted rounded-lg transition-colors border border-border bg-card mb-2"
       >
-        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+        <div className="shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
           {server.image ? (
             <img src={server.image} alt={server.name} className="w-full h-full object-cover" />
           ) : (
@@ -752,7 +752,7 @@ export function StreamChatWrapper({
             </span>
           )}
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
       </button>
     );
   }, [channelUnreadCounts, selectServerMobile]);
@@ -837,9 +837,9 @@ export function StreamChatWrapper({
         {/* Desktop Layout */}
         <div className="hidden md:flex h-full overflow-hidden">
           {/* Sidebar */}
-          <div className="w-80 border-r border-border flex-shrink-0 bg-card/50 backdrop-blur-sm flex flex-col overflow-hidden">
+          <div className="w-80 border-r border-border shrink-0 bg-card/50 backdrop-blur-sm flex flex-col overflow-hidden">
             {/* Sidebar Header */}
-            <div className="px-4 pt-4 pb-3 flex-shrink-0">
+            <div className="px-4 pt-4 pb-3 shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1000,7 +1000,7 @@ export function StreamChatWrapper({
         <div className="md:hidden h-full flex flex-col overflow-hidden min-w-0 w-full max-w-[100vw]">
           {mobileView === "servers" && (
             <div className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full">
-              <div className="px-4 sm:px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm flex-shrink-0 min-w-0">
+              <div className="px-4 sm:px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm shrink-0 min-w-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                     <MessageCircle className="h-4 w-4 text-primary" />
@@ -1060,7 +1060,7 @@ export function StreamChatWrapper({
                               onClick={() => selectDMChannel(dm)}
                               className="w-full p-4 flex items-center gap-3 text-left hover:bg-muted rounded-lg transition-colors border border-border bg-card mb-2"
                             >
-                              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                              <div className="shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                                 {dm.otherUser.image ? (
                                   <img
                                     src={dm.otherUser.image}
@@ -1082,11 +1082,11 @@ export function StreamChatWrapper({
                                 </p>
                               </div>
                               {dm.unreadCount > 0 && (
-                                <span className="flex-shrink-0 min-w-[24px] h-6 px-2 bg-primary text-primary-foreground text-sm font-medium rounded-full flex items-center justify-center">
+                                <span className="shrink-0 min-w-[24px] h-6 px-2 bg-primary text-primary-foreground text-sm font-medium rounded-full flex items-center justify-center">
                                   {dm.unreadCount > 99 ? "99+" : dm.unreadCount}
                                 </span>
                               )}
-                              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
                             </button>
                           );
                         })}
@@ -1114,15 +1114,15 @@ export function StreamChatWrapper({
 
           {mobileView === "channels" && selectedServer && (
             <div className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full">
-              <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0 min-w-0">
+              <div className="p-4 border-b border-border bg-card flex items-center gap-3 shrink-0 min-w-0">
                 <button
                   onClick={goBackToServers}
-                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors shrink-0"
                 >
                   <ArrowLeft className="h-5 w-5 text-foreground" />
                 </button>
                 <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                     {selectedServer.image ? (
                       <img
                         src={selectedServer.image}
@@ -1188,7 +1188,7 @@ export function StreamChatWrapper({
                 Message={CustomMessage}
               >
                 <Window>
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card shrink-0">
                     <button
                       onClick={goBackToChannels}
                       className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
@@ -1207,7 +1207,7 @@ export function StreamChatWrapper({
 
           {mobileView === "chat" && channelError && (
             <div className="h-full flex flex-col bg-background overflow-hidden">
-              <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0">
+              <div className="p-4 border-b border-border bg-card flex items-center gap-3 shrink-0">
                 <button
                   onClick={goBackToChannels}
                   className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
@@ -1351,11 +1351,17 @@ export function StreamChatWrapper({
         /* Send button — circular, prominent */
         .str-chat__send-button {
           background: var(--primary) !important;
-          border-radius: 50% !important;
+          border-radius: 10px !important;
           width: 38px !important;
           height: 38px !important;
           transition: all 0.15s ease !important;
           flex-shrink: 0 !important;
+        }
+
+        .str-chat__message-textarea-container {
+          border-radius: 8px !important;
+          background: var(--muted) !important;
+          margin-right: 12px !important;
         }
 
         .str-chat__send-button svg path {

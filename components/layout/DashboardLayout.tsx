@@ -114,10 +114,10 @@ export function DashboardLayout({
 
         {/* Main Content — safe area under mobile header when shown; scrollable except chat */}
         <main className={cn(
-          'h-[calc(100dvh-80px)] lg:h-[100dvh] overflow-x-hidden w-full md:pt-0',
+          'h-[calc(100dvh-60px)] lg:h-dvh overflow-x-hidden w-full md:pt-0',
           !shouldHideMobileHeader && 'pt-[calc(3rem+env(safe-area-inset-top))]',
           contextView !== 'chat' && 'overflow-y-auto',
-          contextView === 'chat' && 'h-[calc(100dvh-80px)] lg:h-[100dvh] overflow-hidden'
+          contextView === 'chat' && 'h-[calc(100dvh-60px)] lg:h-dvh overflow-hidden'
         )}>
           <div className={cn(
             'h-full min-h-0 mx-auto',
