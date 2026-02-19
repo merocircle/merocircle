@@ -8,6 +8,9 @@ on:
         required: true
         default: ''
 
+permissions:
+  contents: write
+
 jobs:
   promote:
     runs-on: ubuntu-latest
@@ -25,23 +28,24 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-      - name: Fetch latest branches
-        run: git fetch origin
+      - name: Fetch all branches
+        run: git fetch --all
 
       - name: Checkout prod branch
-        run: git checkout prod
-
-      - name: Ensure prod is up to date
-        run: git pull origin prod
+        run: |
+          git checkout prod || git checkout -b prod origin/prod
+          git pull origin prod
 
       - name: Merge main into prod
-        run: 'git merge origin/main --no-ff -m "Release: main to prod"'
+        run: |
+          'git merge origin/main --no-ff -m "🚀 Release: main → prod"'
 
       - name: Push prod branch
         run: git push origin prod
