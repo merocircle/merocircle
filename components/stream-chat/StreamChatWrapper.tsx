@@ -1394,100 +1394,236 @@ export function StreamChatWrapper({
           box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
         }
 
-        /* ── Message slide-in animations ── */
-        @keyframes slideInFromRight {
-          0% {
-            opacity: 0;
-            transform: translateX(20px) scale(0.95);
-          }
-          100% {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-          }
+        /* ═══════════════════════════════════════════
+           CHAT ANIMATIONS
+           ═══════════════════════════════════════════ */
+
+        /* ── Keyframes ── */
+
+        /* New message: slides up from slightly below */
+        @keyframes msgSlideUp {
+          0%   { opacity: 0; transform: translateY(16px) scale(0.97); }
+          60%  { opacity: 1; transform: translateY(-3px) scale(1.01); }
+          100% { opacity: 1; transform: translateY(0)   scale(1);    }
         }
 
-        @keyframes slideInFromLeft {
-          0% {
-            opacity: 0;
-            transform: translateX(-20px) scale(0.95);
-          }
-          100% {
-            opacity: 1;
-            transform: translateX(0) scale(1);
-          }
+        /* Other messages: slide up from slight left offset */
+        @keyframes msgSlideUpLeft {
+          0%   { opacity: 0; transform: translateY(16px) translateX(-8px) scale(0.97); }
+          60%  { opacity: 1; transform: translateY(-3px) translateX(0)     scale(1.01); }
+          100% { opacity: 1; transform: translateY(0)    translateX(0)     scale(1);    }
         }
 
-        /* Apply animation to new messages with ease-out timing (coming into view) */
+        /* Emoji pop-in (used per emoji with delay) */
+        @keyframes emojiPop {
+          0%   { opacity: 0; transform: scale(0.3) translateY(6px); }
+          70%  { opacity: 1; transform: scale(1.25) translateY(-2px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Action menu card scale-in from center-bottom */
+        @keyframes menuScaleIn {
+          0%   { opacity: 0; transform: translateX(-50%) scale(0.88) translateY(12px); }
+          70%  { opacity: 1; transform: translateX(-50%) scale(1.02) translateY(-2px); }
+          100% { opacity: 1; transform: translateX(-50%) scale(1)    translateY(0);    }
+        }
+
+        /* Backdrop fade-in */
+        @keyframes backdropFadeIn {
+          from { opacity: 0; backdrop-filter: blur(0px); }
+          to   { opacity: 1; backdrop-filter: blur(6px);  }
+        }
+
+        /* Reaction badge pop when added */
+        @keyframes reactionBadgePop {
+          0%   { transform: scale(0); }
+          65%  { transform: scale(1.35); }
+          100% { transform: scale(1); }
+        }
+
+        /* Send button pulse on click */
+        @keyframes sendPulse {
+          0%   { transform: scale(1);    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 40%, transparent); }
+          50%  { transform: scale(0.9);  box-shadow: 0 0 0 6px transparent; }
+          100% { transform: scale(1);    box-shadow: 0 0 0 0 transparent; }
+        }
+
+        @keyframes slideDown {
+          0%   { opacity: 0; transform: translateY(-10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        /* ── Apply to new messages ── */
         .str-chat__message-list .str-chat__li {
-          animation-duration: 0.35s;
-          animation-timing-function: ease-out;
+          animation-duration: 0.42s;
+          animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
           animation-fill-mode: both;
         }
-
-        /* My messages slide in from right */
         .str-chat__message-simple--me {
-          animation-name: slideInFromRight;
+          animation-name: msgSlideUp;
         }
-
-        /* Other messages slide in from left */
         .str-chat__message-simple:not(.str-chat__message-simple--me):not(.str-chat__message--system) {
-          animation-name: slideInFromLeft;
+          animation-name: msgSlideUpLeft;
         }
-
-        /* Prevent animation on system messages */
         .str-chat__message--system {
           animation: none !important;
         }
 
-        /* Smooth transition for message bubbles */
+        /* ── Bubble interactions ── */
         .str-chat__message-bubble {
-          transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+          transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+                      box-shadow 0.18s ease !important;
+          will-change: transform;
+        }
+        .str-chat__li:hover .str-chat__message-bubble {
+          transform: translateY(-2px) scale(1.012) !important;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+        }
+        /* Don't lift on mobile (long-press handles interaction) */
+        @media (hover: none) {
+          .str-chat__li:hover .str-chat__message-bubble {
+            transform: none !important;
+            box-shadow: inherit !important;
+          }
         }
 
-        /* Subtle scale effect on hover for better interactivity */
-        .str-chat__li:hover .str-chat__message-bubble {
-          transform: scale(1.01);
+        /* ── Reaction badge pop ── */
+        .str-chat__simple-reactions-list-item {
+          animation: reactionBadgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        /* ── Send button press feedback ── */
+        .str-chat__send-button:active {
+          animation: sendPulse 0.28s ease-out !important;
+        }
+
+        /* ── Long-press action menu (centered, animated) ── */
+
+        /* Full-screen backdrop */
+        .chat-menu-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 40;
+          background: rgba(0,0,0,0.35);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          animation: backdropFadeIn 0.22s ease-out both;
+        }
+
+        /* Centered card */
+        .chat-action-menu {
+          position: fixed;
+          left: 50%;
+          bottom: calc(5rem + env(safe-area-inset-bottom));
+          z-index: 50;
+          width: min(320px, 90vw);
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12);
+          animation: menuScaleIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          transform-origin: center bottom;
+        }
+
+        /* Emoji reaction row */
+        .chat-reaction-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+          padding: 14px 16px 10px;
+          gap: 4px;
+        }
+
+        .chat-reaction-btn {
+          width: 44px;
+          height: 44px;
+          font-size: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          transition: transform 0.12s ease, background 0.12s ease;
+          animation: emojiPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          animation-delay: var(--delay, 0ms);
+        }
+
+        .chat-reaction-btn:hover,
+        .chat-reaction-btn:active {
+          background: color-mix(in srgb, var(--muted) 80%, transparent);
+          transform: scale(1.3);
+        }
+
+        /* Divider */
+        .chat-action-divider {
+          height: 1px;
+          background: var(--border);
+          margin: 0;
+        }
+
+        /* Action row button (Reply etc.) */
+        .chat-action-row-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 18px;
+          font-size: 15px;
+          font-weight: 500;
+          color: var(--foreground);
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.12s ease;
+        }
+        .chat-action-row-btn:hover,
+        .chat-action-row-btn:active {
+          background: var(--muted);
+        }
+
+        /* Close pill */
+        .chat-action-close {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 12px 18px;
+          font-size: 14px;
+          color: var(--muted-foreground);
+          background: color-mix(in srgb, var(--muted) 60%, transparent);
+          border: none;
+          border-top: 1px solid var(--border);
+          cursor: pointer;
+          transition: background 0.12s ease;
+        }
+        .chat-action-close:hover,
+        .chat-action-close:active {
+          background: var(--muted);
+          color: var(--foreground);
         }
 
         /* ── Mobile view transitions ── */
         @media (max-width: 768px) {
-          /* Smooth transitions for mobile view containers */
           .stream-chat-wrapper .md\\:hidden {
             transition: transform 0.4s ease-out, opacity 0.3s ease-out;
             will-change: transform, opacity;
           }
-
-          /* Animate channel switcher strip appearance */
           .channel-strip-scroll {
             animation: slideDown 0.3s ease-out;
           }
-
-          @keyframes slideDown {
-            0% {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          /* Smooth fade-in for message list when switching channels */
           .str-chat__message-list {
             animation: fadeIn 0.3s ease-out;
           }
-
-          @keyframes fadeIn {
-            0% {
-              opacity: 0;
-            }
-            100% {
-              opacity: 1;
-            }
-          }
-
-          /* Smooth transitions for header elements */
           .str-chat__channel-header {
             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
           }

@@ -8,9 +8,9 @@ import {
   useChatContext,
   useMessageComposer,
 } from 'stream-chat-react';
-import { Crown, Reply, Smile } from 'lucide-react';
+import { Crown, Reply, Smile, X } from 'lucide-react';
 
-const LONG_PRESS_MS = 500;
+const LONG_PRESS_MS = 450;
 const DRAG_THRESHOLD_PX = 50;
 const MOBILE_REACTIONS = [
   { type: 'like', emoji: '👍' },
@@ -21,8 +21,10 @@ const MOBILE_REACTIONS = [
 ] as const;
 
 /**
- * Custom message component that highlights messages from the channel creator/owner.
- * On mobile only: long-press on bubble shows Reply + Reaction options (desktop unchanged).
+ * Custom message component with:
+ * - Creator message highlighting
+ * - Mobile long-press / drag-to-reveal: centered animated menu with backdrop
+ * - Desktop unchanged
  */
 export function CustomMessage(props: any) {
   const { message, handleReaction } = useMessageContext();
@@ -30,7 +32,8 @@ export function CustomMessage(props: any) {
   const { client } = useChatContext();
   const messageComposer = useMessageComposer();
 
-  const [mobileMenu, setMobileMenu] = useState<{ x: number; y: number } | null>(null);
+  // null = closed; 'open' = visible
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchMoved = useRef(false);
@@ -51,8 +54,13 @@ export function CustomMessage(props: any) {
   const isSystemMessage = message?.type === 'system';
   const isMyMessage = message?.user?.id === client?.userID;
 
+  const openMenu = useCallback(() => {
+    menuOpenedAt.current = Date.now();
+    setMenuOpen(true);
+  }, []);
+
   const closeMenu = useCallback(() => {
-    setMobileMenu(null);
+    setMenuOpen(false);
     touchMoved.current = false;
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -78,7 +86,7 @@ export function CustomMessage(props: any) {
   );
 
   const handleOverlayClose = useCallback(() => {
-    if (Date.now() - menuOpenedAt.current < 400) return;
+    if (Date.now() - menuOpenedAt.current < 350) return;
     closeMenu();
   }, [closeMenu]);
 
@@ -87,26 +95,22 @@ export function CustomMessage(props: any) {
       touchMoved.current = false;
       dragOpenedRef.current = false;
       const touch = e.touches[0];
-      const x = touch.clientX;
-      const y = touch.clientY;
-      touchStartX.current = x;
+      touchStartX.current = touch.clientX;
       longPressTimer.current = setTimeout(() => {
         longPressTimer.current = null;
         if (!touchMoved.current && !dragOpenedRef.current) {
-          menuOpenedAt.current = Date.now();
-          setMobileMenu({ x, y });
+          openMenu();
         }
       }, LONG_PRESS_MS);
     },
-    []
+    [openMenu]
   );
 
   const onTouchMove = useCallback(
     (e: React.TouchEvent) => {
       if (dragOpenedRef.current) return;
       const touch = e.touches[0];
-      const currentX = touch.clientX;
-      const deltaX = currentX - touchStartX.current;
+      const deltaX = touch.clientX - touchStartX.current;
       if (Math.abs(deltaX) >= DRAG_THRESHOLD_PX) {
         dragOpenedRef.current = true;
         touchMoved.current = true;
@@ -114,8 +118,7 @@ export function CustomMessage(props: any) {
           clearTimeout(longPressTimer.current);
           longPressTimer.current = null;
         }
-        menuOpenedAt.current = Date.now();
-        setMobileMenu({ x: currentX, y: touch.clientY });
+        openMenu();
         return;
       }
       touchMoved.current = true;
@@ -124,7 +127,7 @@ export function CustomMessage(props: any) {
         longPressTimer.current = null;
       }
     },
-    []
+    [openMenu]
   );
 
   const onTouchEnd = useCallback(() => {
@@ -146,11 +149,12 @@ export function CustomMessage(props: any) {
   const messageContent = (
     <>
       <MessageSimple {...props} />
-      {/* Mobile-only long-press menu */}
-      {isMobile && mobileMenu && (
+      {/* Mobile-only long-press menu — centered with animated backdrop */}
+      {isMobile && menuOpen && (
         <>
+          {/* Blurred backdrop */}
           <div
-            className="fixed inset-0 z-40 md:hidden"
+            className="chat-menu-backdrop"
             onClick={handleOverlayClose}
             onTouchEnd={(e) => {
               e.preventDefault();
@@ -158,39 +162,47 @@ export function CustomMessage(props: any) {
             }}
             aria-hidden
           />
-          <div
-            className="fixed z-50 md:hidden rounded-lg border border-border bg-card shadow-lg overflow-hidden min-w-[140px]"
-            style={{
-              left: Math.min(mobileMenu.x, typeof window !== 'undefined' ? window.innerWidth - 160 : mobileMenu.x),
-              top: Math.max(12, mobileMenu.y - 100),
-            }}
-          >
+
+          {/* Centered action sheet */}
+          <div className="chat-action-menu">
+            {/* Emoji reaction row */}
+            <div className="chat-reaction-row">
+              {MOBILE_REACTIONS.map(({ type, emoji }, i) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleReactionClick(type)}
+                  className="chat-reaction-btn"
+                  style={{ '--delay': `${i * 40}ms` } as React.CSSProperties}
+                  aria-label={type}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div className="chat-action-divider" />
+
+            {/* Reply action */}
             <button
               type="button"
               onClick={handleReply}
-              className="w-full flex items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-muted transition-colors"
+              className="chat-action-row-btn"
             >
-              <Reply className="h-3.5 w-3.5" />
-              Reply
+              <Reply className="h-4 w-4" />
+              <span>Reply</span>
             </button>
-            <div className="border-t border-border px-2 py-1.5">
-              <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground mb-1 px-0.5">
-                <Smile className="h-3 w-3" />
-                React
-              </div>
-              <div className="flex items-center gap-0.5 flex-wrap">
-                {MOBILE_REACTIONS.map(({ type, emoji }) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => handleReactionClick(type)}
-                    className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted transition-colors text-base"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </div>
+
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={closeMenu}
+              className="chat-action-close"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </>
       )}
