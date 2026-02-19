@@ -44,7 +44,7 @@ jobs:
           git pull origin prod
 
       - name: Merge main into prod
-        run: git merge origin/main --no-ff -m "Release: main to prod"
+        run: 'git merge origin/main --no-ff -m "Release: main to prod"'
 
       - name: Push prod branch
         run: git push origin prod
