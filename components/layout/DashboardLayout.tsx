@@ -81,11 +81,11 @@ export function DashboardLayout({
   const shouldHideMobileHeader = contextView !== 'explore';
 
   return (
-    <div
-      className={cn(
-        'bg-background h-full min-h-0 flex flex-col overflow-hidden overscroll-none',
-        className
-      )}
+    <div className={cn(
+      'min-h-dvh bg-background',
+      contextView === 'chat' ? 'h-dvh min-h-0 flex flex-col overflow-hidden overscroll-none' : 'min-h-dvh', 
+      className
+    )}
     >
       {/* Mobile Header */}
       <MobileHeader
@@ -95,12 +95,16 @@ export function DashboardLayout({
         hideHeader={shouldHideMobileHeader}
       />
 
-      {/* Grid: fills remaining height, never scrolls — only main scrolls (except chat) */}
+      {/* Desktop Grid: [ActivityBar | Content] */}
       <div
         className={cn(
-          'grid flex-1 min-h-0 overflow-hidden w-full',
-          // Mobile: padding above bottom nav for non-chat views
+          'grid min-h-dvh',
+          // Mobile: single column (3.5rem nav + safe area)
+          // 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
+          contextView === 'chat' && 'flex-1 min-h-0 overflow-hidden pb-0',
+          // Mobile: single column (3.5rem nav + safe area) — only when not chat so chat stays fixed
           contextView !== 'chat' && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
+          // Desktop: 2-column with activity bar
           'md:grid-cols-[64px_minmax(0,1fr)] md:pb-0',
         )}
       >
@@ -116,15 +120,19 @@ export function DashboardLayout({
           />
         </aside>
 
-        {/* Main Content — only this area scrolls (Home, Explore, etc.); chat has internal scroll */}
+        {/* Main Content — safe area under mobile header when shown; scrollable except chat */}
         <main className={cn(
-          'min-h-0 overflow-x-hidden w-full md:pt-0 flex flex-col',
+          'h-[calc(100dvh-60px)] lg:h-dvh overflow-x-hidden w-full md:pt-0',
           !shouldHideMobileHeader && 'pt-[calc(3rem+env(safe-area-inset-top))]',
           contextView !== 'chat' && 'overflow-y-auto',
+          // contextView === 'chat' && 'h-[calc(100dvh-60px)] lg:h-dvh overflow-hidden'
           contextView === 'chat' && 'overflow-hidden',
+          contextView === 'chat' && 'lg:h-dvh',
+          /* Mobile chat: fixed height above bottom nav so only messages scroll */
+          contextView === 'chat' && 'h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-60px)]'
         )}>
           <div className={cn(
-            'h-full min-h-0 mx-auto flex flex-col',
+            'h-full min-h-0 mx-auto',
             !isFullWidth && 'max-w-[830px] w-full px-3 sm:px-4 md:px-6',
             contextView === 'chat' && 'overflow-hidden max-w-none px-0 sm:px-0'
           )}>
@@ -135,7 +143,8 @@ export function DashboardLayout({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className={cn('h-full min-h-0', contextView === 'chat' && 'overflow-hidden flex flex-col')}
+                // className="h-full"
+                className={cn('h-full', contextView === 'chat' && 'min-h-0 overflow-hidden flex flex-col')}
               >
                 {children}
               </motion.div>
