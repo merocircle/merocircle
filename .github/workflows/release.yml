@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   promote:
@@ -25,7 +26,7 @@ jobs:
           echo "✅ Release confirmed."
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -35,23 +36,28 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-      - name: Fetch all branches
-        run: git fetch --all
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout prod branch
+      - name: Create and merge release PR (main → prod)
         run: |
-          git checkout prod || git checkout -b prod origin/prod
-          git pull origin prod
+          PR_URL=$(gh pr create --base prod --head main --title "Release: main to prod" --body "Automated release from workflow run" 2>/dev/null || true)
+          if [ -z "$PR_URL" ]; then
+            PR_URL=$(gh pr list --base prod --head main --state open --json number,url -q '.[0].url' 2>/dev/null || true)
+          fi
+          if [ -n "$PR_URL" ]; then
+            echo "Merging PR: $PR_URL"
+            gh pr merge "$PR_URL" --merge --delete-branch=false
+          else
+            echo "No PR to merge (main may already be up to date with prod)."
+          fi
 
-      - name: Merge main into prod
-        run: 'git merge origin/main --no-ff -m "Release: main to prod"'
-
-      - name: Push prod branch
-        run: git push origin prod
-
-      - name: Create release tag
+      - name: Create and push release tag
         run: |
+          git fetch origin prod
           VERSION="v$(date +'%Y.%m.%d.%H%M')"
-          git tag $VERSION
-          git push origin $VERSION
+          git tag "$VERSION" origin/prod
+          git push origin "$VERSION"
           echo "📦 Created tag $VERSION"
