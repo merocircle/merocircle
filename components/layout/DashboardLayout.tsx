@@ -81,7 +81,13 @@ export function DashboardLayout({
   const shouldHideMobileHeader = contextView !== 'explore';
 
   return (
-    <div className={cn('min-h-dvh bg-background', className)}>
+    <div
+      className={cn(
+        'bg-background',
+        contextView === 'chat' ? 'h-dvh min-h-0 flex flex-col overflow-hidden overscroll-none' : 'min-h-dvh',
+        className
+      )}
+    >
       {/* Mobile Header */}
       <MobileHeader
         title={mobileTitle}
@@ -94,8 +100,9 @@ export function DashboardLayout({
       <div
         className={cn(
           'grid min-h-dvh',
-          // Mobile: single column (3.5rem nav + safe area)
-          'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
+          contextView === 'chat' && 'flex-1 min-h-0 overflow-hidden pb-0',
+          // Mobile: single column (3.5rem nav + safe area) — only when not chat so chat stays fixed
+          contextView !== 'chat' && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
           // Desktop: 2-column with activity bar
           'md:grid-cols-[64px_minmax(0,1fr)] md:pb-0',
         )}
@@ -117,7 +124,10 @@ export function DashboardLayout({
           'h-[calc(100dvh-60px)] lg:h-dvh overflow-x-hidden w-full md:pt-0',
           !shouldHideMobileHeader && 'pt-[calc(3rem+env(safe-area-inset-top))]',
           contextView !== 'chat' && 'overflow-y-auto',
-          contextView === 'chat' && 'h-[calc(100dvh-60px)] lg:h-dvh overflow-hidden'
+          contextView === 'chat' && 'overflow-hidden',
+          contextView === 'chat' && 'lg:h-dvh',
+          /* Mobile chat: fixed height above bottom nav so only messages scroll */
+          contextView === 'chat' && 'h-[calc(100dvh-3.5rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-60px)]'
         )}>
           <div className={cn(
             'h-full min-h-0 mx-auto',
@@ -131,7 +141,7 @@ export function DashboardLayout({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full"
+                className={cn('h-full', contextView === 'chat' && 'min-h-0 overflow-hidden flex flex-col')}
               >
                 {children}
               </motion.div>

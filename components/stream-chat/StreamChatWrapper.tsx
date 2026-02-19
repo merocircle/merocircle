@@ -78,8 +78,6 @@ export function StreamChatWrapper({
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
 
   // Custom hooks
   const { otherServers, myServer, loading, fetchChannels } = useChannels(user);
@@ -339,33 +337,6 @@ export function StreamChatWrapper({
     setMobileView("channels");
     setActiveChannel(null);
   }, []);
-
-  // Touch gesture handlers for swipe-to-go-back
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    const deltaX = touchEndX - touchStartX.current;
-    const deltaY = touchEndY - touchStartY.current;
-
-    // Swipe threshold: deltaX > 60px AND less than 40px vertical drift
-    if (deltaX > 60 && Math.abs(deltaY) < 40) {
-      if (mobileView === 'chat') {
-        goBackToServers();
-      } else if (mobileView === 'channels') {
-        goBackToServers();
-      }
-    }
-
-    touchStartX.current = null;
-    touchStartY.current = null;
-  }, [mobileView, goBackToServers]);
 
   const selectChannel = useCallback(
     async (channel: SupabaseChannel, isRetry = false) => {
@@ -1059,7 +1030,7 @@ export function StreamChatWrapper({
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden h-full flex flex-col overflow-hidden min-w-0 w-full max-w-[100vw]">
+        <div className="md:hidden h-full min-h-0 flex flex-col overflow-hidden min-w-0 w-full max-w-[100vw]">
           {mobileView === "servers" && (
             <div className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full">
               <div className="px-4 sm:px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm flex-shrink-0 min-w-0">
@@ -1175,11 +1146,7 @@ export function StreamChatWrapper({
           )}
 
           {mobileView === "channels" && selectedServer && (
-            <div 
-              className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
+            <div className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full">
               <div className="p-4 border-b border-border bg-card flex items-center gap-3 flex-shrink-0 min-w-0">
                 <button
                   onClick={goBackToServers}
@@ -1244,11 +1211,7 @@ export function StreamChatWrapper({
           )}
 
           {mobileView === "chat" && activeChannel && (
-            <div 
-              className="h-full flex flex-col overflow-hidden min-w-0 w-full"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
+            <div className="h-full min-h-0 flex flex-col overflow-hidden min-w-0 w-full">
               <Channel
                 channel={activeChannel}
                 CustomMessageActionsList={CustomMessageActionsList}
@@ -2025,25 +1988,43 @@ export function StreamChatWrapper({
         }
 
         /* ── Message options (action icons) - show on hover ── */
-        .str-chat__message-options-wrapper {
+        .str-chat__message-options-wrapper,
+        .str-chat__message-options {
           opacity: 0;
           transition: opacity 0.15s ease !important;
         }
-        .str-chat__li:hover .str-chat__message-options-wrapper {
+        .str-chat__li:hover .str-chat__message-options-wrapper,
+        .str-chat__li:hover .str-chat__message-options {
           opacity: 1;
         }
 
         /* ── Touch devices: always show message options (desktop / tablet only) ── */
         @media (hover: none) and (min-width: 769px) {
-          .str-chat__message-options-wrapper {
+          .str-chat__message-options-wrapper,
+          .str-chat__message-options {
             opacity: 1 !important;
           }
         }
 
         /* ── Mobile: hide message options (long-press menu used instead) ── */
         @media (max-width: 768px) {
-          .str-chat__message-options-wrapper {
+          .str-chat__message-options-wrapper,
+          .str-chat__message-options {
             display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+          }
+          /* Remove reserved space for options so bubbles sit flush */
+          .str-chat__message--other .str-chat__message-inner,
+          .str-chat__message--me .str-chat__message-inner {
+            margin-inline-start: 0 !important;
+            margin-inline-end: 0 !important;
           }
         }
 
@@ -2062,6 +2043,49 @@ export function StreamChatWrapper({
         /* ── Prevent overscroll bleed ── */
         .str-chat__message-list {
           overscroll-behavior: contain !important;
+        }
+
+        /* ── Mobile: fixed chat container, only message list scrolls ── */
+        @media (max-width: 768px) {
+          .stream-chat-wrapper {
+            height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat,
+          .stream-chat-wrapper .str-chat__channel,
+          .stream-chat-wrapper .str-chat__container {
+            height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat__main-panel {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat__main-panel-inner {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat__list {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+          }
+          .stream-chat-wrapper .str-chat__message-input {
+            flex-shrink: 0 !important;
+          }
         }
 
         /* ── Channel strip scrollbar hiding ── */
