@@ -1,0 +1,57 @@
+name: Promote Main to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "release" to confirm production deployment'
+        required: true
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Confirm release intent
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "release" ]; then
+            echo "❌ Release not confirmed. You must type 'release'."
+            exit 1
+          fi
+          echo "✅ Release confirmed."
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Checkout prod branch
+        run: |
+          git checkout prod || git checkout -b prod origin/prod
+          git pull origin prod
+
+      - name: Merge main into prod
+        run: 'git merge origin/main --no-ff -m "Release: main to prod"'
+
+      - name: Push prod branch
+        run: git push origin prod
+
+      - name: Create release tag
+        run: |
+          VERSION="v$(date +'%Y.%m.%d.%H%M')"
+          git tag $VERSION
+          git push origin $VERSION
+          echo "📦 Created tag $VERSION"
