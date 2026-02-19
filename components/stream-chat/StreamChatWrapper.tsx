@@ -2055,6 +2055,12 @@ export function StreamChatWrapper({
             margin-inline-start: 0 !important;
             margin-inline-end: 0 !important;
           }
+          /* Prevent Safari/iOS text selection on long-press so reaction menu can open */
+          .mobile-long-press-wrapper {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+          }
         }
 
         /* ── iOS safe-area insets for message input ── */
