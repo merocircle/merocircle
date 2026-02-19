@@ -227,6 +227,8 @@ export default function RootLayout({
           src="https://t.contentsquare.net/uxa/0a3928cc3193c.js"
           strategy="lazyOnload"
         />
+        {/* Single scroll root: fills viewport; scrolls only here (or inside dashboard main), not body */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden w-full">
         <ErrorBoundary>
         <ThemeProvider
           attribute="class"
@@ -249,6 +251,7 @@ export default function RootLayout({
           </QueryProvider>
         </ThemeProvider>
         </ErrorBoundary>
+        </div>
       </body>
     </html>
   );

@@ -78,6 +78,11 @@ export function StreamChatWrapper({
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // Custom hooks
   const { otherServers, myServer, loading, fetchChannels } = useChannels(user);
@@ -791,13 +796,26 @@ export function StreamChatWrapper({
   }, [channelUnreadCounts, selectServerMobile]);
 
 
-  // Loading/Error states
+  // Loading/Error states — only use after mount to avoid hydration mismatch (server vs client connection state)
+  if (!hasMounted) {
+    return (
+      <div
+        className={`flex items-center justify-center h-full bg-background ${className}`}
+      >
+        <div className="text-center p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
+          <p className="text-muted-foreground">Connecting to chat...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isConnecting) {
     return (
       <div
         className={`flex items-center justify-center h-full bg-background ${className}`}
       >
-        <div className="text-center">
+        <div className="text-center p-6">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
           <p className="text-muted-foreground">Connecting to chat...</p>
         </div>
@@ -832,7 +850,7 @@ export function StreamChatWrapper({
     if (user) {
       return (
         <div className={`flex items-center justify-center h-full bg-background ${className}`}>
-          <div className="text-center">
+          <div className="text-center p-6">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
             <p className="text-muted-foreground">Connecting to chat...</p>
           </div>
@@ -1230,8 +1248,8 @@ export function StreamChatWrapper({
                     </button>
                     <MobileChannelHeader selectedServer={selectedServer} />
                   </div>
-                  {/* Horizontal channel switcher strip */}
-                  {selectedServer && selectedServer.channels.length > 1 && (
+                  {/* Horizontal channel switcher strip — show when multiple channels or creator's own server (for + button) */}
+                  {selectedServer && (selectedServer.channels.length >= 1 || (selectedServer.id === myServer?.id && isCreator)) && (
                     <div className="flex overflow-x-auto gap-1.5 px-3 py-2 border-b border-border bg-card/40 flex-shrink-0 channel-strip-scroll">
                       {selectedServer.channels.map(ch => {
                         const isActive = activeChannel?.id === ch.stream_channel_id;
@@ -1257,6 +1275,17 @@ export function StreamChatWrapper({
                           </button>
                         );
                       })}
+                      {/* Creator: add channel button at end of strip (scrollable with channels) */}
+                      {selectedServer.id === myServer?.id && isCreator && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateChannel(true)}
+                          className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                          aria-label="Create channel"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   )}
                   <MessageList />

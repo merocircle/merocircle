@@ -192,7 +192,7 @@ export function CreateChannelModal({ onClose, onCreate }: CreateChannelModalProp
             )}
           </div>
 
-          <div className="p-4 border-t border-border flex gap-3">
+          <div className="p-4 pb-[calc(3.5rem+env(safe-area-inset-bottom))] sm:pb-4 border-t border-border flex gap-3 bg-card">
             <Button
               type="button"
               variant="outline"

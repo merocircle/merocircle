@@ -219,16 +219,26 @@
   }
   html {
     overflow-x: hidden;
+    overflow-y: hidden;
     max-width: 100vw;
     position: relative;
     overscroll-behavior-x: none;
+    /* Lock viewport height so only main content scrolls, no gap above nav */
+    height: 100dvh;
+    height: 100%;
   }
   body {
     overflow-x: hidden;
+    overflow-y: hidden;
     max-width: 100vw;
     position: relative;
     overscroll-behavior-x: none;
     overflow-wrap: break-word;
+    /* Fill viewport; scrolling happens only in main content area */
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     @apply bg-background text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
