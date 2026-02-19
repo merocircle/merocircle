@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageLayout } from '@/components/common/PageLayout';
 
@@ -60,10 +60,33 @@ function ChatPageContent() {
   const searchParams = useSearchParams();
   const channelId = searchParams.get('channel');
 
+  // On mobile, lock body scroll so the whole chat box stays fixed — only the message list scrolls
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)');
+    if (!mql.matches) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev || '';
+    };
+  }, []);
+
   return (
-    <div className="h-full min-h-0 flex flex-col overflow-hidden">
-      <StreamCommunitySection channelId={channelId || undefined} />
-    </div>
+    <>
+      {/* Mobile: fix the entire chat box to the viewport so it cannot scroll */}
+      <div
+        className={[
+          'flex flex-col overflow-hidden',
+          'fixed inset-x-0 top-0 z-0',
+          'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]',
+          'md:relative md:inset-auto md:bottom-auto md:z-auto md:h-full md:min-h-0',
+        ].join(' ')}
+      >
+        <div className="h-full min-h-0 flex flex-col overflow-hidden">
+          <StreamCommunitySection channelId={channelId || undefined} />
+        </div>
+      </div>
+    </>
   );
 }
 
