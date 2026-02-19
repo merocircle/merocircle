@@ -229,6 +229,19 @@ See `docs/QUICK_TEST.md` for detailed testing instructions.
 
 ---
 
+## Testing
+
+Unit, integration, and E2E tests run on every push and PR. See **[docs/TESTING.md](docs/TESTING.md)** for full details.
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run unit + integration tests (Vitest) once |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run test:coverage` | Run Vitest with coverage report |
+| `npm run test:e2e` | Run E2E tests (Playwright); app must be at http://localhost:3000 |
+
+---
+
 ## Project Structure
 
 ```
