@@ -460,7 +460,7 @@ export function EnhancedPostCard({
         >
           {/* Supporters only badge – top right */}
           {isSupportersOnlyPost && (
-            <div className="absolute bottom-3 md:top-3 right-3 z-10">
+            <div className="hidden sm:block absolute top-3 right-3 z-10">
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold",
@@ -640,7 +640,7 @@ export function EnhancedPostCard({
           )}
 
           {(post.content || (shouldBlur && post.post_type !== "poll")) && post.post_type !== "poll" && (
-            <div className="mb-4" onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}>
+            <div className="mb-4 cursor-pointer" onClick={!shouldBlur ? handlePostClick : onNavigateToMembership}>
               {shouldBlur ? (
                 <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] cursor-pointer">
                   Subscribe to access this post.

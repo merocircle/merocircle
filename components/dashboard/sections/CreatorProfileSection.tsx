@@ -1501,8 +1501,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       {/* Tabs Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-16">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="sticky top-0.5 z-30 bg-background/50 rounded-lg backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-4 min-w-0">
-            <TabsList className="inline-flex xs:justify-start w-full h-11 bg-muted p-1 gap-1 overflow-x-auto scrollbar-hide rounded-md">
+          <div className="sticky top-0 z-30 bg-background/50 rounded-lg backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-4 min-w-0">
+            <TabsList className="inline-flex xs:justify-start w-full h-11 bg-muted p-1 gap-1 overflow-x-auto overflow-y-clip scrollbar-hide rounded-md">
               <TabsTrigger value="posts" className="flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <FileText className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Posts
