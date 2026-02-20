@@ -104,6 +104,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const membershipTabRef = useRef<HTMLDivElement>(null);
 
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const [tempHighlightPostId, setTempHighlightPostId] = useState<string | null>(null);
@@ -314,6 +315,16 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   }, [renewFromUrl, subscriptionIdFromUrl, user, creatorId, refreshCreatorDetails]);
 
   const { subscribe, unsubscribe } = useSubscription();
+
+  const handleJoinCircle = useCallback(() => {
+    setActiveTab('membership');
+    // Scroll to membership content after a short delay to ensure tab content is rendered
+    setTimeout(() => {
+      if (membershipTabRef.current) {
+        membershipTabRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  }, []);
 
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
@@ -1475,7 +1486,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     </Badge>
                   ) : (
                     <Button
-                      onClick={() => setActiveTab('membership')}
+                      onClick={handleJoinCircle}
                       className="gap-2 px-5 h-9 text-sm font-semibold shadow-md shadow-primary/15"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -1605,7 +1616,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                 <Button 
                                   size="lg" 
                                   className="w-full shadow-lg shadow-primary/20 rounded-full" 
-                                  onClick={() => setActiveTab('membership')}
+                                  onClick={handleJoinCircle}
                                 >
                                   <span>Join the Circle</span>
                                 </Button>
@@ -1619,7 +1630,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </div>
               </TabsContent>
 
-              <TabsContent value="membership" className="pt-6">
+              <TabsContent value="membership" className="pt-6" ref={membershipTabRef}>
                 <div className="max-w-4xl mx-auto">
                   {isOwnProfile ? (
                     <Card className="border-border/50 p-12 text-center">

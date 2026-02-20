@@ -63,9 +63,9 @@ export function TierSelection({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
       {/* Tier Cards - Horizontal 3-Column Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-6">
         {tiers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No tiers available. Please check back later.
@@ -144,7 +144,7 @@ export function TierSelection({
                   )}
 
                   {/* Header Image Area */}
-                  <div className={`h-20 sm:h-24 md:h-32 bg-gradient-to-br ${
+                  <div className={`h-12 sm:h-16 md:h-24 bg-gradient-to-br ${
                     tier.tier_level === 1 ? 'from-muted to-muted/50' :
                     tier.tier_level === 2 ? 'from-foreground/5 to-foreground/10' :
                     'from-foreground/10 to-foreground/5'
@@ -153,7 +153,7 @@ export function TierSelection({
                       <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-foreground/20 to-transparent" />
                     </div>
                     <div className="relative z-10">
-                      <Icon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${
+                      <Icon className={`w-5 h-5 sm:w-7 sm:h-7 md:w-10 md:h-10 ${
                         tier.tier_level === 1 ? 'text-foreground/40' :
                         tier.tier_level === 2 ? 'text-foreground/60' :
                         'text-foreground/70'
@@ -162,33 +162,33 @@ export function TierSelection({
                   </div>
 
                   {/* Content */}
-                  <div className={`flex-1 flex flex-col p-3 sm:p-4 md:p-6 ${isCurrent ? 'opacity-60' : ''}`}>
+                  <div className={`flex-1 flex flex-col p-2 sm:p-3 md:p-5 ${isCurrent ? 'opacity-60' : ''}`}>
                     {/* Title and Price */}
-                    <div className="mb-3 sm:mb-4 md:mb-6">
-                      <h3 className="text-base sm:text-lg md:text-xl font-bold text-foreground mb-1">
+                    <div className="mb-2 sm:mb-3 md:mb-4">
+                      <h3 className="text-sm sm:text-base md:text-lg font-bold text-foreground mb-1">
                         {getTierDisplayName(tier.tier_level)}
                       </h3>
-                      <div className="mt-2 sm:mt-3">
-                        <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
+                      <div className="mt-1 sm:mt-2">
+                        <div className="text-lg sm:text-xl md:text-3xl font-bold text-foreground">
                           {tier.price === 0 ? 'Free' : `NPR ${tier.price}`}
                         </div>
-                        <div className="text-xs sm:text-sm text-muted-foreground mt-1">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           {tier.price === 0 ? 'no payment required' : 'per month'}
                         </div>
                       </div>
                     </div>
 
                     {/* Benefits */}
-                    <div className="flex-1 space-y-2 sm:space-y-2.5 mb-3 sm:mb-4 md:mb-6">
+                    <div className="flex-1 space-y-1.5 sm:space-y-2 mb-2 sm:mb-3 md:mb-4">
                       {tier.benefits.map((benefit, index) => (
                         <div
                           key={index}
-                          className="flex items-start gap-2.5"
+                          className="flex items-start gap-2"
                         >
-                          <div className="flex-shrink-0 w-4 h-4 rounded-full bg-foreground/10 flex items-center justify-center mt-0.5">
-                            <Check className="w-2.5 h-2.5 text-foreground" />
+                          <div className="flex-shrink-0 w-3.5 h-3.5 rounded-full bg-foreground/10 flex items-center justify-center mt-0.5">
+                            <Check className="w-2 h-2 text-foreground" />
                           </div>
-                          <span className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                          <span className="text-xs text-muted-foreground leading-tight">
                             {benefit}
                           </span>
                         </div>
@@ -196,13 +196,13 @@ export function TierSelection({
                       
                       {/* Extra Perks */}
                       {tier.extra_perks && tier.extra_perks.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-border">
+                        <div className="mt-3 pt-3 border-t border-border">
                           {tier.extra_perks.map((perk, perkIndex) => (
-                            <div key={`${tier.id}-perk-${perkIndex}`} className="flex items-start gap-2.5 mb-2.5">
-                              <div className="flex-shrink-0 w-4 h-4 rounded-full bg-foreground/10 flex items-center justify-center mt-0.5">
-                                <Check className="w-2.5 h-2.5 text-foreground" />
+                            <div key={`${tier.id}-perk-${perkIndex}`} className="flex items-start gap-2 mb-2">
+                              <div className="flex-shrink-0 w-3.5 h-3.5 rounded-full bg-foreground/10 flex items-center justify-center mt-0.5">
+                                <Check className="w-2 h-2 text-foreground" />
                               </div>
-                              <span className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                              <span className="text-xs text-muted-foreground leading-tight">
                                 {perk}
                               </span>
                             </div>
@@ -216,21 +216,21 @@ export function TierSelection({
                       {isCurrent ? (
                         <button
                           disabled
-                          className="w-full py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 rounded-md font-medium text-center bg-muted/50 text-muted-foreground cursor-not-allowed border border-border/50 text-xs sm:text-sm"
+                          className="w-full py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 rounded-md font-medium text-center bg-muted/50 text-muted-foreground cursor-not-allowed border border-border/50 text-xs"
                         >
                           Current Plan
                         </button>
                       ) : isComingSoon ? (
                         <button
                           disabled
-                          className="w-full py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 rounded-md font-medium text-center bg-muted/30 text-muted-foreground cursor-not-allowed border border-border/30 text-xs sm:text-sm"
+                          className="w-full py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 rounded-md font-medium text-center bg-muted/30 text-muted-foreground cursor-not-allowed border border-border/30 text-xs"
                         >
                           Coming Soon
                         </button>
                       ) : (
                         <button
                           disabled={loading}
-                          className="w-full py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 rounded-md font-medium text-center bg-foreground text-background hover:opacity-90 active:opacity-80 transition-all duration-200 disabled:opacity-50 text-xs sm:text-sm"
+                          className="w-full py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 rounded-md font-medium text-center bg-foreground text-background hover:opacity-90 active:opacity-80 transition-all duration-200 disabled:opacity-50 text-xs"
                         >
                           {tier.price === 0 && tier.tier_level === 1
                             ? 'Join as Supporter'
