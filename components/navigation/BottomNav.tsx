@@ -10,6 +10,7 @@ import {
   User,
   Settings,
   BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { BottomNavIcon } from './NavIcon';
 import { cn } from '@/lib/utils';
@@ -81,18 +82,35 @@ export function BottomNav({
             <BarChart3 className="w-5 h-5" strokeWidth={2.5} />
           </Link>
         ) : (
-          <Link
-            href="/signup/creator"
-            className={cn(
-              'w-11 h-11 rounded-full flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform',
-              isSignupCreatorActive
-                ? 'bg-muted text-muted-foreground ring-2 ring-border ring-offset-2 ring-offset-card'
-                : 'bg-muted text-foreground border border-border/60',
-            )}
-            aria-label="Join as creator"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Settings className="w-5 h-5" strokeWidth={2} />
-          </Link>
+            <Link
+              href="/signup/creator"
+              className={cn(
+                'w-11 h-11 rounded-full flex items-center justify-center shadow-lg shadow-primary/25 active:scale-95 transition-transform',
+                'bg-gradient-to-r from-primary/90 to-primary text-primary-foreground',
+                'ring-2 ring-primary ring-offset-2 ring-offset-card',
+                'hover:shadow-xl hover:shadow-primary/30',
+              )}
+              aria-label="Join as creator"
+            >
+              <motion.div
+                animate={{ 
+                  rotate: [0, 5, -5, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Sparkles className="w-5 h-5" strokeWidth={2.5} />
+              </motion.div>
+            </Link>
+          </motion.div>
         )}
       </div>
 
