@@ -136,6 +136,20 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     updateSupporterTier
   } = useCreatorDetails(creatorId);
 
+  // Redirect from /creator/id to /creator/username when username is available
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const pathname = window.location.pathname;
+    const username = creatorDetails?.username;
+    
+    // Check if current path is /creator/id and we have a username
+    if (username && pathname.startsWith('/creator/') && pathname === `/creator/${creatorId}`) {
+      const newPath = `/creator/${username}`;
+      window.history.replaceState({}, '', newPath);
+    }
+  }, [creatorDetails, creatorId]);
+
   const creatorPostIds = useMemo(() => recentPosts.map((p) => String(p.id)), [recentPosts]);
   useRealtimeCreatorPosts(creatorPostIds, refreshCreatorDetails);
 
@@ -418,7 +432,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       bio: creatorDetails.bio || '',
       category: creatorDetails.category || '',
     });
-    setEditVanityUsername(creatorDetails.vanity_username || '');
+    setEditVanityUsername(creatorDetails.username || '');
     const links = creatorDetails.social_links || {};
     setEditSocialLinks(links);
     setEditPlatformIds(Object.keys(links));
