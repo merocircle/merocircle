@@ -1561,7 +1561,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
               <TabsContent value="chat" className="mt-3">
                 <div className="relative">
-                  {isSupporter ? (
+                  {isSupporter || isOwnProfile ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
                       <div className="h-[400px] sm:h-[500px] lg:h-[600px]">
                         <StreamCommunitySection creatorId={creatorId} />
