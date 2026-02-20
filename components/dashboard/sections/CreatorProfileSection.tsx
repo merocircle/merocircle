@@ -2094,18 +2094,18 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       )}
 
       <Dialog open={!!showConfirmFreeSupport} onOpenChange={(open) => !open && setShowConfirmFreeSupport(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Join as Supporter (Free)</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-sm mx-4 sm:mx-auto sm:max-w-md" showCloseButton={false}>
+          <DialogHeader className="text-center sm:text-left">
+            <DialogTitle className="text-lg sm:text-xl">Join as Supporter (Free)</DialogTitle>
+            <DialogDescription className="text-sm mt-2">
               You&apos;ll get access to community chat and posts. No payment required.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex gap-3 mt-4">
-            <Button variant="outline" className="flex-1" onClick={() => setShowConfirmFreeSupport(null)} disabled={paymentLoading}>
+          <div className="flex gap-3 mt-6">
+            <Button variant="outline" className="flex-1 h-10 text-sm" onClick={() => setShowConfirmFreeSupport(null)} disabled={paymentLoading}>
               Cancel
             </Button>
-            <Button className="flex-1" onClick={handleConfirmFreeSupport} disabled={paymentLoading}>
+            <Button className="flex-1 h-10 text-sm" onClick={handleConfirmFreeSupport} disabled={paymentLoading}>
               {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm'}
             </Button>
           </div>
