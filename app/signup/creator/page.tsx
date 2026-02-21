@@ -288,18 +288,72 @@ export default function CreatorSignupPage() {
       if (userProfile.role === 'creator') {
         // Check if creator profile exists
         const checkCreatorProfile = async () => {
-          const { data } = await supabase
+          const { data: creatorProfile } = await supabase
             .from('creator_profiles')
             .select('*')
             .eq('user_id', user.id)
             .single();
 
-          if (!data) {
+          if (!creatorProfile) {
             // Creator profile doesn't exist: only move to creator-details if we're still on signup (don't overwrite restored draft step)
             setStep((s) => (s === 'signup' ? 'creator-details' : s));
           } else {
-            // Creator profile exists, redirect to Creator Studio
-            router.push('/creator-studio');
+            // Creator profile exists - check if it's complete (has required fields)
+            const isComplete = creatorProfile.vanity_username && creatorProfile.category;
+            
+            if (isComplete) {
+              // Profile is complete - redirect to Creator Studio
+              router.push('/creator-studio');
+            } else {
+              // Profile is incomplete - load existing data and allow completion
+              setCreatorData({
+                username: creatorProfile.vanity_username || '',
+                bio: creatorProfile.bio || '',
+                category: creatorProfile.category || '',
+                socialLinks: creatorProfile.social_links || {}
+              });
+              
+              // Load existing social platforms
+              if (creatorProfile.social_links) {
+                const platforms = Object.keys(creatorProfile.social_links);
+                setAddedSocialPlatforms(platforms);
+              }
+              
+              // Load existing profile photo
+              if (userProfile.photo_url) {
+                setProfilePhotoUrl(userProfile.photo_url);
+              }
+              
+              // Load existing tier data
+              const { data: tierData } = await supabase
+                .from('subscription_tiers')
+                .select('*')
+                .eq('creator_id', user.id)
+                .order('tier_level', { ascending: true });
+                
+              if (tierData && tierData.length > 0) {
+                const newTierPrices = { ...tierPrices };
+                const newTierExtraPerks = { ...tierExtraPerks };
+                
+                tierData.forEach(tier => {
+                  if (tier.tier_level === 1) {
+                    newTierExtraPerks[1] = tier.extra_perks || [];
+                  } else if (tier.tier_level === 2) {
+                    newTierPrices.tier2 = tier.price.toString();
+                    newTierExtraPerks[2] = tier.extra_perks || [];
+                  } else if (tier.tier_level === 3) {
+                    newTierPrices.tier3 = tier.price.toString();
+                    newTierExtraPerks[3] = tier.extra_perks || [];
+                  }
+                });
+                
+                setTierPrices(newTierPrices);
+                setTierExtraPerks(newTierExtraPerks);
+              }
+              
+              // Set to creator-details step to complete the profile
+              setStep('creator-details');
+            }
           }
         };
 
@@ -535,16 +589,17 @@ export default function CreatorSignupPage() {
       {/* Header */}
       <header className="relative z-10 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 top-0">
         <div className="w-full max-w-6xl mx-auto flex h-14 sm:h-16 items-center justify-between gap-3 px-4 sm:px-6 min-w-0">
-          <Link href="/" className="flex items-center gap-2 min-w-0 flex-shrink">
-            <Logo className="w-6 h-6 text-primary object-contain flex-shrink-0"/>
-            <span className="text-lg sm:text-xl font-bold text-foreground truncate">MeroCircle</span>
-          </Link>
-          <Link href="/profile" className="flex-shrink-0">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground text-sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Profile
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Link href="/profile" className="flex-shrink-0">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link href="/" className="flex items-center gap-2 min-w-0 flex-shrink">
+              <Logo className="w-6 h-6 text-primary object-contain flex-shrink-0"/>
+              <span className="text-lg sm:text-xl font-bold text-foreground truncate">MeroCircle</span>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -553,7 +608,7 @@ export default function CreatorSignupPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className={`w-full max-w-full min-w-0 ${step === 'tier-pricing' ? 'max-w-6xl' : 'max-w-2xl'}`}
+          className={`w-full min-w-0 ${step === 'tier-pricing' ? 'max-w-6xl xl:max-w-7xl' : 'max-w-3xl lg:max-w-4xl'}`}
         >
           {step === 'signup' && (
             <motion.div
@@ -682,9 +737,9 @@ export default function CreatorSignupPage() {
                     </p>
                     <div className="flex items-center gap-4">
                       <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border flex-shrink-0">
-                        {(profilePhotoUrl || user?.user_metadata?.avatar_url) ? (
+                        {(profilePhotoUrl || user?.photo_url) ? (
                           <img
-                            src={profilePhotoUrl || user?.user_metadata?.avatar_url}
+                            src={(profilePhotoUrl || user?.photo_url) ?? undefined}
                             alt="Profile"
                             className="w-full h-full object-cover"
                           />
@@ -718,7 +773,7 @@ export default function CreatorSignupPage() {
                           >
                             <span className="cursor-pointer">
                               <Camera className="w-4 h-4 mr-2" />
-                              {profilePhotoUrl || user?.user_metadata?.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                              {profilePhotoUrl || user?.photo_url ? 'Change Photo' : 'Upload Photo'}
                             </span>
                           </Button>
                         </label>

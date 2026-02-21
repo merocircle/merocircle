@@ -40,15 +40,16 @@
 }
 
 .proof-payment-logo {
-  height: 18px;
+  height: 26px;
   width: auto;
-  opacity: 0.3;
+  opacity: 0.5;
   filter: grayscale(1);
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, filter 0.2s;
   object-fit: contain;
 }
 .proof-payment-logo:hover {
-  opacity: 0.6;
+  opacity: 1;
+  filter: grayscale(0);
 }
 
 /* ── Responsive ── */
@@ -72,7 +73,7 @@
   }
 
   .proof-payment-logo {
-    height: 14px;
+    height: 20px;
   }
 
   .proof-label {

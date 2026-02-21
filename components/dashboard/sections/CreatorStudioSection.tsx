@@ -485,7 +485,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const creatorSlug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user?.id;
 
   return (
-    <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto overflow-y-auto h-full">
+    <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto h-full">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
