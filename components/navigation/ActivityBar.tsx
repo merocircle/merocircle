@@ -234,7 +234,7 @@ export function ActivityBar({
 
         {/* Favorite Creators */}
         {favoriteCreators.length > 0 && (
-          <div className="flex flex-col items-center gap-1.5 flex-1 overflow-y-auto scrollbar-hide px-1">
+          <div className="flex flex-col items-center gap-1.5 overflow-y-auto scrollbar-hide px-1 max-h-[calc(100vh-400px)]">
             {favoriteCreators.slice(0, 5).map((creator) => (
               <Tooltip key={creator.id}>
                 <TooltipTrigger asChild>
@@ -297,7 +297,7 @@ export function ActivityBar({
         <div className="flex-1" />
 
         {/* Bottom Section */}
-        <div className="flex flex-col items-center gap-1.5 mt-auto">
+        <div className="flex flex-col items-center gap-1.5 py-2">
           {/* Feedback */}
           <Tooltip>
             <TooltipTrigger asChild>
