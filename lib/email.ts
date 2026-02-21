@@ -51,6 +51,7 @@ interface PostNotificationEmailData {
   supporterId: string;
   creatorId: string;
   creatorName: string;
+  creatorUsername?: string;
   postTitle: string;
   postContent: string;
   postImageUrl?: string | null;
@@ -90,7 +91,7 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
 
     // Render email using appropriate template
     const EmailTemplate = data.isPoll ? PollNotification : PostNotification;
@@ -241,7 +242,7 @@ Your support helps ${data.creatorName} create more amazing content.
 You're part of a community that matters.
 
 Notification Settings: ${appUrl}/settings
-View Profile: ${appUrl}/${data.creatorName}
+View Profile: ${appUrl}/${data.creatorUsername || data.creatorName}
 
 MeroCircle © ${new Date().getFullYear()}
   `.trim();
@@ -430,6 +431,8 @@ interface ChannelMentionEmailData {
   memberId: string;
   creatorId: string;
   creatorName: string;
+  /** Creator's URL slug (username or vanity_username). Used to build the profile link. */
+  creatorUsername?: string;
   channelName: string;
   channelId: string;
   messageText: string;
@@ -452,7 +455,7 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
     const channelUrl = `${appUrl}/chat?channel=${data.channelId}`;
     const mentionType = data.mentionType ?? 'everyone';
 
@@ -730,6 +733,8 @@ export async function sendSubscriptionExpiringEmail(data: {
   supporterEmail: string;
   supporterName: string;
   creatorName: string;
+  /** Creator's URL slug (username or vanity_username). Used to build the profile link. */
+  creatorUsername?: string;
   creatorId: string;
   tierLevel: number;
   expiryDate: string;
@@ -744,7 +749,7 @@ export async function sendSubscriptionExpiringEmail(data: {
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
 
     const emailHtml = await render(
       SubscriptionExpiringReminder({
@@ -802,6 +807,8 @@ export async function sendSubscriptionExpiredEmail(data: {
   supporterEmail: string;
   supporterName: string;
   creatorName: string;
+  /** Creator's URL slug (username or vanity_username). Used to build the profile link. */
+  creatorUsername?: string;
   creatorId: string;
   renewUrl: string;
 }): Promise<boolean> {
@@ -813,7 +820,7 @@ export async function sendSubscriptionExpiredEmail(data: {
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
 
     const emailHtml = await render(
       SubscriptionExpiredNotification({

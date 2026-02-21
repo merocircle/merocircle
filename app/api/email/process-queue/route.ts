@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
               supporterEmail: emailJob.recipient_email,
               supporterName: emailJob.payload.supporterName,
               creatorName: emailJob.payload.creatorName,
+              creatorUsername: emailJob.payload.creatorUsername,
               creatorId: emailJob.payload.creatorId,
               tierLevel: emailJob.payload.tierLevel,
               expiryDate: emailJob.payload.expiryDate,
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
               supporterEmail: emailJob.recipient_email,
               supporterName: emailJob.payload.supporterName,
               creatorName: emailJob.payload.creatorName,
+              creatorUsername: emailJob.payload.creatorUsername,
               creatorId: emailJob.payload.creatorId,
               renewUrl: emailJob.payload.renewUrl,
             });

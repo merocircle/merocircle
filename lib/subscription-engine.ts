@@ -667,7 +667,7 @@ export async function manageSubscription(
             .single(),
           supabase
             .from('users')
-            .select('email, display_name')
+            .select('email, display_name, username')
             .eq('id', creatorId)
             .single(),
         ]);
@@ -686,7 +686,7 @@ export async function manageSubscription(
             tierName: tierInfo.tierName,
             amount: newAmount,
             currency: 'NPR',
-            creatorProfileUrl: getCreatorProfileUrl(creatorUser?.display_name || ''),
+            creatorProfileUrl: getCreatorProfileUrl(creatorUser?.username || creatorUser?.display_name || ''),
             chatUrl: `${appUrl}/chat`,
           }).catch((emailError: unknown) => {
             logger.warn('Failed to send subscription confirmation email', 'SUBSCRIPTION_ENGINE', {

@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     const { data: creatorUser } = await supabase
       .from('users')
-      .select('id, display_name')
+      .select('id, display_name, username')
       .eq('id', creatorId)
       .single();
 
@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
           memberId: recipient.id,
           creatorId,
           creatorName: creatorUser.display_name,
+          creatorUsername: creatorUser.username || undefined,
           channelName: finalChannelName,
           channelId,
           messageText,
