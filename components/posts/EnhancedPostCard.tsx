@@ -848,6 +848,7 @@ export function EnhancedPostCard({
         postContent={post.content}
         creatorSlug={creatorSlug}
         creatorId={creator.id}
+        creator={creator}
       />
 
       <PostDetailModal
