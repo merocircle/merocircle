@@ -258,8 +258,7 @@ function AuthPageContent() {
     }
   }, []);
 
-  // Use only auth context loading so CI timeout can unblock (context sets loading false after 6s in E2E)
-  if (authLoading) {
+  if (status === 'loading' || authLoading) {
     return (
       <div className="auth-theme min-h-screen flex items-center justify-center" style={{ background: 'var(--auth-bg, #faf8f6)' }}>
         <Loader2 className="h-6 w-6 animate-spin text-[#6b5d56]" />

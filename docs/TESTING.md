@@ -87,7 +87,7 @@ npm run test:e2e:ui
 ### What is tested
 
 - **All pages:** `e2e/all-pages.spec.ts` – one smoke test per route (landing, about, auth, explore, creator/[slug], [username], home, profile, settings, notifications, chat, creator-studio, create-post, admin, payment success/failure/dodo, unsubscribe).
-- **Auth/landing:** `e2e/auth.spec.ts` – smoke tests that `/auth` and `/` are reachable (no assertion on Sign in form, to avoid CI flakiness). “Continue with Google”, landing when not logged in.
+- **Auth/landing:** `e2e/auth.spec.ts` – smoke tests that `/auth` and `/` are reachable (no assertion on Sign in form, to avoid CI flakiness).
 - **Protected routes:** Home, settings, etc. – tests assert the page loads or redirects to auth.
 
 E2E runs **unauthenticated** (Google OAuth only; no test credentials). To add authenticated E2E later, see `e2e/README.md`.

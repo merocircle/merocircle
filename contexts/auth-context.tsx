@@ -47,24 +47,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// If session stays "loading" this long, stop blocking UI (fixes E2E/CI where session fetch can hang).
-const SESSION_LOAD_TIMEOUT_MS = 7_000;
-
 export function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [creatorProfile, setCreatorProfile] = useState<CreatorProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sessionLoadTimedOut, setSessionLoadTimedOut] = useState(false);
-
-  useEffect(() => {
-    if (status !== 'loading') {
-      setSessionLoadTimedOut(false);
-      return;
-    }
-    const t = setTimeout(() => setSessionLoadTimedOut(true), SESSION_LOAD_TIMEOUT_MS);
-    return () => clearTimeout(t);
-  }, [status]);
 
   const loadProfile = useCallback(async (userId: string) => {
     try {
@@ -223,7 +210,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     creatorProfile,
     isAuthenticated: status === 'authenticated' && !!userProfile,
     isCreator: userProfile?.role === 'creator',
-    loading: (loading || status === 'loading') && !sessionLoadTimedOut,
+    loading: loading || status === 'loading',
     updateUserRole,
     createCreatorProfile,
     refreshProfile,

@@ -2,19 +2,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '../supabase'
 
-function getSupabaseAnonConfig() {
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    (process.env.CI === 'true' ? 'https://placeholder.supabase.co' : '')
-  const anonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    (process.env.CI === 'true' ? 'placeholder-anon-key' : '')
-  return { url, anonKey }
-}
-
 export async function createClient() {
-  const { url, anonKey } = getSupabaseAnonConfig()
-  if (!url || !anonKey) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     console.error('Missing Supabase environment variables', {
       hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -26,8 +15,8 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
-    url,
-    anonKey,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         get(name: string) {

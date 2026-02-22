@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useAuth } from "@/contexts/auth-context";
 import "./landing-page.css";
 import {
@@ -16,14 +17,15 @@ import { SocialProofStrip } from "@/components/landing/SocialProofStrip";
 
 export default function LandingPage() {
   const [urlMessage, setUrlMessage] = useState<string | null>(null);
+  const { status } = useSession();
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (status !== "loading" && !loading && isAuthenticated) {
       router.replace("/home");
     }
-  }, [loading, isAuthenticated, router]);
+  }, [status, loading, isAuthenticated, router]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -34,8 +36,7 @@ export default function LandingPage() {
     }
   }, []);
 
-  // Use only auth context loading so CI timeout can unblock (context sets loading false after 6s in E2E)
-  if (loading || isAuthenticated) {
+  if (status === "loading" || loading || isAuthenticated) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#990000] border-t-transparent" />

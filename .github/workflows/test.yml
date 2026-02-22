@@ -48,11 +48,13 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       # Same as: npm run test:e2e (CI starts dev server; merge blocked if this fails).
-      # Placeholder env vars so the app can boot in CI (Supabase + NextAuth). Real auth won't work in E2E.
+      # All env below are CI-only placeholders so the app boots; no app code changes required.
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           CI: true
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: e2e-placeholder-secret-min-32-chars-for-nextauth
           GOOGLE_CLIENT_ID: e2e-placeholder-google-client-id
