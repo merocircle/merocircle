@@ -47,7 +47,10 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # Same as: npm run test:e2e (CI starts dev server; merge blocked if this fails)
+      # Same as: npm run test:e2e (CI starts dev server; merge blocked if this fails).
+      # Supabase env vars are optional in CI: app uses placeholders so the server can start.
+      # To run E2E against a real Supabase project, add NEXT_PUBLIC_SUPABASE_URL and
+      # NEXT_PUBLIC_SUPABASE_ANON_KEY as repo secrets and pass them here.
       - name: Run E2E tests
         run: npm run test:e2e
         env:

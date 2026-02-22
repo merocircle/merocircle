@@ -2,22 +2,32 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '../supabase'
 
+function getSupabaseAnonConfig() {
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    (process.env.CI === 'true' ? 'https://placeholder.supabase.co' : '')
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    (process.env.CI === 'true' ? 'placeholder-anon-key' : '')
+  return { url, anonKey }
+}
+
 export async function createClient() {
-  // Validate environment variables
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  const { url, anonKey } = getSupabaseAnonConfig()
+  if (!url || !anonKey) {
     console.error('Missing Supabase environment variables', {
       hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       env: process.env.VERCEL_ENV || 'local'
-    });
-    throw new Error('Missing Supabase configuration');
+    })
+    throw new Error('Missing Supabase configuration')
   }
 
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    url,
+    anonKey,
     {
       cookies: {
         get(name: string) {
