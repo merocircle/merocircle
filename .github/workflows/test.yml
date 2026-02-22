@@ -45,7 +45,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       # Same as: npm run test:e2e (CI starts dev server; merge blocked if this fails).
       # Supabase env vars are optional in CI: app uses placeholders so the server can start.
