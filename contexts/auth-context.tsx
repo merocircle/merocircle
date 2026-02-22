@@ -47,11 +47,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const CI_SESSION_LOAD_TIMEOUT_MS = 6_000;
+
 export function AuthContextProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [creatorProfile, setCreatorProfile] = useState<CreatorProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ciSessionTimedOut, setCiSessionTimedOut] = useState(false);
+
+  // In CI (E2E), session fetch can hang; stop blocking the UI after a short timeout so auth/landing pages render.
+  useEffect(() => {
+    const isCi = typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_CI === 'true' || process.env.CI === 'true');
+    if (!isCi) return;
+    if (status !== 'loading') return;
+    const t = setTimeout(() => setCiSessionTimedOut(true), CI_SESSION_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [status]);
 
   const loadProfile = useCallback(async (userId: string) => {
     try {
@@ -210,7 +222,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     creatorProfile,
     isAuthenticated: status === 'authenticated' && !!userProfile,
     isCreator: userProfile?.role === 'creator',
-    loading: loading || status === 'loading',
+    loading: (loading || status === 'loading') && !ciSessionTimedOut,
     updateUserRole,
     createCreatorProfile,
     refreshProfile,

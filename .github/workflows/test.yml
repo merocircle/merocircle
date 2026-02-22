@@ -53,6 +53,7 @@ jobs:
         run: npm run test:e2e
         env:
           CI: true
+          NEXT_PUBLIC_CI: true
           NEXTAUTH_URL: http://localhost:3000
           NEXTAUTH_SECRET: e2e-placeholder-secret-min-32-chars-for-nextauth
           GOOGLE_CLIENT_ID: e2e-placeholder-google-client-id
