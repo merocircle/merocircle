@@ -375,6 +375,38 @@ export function EnhancedPostCard({
     );
   };
 
+  const handleDeleteComment = useCallback(
+    async (commentId: string) => {
+      try {
+        const res = await fetch(
+          `/api/posts/${post.id}/comments/${commentId}`,
+          { method: "DELETE" }
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to delete comment");
+        }
+        setComments((prev) => {
+          const toRemove = new Set<string>();
+          const addDescendants = (id: string) => {
+            toRemove.add(id);
+            prev
+              .filter((c) => c.parent_comment_id === id)
+              .forEach((c) => addDescendants(c.id));
+          };
+          addDescendants(commentId);
+          const next = prev.filter((c) => !toRemove.has(c.id));
+          setCommentsCount((count) => Math.max(0, count - toRemove.size));
+          return next;
+        });
+      } catch (err) {
+        console.error("Delete comment error:", err);
+        alert(err instanceof Error ? err.message : "Failed to delete comment");
+      }
+    },
+    [post.id]
+  );
+
   const isSupporterOnly = post.tier_required && post.tier_required !== "free";
   const hasMedia = allImages.length > 0 || youtubeVideoId;
   const contentLength = post.content?.length || 0;
@@ -778,7 +810,9 @@ export function EnhancedPostCard({
                     postId={post.id}
                     comments={comments}
                     currentUserId={currentUserId}
+                    postCreatorId={post.creator?.id}
                     onAddComment={handleAddComment}
+                    onDeleteComment={handleDeleteComment}
                     isSubmitting={commentMutation.isPending}
                   />
                 )}
@@ -805,7 +839,7 @@ export function EnhancedPostCard({
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Write a comment..."
-                        className="w-full bg-card border border-border/60 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
+                        className="w-full rounded-md bg-card border border-border/60 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
@@ -813,7 +847,7 @@ export function EnhancedPostCard({
                       type="submit"
                       disabled={!newComment.trim() || commentMutation.isPending}
                       className={cn(
-                        "text-sm font-semibold px-3 py-2 transition-all",
+                        "text-sm font-semibold rounded-md px-3 py-2 transition-all",
                         newComment.trim()
                           ? "text-primary-foreground bg-primary hover:bg-primary/90"
                           : "text-muted-foreground bg-muted cursor-not-allowed",

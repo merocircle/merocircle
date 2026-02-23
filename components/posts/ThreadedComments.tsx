@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, CornerDownRight, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+import { Loader2, CornerDownRight, ChevronDown, ChevronUp, MessageCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRealtimeComments } from '@/hooks/useRealtimeFeed';
 
@@ -27,7 +27,9 @@ interface ThreadedCommentsProps {
   postId: string;
   comments: Comment[];
   currentUserId?: string;
+  postCreatorId?: string;
   onAddComment: (content: string, parentCommentId?: string) => Promise<void>;
+  onDeleteComment?: (commentId: string) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -46,12 +48,15 @@ export function ThreadedComments({
   postId,
   comments,
   currentUserId,
+  postCreatorId,
   onAddComment,
+  onDeleteComment,
   isSubmitting,
 }: ThreadedCommentsProps) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useRealtimeComments(postId);
 
@@ -124,6 +129,31 @@ export function ThreadedComments({
                   className="font-semibold hover:text-primary transition-colors"
                 >
                   Reply
+                </button>
+              )}
+
+              {onDeleteComment && currentUserId && (currentUserId === comment.user.id || currentUserId === postCreatorId) && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (deletingId) return;
+                    setDeletingId(comment.id);
+                    try {
+                      await onDeleteComment(comment.id);
+                    } finally {
+                      setDeletingId(null);
+                    }
+                  }}
+                  disabled={deletingId === comment.id}
+                  className="font-semibold hover:text-destructive transition-colors flex items-center gap-1"
+                  aria-label="Delete comment"
+                >
+                  {deletingId === comment.id ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
+                  Delete
                 </button>
               )}
 
