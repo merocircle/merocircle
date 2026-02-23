@@ -14,6 +14,7 @@ import {
   Moon,
   Monitor,
   ArrowLeft,
+  Bell,
 } from "lucide-react";
 import { BottomNavIcon } from "./NavIcon";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ interface BottomNavProps {
   activeView?: DashboardView;
   onViewChange?: (view: DashboardView) => void;
   unreadMessages?: number;
+  unreadNotifications?: number;
   onCreateClick?: () => void;
   className?: string;
 }
@@ -34,6 +36,7 @@ export function BottomNav({
   activeView = "home",
   onViewChange,
   unreadMessages = 0,
+  unreadNotifications = 0,
   onCreateClick,
   className,
 }: BottomNavProps) {
@@ -42,10 +45,20 @@ export function BottomNav({
   const [currentActiveView, setCurrentActiveView] =
     useState<DashboardView>("home");
 
+  // Views that are represented in the bottom navigation
+  const bottomNavViews: DashboardView[] = ["home", "explore", "chat", "profile"];
+
+  // Check if a view should be active in bottom nav
+  const isBottomNavActive = (view: DashboardView): boolean => {
+    return currentActiveView === view && bottomNavViews.includes(currentActiveView);
+  };
+
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === "/home") return "home";
     if (pathname === "/explore") return "explore";
     if (pathname === "/chat") return "chat";
+    if (pathname === "/notifications") return "notifications";
+    if (pathname === "/settings") return "settings";
     if (pathname === "/profile") return "profile";
 
     // Don't auto-detect profile routes anymore - let useEffect handle the specific case
@@ -142,13 +155,13 @@ export function BottomNav({
       <BottomNavIcon
         icon={Home}
         label="Home"
-        isActive={currentActiveView === "home"}
+        isActive={isBottomNavActive("home")}
         href="/home"
       />
       <BottomNavIcon
         icon={Search}
         label="Explore"
-        isActive={currentActiveView === "explore"}
+        isActive={isBottomNavActive("explore")}
         href="/explore"
       />
 
@@ -176,14 +189,14 @@ export function BottomNav({
       <BottomNavIcon
         icon={MessageCircle}
         label="Chat"
-        isActive={currentActiveView === "chat"}
+        isActive={isBottomNavActive("chat")}
         badge={unreadMessages}
         href="/chat"
       />
       <BottomNavIcon
         icon={User}
         label="Me"
-        isActive={currentActiveView === "profile"}
+        isActive={isBottomNavActive("profile")}
         href="/profile"
       />
     </motion.nav>
@@ -198,6 +211,7 @@ interface MobileHeaderProps {
   onTabChange?: (tab: "for-you" | "following") => void;
   onSettingsClick?: () => void;
   hideHeader?: boolean;
+  unreadNotifications?: number;
   className?: string;
 }
 
@@ -208,6 +222,7 @@ export function MobileHeader({
   onTabChange,
   onSettingsClick,
   hideHeader = false,
+  unreadNotifications = 0,
   className,
 }: MobileHeaderProps) {
   const pathname = usePathname();
@@ -321,6 +336,25 @@ export function MobileHeader({
           </h1>
         </div>
         <div className="flex items-center gap-1">
+          {/* Notifications */}
+          <Link href="/notifications" prefetch={true}>
+            <motion.button
+              className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"
+              whileTap={{ scale: 0.95 }}
+              aria-label="Notifications"
+            >
+              <Bell className="w-4.5 h-4.5 text-muted-foreground" />
+              {unreadNotifications > 0 && (
+                <motion.span
+                  className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 flex items-center justify-center text-[9px] font-bold text-white bg-red-500 rounded-full"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                >
+                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                </motion.span>
+              )}
+            </motion.button>
+          </Link>
           {/* Theme Toggle */}
           <motion.button
             onClick={toggleTheme}
@@ -348,7 +382,7 @@ export function MobileHeader({
           </motion.button>
           <motion.button
             onClick={onSettingsClick}
-            className="p-2 rounded-full hover:bg-muted/60 transition-colors"
+            className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"
             whileTap={{ scale: 0.95 }}
             aria-label="Settings"
           >
