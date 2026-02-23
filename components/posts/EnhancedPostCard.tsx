@@ -839,7 +839,7 @@ export function EnhancedPostCard({
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Write a comment..."
-                        className="w-full bg-card border border-border/60 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
+                        className="w-full rounded-md bg-card border border-border/60 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
@@ -847,7 +847,7 @@ export function EnhancedPostCard({
                       type="submit"
                       disabled={!newComment.trim() || commentMutation.isPending}
                       className={cn(
-                        "text-sm font-semibold px-3 py-2 transition-all",
+                        "text-sm font-semibold rounded-md px-3 py-2 transition-all",
                         newComment.trim()
                           ? "text-primary-foreground bg-primary hover:bg-primary/90"
                           : "text-muted-foreground bg-muted cursor-not-allowed",
