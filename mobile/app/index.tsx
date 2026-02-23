@@ -1,4 +1,5 @@
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { colors } from '../constants/colors';
 
 const logoSource = require('../assets/images/logo.png');
@@ -12,6 +13,9 @@ export default function HomeScreen() {
         <Text style={styles.tagline}>Creator support for Nepal</Text>
       </View>
       <Text style={styles.comingSoon}>Coming Soon</Text>
+      <Pressable style={styles.enterButton} onPress={() => router.replace('/(tabs)')}>
+        <Text style={styles.enterButtonText}>Enter app</Text>
+      </Pressable>
     </View>
   );
 }
@@ -47,5 +51,17 @@ const styles = StyleSheet.create({
   comingSoon: {
     fontSize: 16,
     color: colors.mutedForeground,
+  },
+  enterButton: {
+    marginTop: 32,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+  enterButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primaryForeground,
   },
 });
