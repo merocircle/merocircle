@@ -1,19 +1,26 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Avatar, Button } from '../../components/ui';
+import { useAuth } from '../../contexts/auth-context';
 import { colors } from '../../constants/colors';
 
-const MOCK_USER = { displayName: 'You', username: 'you', supporterCount: 0, supportingCount: 3 };
-
 export default function ProfileTab() {
+  const { userProfile, user } = useAuth();
+  const displayName = userProfile?.display_name ?? user?.email?.split('@')[0] ?? 'You';
+  const email = userProfile?.email ?? user?.email ?? '';
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Avatar fallback={MOCK_USER.displayName} size={80} />
-        <Text style={styles.displayName}>{MOCK_USER.displayName}</Text>
-        <Text style={styles.username}>@{MOCK_USER.username}</Text>
+        <Avatar
+          source={userProfile?.photo_url ? { uri: userProfile.photo_url } : null}
+          fallback={displayName}
+          size={80}
+        />
+        <Text style={styles.displayName}>{displayName}</Text>
+        {email ? <Text style={styles.username}>{email}</Text> : null}
         <View style={styles.stats}>
-          <Text style={styles.stat}>{MOCK_USER.supportingCount} supporting</Text>
+          <Text style={styles.stat}>0 supporting</Text>
         </View>
       </View>
       <View style={styles.actions}>

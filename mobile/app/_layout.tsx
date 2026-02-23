@@ -1,8 +1,22 @@
-import { View } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AuthProvider, useAuth } from '../contexts/auth-context';
 import { colors } from '../constants/colors';
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { loading, session } = useAuth();
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading…</Text>
+      </View>
+    );
+  }
+  return <>{children}</>;
+}
 
 function RootLayoutContent() {
   const insets = useSafeAreaInsets();
@@ -14,7 +28,6 @@ function RootLayoutContent() {
         paddingTop: insets.top,
         paddingLeft: insets.left,
         paddingRight: insets.right,
-        // No paddingBottom: tab bar extends to bottom and handles its own safe area
       }}
     >
       <Stack screenOptions={{ headerShown: false }} />
@@ -27,8 +40,17 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <RootLayoutContent />
+        <AuthProvider>
+          <AuthGate>
+            <RootLayoutContent />
+          </AuthGate>
+        </AuthProvider>
       </View>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingText: { fontSize: 16, color: colors.mutedForeground },
+});

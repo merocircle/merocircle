@@ -1,10 +1,21 @@
+import { useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '../contexts/auth-context';
 import { colors } from '../constants/colors';
 
 const logoSource = require('../assets/images/logo.png');
 
 export default function HomeScreen() {
+  const { session, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    if (session) router.replace('/(tabs)');
+  }, [session, loading]);
+
+  if (loading) return null;
+
   return (
     <View style={styles.container}>
       <View style={styles.brand}>
@@ -12,9 +23,9 @@ export default function HomeScreen() {
         <Text style={styles.logoText}>MeroCircle</Text>
         <Text style={styles.tagline}>Creator support for Nepal</Text>
       </View>
-      <Text style={styles.comingSoon}>Coming Soon</Text>
-      <Pressable style={styles.enterButton} onPress={() => router.replace('/(tabs)')}>
-        <Text style={styles.enterButtonText}>Enter app</Text>
+      <Text style={styles.comingSoon}>Sign in to continue</Text>
+      <Pressable style={styles.enterButton} onPress={() => router.push('/(auth)/login')}>
+        <Text style={styles.enterButtonText}>Sign in</Text>
       </Pressable>
     </View>
   );

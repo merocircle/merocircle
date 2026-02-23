@@ -1,6 +1,8 @@
-import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/auth-context';
 import { colors } from '../../constants/colors';
 
 const TAB_ICON_SIZE = 22;
@@ -8,6 +10,13 @@ const TAB_BAR_HEIGHT = 52;
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { session, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session) router.replace('/');
+  }, [session, loading]);
+
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
 
   return (

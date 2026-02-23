@@ -12,8 +12,8 @@ interface AuthUser {
 }
 
 /**
- * Get authenticated user from NextAuth session
- * Returns user or null, and error response if unauthorized
+ * Get authenticated user from NextAuth session.
+ * Returns user or null, and error response if unauthorized.
  */
 export async function getAuthenticatedUser(): Promise<{
   user: AuthUser | null;
@@ -28,27 +28,24 @@ export async function getAuthenticatedUser(): Promise<{
     };
   }
 
-  return { 
+  return {
     user: {
       id: session.user.id,
       email: session.user.email || '',
       name: session.user.name || undefined,
       image: session.user.image || undefined,
-    }, 
-    errorResponse: null 
+    },
+    errorResponse: null,
   };
 }
 
 /**
- * Get optional authenticated user (doesn't return error if not authenticated)
- * Useful for endpoints that work with or without authentication
+ * Get optional authenticated user (returns null if not authenticated).
  */
 export async function getOptionalUser(): Promise<AuthUser | null> {
   const session = await getServerSession(authOptions);
-  
-  if (!session?.user?.id) {
-    return null;
-  }
+
+  if (!session?.user?.id) return null;
 
   return {
     id: session.user.id,
@@ -72,7 +69,8 @@ export async function requireCreatorRole(userId: string): Promise<{
     .eq('id', userId)
     .single();
 
-  if (userProfile?.role !== 'creator') {
+  const profile = userProfile as { role: string } | null;
+  if (profile?.role !== 'creator') {
     return {
       isCreator: false,
       errorResponse: NextResponse.json(
