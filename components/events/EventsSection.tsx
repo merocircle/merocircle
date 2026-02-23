@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, MapPin, Users, Clock, Star, TrendingUp, Heart, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -26,114 +27,177 @@ const itemVariants = {
   },
 };
 
-// Featured Events Carousel Component
-const FeaturedEventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
+// Compact Events Carousel Component
+const EventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+      day: 'numeric' 
     });
   };
 
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || events.length <= 1) return;
     
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % events.length);
-    }, 5000);
+      goToNext();
+    }, 8000); // Slower speed - 8 seconds instead of 5
 
     return () => clearInterval(interval);
   }, [isAutoPlaying, events.length]);
 
   const goToPrevious = () => {
+    if (isAnimating || events.length <= 1) return;
+    setIsAnimating(true);
     setCurrentIndex((prev) => (prev - 1 + events.length) % events.length);
     setIsAutoPlaying(false);
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
   const goToNext = () => {
+    if (isAnimating || events.length <= 1) return;
+    setIsAnimating(true);
     setCurrentIndex((prev) => (prev + 1) % events.length);
     setIsAutoPlaying(false);
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
   const currentEvent = events[currentIndex];
 
   return (
-    <div className="relative w-full h-[400px] rounded-2xl overflow-hidden bg-card">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-muted/20">
-        <div className="w-full h-full flex items-center justify-center">
-          <Calendar className="w-24 h-24 text-muted-foreground/30" />
-        </div>
-      </div>
+    <div className="relative w-full h-[320px] rounded-2xl overflow-hidden bg-card">
+      {/* Background Image */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="absolute inset-0"
+        >
+          <img 
+            src={`https://picsum.photos/seed/event${currentIndex}/800/400.jpg`} 
+            alt={currentEvent.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/30 to-transparent" />
+        </motion.div>
+      </AnimatePresence>
       
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-between p-8">
-        <div>
-          <Badge className="bg-primary text-primary-foreground mb-4">
-            <Sparkles className="w-3 h-3 mr-1" />
-            Featured Event
+        <motion.div
+          key={`title-${currentIndex}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Badge className="bg-primary text-primary-foreground mb-3 w-fit rounded-sm">
+            {currentEvent.category}
           </Badge>
-          <h1 className="text-4xl font-bold mb-3">{currentEvent.title}</h1>
-          <p className="text-lg text-muted-foreground mb-6 max-w-2xl">{currentEvent.description}</p>
-        </div>
+          <h1 className="text-3xl font-bold mb-2 text-white">{currentEvent.title}</h1>
+        </motion.div>
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
+        <motion.div
+          key={`meta-${currentIndex}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center gap-4 text-white/90 text-sm">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
               <span>{formatDate(currentEvent.date)}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
               <span>{currentEvent.time}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              <span>{currentEvent.location}</span>
+            <div className="flex items-center gap-1">
+              <MapPin className="w-4 h-4" />
+              <span className="truncate max-w-[150px]">{currentEvent.location}</span>
             </div>
           </div>
           
-          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            {currentEvent.price === 0 ? 'Register for Free' : `Book Spot - NPR ${currentEvent.price}`}
-          </Button>
-        </div>
+          <div className="flex items-center justify-between">
+            <Link className="flex items-center gap-2" href={`/creator/${currentEvent.creator.id}`}>
+              <Avatar className="w-6 h-6">
+                <AvatarImage src={getValidAvatarUrl(currentEvent.creator.avatar)} alt={currentEvent.creator.name} />
+                <AvatarFallback className="text-xs">
+                  {currentEvent.creator.name[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <p className="text-white/90 text-sm hover:text-white transition-colors">
+                {currentEvent.creator.name}
+              </p>
+            </Link>
+            
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              Learn More
+            </Button>
+          </div>
+        </motion.div>
       </div>
       
-      {/* Navigation Controls */}
-      <button
-        onClick={goToPrevious}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors border border-border/50"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
-      <button
-        onClick={goToNext}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors border border-border/50"
-      >
-        <ChevronRight className="w-5 h-5" />
-      </button>
-      
-      {/* Progress Indicators */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {events.map((_, index) => (
+      {/* Navigation Controls - Only show if more than 1 event */}
+      {events.length > 1 && (
+        <>
           <button
-            key={index}
-            onClick={() => {
-              setCurrentIndex(index);
-              setIsAutoPlaying(false);
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goToPrevious();
             }}
-            className={cn(
-              "w-2 h-2 rounded-full transition-all",
-              index === currentIndex ? "bg-primary w-8" : "bg-muted"
-            )}
-          />
-        ))}
-      </div>
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20 z-20"
+            type="button"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              goToNext();
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors border border-white/20 z-20"
+            type="button"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </>
+      )}
+      
+      {/* Progress Indicators - Only show if more than 1 event */}
+      {events.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-50">
+          {events.map((_, index) => (
+            <button
+              key={index}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isAnimating) return;
+                setIsAnimating(true);
+                setCurrentIndex(index);
+                setIsAutoPlaying(false);
+                setTimeout(() => setIsAnimating(false), 300);
+              }}
+              type="button"
+              className={cn(
+                "w-1.5 h-1.5 rounded-full transition-all cursor-pointer hover:bg-white/60 relative",
+                index === currentIndex ? "bg-white w-6" : "bg-white/40"
+              )}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -542,7 +606,7 @@ const EventCard: React.FC<{ event: Event; variant?: 'default' | 'compact' }> = (
 export default function EventsSection() {
   return (
     <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto h-full space-y-8 pb-8 pt-2">
-      {/* Featured Events Carousel */}
+      {/* Events Header and Carousel */}
       <motion.section
         variants={containerVariants}
         initial="hidden"
@@ -551,16 +615,19 @@ export default function EventsSection() {
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Star className="w-4 h-4 text-primary" />
+            <Calendar className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Featured Events</h2>
-            <p className="text-sm text-muted-foreground">Official events from MeroCircle</p>
+            <h2 className="text-xl font-bold text-foreground">Events</h2>
+            <p className="text-sm text-muted-foreground">Discover and join amazing events</p>
           </div>
         </div>
         
-        <FeaturedEventsCarousel events={featuredEvents} />
+        <EventsCarousel events={featuredEvents} />
       </motion.section>
+
+      {/* Separator */}
+      <div className="border-t border-border/30" />
 
       {/* Creator Events Coming Soon */}
       <motion.section
@@ -569,19 +636,14 @@ export default function EventsSection() {
         animate="show"
         className="space-y-4"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-            <Heart className="w-4 h-4 text-blue-500" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Creator Events</h2>
-            <p className="text-sm text-muted-foreground">Events from your favorite creators</p>
-          </div>
-        </div>
-        
         <div className="rounded-xl border border-dashed border-border/50 bg-muted/20 p-8 text-center">
-          <h3 className="text-lg font-medium mb-2">Coming Soon</h3>
-          <p className="text-sm text-muted-foreground">Creators will soon be able to host events</p>
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-6 h-6 text-primary" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">Creator Events Coming Soon</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Creators will soon be able to host their own events. Stay tuned for exciting workshops, meetups, and experiences from your favorite creators!
+          </p>
         </div>
       </motion.section>
     </div>
