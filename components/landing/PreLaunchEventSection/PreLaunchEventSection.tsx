@@ -82,8 +82,7 @@ export function PreLaunchEventSection() {
 
           {/* Subtitle */}
           <p className="pre-launch-sub">
-            Be part of something special. Get exclusive access, meet the team, and 
-            celebrate the future of creator connections with us.
+            Beta users only. Connect with the team and see what's first.
           </p>
 
           {/* Event details in row */}
@@ -105,14 +104,6 @@ export function PreLaunchEventSection() {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* CTA button */}
-          <div className="pre-launch-cta">
-            <button className="pre-launch-primary-btn">
-              Learn More
-              <ArrowRight size={16} className="btn-arrow" />
-            </button>
           </div>
         </div>
       </div>
