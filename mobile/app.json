@@ -17,6 +17,15 @@
     "web": {
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-secure-store"]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "56b15176-07a8-48af-ba6b-d8af57db9b4b"
+      }
+    }
   }
 }

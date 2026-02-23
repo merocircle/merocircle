@@ -2,6 +2,10 @@
 
 Expo (React Native) app for MeroCircle. Run from repo root: `npm run mobile:start`.
 
+## Distribution (APK / iOS testing)
+
+To build an **Android APK** for testers or an **iOS** build (simulator or TestFlight), see **[DISTRIBUTION.md](./DISTRIBUTION.md)**. You need an Expo account and EAS CLI; from repo root you can run `npm run mobile:build:android` or `npm run mobile:build:ios`.
+
 ## Logo and icon
 
 - App icon and splash use `assets/images/icon.png` (MeroCircle logo).

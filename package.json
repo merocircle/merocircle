@@ -18,7 +18,9 @@
     "clear:stream": "npx tsx scripts/clear-stream-channels.ts",
     "mobile:start": "npm run start --workspace=mobile",
     "mobile:android": "npm run android --workspace=mobile",
-    "mobile:ios": "npm run ios --workspace=mobile"
+    "mobile:ios": "npm run ios --workspace=mobile",
+    "mobile:build:android": "npm run build:android --workspace=mobile",
+    "mobile:build:ios": "npm run build:ios --workspace=mobile"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
