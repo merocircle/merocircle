@@ -49,7 +49,7 @@ export function ShowcaseSection() {
           {/* Floating cards */}
           <div className="orbit-card orbit-card-proof orbit-float-1">
             <div className="orbit-avatar-stack">
-              <Image src="/dodo.png" alt="" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/illustration (1).png" alt="" width={20} height={20} className="orbit-stack-img" />
               <Image src="/Nishar.jpeg" alt="" width={20} height={20} className="orbit-stack-img" />
               <Image src="/Shaswot Lamichhane.png" alt="" width={20} height={20} className="orbit-stack-img" />
             </div>
@@ -94,7 +94,7 @@ export function ShowcaseSection() {
             <Image src="/Nishar.jpeg" alt="" width={32} height={32} className="orbit-mini-img" />
           </div>
           <div className="orbit-mini orbit-mini-2">
-            <Image src="/dodo.png" alt="" width={28} height={28} className="orbit-mini-img" />
+            <Image src="/Shaswot Lamichhane.png" alt="" width={28} height={28} className="orbit-mini-img" />
           </div>
         </div>
 
