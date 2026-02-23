@@ -375,6 +375,38 @@ export function EnhancedPostCard({
     );
   };
 
+  const handleDeleteComment = useCallback(
+    async (commentId: string) => {
+      try {
+        const res = await fetch(
+          `/api/posts/${post.id}/comments/${commentId}`,
+          { method: "DELETE" }
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to delete comment");
+        }
+        setComments((prev) => {
+          const toRemove = new Set<string>();
+          const addDescendants = (id: string) => {
+            toRemove.add(id);
+            prev
+              .filter((c) => c.parent_comment_id === id)
+              .forEach((c) => addDescendants(c.id));
+          };
+          addDescendants(commentId);
+          const next = prev.filter((c) => !toRemove.has(c.id));
+          setCommentsCount((count) => Math.max(0, count - toRemove.size));
+          return next;
+        });
+      } catch (err) {
+        console.error("Delete comment error:", err);
+        alert(err instanceof Error ? err.message : "Failed to delete comment");
+      }
+    },
+    [post.id]
+  );
+
   const isSupporterOnly = post.tier_required && post.tier_required !== "free";
   const hasMedia = allImages.length > 0 || youtubeVideoId;
   const contentLength = post.content?.length || 0;
@@ -778,7 +810,9 @@ export function EnhancedPostCard({
                     postId={post.id}
                     comments={comments}
                     currentUserId={currentUserId}
+                    postCreatorId={post.creator?.id}
                     onAddComment={handleAddComment}
+                    onDeleteComment={handleDeleteComment}
                     isSubmitting={commentMutation.isPending}
                   />
                 )}
