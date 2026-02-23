@@ -90,7 +90,7 @@ export async function GET(
       .eq('is_active', true)
       .order('tier_level', { ascending: true });
 
-    // Fetch ALL posts (both public and supporter-only) so non-supporters can see they exist
+    // Fetch first batch of posts (10) for initial load; more loaded via /api/creator/[id]/posts
     const { data: posts } = await supabase
       .from('posts')
       .select(`
@@ -102,7 +102,7 @@ export async function GET(
       `)
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(10);
 
     const { count: actualPostsCount } = await supabase
       .from('posts')

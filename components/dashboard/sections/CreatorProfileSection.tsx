@@ -90,6 +90,54 @@ const PaymentGatewaySelector = dynamic(
   { loading: () => null, ssr: false }
 );
 
+/** Sentinel that triggers load more when scrolled into view (batch load like home feed) */
+function CreatorPostsLoadMore({
+  onLoadMore,
+  hasMore,
+  isLoading,
+}: {
+  onLoadMore: () => void;
+  hasMore: boolean;
+  isLoading: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const hasMoreRef = useRef(hasMore);
+  const isLoadingRef = useRef(isLoading);
+  hasMoreRef.current = hasMore;
+  isLoadingRef.current = isLoading;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: '200px', threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onLoadMore]);
+
+  if (!hasMore && !isLoading) return null;
+
+  return (
+    <div ref={ref} className="min-h-px py-4 flex justify-center">
+      {isLoading && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <span>Loading more...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface CreatorProfileSectionProps {
   creatorId: string;
   initialHighlightedPostId?: string | null;
@@ -134,7 +182,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     loading,
     error,
     refreshCreatorDetails,
-    updateSupporterTier
+    updateSupporterTier,
+    loadMorePosts,
+    hasMorePosts,
+    postsLoadingMore
   } = useCreatorDetails(creatorId);
 
   // Redirect from /creator/id to /creator/username when username is available
@@ -1732,10 +1783,14 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   <>
                     <TimelineFeed
                       emptyMessage="This creator hasn't shared any content yet. Check back soon!"
-                      onRefresh={refreshCreatorDetails}
                     >
                       {renderTimelinePosts}
                     </TimelineFeed>
+                    <CreatorPostsLoadMore
+                      onLoadMore={loadMorePosts}
+                      hasMore={hasMorePosts}
+                      isLoading={postsLoadingMore}
+                    />
                     {showSupportBanner && <div className="h-24" />}
                   </>
                 ) : (
