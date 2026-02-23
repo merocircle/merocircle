@@ -49,7 +49,7 @@ export const EMAIL_CONFIG = {
 // Email subject lines
 export const EMAIL_SUBJECTS = {
   postNotification: (creatorName: string) => `${creatorName} shared an update`,
-  pollNotification: (creatorName: string) => `${creatorName} wants your input`,
+  pollNotification: (creatorName: string) => `New poll from ${creatorName}`,
   welcome: (firstName: string) => `Hi ${firstName}, welcome to Mero Circle`,
   paymentSuccess: (creatorName: string) => `Payment confirmed - Supporting ${creatorName}`,
   paymentFailed: () => 'Payment issue - Action required',

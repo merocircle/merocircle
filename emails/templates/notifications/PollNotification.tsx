@@ -39,11 +39,11 @@ export default function PollNotification({
   appUrl,
   logoSrc,
 }: PollNotificationProps) {
-  const preview = pollDescription.length > 160 ? pollDescription.substring(0, 160) + '…' : pollDescription;
+  const preview = pollQuestion ? `New poll: ${pollQuestion}` : `New poll from ${creatorName}`;
 
   return (
     <EmailLayout
-      preview={`${creatorName} wants your voice — ${pollQuestion}`}
+      preview={preview}
       creatorName={creatorName}
       creatorProfileUrl={creatorProfileUrl}
       settingsUrl={settingsUrl}
@@ -54,7 +54,7 @@ export default function PollNotification({
       <Section style={contentSection}>
         <Text style={greeting}>Hi {supporterName},</Text>
 
-        <Text style={label}>{creatorName} wants your voice</Text>
+        <Text style={label}>New poll from {creatorName}</Text>
 
         <Heading style={title}>{pollQuestion}</Heading>
 
@@ -62,7 +62,7 @@ export default function PollNotification({
 
         <Section style={ctaWrapper}>
           <Link href={pollUrl} style={primaryButton}>
-            Share your input
+            Vote in poll
           </Link>
         </Section>
       </Section>
@@ -71,7 +71,7 @@ export default function PollNotification({
 
       <Section style={messageSection}>
         <Text style={messageText}>
-          Your opinion matters — help shape what {creatorName} creates next.
+          This poll is part of {creatorName}&apos;s latest update.
         </Text>
         <Text style={messageSubtext}>
           <Link href={settingsUrl} style={inlineLink}>Manage your preferences</Link>
