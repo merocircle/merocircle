@@ -14,6 +14,7 @@ import {
 } from "@/components/landing";
 import { ShowcaseSection } from "@/components/landing/ShowcaseSection";
 import { SocialProofStrip } from "@/components/landing/SocialProofStrip";
+import { PreLaunchEventSection } from "@/components/landing";
 
 export default function LandingPage() {
   const [urlMessage, setUrlMessage] = useState<string | null>(null);
@@ -55,6 +56,7 @@ export default function LandingPage() {
         <HeroSection />
         <SocialProofStrip />
         <ShowcaseSection />
+        <PreLaunchEventSection />
         <CTASection />
         <Footer />
       </div>
