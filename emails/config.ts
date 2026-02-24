@@ -19,11 +19,11 @@ export const EMAIL_CONFIG = {
     password: process.env.SMTP_PASSWORD,
   },
 
-  // App URLs
+  // App URLs (fallback so emails never get undefined appUrl)
   urls: {
-    app: process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app',
-    help: `${process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app'}/help`,
-    settings: `${process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app'}/settings`,
+    app: (process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app').trim() || 'https://merocircle.app',
+    help: `${(process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app').trim() || 'https://merocircle.app'}/help`,
+    settings: `${(process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app').trim() || 'https://merocircle.app'}/settings`,
   },
 
   // Batch sending settings
