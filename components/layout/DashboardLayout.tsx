@@ -78,7 +78,7 @@ export function DashboardLayout({
   className
 }: DashboardLayoutProps) {
   const isFullWidth = fullWidth || FULL_WIDTH_VIEWS.includes(contextView);
-  const shouldHideMobileHeader = contextView !== 'explore';
+  const shouldHideMobileHeader = !['explore'].includes(contextView);
 
   return (
     <div className={cn(
@@ -93,6 +93,7 @@ export function DashboardLayout({
         showTabs={false}
         onSettingsClick={onSettingsClick}
         hideHeader={shouldHideMobileHeader}
+        unreadNotifications={unreadNotifications}
       />
 
       {/* Desktop Grid: [ActivityBar | Content] */}

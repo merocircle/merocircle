@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
   MessageCircleHeart,
   Menu,
   X,
+  ArrowLeft,
 } from 'lucide-react';
 import SubscriptionsManagement from '@/components/settings/SubscriptionsManagement';
 import EmailNotificationPreferences from '@/components/settings/EmailNotificationPreferences';
@@ -160,6 +162,7 @@ const tabs = [
 
 const SettingsSection = memo(function SettingsSection() {
   const { user, userProfile, isCreator, signOut } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<SettingsTab>('notifications');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -168,11 +171,24 @@ const SettingsSection = memo(function SettingsSection() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-lg border-b border-border/50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center gap-4">
+            {/* Back button - only visible on mobile */}
+            <button
+              onClick={handleBack}
+              className="lg:hidden p-2 rounded-full hover:bg-muted/60 transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+            </button>
+            
             {/* User avatar */}
             <Avatar className="w-12 h-12 border-2 border-border/50">
               <AvatarImage src={getValidAvatarUrl(userProfile?.photo_url)} alt={userProfile?.display_name || ''} />

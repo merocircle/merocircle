@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, CheckCheck, Settings, Filter } from "lucide-react";
+import { Bell, CheckCheck, Settings, Filter, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NotificationItem } from "./NotificationItem";
@@ -55,7 +56,12 @@ export function NotificationList({
   onNotificationClick,
   className,
 }: NotificationListProps) {
+  const router = useRouter();
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const handleBack = () => {
+    router.back();
+  };
 
   const filteredNotifications =
     filter === "all"
@@ -77,6 +83,15 @@ export function NotificationList({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-card/95 backdrop-blur z-10">
         <div className="flex items-center gap-2">
+          {/* Back button - only visible on mobile */}
+          <button
+            onClick={handleBack}
+            className="lg:hidden p-2 rounded-full hover:bg-muted/60 transition-colors"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+          </button>
+          
           <h2 className="font-semibold">Notifications</h2>
           {unreadCount > 0 && (
             <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-primary text-primary-foreground">
