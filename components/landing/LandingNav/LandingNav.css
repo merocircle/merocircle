@@ -60,13 +60,13 @@
   font-size: 0.875rem;
   font-weight: 700;
   color: #fff;
-  background: #990000;
+  background: var(--primary);
   border-radius: 9999px;
   text-decoration: none;
   transition: background 0.2s, transform 0.15s;
 }
 .landing-nav-cta:hover {
-  background: #7a0000;
+  background: color-mix(in srgb, var(--primary) 85%, black 15%);
   transform: translateY(-1px);
 }
 
