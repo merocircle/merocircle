@@ -1,25 +1,25 @@
 /**
- * Simple toast hook for admin dashboard
- * Uses native alerts for now - can be upgraded to a toast library later
+ * Toast hook — shows a short non-blocking box in the top-right with a close button.
+ * Use within ToastProvider (wrapped in root layout).
  */
 
-interface ToastOptions {
+import { useToastContext } from "@/contexts/toast-context";
+
+export interface ToastOptions {
   title: string;
   description?: string;
-  variant?: 'default' | 'destructive';
+  variant?: "default" | "destructive";
 }
 
 export function useToast() {
+  const { addToast } = useToastContext();
+
   const toast = (options: ToastOptions) => {
-    const message = options.description 
-      ? `${options.title}\n${options.description}`
-      : options.title;
-    
-    if (options.variant === 'destructive') {
-      alert(`❌ ${message}`);
-    } else {
-      alert(`✓ ${message}`);
-    }
+    addToast({
+      title: options.title,
+      description: options.description,
+      variant: options.variant ?? "default",
+    });
   };
 
   return { toast };

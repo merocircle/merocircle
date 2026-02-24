@@ -10,6 +10,8 @@ import { StreamChatProvider } from "@/contexts/stream-chat-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppBackground } from "@/components/ui/app-background";
 import { PageLoadingBar } from "@/components/common/PageLoadingBar";
+import { ToastProvider } from "@/contexts/toast-context";
+import { Toaster } from "@/components/ui/toaster";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -228,6 +230,7 @@ export default function RootLayout({
           strategy="lazyOnload"
         />
         <ErrorBoundary>
+        <ToastProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -240,6 +243,7 @@ export default function RootLayout({
             <AuthContextProvider>
               <StreamChatProvider>
                 <PageLoadingBar />
+                <Toaster />
                 <AppBackground>
                   {children}
                 </AppBackground>
@@ -248,6 +252,7 @@ export default function RootLayout({
           </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
+        </ToastProvider>
         </ErrorBoundary>
       </body>
     </html>
