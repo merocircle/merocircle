@@ -570,7 +570,7 @@ export function EnhancedPostCard({
                 src={allImages[0]}
                 alt="Preview"
                 fill
-                className="object-cover opacity-15 blur-xl scale-110"
+                className="object-cover opacity-15 blur-md scale-110"
                 sizes="630px"
               />
             )}
