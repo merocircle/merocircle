@@ -46,12 +46,12 @@ export function ShareModal({
 
   // Copy vanity URL when possible: /creator/slug?post=id
   // Use creatorSlug first, then fallback to creator.vanity_username, then creatorId
-  console.log('URL DEBUG:', { 
-    creatorSlug, 
-    creatorVanity: creator?.vanity_username, 
-    creatorId,
-    finalIdentifier: creatorSlug || creator?.vanity_username || creatorId 
-  });
+  // console.log('URL DEBUG:', { 
+  //   creatorSlug, 
+  //   creatorVanity: creator?.vanity_username, 
+  //   creatorId,
+  //   finalIdentifier: creatorSlug || creator?.vanity_username || creatorId 
+  // });
   const creatorIdentifier = creatorSlug || creator?.vanity_username || creatorId;
   const shareUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/creator/${creatorIdentifier}?post=${postId}`
