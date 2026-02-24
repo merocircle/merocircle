@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useChannelStateContext } from 'stream-chat-react';
 import { Hash, Info, Search, X } from 'lucide-react';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 interface CustomChannelData {
   name?: string;
@@ -19,6 +21,7 @@ interface CustomChannelHeaderProps {
 
 export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChannelHeaderProps) {
   const { channel } = useChannelStateContext();
+  const { toast } = useToast();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -45,7 +48,8 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
       const results = await channel.search({ query: searchQuery }, { limit: 20 });
       setSearchResults(results.results?.map((r: any) => r.message) || []);
     } catch (err) {
-      console.error('Search failed:', err);
+      logger.error('Channel search failed', 'CUSTOM_CHANNEL_HEADER', { error: err instanceof Error ? err.message : String(err) });
+      toast({ title: 'Search failed', variant: 'destructive' });
       setSearchResults([]);
     }
     setIsSearching(false);

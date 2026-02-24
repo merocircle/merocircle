@@ -3,6 +3,8 @@
 import React, { useState, useCallback } from 'react';
 import { Video, X, Mic, MicOff, VideoOff, PhoneOff, Users, Loader2 } from 'lucide-react';
 import { useStreamChat } from '@/contexts/stream-chat-context';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 interface VideoCallButtonProps {
   channelId: string;
@@ -10,6 +12,7 @@ interface VideoCallButtonProps {
 
 export function VideoCallButton({ channelId }: VideoCallButtonProps) {
   const { chatClient, streamUser } = useStreamChat();
+  const { toast } = useToast();
   const [isCallActive, setIsCallActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -26,13 +29,12 @@ export function VideoCallButton({ channelId }: VideoCallButtonProps) {
     setError(null);
 
     try {
-      // For now, we'll show a modal indicating video calls are available
-      // Full video implementation requires additional Stream Video SDK setup
       setIsCallActive(true);
-      console.log('Video call initiated for channel:', channelId);
+      logger.info('Video call initiated', 'VIDEO_CALL_BUTTON', { channelId });
     } catch (err) {
-      console.error('Failed to start video call:', err);
+      logger.error('Failed to start video call', 'VIDEO_CALL_BUTTON', { channelId, error: err instanceof Error ? err.message : String(err) });
       setError(err instanceof Error ? err.message : 'Failed to start call');
+      toast({ title: 'Failed to start call', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

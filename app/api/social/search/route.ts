@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getOptionalUser } from '@/lib/api-utils'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q')
     const limit = parseInt(searchParams.get('limit') || '20')
-    
+
+    logger.info('Creator search request', 'SOCIAL_SEARCH_API', { query: query?.slice(0, 50), limit })
+
     if (!query || query.trim().length < 2) {
       return NextResponse.json(
         { error: 'Search query must be at least 2 characters' },
@@ -46,6 +49,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
+    logger.error('Creator search failed', 'SOCIAL_SEARCH_API', { error: error instanceof Error ? error.message : String(error) })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

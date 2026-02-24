@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
+    logger.info('Top creators request', 'PUBLIC_TOP_CREATORS_API');
     const supabase = await createClient();
 
     // First get all users who exist (inner join approach)
@@ -48,7 +50,8 @@ export async function GET() {
       .slice(0, 3);
 
     return NextResponse.json({ creators });
-  } catch {
+  } catch (error) {
+    logger.error('Top creators failed', 'PUBLIC_TOP_CREATORS_API', { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ creators: [] });
   }
 }

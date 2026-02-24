@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: Request,
@@ -44,7 +45,9 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('View tracking error:', error);
+    logger.error('View tracking error', 'POST_VIEW_API', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Failed to track view' }, { status: 500 });
   }
 }

@@ -15,6 +15,8 @@ import {
   Share2 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 interface ShareModalProps {
   open: boolean;
@@ -42,16 +44,9 @@ export function ShareModal({
   creatorId,
   creator,
 }: ShareModalProps) {
+  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  // Copy vanity URL when possible: /creator/slug?post=id
-  // Use creatorSlug first, then fallback to creator.vanity_username, then creatorId
-  // console.log('URL DEBUG:', { 
-  //   creatorSlug, 
-  //   creatorVanity: creator?.vanity_username, 
-  //   creatorId,
-  //   finalIdentifier: creatorSlug || creator?.vanity_username || creatorId 
-  // });
   const creatorIdentifier = creatorSlug || creator?.vanity_username || creatorId;
   const shareUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/creator/${creatorIdentifier}?post=${postId}`
@@ -66,7 +61,8 @@ export function ShareModal({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy:', error);
+      logger.error('Failed to copy share link', 'SHARE_MODAL', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Copy failed', description: 'Please copy the link manually.', variant: 'destructive' });
     }
   };
 
@@ -80,8 +76,7 @@ export function ShareModal({
         });
         onClose();
       } catch (error) {
-        // User cancelled or error occurred
-        console.log('Share cancelled or failed');
+        logger.debug('Share cancelled or failed', 'SHARE_MODAL', { error: error instanceof Error ? error.message : String(error) });
       }
     } else {
       // Fallback to copy link

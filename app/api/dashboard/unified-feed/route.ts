@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getOptionalUser, parsePaginationParams, handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
     const { data: allPosts, error: postsError } = await postsQuery.range(offset, offset + limit - 1);
 
     if (postsError) {
-      console.error('Error fetching posts:', postsError);
+      logger.error('Error fetching posts', 'UNIFIED_FEED_API', { error: postsError.message });
       return NextResponse.json({ error: 'Failed to fetch posts', details: postsError.message }, { status: 500 });
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getOptionalUser, handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   request: NextRequest,
@@ -8,6 +9,7 @@ export async function GET(
 ) {
   try {
     const { pollId } = await params;
+    logger.info('Fetch poll', 'POLLS_API', { pollId });
     const user = await getOptionalUser();
     const supabase = await createClient();
 

@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 import { BalloonBurst } from '@/components/animations/BalloonBurst';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 interface PaymentSuccessModalProps {
   open: boolean;
   onClose: () => void;
@@ -27,6 +29,7 @@ export const PaymentSuccessModal = ({
   gateway = 'direct',
   creatorName = "",
 }: PaymentSuccessModalProps) => {
+  const { toast } = useToast();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
   const [transaction, setTransaction] = useState<{ id?: string; amount?: number; status?: string; created_at?: string } | null>(null);
@@ -35,7 +38,6 @@ export const PaymentSuccessModal = ({
   useEffect(() => {
     const verifyPayment = async () => {
       try {
-        // For direct payments, mark as verified immediately
         setVerified(true);
         setTransaction({
           id: transactionUuid,
@@ -44,7 +46,11 @@ export const PaymentSuccessModal = ({
           created_at: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('[SUCCESS] Verification error:', error);
+        logger.error('Verification error', 'PAYMENT_SUCCESS_MODAL', {
+          error: error instanceof Error ? error.message : String(error),
+          transactionUuid,
+        });
+        toast({ title: 'Verification failed', variant: 'destructive' });
       } finally {
         setIsVerifying(false);
       }

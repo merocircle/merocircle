@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 interface FeedbackItem {
   id: string;
@@ -37,26 +38,16 @@ export function FeedbackTab() {
   const fetchFeedback = async () => {
     try {
       setLoading(true);
-      console.log('[FeedbackTab] Fetching feedback...');
+      logger.debug('Fetching feedback', 'FEEDBACK_TAB');
       const response = await fetch('/api/admin/feedback');
       const data = await response.json();
-
-      console.log('[FeedbackTab] Received response:', {
-        success: data.success,
-        feedbackCount: data.feedback?.length || 0,
-        total: data.total,
-        feedback: data.feedback,
-      });
 
       if (data.success) {
         setFeedback(data.feedback || []);
         setTotal(data.total || 0);
-        console.log('[FeedbackTab] State updated:', {
-          feedbackCount: data.feedback?.length || 0,
-          total: data.total,
-        });
+        logger.info('Feedback loaded', 'FEEDBACK_TAB', { count: data.feedback?.length || 0, total: data.total });
       } else {
-        console.error('[FeedbackTab] API returned error:', data);
+        logger.error('API returned error', 'FEEDBACK_TAB', { error: data.error });
         toast({
           title: 'Error',
           description: data.error || 'Failed to load feedback',
@@ -64,7 +55,7 @@ export function FeedbackTab() {
         });
       }
     } catch (error) {
-      console.error('[FeedbackTab] Error fetching feedback:', error);
+      logger.error('Error fetching feedback', 'FEEDBACK_TAB', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: 'Error',
         description: 'Failed to load feedback',
@@ -85,7 +76,7 @@ export function FeedbackTab() {
       });
       setTimeout(() => setCopiedEmail(null), 2000);
     } catch (error) {
-      console.error('Failed to copy email:', error);
+      logger.error('Failed to copy email', 'FEEDBACK_TAB', { error: error instanceof Error ? error.message : String(error) });
       toast({
         title: 'Error',
         description: 'Failed to copy email address',
@@ -113,7 +104,7 @@ export function FeedbackTab() {
         )
       );
     } catch (error) {
-      console.error('Failed to update addressed status:', error);
+      logger.error('Failed to update addressed status', 'FEEDBACK_TAB', { feedbackId, error: error instanceof Error ? error.message : String(error) });
       toast({
         title: 'Error',
         description: 'Failed to update feedback status',

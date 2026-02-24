@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 /**
  * Delete User - DEV ONLY
@@ -42,7 +43,7 @@ export async function DELETE(request: NextRequest) {
       .delete()
       .eq('recipient_email', email)
       .then(() => {
-        console.log('Email queue cleaned for:', email);
+        logger.info('Email queue cleaned for user', 'DEV_DELETE_USER', { email });
       })
       .catch(() => {
         // Table might not exist, ignore error
@@ -90,6 +91,7 @@ export async function DELETE(request: NextRequest) {
 
     return response;
   } catch (error: any) {
+    logger.error('Delete user failed', 'DEV_DELETE_USER', { email, error: error?.message });
     return NextResponse.json({
       error: error.message,
       hint: 'Make sure the user exists in the database'

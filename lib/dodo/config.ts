@@ -7,6 +7,8 @@
  * Documentation: https://docs.dodopayments.com
  */
 
+import { logger } from '@/lib/logger';
+
 // Determine API URL based on environment
 // According to Dodo Payments docs: https://docs.dodopayments.com/api-reference/introduction
 // Test Mode: https://test.dodopayments.com
@@ -66,9 +68,10 @@ const getBaseUrl = (): string => {
     return 'https://merocircle.app';
   }
   
-  // For preview deployments, warn but still use (not recommended for production payments)
   if (process.env.VERCEL_URL && process.env.VERCEL_ENV === 'preview') {
-    console.warn('[Dodo Config] Using preview deployment URL - set DODO_PAYMENTS_RETURN_URL or NEXT_PUBLIC_APP_URL for production');
+    logger.warn('Using preview deployment URL for Dodo', 'DODO_CONFIG', {
+      hint: 'Set DODO_PAYMENTS_RETURN_URL or NEXT_PUBLIC_APP_URL for production',
+    });
     return `https://${process.env.VERCEL_URL}`;
   }
   
@@ -91,26 +94,26 @@ export const dodoConfig = {
   testMode: process.env.DODO_PAYMENTS_ENVIRONMENT !== 'production',
 };
 
-// Validate configuration
 if (!dodoConfig.apiKey && process.env.NODE_ENV === 'production') {
-  console.warn('DODO_PAYMENTS_API_KEY is not set. Dodo Payments will not work.');
+  logger.warn('DODO_PAYMENTS_API_KEY is not set', 'DODO_CONFIG');
 }
 
 if (!dodoConfig.webhookKey && process.env.NODE_ENV === 'production') {
-  console.warn('DODO_PAYMENTS_WEBHOOK_KEY is not set. Webhook verification will fail.');
+  logger.warn('DODO_PAYMENTS_WEBHOOK_KEY is not set', 'DODO_CONFIG');
 }
 
-// Log exchange rate info on startup (development only)
 if (process.env.NODE_ENV === 'development') {
-  // Async initialization - don't block startup
   (async () => {
     try {
       const { getExchangeRateInfo } = require('./exchange-rate');
       const exchangeInfo = await getExchangeRateInfo();
-      console.log(`[Dodo Payments] Exchange Rate: ${exchangeInfo.example} (${exchangeInfo.source}${exchangeInfo.cached ? ', cached' : ''})`);
-      console.log(`[Dodo Payments] Set DODO_PAYMENTS_EXCHANGE_RATE to override, or EXCHANGE_RATE_API_KEY for more API requests`);
-    } catch (error) {
-      console.log(`[Dodo Payments] Exchange Rate: Using default (100 NPR = 1 USD)`);
+      logger.info('Dodo exchange rate loaded', 'DODO_CONFIG', {
+        example: exchangeInfo.example,
+        source: exchangeInfo.source,
+        cached: exchangeInfo.cached,
+      });
+    } catch {
+      logger.debug('Dodo exchange rate using default', 'DODO_CONFIG', { default: '100 NPR = 1 USD' });
     }
   })();
 }

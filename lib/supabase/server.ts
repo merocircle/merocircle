@@ -1,10 +1,11 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Database } from '../supabase'
+import { logger } from '@/lib/logger'
 
 export async function createClient() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.error('Missing Supabase environment variables', {
+    logger.error('Missing Supabase environment variables', 'SUPABASE_SERVER', {
       hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       env: process.env.VERCEL_ENV || 'local'
@@ -47,9 +48,8 @@ export async function createClient() {
 
 // For admin operations that need elevated privileges
 export function createAdminClient() {
-  // Validate environment variables
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('Missing Supabase admin environment variables', {
+    logger.error('Missing Supabase admin environment variables', 'SUPABASE_SERVER', {
       hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       env: process.env.VERCEL_ENV || 'local'
