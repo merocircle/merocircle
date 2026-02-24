@@ -48,23 +48,23 @@ export function ShowcaseSection() {
 
           {/* Floating cards */}
           <div className="orbit-card orbit-card-proof orbit-float-1">
-            <div className="orbit-avatar-stack">
-              <Image src="/dodo.png" alt="" width={20} height={20} className="orbit-stack-img" />
-              <Image src="/Nishar.jpeg" alt="" width={20} height={20} className="orbit-stack-img" />
-              <Image src="/Shaswot Lamichhane.png" alt="" width={20} height={20} className="orbit-stack-img" />
-            </div>
-            <div>
-              <p className="orbit-card-value-sm">Your supporters</p>
-            </div>
-          </div>
-
-          <div className="orbit-card orbit-card-revenue orbit-float-2">
             <div className="orbit-card-icon orbit-card-icon-green">
               <Send size={13} />
             </div>
             <div>
               <p className="orbit-card-label">This month</p>
               <p className="orbit-card-value">NPR 125,000</p>
+            </div>
+          </div>
+
+          <div className="orbit-card orbit-card-revenue orbit-float-2">
+            <div className="orbit-avatar-stack">
+              <Image src="/illustration (1).png" alt="" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Nishar.jpeg" alt="" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Shaswot Lamichhane.png" alt="" width={20} height={20} className="orbit-stack-img" />
+            </div>
+            <div>
+              <p className="orbit-card-value-sm">Your supporters</p>
             </div>
           </div>
 
@@ -78,9 +78,9 @@ export function ShowcaseSection() {
             </div>
           </div>
 
-          <div className="orbit-card orbit-card-video orbit-float-4">
+          {/* <div className="orbit-card orbit-card-video orbit-float-4">
             <span>New Video 🎬</span>
-          </div>
+          </div> */}
 
           <div className="orbit-pill orbit-pill-heart orbit-float-5">
             <Heart size={14} fill="#ef4444" color="#ef4444" />
@@ -91,7 +91,8 @@ export function ShowcaseSection() {
           </div>
 
           <div className="orbit-mini orbit-mini-1">
-            <Image src="/Nishar.jpeg" alt="" width={32} height={32} className="orbit-mini-img" />
+            <span>New Video 🎬</span>
+            {/* <Image src="/Nishar.jpeg" alt="" width={32} height={32} className="orbit-mini-img" /> */}
           </div>
           <div className="orbit-mini orbit-mini-2">
             <Image src="/dodo.png" alt="" width={28} height={28} className="orbit-mini-img" />

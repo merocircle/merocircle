@@ -254,7 +254,7 @@
   right: 6%;
 }
 .orbit-card-revenue {
-  right: -2%;
+  right: -10%;
   top: 44%;
 }
 .orbit-card-chat {
@@ -292,16 +292,28 @@
   object-fit: cover;
 }
 .orbit-mini-1 {
-  width: 48px;
   height: 48px;
-  right: 24%;
+  right: 10%;
   bottom: 22%;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  z-index: 5;
 }
 .orbit-mini-2 {
   width: 44px;
   height: 44px;
-  left: 18%;
-  top: 46%;
+  right: 48%;
+  bottom: 12%;
 }
 
 /* Float animations — varied timing */
