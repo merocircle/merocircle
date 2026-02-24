@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 export type DashboardView =
   | 'home'
   | 'explore'
+  | 'events'
   | 'chat'
   | 'notifications'
   | 'settings'
@@ -64,6 +65,7 @@ function DashboardProviderInner({ children }: { children: ReactNode }) {
       const routeMap: Record<string, string> = {
         'home': '/home',
         'explore': '/explore',
+        'events': '/events',
         'chat': '/chat',
         'notifications': '/notifications',
         'settings': '/settings',

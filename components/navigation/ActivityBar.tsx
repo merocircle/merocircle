@@ -16,7 +16,8 @@ import {
   Moon,
   Monitor,
   Shield,
-  MessageCircleHeart
+  MessageCircleHeart,
+  Calendar
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
@@ -87,6 +88,7 @@ export function ActivityBar({
     switch (view) {
       case 'home': return '/home';
       case 'explore': return '/explore';
+      case 'events': return '/events';
       case 'chat': return '/chat';
       case 'notifications': return '/notifications';
       case 'settings': return '/settings';
@@ -99,6 +101,7 @@ export function ActivityBar({
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
+    if (pathname === '/events') return 'events';
     if (pathname === '/chat') return 'chat';
     if (pathname === '/notifications') return 'notifications';
     if (pathname === '/settings') return 'settings';
@@ -120,6 +123,8 @@ export function ActivityBar({
   const creatorNavItem: NavItem | null = isCreator
     ? { id: 'creator-studio', icon: BarChart3, label: 'Creator Studio', view: 'creator-studio' }
     : null;
+
+  const eventsNavItem: NavItem = { id: 'events', icon: Calendar, label: 'Events', view: 'events' };
 
   const adminNavItem: NavItem | null = isAdminUser
     ? { id: 'admin', icon: Shield, label: 'Admin' }
@@ -208,6 +213,23 @@ export function ActivityBar({
               </TooltipContent>
             </Tooltip>
           )}
+
+          {/* Events */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <NavIcon
+                  icon={eventsNavItem.icon}
+                  label={eventsNavItem.label}
+                  isActive={isActive(eventsNavItem)}
+                  href={eventsNavItem.view ? getRoute(eventsNavItem.view) : undefined}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              <p>{eventsNavItem.label}</p>
+            </TooltipContent>
+          </Tooltip>
 
           {/* Admin */}
           {adminNavItem && (
