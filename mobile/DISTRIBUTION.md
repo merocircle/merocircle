@@ -15,6 +15,35 @@
 
 ---
 
+## Environment variables for EAS / APK builds
+
+EAS Build runs in the cloud and **does not** use your local `mobile/.env`. If you build an APK without providing Supabase (and app URL) there, the app will crash with **"supabaseUrl is required"** when it starts.
+
+**Required for all builds that use auth or API:**
+
+1. Open [expo.dev](https://expo.dev) → your project → **Secrets** (or run `eas secret:list`).
+2. Add these secrets (same values as in `mobile/.env`):
+
+   | Name | Value |
+   |------|--------|
+   | `EXPO_PUBLIC_SUPABASE_URL` | Your Supabase project URL (e.g. `https://xxxx.supabase.co`) |
+   | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+
+3. Optional but recommended for full app behavior (feed, API, notifications):
+   - `EXPO_PUBLIC_APP_URL` — your Next.js app URL (e.g. `https://merocircle.app` or `https://your-ngrok-url.ngrok.io` for dev).
+
+You can also set secrets from the CLI (from the `mobile` folder):
+
+```bash
+eas secret:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://YOUR_PROJECT.supabase.co"
+eas secret:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "YOUR_ANON_KEY"
+eas secret:create --name EXPO_PUBLIC_APP_URL --value "https://merocircle.app"
+```
+
+After saving secrets, run the build again (e.g. `npm run build:android` or `npm run build:android:dev`). The new APK will have these values embedded.
+
+---
+
 ## Android — Development Build (recommended for testing auth / dev work)
 
 Expo Go on Android **cannot** intercept `mobile://auth/callback` from Chrome Custom Tabs — that's a

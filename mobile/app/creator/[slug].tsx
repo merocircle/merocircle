@@ -1,30 +1,55 @@
-import { ScrollView, Text, StyleSheet } from 'react-native';
+import { ScrollView, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Avatar, Badge, Button, PostCard } from '../../components/ui';
 import { colors } from '../../constants/colors';
-
-const MOCK_CREATORS: Record<string, { displayName: string; username: string; category: string; supporterCount: number; bio: string }> = {
-  'sita-rai': { displayName: 'Sita Rai', username: 'sitarai', category: 'Music', supporterCount: 1200, bio: 'Singer & songwriter from Nepal. Supporting local music.' },
-  'ram-thapa': { displayName: 'Ram Thapa', username: 'ramthapa', category: 'Photography', supporterCount: 890, bio: 'Landscape and portrait photographer.' },
-  'anita-karki': { displayName: 'Anita Karki', username: 'anitakarki', category: 'Vlog', supporterCount: 2100, bio: 'Daily vlogs and lifestyle from Kathmandu.' },
-};
-
-const MOCK_POSTS = [
-  { id: '1', authorName: 'Sita Rai', content: 'New single dropping next week. Thank you for your support!', likeCount: 89, commentCount: 12 },
-];
+import { useCreator } from '../../hooks/useCreator';
 
 export default function CreatorProfileScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const creator = slug ? MOCK_CREATORS[slug] : null;
-  const displayName = creator?.displayName ?? slug ?? 'Creator';
-  const username = creator?.username ?? '—';
-  const category = creator?.category;
-  const supporterCount = creator?.supporterCount ?? 0;
-  const bio = creator?.bio ?? '';
+  const creatorQuery = useCreator(slug ?? null);
+  const { data, isLoading, isError, error } = creatorQuery;
+  const details = data?.creatorDetails;
+  const posts = data?.posts ?? [];
+
+  if (!slug) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.centered}>
+        <Text style={styles.muted}>Missing creator</Text>
+      </ScrollView>
+    );
+  }
+
+  if (isLoading && !details) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.muted}>Loading creator…</Text>
+      </ScrollView>
+    );
+  }
+
+  if (isError || !details) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.centered}>
+        <Text style={styles.error}>{(error as Error)?.message ?? 'Creator not found'}</Text>
+      </ScrollView>
+    );
+  }
+
+  const displayName = details.display_name ?? 'Creator';
+  const username = details.username ?? slug;
+  const category = details.category ?? undefined;
+  const supporterCount = details.supporter_count ?? details.supporters_count ?? 0;
+  const bio = details.bio ?? '';
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Avatar fallback={displayName} size={72} style={styles.avatar} />
+      <Avatar
+        source={details.avatar_url ? { uri: details.avatar_url } : null}
+        fallback={displayName}
+        size={72}
+        style={styles.avatar}
+      />
       <Text style={styles.displayName}>{displayName}</Text>
       <Text style={styles.username}>@{username}</Text>
       {category ? <Badge label={category} variant="primary" style={styles.badge} /> : null}
@@ -32,9 +57,22 @@ export default function CreatorProfileScreen() {
       {bio ? <Text style={styles.bio}>{bio}</Text> : null}
       <Button title="Support" onPress={() => {}} style={styles.supportBtn} />
       <Text style={styles.sectionTitle}>Recent posts</Text>
-      {MOCK_POSTS.map((p) => (
-        <PostCard key={p.id} authorName={p.authorName} content={p.content} likeCount={p.likeCount} commentCount={p.commentCount} style={styles.postCard} />
-      ))}
+      {posts.length === 0 ? (
+        <Text style={styles.muted}>No posts yet.</Text>
+      ) : (
+        posts.map((p) => (
+          <PostCard
+            key={p.id}
+            authorName={p.creator?.display_name ?? 'Creator'}
+            authorAvatar={p.creator?.photo_url}
+            content={p.content ?? '[Support to view]'}
+            imageUri={p.image_url ?? (p.image_urls?.[0]) ?? null}
+            likeCount={p.likes_count}
+            commentCount={p.comments_count}
+            style={styles.postCard}
+          />
+        ))
+      )}
     </ScrollView>
   );
 }
@@ -42,6 +80,7 @@ export default function CreatorProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 24, paddingBottom: 32, alignItems: 'center' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   avatar: { marginBottom: 12 },
   displayName: { fontSize: 22, fontWeight: '700', color: colors.foreground },
   username: { fontSize: 14, color: colors.mutedForeground, marginTop: 4 },
@@ -51,4 +90,6 @@ const styles = StyleSheet.create({
   supportBtn: { marginTop: 20, alignSelf: 'stretch' },
   sectionTitle: { fontSize: 18, fontWeight: '600', color: colors.foreground, alignSelf: 'flex-start', marginTop: 24, marginBottom: 12 },
   postCard: { marginBottom: 16, width: '100%' },
+  muted: { fontSize: 14, color: colors.mutedForeground },
+  error: { fontSize: 14, color: colors.destructive },
 });

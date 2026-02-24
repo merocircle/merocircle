@@ -15,6 +15,7 @@
     "build:ios:prod": "eas build --platform ios --profile production"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.19",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "^7.0.0",

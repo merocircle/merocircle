@@ -2,10 +2,13 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Avatar, Button } from '../../components/ui';
 import { useAuth } from '../../contexts/auth-context';
+import { useSupportedCreators } from '../../hooks/useSupporting';
 import { colors } from '../../constants/colors';
 
 export default function ProfileTab() {
   const { userProfile, user } = useAuth();
+  const { data: supportingData } = useSupportedCreators();
+  const supportingCount = supportingData?.creators?.length ?? 0;
   const displayName = userProfile?.display_name ?? user?.email?.split('@')[0] ?? 'You';
   const email = userProfile?.email ?? user?.email ?? '';
 
@@ -20,7 +23,7 @@ export default function ProfileTab() {
         <Text style={styles.displayName}>{displayName}</Text>
         {email ? <Text style={styles.username}>{email}</Text> : null}
         <View style={styles.stats}>
-          <Text style={styles.stat}>0 supporting</Text>
+          <Text style={styles.stat}>{supportingCount} supporting</Text>
         </View>
       </View>
       <View style={styles.actions}>

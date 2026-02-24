@@ -2,8 +2,11 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '../contexts/auth-context';
 import { colors } from '../constants/colors';
+
+const queryClient = new QueryClient();
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { loading, session } = useAuth();
@@ -39,13 +42,15 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <AuthProvider>
-          <AuthGate>
-            <RootLayoutContent />
-          </AuthGate>
-        </AuthProvider>
-      </View>
+      <QueryClientProvider client={queryClient}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          <AuthProvider>
+            <AuthGate>
+              <RootLayoutContent />
+            </AuthGate>
+          </AuthProvider>
+        </View>
+      </QueryClientProvider>
     </SafeAreaProvider>
   );
 }

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { user, errorResponse } = await getAuthenticatedUser()
+    const { user, errorResponse } = await getAuthenticatedUser(request)
     if (errorResponse || !user) {
       return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const user = await getOptionalUser()
+    const user = await getOptionalUser(request)
 
     // Use unified like engine to get status
     const status = await getPostLikeStatus(postId, user?.id)

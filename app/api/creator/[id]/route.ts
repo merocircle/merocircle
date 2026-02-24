@@ -3,14 +3,51 @@ import { createClient } from '@/lib/supabase/server';
 import { handleApiError, getOptionalUser } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type SupabaseClient = Awaited<ReturnType<typeof import('@/lib/supabase/server').createClient>>;
+
+/** Resolve slug (vanity_username or users.username) to creator user_id. Same logic as /api/creator/resolve/[username]. */
+async function resolveSlugToCreatorId(supabase: SupabaseClient, slug: string): Promise<string | null> {
+  const decoded = decodeURIComponent(slug).trim().toLowerCase();
+  if (!decoded) return null;
+
+  const { data: byVanity } = await supabase
+    .from('creator_profiles')
+    .select('user_id, vanity_username')
+    .not('vanity_username', 'is', null);
+  const rows = (byVanity ?? []) as { user_id: string; vanity_username: string | null }[];
+  const match = rows.find(
+    (row) => row.vanity_username != null && row.vanity_username.trim().toLowerCase() === decoded
+  );
+  if (match) return match.user_id;
+
+  const { data: userRow } = await supabase
+    .from('users')
+    .select('id')
+    .eq('username', decoded)
+    .eq('role', 'creator')
+    .maybeSingle();
+  const u = userRow as { id: string } | null;
+  return u?.id ?? null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: creatorId } = await params;
+    const { id: param } = await params;
     const supabase = await createClient();
-    const user = await getOptionalUser();
+    const user = await getOptionalUser(request);
+
+    // Same route: param can be UUID (creator id) or vanity slug
+    const creatorId = UUID_REGEX.test(param)
+      ? param
+      : await resolveSlugToCreatorId(supabase, param);
+    if (!creatorId) {
+      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+    }
 
     const { data: creatorProfile, error: profileError } = await supabase
       .from('creator_profiles')

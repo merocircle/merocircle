@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const user = await getOptionalUser()
+    const user = await getOptionalUser(request)
     const supabase = await createClient()
 
     // Call the optimized creator search function

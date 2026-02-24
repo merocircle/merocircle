@@ -12,7 +12,7 @@ export async function GET(
     const { id: creatorId } = await params;
     
     // Authenticate and verify creator role
-    const { user, errorResponse: authError } = await getAuthenticatedUser();
+    const { user, errorResponse: authError } = await getAuthenticatedUser(request);
     if (authError || !user) return authError || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     
     if (user.id !== creatorId) {

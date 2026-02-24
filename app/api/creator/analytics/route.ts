@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser, requireCreatorRole, handleApiError } from '@/lib/api-utils';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { user, errorResponse } = await getAuthenticatedUser();
+    const { user, errorResponse } = await getAuthenticatedUser(request);
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { isCreator, errorResponse: roleError } = await requireCreatorRole(user.id);

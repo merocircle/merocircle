@@ -9,7 +9,7 @@ import { getOptionalUser, parsePaginationParams, handleApiError } from '@/lib/ap
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getOptionalUser();
+    const user = await getOptionalUser(request);
     const supabase = await createClient();
 
     const searchParams = request.nextUrl.searchParams;

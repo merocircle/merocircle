@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { verifySupabaseAccessToken } from '@/lib/supabase-jwt';
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   email: string;
   name?: string;
@@ -12,39 +13,42 @@ interface AuthUser {
 }
 
 /**
- * Get authenticated user from NextAuth session.
- * Returns user or null, and error response if unauthorized.
+ * Resolve authenticated user from either:
+ * - Authorization: Bearer <supabase_access_token> (mobile app), or
+ * - NextAuth session (web).
+ * When request is provided, Bearer token is checked first.
  */
-export async function getAuthenticatedUser(): Promise<{
-  user: AuthUser | null;
-  errorResponse: NextResponse | null;
-}> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    return {
-      user: null,
-      errorResponse: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+async function resolveUser(request?: NextRequest): Promise<AuthUser | null> {
+  if (request) {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (token) {
+      const payload = await verifySupabaseAccessToken(token);
+      if (payload) {
+        const supabase = await createClient();
+        const { data: row } = await supabase
+          .from('users')
+          .select('id, email, display_name, photo_url')
+          .eq('id', payload.sub)
+          .single();
+        const userRow = row as { id: string; email: string | null; display_name: string | null; photo_url: string | null } | null;
+        if (userRow) {
+          return {
+            id: userRow.id,
+            email: userRow.email ?? payload.email ?? '',
+            name: userRow.display_name ?? undefined,
+            image: userRow.photo_url ?? undefined,
+          };
+        }
+        return {
+          id: payload.sub,
+          email: payload.email ?? '',
+        };
+      }
+    }
   }
 
-  return {
-    user: {
-      id: session.user.id,
-      email: session.user.email || '',
-      name: session.user.name || undefined,
-      image: session.user.image || undefined,
-    },
-    errorResponse: null,
-  };
-}
-
-/**
- * Get optional authenticated user (returns null if not authenticated).
- */
-export async function getOptionalUser(): Promise<AuthUser | null> {
   const session = await getServerSession(authOptions);
-
   if (!session?.user?.id) return null;
 
   return {
@@ -53,6 +57,32 @@ export async function getOptionalUser(): Promise<AuthUser | null> {
     name: session.user.name || undefined,
     image: session.user.image || undefined,
   };
+}
+
+/**
+ * Get authenticated user from NextAuth session or Supabase Bearer token (mobile).
+ * Pass the request so mobile can send Authorization: Bearer <supabase_access_token>.
+ */
+export async function getAuthenticatedUser(request?: NextRequest): Promise<{
+  user: AuthUser | null;
+  errorResponse: NextResponse | null;
+}> {
+  const user = await resolveUser(request);
+  if (!user) {
+    return {
+      user: null,
+      errorResponse: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+  return { user, errorResponse: null };
+}
+
+/**
+ * Get optional authenticated user (returns null if not authenticated).
+ * Pass the request so mobile can send Authorization: Bearer <supabase_access_token>.
+ */
+export async function getOptionalUser(request?: NextRequest): Promise<AuthUser | null> {
+  return resolveUser(request);
 }
 
 /**

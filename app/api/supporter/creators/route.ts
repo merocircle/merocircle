@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils'
@@ -8,9 +8,9 @@ import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils'
  * Uses supporters table so "Your circle" reflects who you're currently supporting;
  * after unsubscribe they disappear. Payment history stays in supporter_transactions.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const { user, errorResponse } = await getAuthenticatedUser();
+    const { user, errorResponse } = await getAuthenticatedUser(request);
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const supabase = await createClient();

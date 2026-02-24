@@ -10,7 +10,7 @@ export async function GET(
     const { id: creatorId } = await params
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
-    const user = await getOptionalUser()
+    const user = await getOptionalUser(request)
     const supabase = await createClient()
 
     const { data: postsData, error: postsError } = await supabase

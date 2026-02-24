@@ -5,7 +5,7 @@ import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const { user, errorResponse } = await getAuthenticatedUser();
+    const { user, errorResponse } = await getAuthenticatedUser(request);
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const supabase = await createClient();
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
 // Mark notifications as read
 export async function PATCH(request: NextRequest) {
   try {
-    const { user, errorResponse } = await getAuthenticatedUser();
+    const { user, errorResponse } = await getAuthenticatedUser(request);
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const supabase = await createClient();
