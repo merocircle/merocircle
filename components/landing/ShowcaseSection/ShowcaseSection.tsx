@@ -68,6 +68,17 @@ export function ShowcaseSection() {
             </div>
           </div>
 
+          <div className="orbit-card orbit-card-revenue orbit-float-2">
+            <div className="orbit-avatar-stack">
+              <Image src="/illustration (1).png" alt="Creator Image 1" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Nishar.jpeg" alt="Creator Image 2" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Shaswot Lamichhane.png" alt="Creator Image 3" width={20} height={20} className="orbit-stack-img" />
+            </div>
+            <div>
+              <p className="orbit-card-value-sm">Your supporters</p>
+            </div>
+          </div>
+
           <div className="orbit-card orbit-card-chat orbit-float-3">
             <div className="orbit-card-icon orbit-card-icon-blue">
               <MessageSquare size={13} />
@@ -94,7 +105,7 @@ export function ShowcaseSection() {
             <Image src="/Nishar.jpeg" alt="" width={32} height={32} className="orbit-mini-img" />
           </div>
           <div className="orbit-mini orbit-mini-2">
-            <Image src="/dodo.png" alt="" width={28} height={28} className="orbit-mini-img" />
+            <Image src="/dodo.png" alt="Visa / Mastercard Payment" width={28} height={28} className="orbit-mini-img" />
           </div>
         </div>
 
