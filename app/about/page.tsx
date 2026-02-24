@@ -30,7 +30,7 @@ const TEAM = [
     // current: "—",
     image: null as string | null,
     words:
-      "As the UI/UX designer, my focus is on making every tap and scroll feel intentional. MeroCircle should feel like a quiet room where connection happens—clear, calm, and without the noise of feeds or algorithms. We're designing for the moment a supporter decides to give, and for the creator who receives it. That moment deserves a clear path and zero friction.",
+      "Kritish is a UI/UX developer working at the crossroads of design and technology. He has contributed to interactive web projects and community-led creative initiatives, shaping experiences that connect people and ideas.",
     isPlaceholder: true,
   },
 ];

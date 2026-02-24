@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Video, MessageSquare, Heart, Lock, Send } from "lucide-react";
+import { ArrowRight, Video, MessageSquare, Heart, Lock, Send, Sparkles, Users } from "lucide-react";
 import { useReveal } from "../useReveal";
 import "./ShowcaseSection.css";
 
@@ -14,7 +14,10 @@ export function ShowcaseSection() {
       <div className={`showcase-inner ${isVisible ? "showcase-visible" : ""}`}>
 
         {/* ═══ FOR CREATORS ═══ */}
-        <div className="showcase-audience-label">For Creators</div>
+        <div className="showcase-audience-label">
+          <Sparkles size={12} className="mr-1.5" />
+          For Creators
+        </div>
 
         <h2 className="showcase-title">
           Your community. Your way.
@@ -87,7 +90,7 @@ export function ShowcaseSection() {
           </div>
 
           <div className="orbit-pill orbit-pill-lock orbit-float-6">
-            <Lock size={13} color="#990000" />
+            <Lock size={13} color="var(--primary)" />
           </div>
 
           <div className="orbit-mini orbit-mini-1">
@@ -137,7 +140,10 @@ export function ShowcaseSection() {
         {/* ═══ FOR SUPPORTERS ═══ */}
         <div className="showcase-divider" />
 
-        <div className="showcase-audience-label showcase-audience-label-alt">For Supporters</div>
+        <div className="showcase-audience-label showcase-audience-label-alt">
+          <Users size={12} className="mr-1.5" />
+          For Supporters
+        </div>
 
         <h2 className="showcase-title">
           Get closer to the people you admire.

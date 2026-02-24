@@ -20,16 +20,17 @@
 
 /* Audience labels */
 .showcase-audience-label {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin: 0 auto 1rem;
   padding: 0.3rem 0.875rem;
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: #990000;
-  background: rgba(153, 0, 0, 0.05);
-  border: 1px solid rgba(153, 0, 0, 0.1);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, transparent 95%);
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent 90%);
   border-radius: 9999px;
 }
 
@@ -103,7 +104,7 @@
 }
 
 .orbit-svg-ring-inner {
-  stroke: rgba(153, 0, 0, 0.08);
+  stroke: color-mix(in srgb, var(--primary) 8%, transparent 92%);
   animation: orbit-ring-rotate 35s linear infinite;
   transform-origin: center;
 }
@@ -133,7 +134,7 @@
   object-fit: cover;
   border: 3px solid #fff;
   box-shadow:
-    0 0 0 1px rgba(153, 0, 0, 0.06),
+    0 0 0 1px color-mix(in srgb, var(--primary) 6%, transparent 94%),
     0 12px 48px rgba(0, 0, 0, 0.12);
 }
 
@@ -295,13 +296,12 @@
   height: 48px;
   right: 10%;
   bottom: 22%;
-  border-radius: 20px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
   background: #fff;
-  border-radius: 20px;
   box-shadow: 0 6px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
   font-size: 1rem;
   font-weight: 600;
@@ -357,7 +357,7 @@
   margin-bottom: 0.625rem;
   font-size: 0.6875rem;
   font-weight: 700;
-  color: #990000;
+  color: var(--primary);
   letter-spacing: 0.05em;
   opacity: 0.6;
 }
@@ -395,19 +395,19 @@
   gap: 0.625rem;
   padding: 1rem 2.5rem;
   background: transparent;
-  color: #990000;
+  color: var(--primary);
   font-size: 0.9375rem;
   font-weight: 700;
-  border: 1.5px solid rgba(153, 0, 0, 0.25);
+  border: 1.5px solid color-mix(in srgb, var(--primary) 25%, transparent 75%);
   border-radius: 9999px;
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .showcase-cta:hover {
-  background: #990000;
+  background: var(--primary);
   color: #fff;
-  border-color: #990000;
+  border-color: var(--primary);
   transform: translateY(-1px);
 }
 
