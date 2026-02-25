@@ -56,17 +56,17 @@
 }
 
 .landing-nav-cta {
-  padding: 0.5rem 1.25rem;
-  font-size: 0.8125rem;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #fff;
-  background: #990000;
+  background: var(--primary);
   border-radius: 9999px;
   text-decoration: none;
   transition: background 0.2s, transform 0.15s;
 }
 .landing-nav-cta:hover {
-  background: #7a0000;
+  background: color-mix(in srgb, var(--primary) 85%, black 15%);
   transform: translateY(-1px);
 }
 
@@ -81,7 +81,7 @@
     font-size: 0.75rem;
   }
   .landing-nav-cta {
-    padding: 0.4375rem 1rem;
-    font-size: 0.75rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 0.8125rem;
   }
 }

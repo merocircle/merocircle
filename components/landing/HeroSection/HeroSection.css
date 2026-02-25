@@ -113,7 +113,7 @@
 }
 
 .hero-accent {
-  color: #990000;
+  color: var(--primary);
   font-style: italic;
 }
 
@@ -140,7 +140,7 @@
   align-items: center;
   gap: 0.625rem;
   padding: 1rem 2.5rem;
-  background: #990000;
+  background: var(--primary);
   color: #fff;
   font-size: 0.9375rem;
   font-weight: 700;
@@ -148,13 +148,13 @@
   border-radius: 9999px;
   text-decoration: none;
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-  box-shadow: 0 8px 30px rgba(153, 0, 0, 0.25);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--primary) 25%, transparent 75%);
 }
 
 .hero-cta:hover {
-  background: #7a0000;
+  background: color-mix(in srgb, var(--primary) 85%, black 15%);
   transform: translateY(-1px);
-  box-shadow: 0 12px 40px rgba(153, 0, 0, 0.35);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--primary) 35%, transparent 65%);
 }
 
 .hero-cta:active {

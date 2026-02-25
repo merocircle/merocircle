@@ -1,0 +1,370 @@
+/* ── Pre-Launch Event Section ── */
+.pre-launch-event {
+  position: relative;
+  padding: 1rem 0.5rem;
+  background: #f8f9fa;
+  overflow: visible;
+}
+
+.pre-launch-event-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.pre-launch-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Background Image ── */
+.pre-launch-background {
+  position: relative;
+  width: 100%;
+  min-height: 550px;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.pre-launch-bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pre-launch-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 100%);
+  border-radius: 24px;
+}
+
+/* ── Content Overlay ── */
+.pre-launch-content {
+  position: absolute;
+  inset: 0;
+  padding: 4rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: white;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+/* Title */
+.pre-launch-title {
+  margin: 0 0 1rem;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: white;
+  max-width: 800px;
+}
+
+.pre-launch-accent {
+  color: var(--primary);
+  font-style: italic;
+}
+
+/* Subtitle */
+.pre-launch-sub {
+  margin: 0 0 2rem;
+  max-width: 700px;
+  font-size: clamp(1.125rem, 2.2vw, 1.25rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 450;
+}
+
+/* ── Compact Countdown Timer ── */
+.pre-launch-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0 0 1.5rem;
+  width: fit-content;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 45px;
+}
+
+.countdown-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-label {
+  font-size: 0.5rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.countdown-separator {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0.125rem;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+/* ── Event Details Row ── */
+.pre-launch-details-row {
+  display: flex;
+  gap: 2rem;
+  margin: 0 0 2rem;
+  width: fit-content;
+  flex-wrap: wrap;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.detail-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* ── Features Row ── */
+.pre-launch-features-row {
+  display: flex;
+  gap: 1rem;
+  margin: 0 0 2rem;
+  max-width: 1000px;
+  flex-wrap: wrap;
+}
+
+.feature-card {
+  flex: 1;
+  min-width: 180px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in srgb, var(--primary) 20%, transparent 80%);
+  color: var(--primary);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.feature-content {
+  text-align: left;
+}
+
+.feature-title {
+  margin: 0 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1.3;
+}
+
+.feature-description {
+  margin: 0;
+  font-size: 0.625rem;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── CTA Button ── */
+.pre-launch-cta {
+  width: fit-content;
+}
+
+.pre-launch-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1rem 2rem;
+  background: var(--primary);
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--primary) 30%, transparent 70%);
+  text-decoration: none;
+}
+
+.pre-launch-primary-btn:hover {
+  background: color-mix(in srgb, var(--primary) 85%, black 15%);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--primary) 40%, transparent 60%);
+}
+
+.pre-launch-primary-btn:active {
+  transform: scale(0.98);
+}
+
+.btn-arrow {
+  transition: transform 0.2s;
+}
+
+.pre-launch-primary-btn:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .pre-launch-event {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .pre-launch-background {
+    min-height: 600px;
+  }
+
+  .pre-launch-content {
+    padding: 2.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .pre-launch-title {
+    font-size: 1.75rem;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .pre-launch-sub {
+    font-size: 0.9rem;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .pre-launch-details-row {
+    justify-content: center;
+    margin: 0 0 1.5rem;
+    text-align: center;
+  }
+
+  .pre-launch-features-row {
+    flex-direction: row;
+    gap: 0.75rem;
+    align-items: stretch;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .feature-card {
+    min-width: 60px;
+    max-width: 180px;
+    text-align: center;
+    width: 100%;
+    flex: 1;
+  }
+
+  .feature-icon {
+    margin: 0 auto 0.75rem;
+  }
+
+  .pre-launch-primary-btn {
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 180px;
+  }
+}
+
+
+@media (max-width: 480px) {
+  .pre-launch-background {
+    min-height: 600px;
+  }
+
+  .pre-launch-content {
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  .pre-launch-title {
+    font-size: 1.5rem;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .pre-launch-sub {
+    font-size: 0.85rem;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .pre-launch-details-row {
+    justify-content: center;
+    margin: 0 0 1.5rem;
+    text-align: center;
+  }
+
+  .pre-launch-features-row {
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: stretch;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .feature-card {
+    min-width: 120px;
+    max-width: 140px;
+    text-align: center;
+    width: 100%;
+    flex: 1;
+    padding: 0.875rem;
+  }
+
+  .feature-icon {
+    margin: 0 auto 0.75rem;
+  }
+
+  .pre-launch-primary-btn {
+    margin: 0 auto;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8rem;
+  }
+}

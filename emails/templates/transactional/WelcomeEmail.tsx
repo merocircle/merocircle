@@ -15,40 +15,39 @@ interface WelcomeEmailProps {
   exploreUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
+  teamImageSrc?: string;
 }
 
 /**
  * Welcome email — a concise personal note from the Mero Circle team
  * Triggered when someone creates an account.
  */
+const DEFAULT_APP_URL = 'https://merocircle.app';
+
 export default function WelcomeEmail({
   firstName = 'there',
-  exploreUrl = 'https://merocircle.app/explore',
-  settingsUrl = 'https://merocircle.app/settings',
-  helpUrl = 'https://merocircle.app/help',
+  exploreUrl = `${DEFAULT_APP_URL}/explore`,
+  settingsUrl = `${DEFAULT_APP_URL}/settings`,
+  helpUrl = `${DEFAULT_APP_URL}/help`,
+  appUrl,
+  logoSrc,
+  teamImageSrc,
 }: WelcomeEmailProps) {
+  const baseUrl = appUrl?.trim() || DEFAULT_APP_URL;
+  const teamPhotoUrl = teamImageSrc ?? `${baseUrl}/email/team-photo.jpg`;
   return (
     <EmailLayout
       preview={`Hi ${firstName}, welcome to Mero Circle — we're glad you're here.`}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
       hideCreatorInfo
-      appUrl={appUrl}
+      appUrl={baseUrl}
       logoSrc={logoSrc}
     >
       {/* Top accent */}
       <Section style={topAccent} />
-
-      {/* Logo */}
-      <Section style={logoSection}>
-        <Img
-          src={`${appUrl}/logo/logo.png`}
-          alt="MeroCircle"
-          style={logo}
-          width="122"
-          height="72"
-        />
-      </Section>
 
       {/* Letter */}
       <Section style={letterSection}>
@@ -91,7 +90,7 @@ export default function WelcomeEmail({
       {/* Team photo */}
       <Section style={teamPhotoSection}>
         <Img
-          src={`${appUrl}/email/team-photo.jpg`}
+          src={teamPhotoUrl}
           alt="The Mero Circle Team"
           style={teamPhoto}
           width="480"
@@ -108,7 +107,7 @@ export default function WelcomeEmail({
         <Text style={videoLabel}>See what we&apos;re building</Text>
         <Link href="https://www.youtube.com/watch?v=PLACEHOLDER" style={videoLink}>
           <Img
-            src={`${appUrl}/email/video-thumbnail.jpg`}
+            src={`${baseUrl}/email/video-thumbnail.jpg`}
             alt="Watch: What is Mero Circle?"
             style={videoThumbnail}
             width="480"
@@ -144,16 +143,6 @@ const topAccent = {
   height: '4px',
   background: 'linear-gradient(90deg, #c4382a 0%, #e76f51 50%, #f4a261 100%)',
   borderRadius: '16px 16px 0 0',
-};
-
-const logoSection = {
-  textAlign: 'center' as const,
-  padding: '32px 0 8px',
-};
-
-const logo = {
-  margin: '0 auto',
-  borderRadius: '12px',
 };
 
 const letterSection = {

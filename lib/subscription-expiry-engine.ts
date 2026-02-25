@@ -52,6 +52,7 @@ interface SubscriptionToCheck {
   creator: {
     creator_id: string;
     creator_name: string;
+    creator_username?: string;
   };
 }
 
@@ -85,6 +86,7 @@ async function queueReminderEmail(
         payload: {
           supporterName: subscription.supporter.supporter_name,
           creatorName: subscription.creator.creator_name,
+          creatorUsername: subscription.creator.creator_username,
           creatorId: subscription.creator.creator_id,
           tierLevel: subscription.tier_level,
           expiryDate: subscription.current_period_end,
@@ -138,6 +140,7 @@ async function queueExpiredEmail(
         payload: {
           supporterName: subscription.supporter.supporter_name,
           creatorName: subscription.creator.creator_name,
+          creatorUsername: subscription.creator.creator_username,
           creatorId: subscription.creator.creator_id,
           renewUrl,
           subscriptionId: subscription.id,
@@ -213,7 +216,8 @@ export async function checkSubscriptionExpiry(): Promise<ExpiryCheckResult> {
         ),
         creators:users!creator_id(
           id,
-          display_name
+          display_name,
+          username
         )
       `)
       .eq('status', 'active')
@@ -258,6 +262,7 @@ export async function checkSubscriptionExpiry(): Promise<ExpiryCheckResult> {
           creator: {
             creator_id: sub.creator_id,
             creator_name: (sub.creators as any)?.display_name || 'Creator',
+            creator_username: (sub.creators as any)?.username || undefined,
           },
         };
 

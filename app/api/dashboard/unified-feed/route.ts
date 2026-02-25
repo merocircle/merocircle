@@ -174,9 +174,10 @@ export async function GET(request: NextRequest) {
         title: p.title,
         // Hide text content for non-supporters
         content: shouldHideContent ? null : p.content,
-        // Send image URLs so the UI can still show a blurred preview
-        image_url: p.image_url,
-        image_urls: p.image_urls || [],
+        // Non-supporters get only preview URL; full image URLs never sent for gated posts
+        image_url: shouldHideContent ? null : p.image_url,
+        image_urls: shouldHideContent ? [] : (p.image_urls || []),
+        preview_image_url: shouldHideContent ? `/api/post-preview-image?postId=${p.id}&index=0` : null,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
         post_type: p.post_type || 'post',

@@ -18,6 +18,6 @@ html {
 
 /* Selection color */
 .landing-page-wrap ::selection {
-  background: #990000;
+  background: var(--primary);
   color: white;
 }

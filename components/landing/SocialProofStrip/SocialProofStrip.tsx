@@ -10,7 +10,7 @@ export function SocialProofStrip() {
     <section className="proof-strip">
       <div className="proof-strip-inner">
         <p className="proof-label">
-          Trusted by the best creators in Nepal
+          We support the payment gateway you use
         </p>
 
         <span className="proof-divider" aria-hidden />

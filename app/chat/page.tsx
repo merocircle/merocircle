@@ -60,6 +60,10 @@ function ChatPageContent() {
   const searchParams = useSearchParams();
   const channelId = searchParams.get('channel');
 
+  useEffect(() => {
+    document.title = 'Messages — MeroCircle';
+  }, []);
+
   // On mobile, lock body scroll so the whole chat box stays fixed — only the message list scrolls
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 768px)');

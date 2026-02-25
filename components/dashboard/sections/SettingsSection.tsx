@@ -1,12 +1,14 @@
 'use client';
 
 import { memo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   Mail,
   Users,
@@ -21,6 +23,9 @@ import {
   AlertTriangle,
   Loader2,
   MessageCircleHeart,
+  Menu,
+  X,
+  ArrowLeft,
 } from 'lucide-react';
 import SubscriptionsManagement from '@/components/settings/SubscriptionsManagement';
 import EmailNotificationPreferences from '@/components/settings/EmailNotificationPreferences';
@@ -31,6 +36,123 @@ import { cn, getValidAvatarUrl } from '@/lib/utils';
 
 type SettingsTab = 'notifications' | 'memberships' | 'billing' | 'payment-methods';
 
+interface NavigationProps {
+  activeTab: SettingsTab;
+  setActiveTab: (tab: SettingsTab) => void;
+  showFeedback: boolean;
+  setShowFeedback: (show: boolean) => void;
+  signOut: () => void;
+  userProfile: any;
+}
+
+const MobileNavigation = ({ activeTab, setActiveTab, showFeedback, setShowFeedback, signOut, userProfile }: NavigationProps) => (
+  <nav className="p-4 space-y-1">
+    {tabs.map((tab) => {
+      const Icon = tab.icon;
+      const isActive = activeTab === tab.id;
+      return (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={cn(
+            'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm',
+            isActive
+              ? 'bg-primary/10 text-primary font-medium'
+              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+          )}
+        >
+          <Icon className={cn('w-4 h-4 shrink-0', isActive && 'text-primary')} />
+          <span className="flex-1 truncate">{tab.label}</span>
+          {isActive && <ChevronRight className="w-4 h-4 shrink-0" />}
+        </button>
+      );
+    })}
+
+    <Separator className="my-3" />
+
+    {/* Feedback */}
+    <button
+      onClick={() => {
+        setShowFeedback(true);
+      }}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+    >
+      <MessageCircleHeart className="w-4 h-4 shrink-0" />
+      <span>Give feedback</span>
+    </button>
+
+    <Separator className="my-3" />
+
+    <button
+      onClick={signOut}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-destructive hover:bg-destructive/10"
+    >
+      <LogOut className="w-4 h-4 shrink-0" />
+      <span>Sign Out</span>
+    </button>
+
+    {/* Account info card */}
+    <Card className="mt-6 p-4 border-border/50">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+        <Shield className="w-3 h-3" />
+        <span>Account Security</span>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Your account is secured with Google authentication. Manage your Google account settings to update your password or security options.
+      </p>
+    </Card>
+  </nav>
+);
+
+const DesktopNavigation = ({ activeTab, setActiveTab, showFeedback, setShowFeedback, signOut, userProfile }: NavigationProps) => (
+  <>
+    <nav className="space-y-1">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm',
+              isActive
+                ? 'bg-primary/10 text-primary font-medium'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            )}
+          >
+            <Icon className={cn('w-4 h-4 shrink-0', isActive && 'text-primary')} />
+            <span className="flex-1 truncate">{tab.label}</span>
+            {isActive && <ChevronRight className="w-4 h-4 shrink-0" />}
+          </button>
+        );
+      })}
+
+      <Separator className="my-3" />
+
+      {/* Sign out in sidebar */}
+      <button
+        onClick={signOut}
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-destructive hover:bg-destructive/10"
+      >
+        <LogOut className="w-4 h-4 shrink-0" />
+        <span>Sign Out</span>
+      </button>
+    </nav>
+
+    {/* Account info card */}
+    <Card className="mt-6 p-4 border-border/50">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+        <Shield className="w-3 h-3" />
+        <span>Account Security</span>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Your account is secured with Google authentication. Manage your Google account settings to update your password or security options.
+      </p>
+    </Card>
+  </>
+);
+
 const tabs = [
   { id: 'notifications' as SettingsTab, label: 'Email & Notifications', icon: Mail, description: 'Manage your email preferences' },
   { id: 'memberships' as SettingsTab, label: 'Memberships', icon: Users, description: 'Manage your active memberships' },
@@ -40,19 +162,33 @@ const tabs = [
 
 const SettingsSection = memo(function SettingsSection() {
   const { user, userProfile, isCreator, signOut } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<SettingsTab>('notifications');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleBack = () => {
+    router.back();
+  };
 
   return (
     <div className="h-full overflow-y-auto">
-      {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-lg border-b border-border/50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex items-center gap-4">
+            {/* Back button - only visible on mobile */}
+            <button
+              onClick={handleBack}
+              className="lg:hidden p-2 rounded-full hover:bg-muted/60 transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+            </button>
+            
             {/* User avatar */}
             <Avatar className="w-12 h-12 border-2 border-border/50">
               <AvatarImage src={getValidAvatarUrl(userProfile?.photo_url)} alt={userProfile?.display_name || ''} />
@@ -76,72 +212,49 @@ const SettingsSection = memo(function SettingsSection() {
                 {user?.email || 'Manage your account'}
               </p>
             </div>
+
+            {/* Mobile menu button - moved to top right */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="lg" className="lg:hidden shrink-0 h-12 w-12">
+                  <Menu className="w-6 h-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80 p-0">
+                <SheetHeader className="p-6 border-b">
+                  <SheetTitle className="text-left">Settings</SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto">
+                  <MobileNavigation 
+                    activeTab={activeTab}
+                    setActiveTab={(tab) => {
+                      setActiveTab(tab);
+                      setMobileMenuOpen(false);
+                    }}
+                    showFeedback={showFeedback}
+                    setShowFeedback={setShowFeedback}
+                    signOut={signOut}
+                    userProfile={userProfile}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar navigation */}
-          <div className="lg:w-64 shrink-0">
-            <nav className="space-y-1">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm',
-                      isActive
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                    )}
-                  >
-                    <Icon className={cn('w-4 h-4 shrink-0', isActive && 'text-primary')} />
-                    <span className="flex-1 truncate">{tab.label}</span>
-                    {isActive && <ChevronRight className="w-4 h-4 shrink-0" />}
-                  </button>
-                );
-              })}
-
-              <Separator className="my-3" />
-
-              {/* Sign out in sidebar */}
-              {/* Feedback — mobile only (no navbar entry on mobile) */}
-              <div className="md:hidden">
-                <button
-                  onClick={() => setShowFeedback(true)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                >
-                  <MessageCircleHeart className="w-4 h-4 shrink-0" />
-                  <span>Give feedback</span>
-                </button>
-              </div>
-
-              <Separator className="my-3 md:hidden" />
-
-              <button
-                onClick={signOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-destructive hover:bg-destructive/10"
-              >
-                <LogOut className="w-4 h-4 shrink-0" />
-                <span>Sign Out</span>
-              </button>
-            </nav>
-
-            {/* Account info card */}
-            <Card className="mt-6 p-4 border-border/50">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                <Shield className="w-3 h-3" />
-                <span>Account Security</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Your account is secured with Google authentication. Manage your Google account settings to update your password or security options.
-              </p>
-            </Card>
-
+          {/* Desktop sidebar navigation - hidden on mobile */}
+          <div className="hidden lg:block lg:w-64 shrink-0">
+            <DesktopNavigation 
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              showFeedback={showFeedback}
+              setShowFeedback={setShowFeedback}
+              signOut={signOut}
+              userProfile={userProfile}
+            />
           </div>
 
           {/* Content area */}

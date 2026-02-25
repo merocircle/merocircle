@@ -173,7 +173,7 @@ export function CreateChannelModal({ onClose, onCreate }: CreateChannelModalProp
                     </div>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                       {supporter.user.photo_url ? (
-                        <img src={supporter.user.photo_url} alt="" className="w-full h-full object-cover" />
+                        <img src={supporter.user.photo_url} alt={supporter.user.display_name || 'User Avatar'} className="w-full h-full object-cover" />
                       ) : (
                         <Users className="h-4 w-4 text-primary" />
                       )}

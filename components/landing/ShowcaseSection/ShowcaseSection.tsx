@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Video, MessageSquare, Heart, Lock, Send } from "lucide-react";
+import { ArrowRight, Video, MessageSquare, Heart, Lock, Send, Sparkles, Users } from "lucide-react";
 import { useReveal } from "../useReveal";
 import "./ShowcaseSection.css";
 
@@ -14,7 +14,10 @@ export function ShowcaseSection() {
       <div className={`showcase-inner ${isVisible ? "showcase-visible" : ""}`}>
 
         {/* ═══ FOR CREATORS ═══ */}
-        <div className="showcase-audience-label">For Creators</div>
+        <div className="showcase-audience-label">
+          <Sparkles size={12} className="mr-1.5" />
+          For Creators
+        </div>
 
         <h2 className="showcase-title">
           Your community. Your way.
@@ -48,8 +51,18 @@ export function ShowcaseSection() {
 
           {/* Floating cards */}
           <div className="orbit-card orbit-card-proof orbit-float-1">
+            <div className="orbit-card-icon orbit-card-icon-green">
+              <Send size={13} />
+            </div>
+            <div>
+              <p className="orbit-card-label">This month</p>
+              <p className="orbit-card-value">NPR 125,000</p>
+            </div>
+          </div>
+
+          <div className="orbit-card orbit-card-revenue orbit-float-2">
             <div className="orbit-avatar-stack">
-              <Image src="/dodo.png" alt="" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/illustration (1).png" alt="" width={20} height={20} className="orbit-stack-img" />
               <Image src="/Nishar.jpeg" alt="" width={20} height={20} className="orbit-stack-img" />
               <Image src="/Shaswot Lamichhane.png" alt="" width={20} height={20} className="orbit-stack-img" />
             </div>
@@ -59,12 +72,13 @@ export function ShowcaseSection() {
           </div>
 
           <div className="orbit-card orbit-card-revenue orbit-float-2">
-            <div className="orbit-card-icon orbit-card-icon-green">
-              <Send size={13} />
+            <div className="orbit-avatar-stack">
+              <Image src="/illustration (1).png" alt="Creator Image 1" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Nishar.jpeg" alt="Creator Image 2" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Shaswot Lamichhane.png" alt="Creator Image 3" width={20} height={20} className="orbit-stack-img" />
             </div>
             <div>
-              <p className="orbit-card-label">This month</p>
-              <p className="orbit-card-value">NPR 125,000</p>
+              <p className="orbit-card-value-sm">Your supporters</p>
             </div>
           </div>
 
@@ -78,23 +92,24 @@ export function ShowcaseSection() {
             </div>
           </div>
 
-          <div className="orbit-card orbit-card-video orbit-float-4">
+          {/* <div className="orbit-card orbit-card-video orbit-float-4">
             <span>New Video 🎬</span>
-          </div>
+          </div> */}
 
           <div className="orbit-pill orbit-pill-heart orbit-float-5">
             <Heart size={14} fill="#ef4444" color="#ef4444" />
           </div>
 
           <div className="orbit-pill orbit-pill-lock orbit-float-6">
-            <Lock size={13} color="#990000" />
+            <Lock size={13} color="var(--primary)" />
           </div>
 
           <div className="orbit-mini orbit-mini-1">
-            <Image src="/Nishar.jpeg" alt="" width={32} height={32} className="orbit-mini-img" />
+            <span>New Video 🎬</span>
+            {/* <Image src="/Nishar.jpeg" alt="" width={32} height={32} className="orbit-mini-img" /> */}
           </div>
           <div className="orbit-mini orbit-mini-2">
-            <Image src="/dodo.png" alt="" width={28} height={28} className="orbit-mini-img" />
+            <Image src="/dodo.png" alt="Visa / Mastercard Payment" width={28} height={28} className="orbit-mini-img" />
           </div>
         </div>
 
@@ -136,7 +151,10 @@ export function ShowcaseSection() {
         {/* ═══ FOR SUPPORTERS ═══ */}
         <div className="showcase-divider" />
 
-        <div className="showcase-audience-label showcase-audience-label-alt">For Supporters</div>
+        <div className="showcase-audience-label showcase-audience-label-alt">
+          <Users size={12} className="mr-1.5" />
+          For Supporters
+        </div>
 
         <h2 className="showcase-title">
           Get closer to the people you admire.

@@ -19,11 +19,11 @@ export const EMAIL_CONFIG = {
     password: process.env.SMTP_PASSWORD,
   },
 
-  // App URLs
+  // App URLs (fallback so emails never get undefined appUrl)
   urls: {
-    app: process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app',
-    help: `${process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app'}/help`,
-    settings: `${process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app'}/settings`,
+    app: (process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app').trim() || 'https://merocircle.app',
+    help: `${(process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app').trim() || 'https://merocircle.app'}/help`,
+    settings: `${(process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app').trim() || 'https://merocircle.app'}/settings`,
   },
 
   // Batch sending settings
@@ -49,7 +49,7 @@ export const EMAIL_CONFIG = {
 // Email subject lines
 export const EMAIL_SUBJECTS = {
   postNotification: (creatorName: string) => `${creatorName} shared an update`,
-  pollNotification: (creatorName: string) => `${creatorName} wants your input`,
+  pollNotification: (creatorName: string) => `New poll from ${creatorName}`,
   welcome: (firstName: string) => `Hi ${firstName}, welcome to Mero Circle`,
   paymentSuccess: (creatorName: string) => `Payment confirmed - Supporting ${creatorName}`,
   paymentFailed: () => 'Payment issue - Action required',

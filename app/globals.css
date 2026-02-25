@@ -915,6 +915,15 @@ section:has(+ .rounded-section),
   transform-origin: center !important;
 }
 
+.str-chat__message-input .str-chat__message-input-inner .str-chat__message-textarea-container {
+  align-items: flex-start !important;
+}
+
+.str-chat__message-input .str-chat__message-input-inner .str-chat__message-textarea-container .str-chat__quoted-message-preview {
+  max-width: none !important;
+  --str-chat__message-max-width: none !important;
+}
+
 /* ===========================================
    STREAM CHAT - CREATOR MESSAGE HIGHLIGHT
    Full-width themed row background for creator messages.

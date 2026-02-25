@@ -25,6 +25,11 @@ interface ShareModalProps {
   /** Vanity slug for /creator/[slug]; when set, share URL uses /creator/slug?post=... */
   creatorSlug?: string;
   creatorId: string;
+  /** Creator object containing vanity_username fallback */
+  creator?: {
+    id: string;
+    vanity_username?: string | null;
+  };
 }
 
 export function ShareModal({
@@ -35,12 +40,21 @@ export function ShareModal({
   postContent,
   creatorSlug,
   creatorId,
+  creator,
 }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
 
   // Copy vanity URL when possible: /creator/slug?post=id
+  // Use creatorSlug first, then fallback to creator.vanity_username, then creatorId
+  // console.log('URL DEBUG:', { 
+  //   creatorSlug, 
+  //   creatorVanity: creator?.vanity_username, 
+  //   creatorId,
+  //   finalIdentifier: creatorSlug || creator?.vanity_username || creatorId 
+  // });
+  const creatorIdentifier = creatorSlug || creator?.vanity_username || creatorId;
   const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/creator/${creatorSlug || creatorId}?post=${postId}`
+    ? `${window.location.origin}/creator/${creatorIdentifier}?post=${postId}`
     : '';
 
   const safeContent = postContent || '';
@@ -77,6 +91,7 @@ export function ShareModal({
 
   const handlePlatformShare = (platform: string) => {
     const encodedUrl = encodeURIComponent(shareUrl);
+    const shareText = `Check out this post on Mero Circle: ${postTitle}`;
     const encodedText = encodeURIComponent(shareText);
     const encodedTitle = encodeURIComponent(postTitle);
 
@@ -84,13 +99,13 @@ export function ShareModal({
 
     switch (platform) {
       case 'facebook':
-        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
         break;
       case 'twitter':
-        shareLink = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;
+        shareLink = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
         break;
       case 'whatsapp':
-        shareLink = `https://wa.me/?text=${encodedTitle}%0A%0A${encodedUrl}`;
+        shareLink = `https://wa.me/?text=${encodedText}%0A%0A${encodedUrl}`;
         break;
       case 'instagram':
         // Instagram doesn't support direct sharing via URL, copy link instead
@@ -152,88 +167,81 @@ export function ShareModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className="p-2 rounded-full bg-gradient-to-br from-primary to-pink-500">
-              <Share2 className="w-4 h-4 text-white" />
+      <DialogContent className="sm:max-w-md border-border/60 shadow-xl">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="flex items-center gap-3 text-lg font-semibold">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Share2 className="w-4 h-4 text-primary" />
             </div>
-            Share Post
+            Share this post
           </DialogTitle>
-          <DialogDescription>
-            Share this post with your friends and followers
+          <DialogDescription className="text-muted-foreground text-sm">
+            Share with your friends and followers
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-2">
           {/* Native Share Button */}
           {typeof window !== 'undefined' && 'share' in navigator && (
             <Button
               onClick={handleNativeShare}
-              className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
-              size="lg"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              size="default"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share via...
             </Button>
           )}
 
-          {/* Platform Buttons */}
+          {/* Social Media Options */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Share on Social Media</h3>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {platforms.map((platform) => {
+            <h3 className="text-sm font-medium text-foreground">Or share on</h3>
+            <div className="flex gap-2 flex-wrap">
+              {platforms.slice(0, 4).map((platform) => {
                 const Icon = platform.icon;
                 return (
-                  <motion.button
+                  <button
                     key={platform.id}
                     onClick={() => handlePlatformShare(platform.id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
                     className={cn(
-                      'flex flex-col items-center justify-center gap-2 p-4 sm:p-5 rounded-xl',
-                      'bg-gradient-to-br text-white transition-all',
-                      'shadow-md hover:shadow-lg min-h-[80px] sm:min-h-[100px]',
-                      platform.color,
-                      platform.hoverColor
+                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium',
+                      'transition-colors hover:opacity-80',
+                      'border border-border/60 bg-muted/30 hover:bg-muted/50',
+                      platform.color.replace('from-', 'text-').replace(' to-', '')
                     )}
+                    title={platform.name}
                   >
-                    <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
-                    <span className="text-xs font-semibold text-center">{platform.name}</span>
-                    {platform.note && (
-                      <span className="text-[10px] opacity-90 mt-1 text-center">{platform.note}</span>
-                    )}
-                  </motion.button>
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{platform.name}</span>
+                  </button>
                 );
               })}
             </div>
           </div>
 
           {/* Copy Link Section */}
-          <div className="pt-4 border-t border-border space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Copy Link</h3>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="flex-1 px-3 py-2.5 bg-muted rounded-lg text-sm break-all">
+          <div className="pt-4 border-t border-border/40 space-y-3">
+            <h3 className="text-sm font-medium text-foreground">Copy link</h3>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 px-3 py-2 bg-muted/50 border border-border/40 rounded-md text-sm font-mono break-all">
                 {shareUrl}
               </div>
               <Button
                 onClick={handleCopyLink}
                 variant={copied ? 'default' : 'outline'}
-                size="default"
+                size="sm"
                 className={cn(
-                  'transition-all whitespace-nowrap',
-                  copied && 'bg-green-500 hover:bg-green-600 text-white'
+                  'transition-colors',
+                  copied && 'bg-green-600 hover:bg-green-700 text-white border-green-600'
                 )}
               >
                 {copied ? (
                   <>
-                    <Check className="w-4 h-4 mr-1" />
-                    Copied!
+                    <Check className="w-4 h-4" />
                   </>
                 ) : (
                   <>
-                    <LinkIcon className="w-4 h-4 mr-1" />
-                    Copy Link
+                    <LinkIcon className="w-4 h-4" />
                   </>
                 )}
               </Button>

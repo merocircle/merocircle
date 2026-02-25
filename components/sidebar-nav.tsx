@@ -20,7 +20,8 @@ import {
   User,
   LogOut,
   Crown,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,7 +31,7 @@ import { Moon, Sun } from 'lucide-react';
 
 interface NavItem {
   label: string;
-  view: 'home' | 'chat' | 'notifications' | 'settings';
+  view: 'home' | 'chat' | 'notifications' | 'settings' | 'events';
   icon: React.ElementType;
   badge?: number;
 }
@@ -93,6 +94,7 @@ export function SidebarNav() {
     if (pathname === '/settings') return 'settings';
     if (pathname === '/profile') return 'profile';
     if (pathname === '/creator-studio') return 'creator-studio';
+    if (pathname === '/events') return 'events';
     return 'home';
   };
   
@@ -108,6 +110,7 @@ export function SidebarNav() {
 
   const navItems: NavItem[] = [
     { label: 'Home', view: 'home', icon: Home },
+    { label: 'Events', view: 'events', icon: Calendar },
     { label: 'Chats', view: 'chat', icon: MessageCircle, badge: chatUnreadCount },
     { label: 'Notifications', view: 'notifications', icon: Bell, badge: notificationsUnreadCount },
     { label: 'Settings', view: 'settings', icon: Settings },
@@ -255,6 +258,7 @@ export function SidebarNav() {
               const getRoute = (view: string) => {
                 switch (view) {
                   case 'home': return '/home';
+                  case 'events': return '/events';
                   case 'chat': return '/chat';
                   case 'notifications': return '/notifications';
                   case 'settings': return '/settings';

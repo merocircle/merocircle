@@ -205,11 +205,12 @@ async function sendPostNotificationsToSupporters(
 
     const { data: creatorData } = await supabase
       .from('users')
-      .select('display_name')
+      .select('display_name, username')
       .eq('id', creatorId)
       .single();
 
     const creatorName = creatorData?.display_name || 'Your creator';
+    const creatorUsername = creatorData?.username || undefined;
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
     const postUrl = `${appUrl}/creator/${creatorId}?post=${post.id}`;
@@ -229,6 +230,7 @@ async function sendPostNotificationsToSupporters(
     // Send bulk email notifications
     const { sent, failed } = await sendBulkPostNotifications(supportersWithEmails, {
       creatorName,
+      creatorUsername,
       postTitle: post.title || 'New Post',
       postContent: post.content || '',
       postImageUrl: post.image_url || (post.image_urls && post.image_urls[0]) || null,

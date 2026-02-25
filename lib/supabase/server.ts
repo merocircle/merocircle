@@ -3,14 +3,13 @@ import { cookies } from 'next/headers'
 import { Database } from '../supabase'
 
 export async function createClient() {
-  // Validate environment variables
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     console.error('Missing Supabase environment variables', {
       hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       env: process.env.VERCEL_ENV || 'local'
-    });
-    throw new Error('Missing Supabase configuration');
+    })
+    throw new Error('Missing Supabase configuration')
   }
 
   const cookieStore = await cookies()

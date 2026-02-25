@@ -7,6 +7,9 @@ import { signIn, useSession } from 'next-auth/react';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+
+import { Logo } from '@/components/ui/logo';
+
 import Image from 'next/image';
 import gsap from 'gsap';
 import './auth-theme.css';
@@ -277,13 +280,7 @@ function AuthPageContent() {
           {/* Logo + Beta */}
           <div className="auth-logo flex flex-col items-center gap-2">
             <Link href="/" className="inline-block">
-              <Image
-                src="/logo/logo-light.png"
-                alt="MeroCircle"
-                width={96}
-                height={96}
-                className="object-contain"
-              />
+              <Logo className="w-16 h-16 text-primary object-contain"/>
             </Link>
             <span className="beta-neon beta-float text-[10px] font-bold tracking-[0.2em] uppercase px-3 py-1 rounded-full">
               BETA

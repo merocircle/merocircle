@@ -29,7 +29,7 @@
 }
 
 .final-cta-accent {
-  color: #990000;
+  color: var(--primary);
   font-style: italic;
 }
 
@@ -48,20 +48,20 @@
   align-items: center;
   gap: 0.625rem;
   padding: 1rem 2.5rem;
-  background: #990000;
+  background: var(--primary);
   color: #fff;
   font-size: 0.9375rem;
   font-weight: 700;
   border-radius: 9999px;
   text-decoration: none;
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-  box-shadow: 0 8px 30px rgba(153, 0, 0, 0.22);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--primary) 22%, transparent 78%);
 }
 
 .final-cta-btn:hover {
-  background: #7a0000;
+  background: color-mix(in srgb, var(--primary) 85%, black 15%);
   transform: translateY(-1px);
-  box-shadow: 0 12px 40px rgba(153, 0, 0, 0.32);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--primary) 32%, transparent 68%);
 }
 
 .final-cta-btn:active {

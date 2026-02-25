@@ -90,7 +90,7 @@ export async function GET(
       .eq('is_active', true)
       .order('tier_level', { ascending: true });
 
-    // Fetch ALL posts (both public and supporter-only) so non-supporters can see they exist
+    // Fetch first batch of posts (10) for initial load; more loaded via /api/creator/[id]/posts
     const { data: posts } = await supabase
       .from('posts')
       .select(`
@@ -102,7 +102,7 @@ export async function GET(
       `)
       .eq('creator_id', creatorId)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(10);
 
     const { count: actualPostsCount } = await supabase
       .from('posts')
@@ -145,10 +145,11 @@ export async function GET(
         title: post.title,
         // For non-supporters viewing supporter-only posts: hide text content only
         content: shouldHideContent ? null : post.content,
-        // Send image URLs so the UI can show a blurred preview and "Subscribe to access"
-        image_url: post.image_url,
-        image_urls: post.image_urls || [],
-        media_url: post.media_url,
+        // Non-supporters get only preview URL; full image URLs never sent for gated posts
+        image_url: shouldHideContent ? null : post.image_url,
+        image_urls: shouldHideContent ? [] : (post.image_urls || []),
+        media_url: shouldHideContent ? null : post.media_url,
+        preview_image_url: shouldHideContent ? `/api/post-preview-image?postId=${post.id}&index=0` : null,
         is_public: post.is_public,
         tier_required: post.tier_required || 'free',
         post_type: post.post_type || 'post',

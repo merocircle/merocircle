@@ -230,10 +230,8 @@ export function BottomNavIcon({
         <Icon
           size={24}
           className={cn(
-            'transition-all duration-200',
-            isActive ? 'stroke-[1.5]' : 'stroke-2'
+            'transition-all duration-200 stroke-2'
           )}
-          fill={isActive ? 'currentColor' : 'transparent'}
         />
 
         {/* Badge */}

@@ -485,7 +485,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const creatorSlug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user?.id;
 
   return (
-    <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto overflow-y-auto h-full">
+    <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto h-full">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -512,18 +512,18 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             <Button
               variant="default"
               size="sm"
-              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm"
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px]"
               asChild
             >
               <Link href="/create-post">
                 <Plus className="w-3.5 h-3.5" />
-                <span>New Post</span>
+                <span className="inline">Create Post</span>
               </Link>
             </Button>
             <Button
               variant={shareCopied ? "default" : "outline"}
-              size="icon"
-              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0"
+              size="sm"
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0"
               onClick={handleShareProfile}
             >
               {shareCopied ? (
@@ -532,23 +532,34 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 <Share2 className="w-3.5 h-3.5" />
               )}
               <span className="hidden sm:inline">{shareCopied ? 'Copied!' : 'Share'}</span>
+              <span className="sm:hidden">{shareCopied ? '✓' : 'Share'}</span>
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0" asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0" 
+              asChild
+            >
               <a href={`/creator/${creatorSlug}`}>
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">View</span>
               </a>
             </Button>
             <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0"
               onClick={() => setShowEditProfilePricingModal(true)}
             >
               <Pencil className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Edit</span>
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0" asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0" 
+              asChild
+            >
               <Link href="/chat">
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Chat</span>

@@ -16,7 +16,8 @@ import {
   Moon,
   Monitor,
   Shield,
-  MessageCircleHeart
+  MessageCircleHeart,
+  Calendar
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
@@ -87,6 +88,7 @@ export function ActivityBar({
     switch (view) {
       case 'home': return '/home';
       case 'explore': return '/explore';
+      case 'events': return '/events';
       case 'chat': return '/chat';
       case 'notifications': return '/notifications';
       case 'settings': return '/settings';
@@ -99,6 +101,7 @@ export function ActivityBar({
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
+    if (pathname === '/events') return 'events';
     if (pathname === '/chat') return 'chat';
     if (pathname === '/notifications') return 'notifications';
     if (pathname === '/settings') return 'settings';
@@ -120,6 +123,8 @@ export function ActivityBar({
   const creatorNavItem: NavItem | null = isCreator
     ? { id: 'creator-studio', icon: BarChart3, label: 'Creator Studio', view: 'creator-studio' }
     : null;
+
+  const eventsNavItem: NavItem = { id: 'events', icon: Calendar, label: 'Events', view: 'events' };
 
   const adminNavItem: NavItem | null = isAdminUser
     ? { id: 'admin', icon: Shield, label: 'Admin' }
@@ -209,6 +214,23 @@ export function ActivityBar({
             </Tooltip>
           )}
 
+          {/* Events */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <NavIcon
+                  icon={eventsNavItem.icon}
+                  label={eventsNavItem.label}
+                  isActive={isActive(eventsNavItem)}
+                  href={eventsNavItem.view ? getRoute(eventsNavItem.view) : undefined}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              <p>{eventsNavItem.label}</p>
+            </TooltipContent>
+          </Tooltip>
+
           {/* Admin */}
           {adminNavItem && (
             <Tooltip>
@@ -234,7 +256,7 @@ export function ActivityBar({
 
         {/* Favorite Creators */}
         {favoriteCreators.length > 0 && (
-          <div className="flex flex-col items-center gap-1.5 flex-1 overflow-y-auto scrollbar-hide px-1">
+          <div className="flex flex-col items-center gap-1.5 overflow-y-auto scrollbar-hide px-1 max-h-[calc(100vh-400px)]">
             {favoriteCreators.slice(0, 5).map((creator) => (
               <Tooltip key={creator.id}>
                 <TooltipTrigger asChild>
@@ -297,7 +319,7 @@ export function ActivityBar({
         <div className="flex-1" />
 
         {/* Bottom Section */}
-        <div className="flex flex-col items-center gap-1.5 mt-auto">
+        <div className="flex flex-col items-center gap-1.5 py-2">
           {/* Feedback */}
           <Tooltip>
             <TooltipTrigger asChild>

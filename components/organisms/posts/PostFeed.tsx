@@ -14,6 +14,7 @@ interface Post {
   content: string;
   image_url?: string | null;
   media_url?: string | null;
+  preview_image_url?: string | null;
   creator: {
     id: string;
     display_name: string;
@@ -156,6 +157,7 @@ export function PostFeed({
               content={post.content}
               imageUrl={post.image_url}
               mediaUrl={post.media_url}
+              previewImageUrl={post.preview_image_url}
               creator={post.creator}
               createdAt={post.created_at}
               likesCount={post.likes_count}
