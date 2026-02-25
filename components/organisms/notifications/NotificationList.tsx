@@ -81,8 +81,8 @@ export function NotificationList({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-card/95 backdrop-blur z-10">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between p-4 border-b sticky top-0 mb-2 backdrop-blur z-10">
+        <div className="flex items-center gap-3">
           {/* Back button - only visible on mobile */}
           <button
             onClick={handleBack}
@@ -92,7 +92,16 @@ export function NotificationList({
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           
-          <h2 className="font-semibold">Notifications</h2>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bell className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">Notifications</h2>
+              <p className="text-sm text-muted-foreground">Stay updated with your activity</p>
+            </div>
+          </div>
+          
           {unreadCount > 0 && (
             <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-primary text-primary-foreground">
               {unreadCount}
@@ -115,18 +124,22 @@ export function NotificationList({
 
       {/* Filters */}
       {onFilterChange && (
-        <div className="flex gap-1.5 p-3 border-b overflow-x-auto scrollbar-hide">
-          {filterOptions.map((option) => (
-            <Button
-              key={option.value}
-              variant={filter === option.value ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => onFilterChange(option.value)}
-              className="shrink-0"
-            >
-              {option.label}
-            </Button>
-          ))}
+        <div className="px-4 pb-3">
+          <div className="text-muted-foreground items-center lg:justify-center md:justify-center justify-start [&.flex]:h-auto inline-flex xs:justify-start w-full h-11 bg-muted p-1 gap-1 overflow-x-auto overflow-y-clip scrollbar-hide rounded-md">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => onFilterChange(option.value)}
+                className={cn(
+                  "dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 border border-transparent transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap",
+                  filter === option.value && "data-[state=active]"
+                )}
+                data-state={filter === option.value ? "active" : "inactive"}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
