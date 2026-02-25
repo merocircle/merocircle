@@ -47,6 +47,8 @@ interface PostCardProps {
   content: string;
   imageUrl?: string | null;
   mediaUrl?: string | null;
+  /** For gated posts when hasAccess is false: optional server-generated preview URL only (never full image) */
+  previewImageUrl?: string | null;
   creator: {
     id: string;
     display_name: string;
@@ -101,6 +103,7 @@ export function PostCard({
   content,
   imageUrl,
   mediaUrl,
+  previewImageUrl,
   creator,
   createdAt,
   likesCount,
@@ -146,7 +149,7 @@ export function PostCard({
 
   const formattedDate = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
 
-  // Locked content overlay
+  // Locked content overlay (no full image shown; use previewImageUrl only if adding an image here)
   if (!hasAccess && tierRequired > 0) {
     return (
       <motion.div
@@ -157,7 +160,7 @@ export function PostCard({
         className={className}
       >
         <Card className="relative overflow-hidden">
-          {/* Blurred preview */}
+          {/* Blurred preview - intentionally no post image to avoid exposing full URL */}
           <div className="p-4 filter blur-sm pointer-events-none select-none">
             <div className="flex items-center gap-3 mb-4">
               <UserAvatar

@@ -24,7 +24,9 @@ interface Post {
   title: string;
   content: string;
   image_url?: string;
+  image_urls?: string[];
   media_url?: string;
+  preview_image_url?: string;
   is_public: boolean;
   tier_required: string;
   created_at: string;
