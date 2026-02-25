@@ -7,7 +7,16 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/creator/", "/explore", "/about"],
+        allow: [
+          "/", 
+          "/creator/", 
+          "/explore", 
+          "/about",
+          "/auth",
+          "/login",
+          "/signup",
+          "/signup/creator"
+        ],
         disallow: [
           "/api/",
           "/home",
@@ -16,10 +25,20 @@ export default function robots(): MetadataRoute.Robots {
           "/chat",
           "/notifications",
           "/profile",
-          "/signup/",
+          "/payment/",
+          "/unsubscribe",
+          "/create-post",
+          "/creator-studio",
+          "/admin/",
         ],
+      },
+      {
+        userAgent: "Googlebot",
+        allow: ["/", "/creator/", "/explore", "/about", "/auth"],
+        crawlDelay: 1,
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }

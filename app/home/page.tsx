@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
 
 // Lazy load the feed component for main engagement
@@ -37,6 +37,10 @@ function FeedLoadingSkeleton() {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = 'Home — MeroCircle';
+  }, []);
+
   return (
     <PageLayout>
       <Suspense fallback={<FeedLoadingSkeleton />}>

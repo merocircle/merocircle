@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
 
 // Lazy load the notifications component
@@ -24,6 +24,10 @@ function NotificationsLoadingSkeleton() {
 }
 
 export default function NotificationsPage() {
+  useEffect(() => {
+    document.title = 'Notifications — MeroCircle';
+  }, []);
+
   return (
     <PageLayout>
       <Suspense fallback={<NotificationsLoadingSkeleton />}>

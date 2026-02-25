@@ -74,7 +74,7 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
                 <div className="flex -space-x-1.5">
                   {avatarStack.map((m: any) => (
                     <div key={m.user_id} className="w-4 h-4 rounded-full overflow-hidden ring-1 ring-card">
-                      <img src={m.user.image} alt="" className="w-full h-full object-cover" />
+                      <img src={m.user.image} alt={m.user.name || 'User Avatar'} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>
