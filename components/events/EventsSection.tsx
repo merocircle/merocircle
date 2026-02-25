@@ -34,6 +34,7 @@ const EventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const formatDate = (dateStr: string) => {
+    if (dateStr === 'Coming Soon') return 'Coming Soon';
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -82,11 +83,11 @@ const EventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
           className="absolute inset-0"
         >
           <img 
-            src={`https://picsum.photos/seed/event${currentIndex}/800/400.jpg`} 
+            src={`${currentEvent.image}`} 
             alt={currentEvent.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/30 to-black/60" />
         </motion.div>
       </AnimatePresence>
       
@@ -102,6 +103,7 @@ const EventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
             {currentEvent.category}
           </Badge>
           <h1 className="text-3xl font-bold mb-2 text-white">{currentEvent.title}</h1>
+          <p className="text-white/80 text-sm mb-3">{currentEvent.description}</p>
         </motion.div>
         
         <motion.div
@@ -127,7 +129,11 @@ const EventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
           </div>
           
           <div className="flex items-center justify-between">
-            <Link className="flex items-center gap-2" href={`/creator/${currentEvent.creator.id}`}>
+            <Link 
+              className="flex items-center gap-2" 
+              href={currentEvent.creator.id === 'merocircle' ? 'https://merocircle.app/' : `/creator/${currentEvent.creator.id}`}
+              target={currentEvent.creator.id === 'merocircle' ? '_blank' : '_self'}
+            >
               <Avatar className="w-6 h-6">
                 <AvatarImage src={getValidAvatarUrl(currentEvent.creator.avatar)} alt={currentEvent.creator.name} />
                 <AvatarFallback className="text-xs">
@@ -139,9 +145,9 @@ const EventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
               </p>
             </Link>
             
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            {/* <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
               Learn More
-            </Button>
+            </Button> */}
           </div>
         </motion.div>
       </div>
@@ -227,44 +233,24 @@ interface Event {
 const featuredEvents: Event[] = [
   {
     id: '1',
-    title: 'MeroCircle Creator Meetup 2024',
-    description: 'Join us for the biggest creator gathering in Nepal. Network with top creators, learn from industry experts, and celebrate the creator economy.',
-    date: '2024-03-15',
-    time: '17:00',
-    location: 'Kathmandu, Hotel Himalaya',
-    image: '/api/placeholder/400/200',
+    title: 'MeroCircle Prelaunch Event',
+    description: 'Exclusive to beta users, get a chance to meet the founders.',
+    date: 'Coming Soon',
+    time: 'Coming Soon',
+    location: 'TBD',
+    image: 'https://images.unsplash.com/photo-1543286386-713bdd548da4?w=1200&h=600&fit=crop&crop=center',
     creator: {
       id: 'merocircle',
       name: 'MeroCircle',
       avatar: '/logo/logo-light.png',
-      isVerified: true
+      isVerified: true,
     },
-    attendees: 245,
-    maxAttendees: 500,
-    category: 'Official',
+    attendees: 50,
+    maxAttendees: 100,
+    category: 'Beta Exclusive',
     isFeatured: true,
-    price: 0
+    isPopular: true,
   },
-  {
-    id: '2',
-    title: 'Creator Workshop: Monetization Strategies',
-    description: 'Learn advanced monetization strategies from successful creators. This workshop covers everything from sponsorships to merchandise.',
-    date: '2024-03-20',
-    time: '14:00',
-    location: 'Online (Zoom)',
-    image: '/api/placeholder/400/200',
-    creator: {
-      id: 'merocircle',
-      name: 'MeroCircle',
-      avatar: '/logo/logo-light.png',
-      isVerified: true
-    },
-    attendees: 189,
-    maxAttendees: 300,
-    category: 'Workshop',
-    isFeatured: true,
-    price: 0
-  }
 ];
 
 const followingEvents: Event[] = [
