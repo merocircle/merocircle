@@ -87,7 +87,7 @@ const EventsCarousel: React.FC<{ events: Event[] }> = ({ events }) => {
             alt={currentEvent.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/50 to-black/20" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/30 to-black/60" />
         </motion.div>
       </AnimatePresence>
       
