@@ -54,6 +54,7 @@ interface Post {
   image_url?: string;
   image_urls?: string[];
   media_url?: string;
+  preview_image_url?: string;
   is_public?: boolean;
   tier_required: string;
   post_type?: "post" | "poll";
@@ -409,13 +410,14 @@ export function PostDetailModal({
 
             {shouldBlur && (
               <div className="relative w-full aspect-16/10 bg-linear-to-br from-muted to-muted/50 shrink-0">
-                {allImages.length > 0 && (
+                {post?.preview_image_url && (
                   <Image
-                    src={allImages[0]}
+                    src={post.preview_image_url}
                     alt="Preview"
                     fill
                     className="object-cover opacity-15 blur-2xl scale-110"
                     sizes="1200px"
+                    unoptimized
                   />
                 )}
                 <div className="absolute inset-0 flex items-center justify-center">

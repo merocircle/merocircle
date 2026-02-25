@@ -145,10 +145,11 @@ export async function GET(
         title: post.title,
         // For non-supporters viewing supporter-only posts: hide text content only
         content: shouldHideContent ? null : post.content,
-        // Send image URLs so the UI can show a blurred preview and "Subscribe to access"
-        image_url: post.image_url,
-        image_urls: post.image_urls || [],
-        media_url: post.media_url,
+        // Non-supporters get only preview URL; full image URLs never sent for gated posts
+        image_url: shouldHideContent ? null : post.image_url,
+        image_urls: shouldHideContent ? [] : (post.image_urls || []),
+        media_url: shouldHideContent ? null : post.media_url,
+        preview_image_url: shouldHideContent ? `/api/post-preview-image?postId=${post.id}&index=0` : null,
         is_public: post.is_public,
         tier_required: post.tier_required || 'free',
         post_type: post.post_type || 'post',

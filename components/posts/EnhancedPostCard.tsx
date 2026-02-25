@@ -81,6 +81,7 @@ interface Post {
   image_url?: string;
   image_urls?: string[];
   media_url?: string;
+  preview_image_url?: string;
   is_public?: boolean;
   tier_required: string;
   post_type?: "post" | "poll";
@@ -597,13 +598,14 @@ export function EnhancedPostCard({
             data-blurred-section
             onClick={(e) => e.stopPropagation()}
           >
-            {allImages.length > 0 && (
+            {post.preview_image_url && (
               <Image
-                src={allImages[0]}
+                src={post.preview_image_url}
                 alt="Preview"
                 fill
                 className="object-cover opacity-15 blur-xl scale-110"
                 sizes="630px"
+                unoptimized
               />
             )}
             <div className="absolute inset-0 flex items-center justify-center">

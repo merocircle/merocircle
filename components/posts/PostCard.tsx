@@ -18,7 +18,9 @@ interface Post {
   title: string;
   content: string;
   image_url?: string;
+  image_urls?: string[];
   media_url?: string;
+  preview_image_url?: string;
   tier_required: string;
   created_at: string;
   updated_at: string;
