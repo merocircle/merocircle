@@ -45,7 +45,7 @@ export function OnboardingBanner({ onDismiss, creatorId }: OnboardingBannerProps
                     Final Step to Activate Your Creator Account
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300 mb-4">
-                    To activate your creator profile on MeroCircle, please schedule a quick 30-minute call with our team. This helps us complete your onboarding, align on expectations, and ensure everything is set up properly before you go live.
+                    To activate your creator profile on MeroCircle, please schedule a quick 10-minute call with our team. This helps us complete your onboarding, align on expectations, and ensure everything is set up properly before you go live.
                   </p>
 
                   <div className="flex flex-wrap gap-3">
