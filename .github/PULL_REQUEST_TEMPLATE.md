@@ -16,4 +16,4 @@
 
 ## Ticket
 
-[SCRUM-139](https://merocircle.atlassian.net/browse/SCRUM-139) <!-- Edit ticket number in both link text and URL -->
+[SCRUM-NNN](https://merocircle.atlassian.net/browse/SCRUM-NNN) <!-- Edit ticket number in both link text and URL -->
