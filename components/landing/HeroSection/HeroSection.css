@@ -199,12 +199,28 @@
     max-width: 320px;
   }
 
+  /* Mobile-specific fixes for floating orbits */
   .hero-connections {
-    opacity: 0.6;
+    opacity: 0.4;
   }
 
   .hero-glow {
-    width: 400px;
-    height: 400px;
+    width: 250px;
+    height: 250px;
+  }
+
+  /* Reduce dot sizes on mobile */
+  .hero-dot {
+    r: 1.5;
+  }
+
+  /* Reduce line opacity on mobile */
+  .hero-line {
+    stroke-opacity: 0.3;
+  }
+
+  /* Hide text labels on mobile to prevent overlap */
+  .hero-connections text {
+    display: none;
   }
 }
