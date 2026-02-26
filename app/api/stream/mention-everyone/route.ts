@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverStreamClient } from '@/lib/stream-server';
 import { createClient } from '@/lib/supabase/server';
-import { sendBulkChannelMentionEmails } from '@/lib/email';
+import { sendChannelMentionEmail } from '@/lib/email';
+import { queueOrSend, triggerProcessQueue } from '@/lib/email-queue';
 import { logger } from '@/lib/logger';
 import { handleApiError } from '@/lib/api-utils';
 
@@ -113,33 +114,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'No recipients to notify', sent: 0 });
     }
 
-    // Send emails to all channel members (@everyone)
-    const { sent, failed } = await sendBulkChannelMentionEmails(
-      recipients.map(m => ({
-        email: m.email!,
-        name: m.display_name || 'Member',
-        id: m.id,
-      })),
-      {
-        creatorId,
-        creatorName: creatorUser.display_name,
-        creatorUsername: creatorUser.username || undefined,
-        channelName: finalChannelName,
-        channelId,
-        messageText,
-        senderName: senderUser.display_name || 'Someone',
-        senderId,
-        mentionType: 'everyone',
-      }
-    );
+    // Queue or send emails to all channel members (queue by default, direct on queue failure)
+    let queued = 0;
+    let sentDirect = 0;
+    let failed = 0;
 
-    logger.info('@everyone mention emails sent', 'STREAM_MENTION', {
+    const basePayload = {
+      creatorId,
+      creatorName: creatorUser.display_name,
+      creatorUsername: creatorUser.username || undefined,
+      channelName: finalChannelName,
+      channelId,
+      messageText,
+      senderName: senderUser.display_name || 'Someone',
+      senderId,
+      mentionType: 'everyone' as const,
+    };
+
+    for (const m of recipients) {
+      const payload = {
+        ...basePayload,
+        memberEmail: m.email!,
+        memberName: m.display_name || 'Member',
+        memberId: m.id,
+      };
+      const result = await queueOrSend(
+        supabase,
+        {
+          email_type: 'channel_mention',
+          recipient_email: m.email!,
+          payload,
+        },
+        () => sendChannelMentionEmail(payload),
+        { trigger: false }
+      );
+      if (result === 'queued') queued++;
+      else if (result === 'sent_direct') sentDirect++;
+      else failed++;
+    }
+
+    if (queued > 0) {
+      triggerProcessQueue();
+    }
+
+    const sent = queued + sentDirect;
+
+    logger.info('@everyone mention emails queued/sent', 'STREAM_MENTION', {
       channelId,
       messageId,
       senderId,
       totalMembers: memberIds.length,
       recipients: recipients.length,
-      sent,
+      queued,
+      sentDirect,
       failed,
     });
 

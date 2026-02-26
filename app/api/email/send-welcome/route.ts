@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { sendWelcomeEmail } from '@/lib/email';
 
 /**
- * Manual Welcome Email Trigger
+ * Queue welcome email (sent via Hostinger SMTP by process-queue, not Supabase).
  * POST /api/email/send-welcome
- * 
- * Useful for:
- * - Testing email system
- * - Resending welcome emails
- * - Onboarding existing users
- * 
+ *
  * Body: { userId: string } or { email: string }
  */
 export async function POST(request: NextRequest) {
@@ -84,7 +80,21 @@ export async function POST(request: NextRequest) {
       .single();
     
     if (queueError) {
-      throw queueError;
+      logger.warn('Queue insert failed, sending welcome email directly', 'EMAIL', {
+        error: queueError.message,
+        userId: user.id,
+        email: user.email,
+      });
+      const sent = await sendWelcomeEmail({
+        userEmail: user.email,
+        userName: user.display_name || user.email.split('@')[0],
+        userRole: (user.role as 'creator' | 'supporter') || 'supporter',
+      });
+      return NextResponse.json({
+        success: sent,
+        message: sent ? 'Welcome email sent directly (queue unavailable)' : 'Failed to send welcome email',
+        action: 'sent_direct',
+      });
     }
     
     logger.info('Welcome email queued manually', 'EMAIL', {

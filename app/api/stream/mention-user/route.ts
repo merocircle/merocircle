@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { serverStreamClient } from '@/lib/stream-server';
 import { createClient } from '@/lib/supabase/server';
 import { sendChannelMentionEmail } from '@/lib/email';
+import { queueOrSend, triggerProcessQueue } from '@/lib/email-queue';
 import { logger } from '@/lib/logger';
 import { handleApiError } from '@/lib/api-utils';
 
@@ -96,48 +97,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'No recipients to notify', sent: 0 });
     }
 
-    // Send emails to mentioned users
-    let sent = 0;
+    // Queue or send emails to mentioned users (queue by default, direct on queue failure)
+    let queued = 0;
+    let sentDirect = 0;
     let failed = 0;
 
-    for (const recipient of recipients) {
-      try {
-        const success = await sendChannelMentionEmail({
-          memberEmail: recipient.email!,
-          memberName: recipient.display_name || 'Member',
-          memberId: recipient.id,
-          creatorId,
-          creatorName: creatorUser.display_name,
-          creatorUsername: creatorUser.username || undefined,
-          channelName: finalChannelName,
-          channelId,
-          messageText,
-          senderName: senderUser.display_name || 'Someone',
-          senderId,
-          mentionType: 'you',
-        });
+    const basePayload = {
+      creatorId,
+      creatorName: creatorUser.display_name,
+      creatorUsername: creatorUser.username || undefined,
+      channelName: finalChannelName,
+      channelId,
+      messageText,
+      senderName: senderUser.display_name || 'Someone',
+      senderId,
+      mentionType: 'you' as const,
+    };
 
-        if (success) {
-          sent++;
-        } else {
-          failed++;
-        }
-      } catch (error) {
-        logger.error('Failed to send mention email to user', 'STREAM_MENTION_USER', {
-          userId: recipient.id,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        failed++;
-      }
+    for (const recipient of recipients) {
+      const payload = {
+        ...basePayload,
+        memberEmail: recipient.email!,
+        memberName: recipient.display_name || 'Member',
+        memberId: recipient.id,
+      };
+      const result = await queueOrSend(
+        supabase,
+        {
+          email_type: 'channel_mention',
+          recipient_email: recipient.email!,
+          payload,
+        },
+        () => sendChannelMentionEmail(payload),
+        { trigger: false }
+      );
+      if (result === 'queued') queued++;
+      else if (result === 'sent_direct') sentDirect++;
+      else failed++;
     }
 
-    logger.info('User mention emails sent', 'STREAM_MENTION_USER', {
+    if (queued > 0) {
+      triggerProcessQueue();
+    }
+
+    const sent = queued + sentDirect;
+
+    logger.info('User mention emails queued/sent', 'STREAM_MENTION_USER', {
       channelId,
       messageId,
       senderId,
       mentionedUserIds,
       recipients: recipients.length,
-      sent,
+      queued,
+      sentDirect,
       failed,
     });
 
