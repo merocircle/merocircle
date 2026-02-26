@@ -5,7 +5,7 @@
   border-top: 1px solid var(--border);
   position: relative;
   overflow: hidden;
-  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+  font-family: var(--font-roboto), var(--font-sans);
 }
 @media (max-width: 767px) {
   .problem-section {

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
+import { Roboto } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -13,17 +13,10 @@ import { PageLoadingBar } from "@/components/common/PageLoadingBar";
 import { ToastProvider } from "@/contexts/toast-context";
 import { Toaster } from "@/components/ui/toaster";
 
-const spaceGrotesk = Space_Grotesk({
+const roboto = Roboto({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-space-grotesk",
-  display: "swap",
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["200", "300", "400", "500", "600", "700", "800"],
-  variable: "--font-plus-jakarta-sans",
+  weight: ["300", "400", "500", "700", "900"],
+  variable: "--font-roboto",
   display: "swap",
 });
 
@@ -223,7 +216,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`${roboto.variable} font-sans antialiased`} suppressHydrationWarning>
         {/* Load analytics after page is interactive — not render-blocking */}
         <Script
           src="https://t.contentsquare.net/uxa/0a3928cc3193c.js"
