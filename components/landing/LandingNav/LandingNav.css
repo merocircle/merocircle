@@ -77,8 +77,12 @@
   .landing-nav-logo-text {
     font-size: 0.9375rem;
   }
+  .landing-nav-right {
+    gap: 0.75rem;
+  }
   .landing-nav-about {
     font-size: 0.75rem;
+    margin-right: 0.25rem;
   }
   .landing-nav-cta {
     padding: 0.625rem 1.5rem;
