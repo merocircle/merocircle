@@ -60,6 +60,7 @@ export function BottomNav({
     if (pathname === "/notifications") return "notifications";
     if (pathname === "/settings") return "settings";
     if (pathname === "/profile") return "profile";
+    if (pathname === "/creator-studio") return "creator-studio";
 
     // Don't auto-detect profile routes anymore - let useEffect handle the specific case
     // of viewing your own profile
@@ -115,7 +116,7 @@ export function BottomNav({
   const isSignupCreatorActive = pathname === "/signup/creator";
 
   return (
-    <motion.nav
+    <nav
       className={cn(
         "fixed bottom-0 left-0 right-0 z-50",
         "flex items-center justify-around",
@@ -125,9 +126,6 @@ export function BottomNav({
         "md:hidden",
         className,
       )}
-      initial={{ y: 80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 28 }}
     >
       <BottomNavIcon
         icon={Home}
@@ -176,7 +174,7 @@ export function BottomNav({
         isActive={isBottomNavActive("profile")}
         href="/profile"
       />
-    </motion.nav>
+    </nav>
   );
 }
 
@@ -282,7 +280,7 @@ export function MobileHeader({
   if (hideHeader) return null;
 
   return (
-    <motion.header
+    <header
       className={cn(
         "fixed top-0 left-0 right-0 z-40",
         "flex flex-col",
@@ -292,9 +290,6 @@ export function MobileHeader({
         "md:hidden",
         className,
       )}
-      initial={{ y: -64, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 28 }}
     >
       <div className="flex items-center justify-between h-12 px-4">
         <div className="flex items-center gap-2">
@@ -408,6 +403,6 @@ export function MobileHeader({
           </button>
         </div>
       )}
-    </motion.header>
+    </header>
   );
 }
