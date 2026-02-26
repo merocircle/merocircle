@@ -6,7 +6,9 @@ import { NextResponse } from 'next/server';
 const ADMIN_USER_IDS = [
   'a03d3820-5a68-4ab4-8b0c-d6b48762841e',
   'a22c3394-947b-4d8f-afe8-a6ad1d6d0c18',
-  'ba1f0a86-1f84-48ef-8aea-123761c7e781'
+  'ba1f0a86-1f84-48ef-8aea-123761c7e781',
+  'fba91bcb-b57d-4230-956f-c3ec1c39d76b',
+  'fb8f6a9b-7921-4c2f-b675-59d949f9282a'
 ];
 
 /**
