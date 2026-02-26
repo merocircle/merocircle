@@ -22,6 +22,9 @@ export function LandingNav() {
           <Link href="/about" className="landing-nav-about">
             About
           </Link>
+          <Link href="/join-us" className="landing-nav-about">
+            Join Us
+          </Link>
           <Link href="/auth" className="landing-nav-cta">
             Get Started
           </Link>

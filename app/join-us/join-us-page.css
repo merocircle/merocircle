@@ -1,0 +1,372 @@
+/* Join Us page – same theme as landing and about */
+.join-us-page-wrap {
+  min-height: 100vh;
+  background: #fff;
+  scroll-behavior: smooth;
+  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+}
+.join-us-page-wrap ::selection {
+  background: var(--primary);
+  color: white;
+}
+
+.join-us-page-content {
+  padding-top: 3rem;
+  padding-bottom: 4rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Hero: logo + MeroCircle + tagline */
+.join-us-hero {
+  max-width: 800px;
+  margin: 0 auto 3rem;
+  text-align: center;
+  padding: 3rem 0 4rem;
+  border-bottom: 1px solid rgb(243 244 246);
+}
+.join-us-hero-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 1rem;
+}
+.join-us-hero-brand:hover {
+  opacity: 0.9;
+}
+.join-us-hero-name {
+  font-size: 2.25rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #1a1a1a;
+}
+.join-us-hero-tagline {
+  font-size: 1rem;
+  color: rgb(107 114 128);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Hero: logo + MeroCircle + tagline - same as about page */
+.join-us-hero {
+  max-width: 800px;
+  margin: 0 auto 3rem;
+  text-align: center;
+  padding: 3rem 0 4rem;
+  border-bottom: 1px solid rgb(243 244 246);
+}
+.join-us-hero-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 1rem;
+}
+.join-us-hero-brand:hover {
+  opacity: 0.9;
+}
+.join-us-hero-name {
+  font-size: 2.25rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #1a1a1a;
+}
+.join-us-hero-tagline {
+  font-size: 1rem;
+  color: rgb(107 114 128);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Careers Section */
+.join-us-form-header-section {
+  text-align: center;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Join Us CTA Button */
+.join-us-cta-button {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.875rem 2rem;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  text-decoration: none;
+}
+.join-us-cta-button:hover {
+  background: color-mix(in srgb, var(--primary) 85%, black 15%);
+  transform: translateY(-1px);
+}
+.join-us-cta-button:active {
+  transform: translateY(0);
+}
+
+/* About Us Preview */
+.join-us-about-preview {
+  padding: 4rem 2rem;
+  background: rgba(249, 250, 251, 0.6);
+  border-top: 1px solid rgb(243 244 246);
+}
+.join-us-about-preview-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+.join-us-about-preview-header {
+  margin-bottom: 3rem;
+}
+.join-us-about-preview-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 auto 0.5rem;
+  padding: 0.3rem 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, transparent 95%);
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent 90%);
+  border-radius: 9999px;
+}
+.join-us-about-preview-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #1a1a1a;
+  margin: 0 0 1rem;
+}
+.join-us-about-preview-subtitle {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: rgb(107 114 128);
+  margin: 0 auto;
+  max-width: 600px;
+}
+.join-us-about-preview-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.join-us-about-preview-content p {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: rgb(55 65 81);
+  margin: 0 0 2rem;
+}
+.join-us-about-preview-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.join-us-about-preview-link:hover {
+  gap: 0.75rem;
+  color: color-mix(in srgb, var(--primary) 85%, black 15%);
+}
+.join-us-about-preview-arrow {
+  transition: transform 0.2s ease;
+}
+.join-us-about-preview-link:hover .join-us-about-preview-arrow {
+  transform: translateX(2px);
+}
+
+/* Sections: Why Join MeroCircle */
+.join-us-section {
+  max-width: 800px;
+  margin: 0 auto 3.5rem;
+}
+.join-us-section-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #1a1a1a;
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid rgba(153, 0, 0, 0.2);
+}
+.join-us-section-body p {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: rgb(55 65 81);
+  margin: 0 0 1.25rem;
+}
+.join-us-section-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Form Section */
+.join-us-form-section {
+  max-width: 1000px;
+  margin: 0 auto 4rem;
+}
+.join-us-form-header {
+  text-align: center;
+  max-width: 36rem;
+  margin: 0 auto 3rem;
+}
+.join-us-form-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 auto 0.5rem;
+  padding: 0.3rem 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, transparent 95%);
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent 90%);
+  border-radius: 9999px;
+}
+.join-us-form-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #1a1a1a;
+  margin: 0 0 1rem;
+}
+.join-us-form-subtitle {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: rgb(107 114 128);
+  margin: 0;
+}
+.join-us-form-container {
+  background: #fff;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+.join-us-tally-form {
+  width: 100%;
+  min-height: 600px;
+  border: none;
+}
+
+/* Values Section */
+.join-us-values-section {
+  padding: 4rem 2rem 6rem;
+  background: rgba(249, 250, 251, 0.6);
+  border-top: 1px solid rgb(243 244 246);
+}
+.join-us-values-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.join-us-values-header {
+  text-align: center;
+  max-width: 36rem;
+  margin: 0 auto 3rem;
+}
+.join-us-values-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 auto 0.5rem;
+  padding: 0.3rem 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, transparent 95%);
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, transparent 90%);
+  border-radius: 9999px;
+}
+.join-us-values-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #1a1a1a;
+  margin: 0;
+}
+.join-us-values-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 768px) {
+  .join-us-values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.join-us-value-card {
+  background: #fff;
+  border-radius: 2rem;
+  border: 1px solid rgb(243 244 246);
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.join-us-value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+.join-us-value-card:hover .join-us-value-icon {
+  background: rgba(153, 0, 0, 0.15);
+  transform: scale(1.05);
+}
+.join-us-value-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  background: rgba(153, 0, 0, 0.1);
+  border-radius: 1rem;
+  color: var(--primary);
+  transition: all 0.2s ease;
+}
+.join-us-value-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin: 0 0 1rem;
+}
+.join-us-value-description {
+  font-size: 0.9375rem;
+  color: rgb(75 85 99);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .join-us-page-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .join-us-hero {
+    padding: 2rem 0 3rem;
+  }
+  
+  .join-us-hero-name {
+    font-size: 1.875rem;
+  }
+  
+  .join-us-form-title,
+  .join-us-values-title {
+    font-size: 1.5rem;
+  }
+  
+  .join-us-value-card {
+    padding: 1.5rem;
+  }
+}
