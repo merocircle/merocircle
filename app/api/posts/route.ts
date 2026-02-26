@@ -138,8 +138,10 @@ export async function POST(request: NextRequest) {
       tier_required = 'free',
       post_type = 'post',
       poll_data,
-      sendNotifications: shouldNotify = true,
+      sendNotifications,
     } = body;
+
+    const shouldNotify = sendNotifications !== false; // Only false if explicitly set to false
 
     // Use unified post publishing engine
     const { publishPost } = await import('@/lib/post-publishing-engine');
