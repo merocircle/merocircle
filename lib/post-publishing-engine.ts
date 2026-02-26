@@ -75,9 +75,12 @@ export async function publishPost(
       tier_required = 'free',
       post_type = 'post',
       poll_data,
-      sendNotifications = true,
+      sendNotifications,
       logActivity: shouldLogActivity = true,
     } = params;
+
+    // Only default to true if sendNotifications is not provided at all
+    const shouldSendNotifications = sendNotifications !== false;
 
     const supabase = await createClient();
 
@@ -227,7 +230,7 @@ export async function publishPost(
     }
 
     // Send email notifications to supporters if enabled
-    if (sendNotifications) {
+    if (shouldSendNotifications) {
       sendPostNotificationsToSupporters(post, creatorId, supabase).catch((notifError) => {
         logger.error('Failed to send post notifications', 'POST_PUBLISHING_ENGINE', {
           error: notifError instanceof Error ? notifError.message : 'Unknown',
