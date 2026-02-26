@@ -30,6 +30,8 @@ import { getBlurDataURL, imageSizes } from "@/lib/image-utils";
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from "@/lib/youtube";
 import { useAuth } from "@/contexts/auth-context";
 import { useLikePost, useAddComment } from "@/hooks/useQueries";
+import { logger } from "@/lib/logger";
+import { useToast } from "@/hooks/use-toast";
 import ThreadedComments from "./ThreadedComments";
 import { ShareModal } from "./ShareModal";
 import { RichContent } from "./RichContent";
@@ -111,6 +113,7 @@ export function PostDetailModal({
   const likeMutation = useLikePost();
   const commentMutation = useAddComment();
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(externalIsLiked ?? false);
@@ -300,8 +303,8 @@ export function PostDetailModal({
           return prev.filter((c) => !toRemove.has(c.id));
         });
       } catch (err) {
-        console.error("Delete comment error:", err);
-        alert(err instanceof Error ? err.message : "Failed to delete comment");
+        logger.error("Delete comment error", "POST_DETAIL_MODAL", { postId: post.id, error: err instanceof Error ? err.message : String(err) });
+        toast({ title: "Failed to delete comment", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" });
       }
     },
     [post?.id],

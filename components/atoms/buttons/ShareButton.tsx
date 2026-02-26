@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { Share2, Check, Copy, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { springBouncy } from "@/components/animations/transitions";
+import { logger } from "@/lib/logger";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +41,7 @@ export function ShareButton({
   size = "md",
   className,
 }: ShareButtonProps) {
+  const { toast } = useToast();
   const [copied, setCopied] = React.useState(false);
 
   const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
@@ -64,7 +67,8 @@ export function ShareButton({
       onShare?.();
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy:", err);
+      logger.error("Failed to copy link", "SHARE_BUTTON", { error: err instanceof Error ? err.message : String(err) });
+      toast({ title: "Copy failed", variant: "destructive" });
     }
   };
 

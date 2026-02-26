@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 import {
   Crown,
   BarChart3,
@@ -335,7 +337,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         const newUrls = await Promise.all(uploadPromises);
         setUploadedImages((prev) => [...prev, ...newUrls]);
       } catch (error) {
-        console.error("Upload error:", error);
+        logger.error("Upload error", "CREATOR_STUDIO_SECTION", { error: error instanceof Error ? error.message : String(error) });
         const errorMessage =
           error instanceof Error ? error.message : "File upload failed.";
         showError(errorMessage);

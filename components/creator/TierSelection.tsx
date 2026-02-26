@@ -72,9 +72,6 @@ export function TierSelection({
           </div>
         ) : (
           tiers.map((tier) => {
-            console.log(tier.tier_level);
-            console.log("current", currentTierLevel);
-
             const tierConfig = tierIcons.find(t => t.level === tier.tier_level);
             // Only mark as current if user is actually a supporter (currentTierLevel > 0)
             const isCurrent = currentTierLevel > 0 && currentTierLevel === tier.tier_level;

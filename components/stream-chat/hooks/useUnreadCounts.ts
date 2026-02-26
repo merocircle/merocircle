@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import type { StreamChat } from 'stream-chat';
+import { logger } from '@/lib/logger';
 
 export function useUnreadCounts(chatClient: StreamChat | null, user: { id: string } | null) {
   const [channelUnreadCounts, setChannelUnreadCounts] = useState<Record<string, number>>({});
@@ -35,9 +36,8 @@ export function useUnreadCounts(chatClient: StreamChat | null, user: { id: strin
 
       setChannelUnreadCounts(counts);
     } catch (err: any) {
-      // Silently handle rate limiting errors
       if (err?.code !== 9) {
-      console.error('Failed to fetch unread counts:', err);
+        logger.error('Failed to fetch unread counts', 'USE_UNREAD_COUNTS', { error: err?.message ?? String(err) });
       }
     } finally {
       isFetchingRef.current = false;

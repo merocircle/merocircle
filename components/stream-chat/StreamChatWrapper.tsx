@@ -38,6 +38,7 @@ import {
 import { ChannelInfoPanel } from './components/ChannelInfoPanel';
 import type { MobileView, DMChannel } from './types';
 import type { Server, SupabaseChannel } from './hooks/useChannels';
+import { logger } from '@/lib/logger';
 import 'stream-chat-react/dist/css/v2/index.css';
 
 interface StreamChatWrapperProps {
@@ -233,13 +234,10 @@ export function StreamChatWrapper({
             });
 
             if (!response.ok) {
-              console.error(
-                "Failed to send @everyone mention emails:",
-                await response.text(),
-              );
+              logger.error("Failed to send @everyone mention emails", "STREAM_CHAT", { text: await response.text() });
             }
           } catch (error) {
-            console.error("Error calling @everyone mention API:", error);
+            logger.error("Error calling @everyone mention API", "STREAM_CHAT", { error: error instanceof Error ? error.message : String(error) });
           }
         }
 
@@ -263,18 +261,15 @@ export function StreamChatWrapper({
               });
 
               if (!response.ok) {
-                console.error(
-                  "Failed to send user mention emails:",
-                  await response.text(),
-                );
+                logger.error("Failed to send user mention emails", "STREAM_CHAT", { text: await response.text() });
               }
             } catch (error) {
-              console.error("Error calling user mention API:", error);
+              logger.error("Error calling user mention API", "STREAM_CHAT", { error: error instanceof Error ? error.message : String(error) });
             }
           }
         }
       } catch (error) {
-        console.error("Error handling mentions:", error);
+        logger.error("Error handling mentions", "STREAM_CHAT", { error: error instanceof Error ? error.message : String(error) });
       }
     };
 
@@ -580,14 +575,10 @@ export function StreamChatWrapper({
           }
         })();
       } else if (hasChannels) {
-        console.warn(
-          `Channel ${urlChannelId} not found in available channels`,
-          {
-            availableChannels: allServers.flatMap((s) =>
-              s.channels.map((ch) => ch.stream_channel_id),
-            ),
-          },
-        );
+        logger.warn("Channel not found in available channels", "STREAM_CHAT", {
+          urlChannelId,
+          availableChannels: allServers.flatMap((s) => s.channels.map((ch) => ch.stream_channel_id)),
+        });
       }
     }
   }, [
@@ -646,7 +637,7 @@ export function StreamChatWrapper({
         setMobileView("chat");
         fetchDMChannels();
       } catch (err) {
-        console.error("Failed to create DM:", err);
+        logger.error("Failed to create DM", "STREAM_CHAT", { error: err instanceof Error ? err.message : String(err), userId });
       }
     },
     [chatClient, user, fetchDMChannels],

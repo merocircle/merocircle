@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser } from '@/lib/api-utils';
 import { isAdmin } from '@/lib/admin-middleware';
+import { logger } from '@/lib/logger';
 
 export async function PATCH(
   request: Request,
@@ -31,13 +32,16 @@ export async function PATCH(
       .eq('id', feedbackId);
 
     if (error) {
-      console.error('[ADMIN_FEEDBACK_API] Error updating feedback:', error);
+      logger.error('Error updating feedback', 'ADMIN_FEEDBACK_API', { error: error.message, feedbackId });
       return NextResponse.json({ error: 'Failed to update feedback' }, { status: 500 });
     }
 
+    logger.info('Feedback updated', 'ADMIN_FEEDBACK_API', { feedbackId, addressed });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[ADMIN_FEEDBACK_API] Error:', error);
+    logger.error('Admin feedback API error', 'ADMIN_FEEDBACK_API', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

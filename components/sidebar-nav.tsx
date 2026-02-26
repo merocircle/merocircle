@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardView } from '@/contexts/dashboard-context';
 import { useNotificationsData } from '@/hooks/useQueries';
@@ -162,7 +163,7 @@ export function SidebarNav() {
         
         setRecentlyVisited(validItems);
       } catch (e) {
-        console.error('Failed to parse recently visited', e);
+        logger.warn('Failed to parse recently visited', 'SIDEBAR_NAV', { error: e instanceof Error ? e.message : String(e) });
         // Clear corrupted data
         localStorage.removeItem('recentlyVisited');
         setRecentlyVisited([]);

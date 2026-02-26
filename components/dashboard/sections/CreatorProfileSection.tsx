@@ -70,6 +70,8 @@ type TierData = { tier_level: number; price: number; tier_name: string; descript
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { signIn } from 'next-auth/react';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { useRealtimeCreatorPosts } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
@@ -149,6 +151,7 @@ interface CreatorProfileSectionProps {
 export default function CreatorProfileSection({ creatorId, initialHighlightedPostId, defaultTab, renewFromUrl, subscriptionIdFromUrl }: CreatorProfileSectionProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -747,8 +750,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           throw new Error(result.error || 'Payment failed');
         }
       } catch (error) {
-        console.error('Direct payment error:', error);
-        alert(error instanceof Error ? error.message : 'Failed to register support. Please try again.');
+        logger.error('Direct payment error', 'CREATOR_PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+        toast({ title: 'Payment failed', description: error instanceof Error ? error.message : 'Failed to register support. Please try again.', variant: 'destructive' });
         setPaymentLoading(false);
       } finally {
         setPendingPayment(null);
@@ -860,8 +863,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       // Unexpected response shape
       throw new Error(result.error || 'eSewa payment failed');
     } catch (error: unknown) {
-      console.error('[PAYMENT] Error:', error);
-      alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
+      logger.error('Payment error', 'CREATOR_PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Payment failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
       setPaymentLoading(false);
       setPendingPayment(null);
     }
@@ -900,8 +903,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         throw new Error(result.error || 'Failed to join');
       }
     } catch (error) {
-      console.error('Free support error:', error);
-      alert(error instanceof Error ? error.message : 'Could not join as supporter. Please try again.');
+      logger.error('Free support error', 'CREATOR_PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Could not join', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
     } finally {
       setPaymentLoading(false);
     }
@@ -999,7 +1002,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         refreshCreatorDetails();
       }
     } catch (err) {
-      console.error('Avatar upload error:', err);
+      logger.error('Avatar upload error', 'CREATOR_PROFILE_SECTION', { error: err instanceof Error ? err.message : String(err) });
+      toast({ title: 'Avatar upload failed', variant: 'destructive' });
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -1024,7 +1028,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         refreshCreatorDetails();
       }
     } catch (err) {
-      console.error('Cover upload error:', err);
+      logger.error('Cover upload error', 'CREATOR_PROFILE_SECTION', { error: err instanceof Error ? err.message : String(err) });
+      toast({ title: 'Cover upload failed', variant: 'destructive' });
     } finally {
       setIsUploadingCover(false);
     }

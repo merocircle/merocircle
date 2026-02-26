@@ -50,6 +50,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { logger } from "@/lib/logger";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -145,6 +147,7 @@ export function EnhancedPostCard({
   const commentMutation = useAddComment();
   const deleteMutation = useDeletePost();
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Safely default creator to prevent null access crashes
@@ -401,11 +404,11 @@ export function EnhancedPostCard({
           return next;
         });
       } catch (err) {
-        console.error("Delete comment error:", err);
-        alert(err instanceof Error ? err.message : "Failed to delete comment");
+        logger.error("Delete comment error", "ENHANCED_POST_CARD", { postId: post.id, error: err instanceof Error ? err.message : String(err) });
+        toast({ title: "Failed to delete comment", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" });
       }
     },
-    [post.id]
+    [post.id, toast]
   );
 
   const isSupporterOnly = post.tier_required && post.tier_required !== "free";

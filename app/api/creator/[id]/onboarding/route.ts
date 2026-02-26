@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -15,6 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    logger.info('Update onboarding', 'CREATOR_ONBOARDING_API', { creatorId, userId: user.id });
     const supabase = await createClient();
 
     const { completed } = await request.json();

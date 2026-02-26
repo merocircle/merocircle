@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { logger } from '@/lib/logger'
 
 const POSTS_BATCH_SIZE = 10
 
@@ -114,7 +115,10 @@ export const useCreatorDetails = (creatorId: string | null) => {
       setHasMorePosts(initialPosts.length >= POSTS_BATCH_SIZE)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load creator')
-      console.error('Creator details error:', err)
+      logger.error('Creator details error', 'USE_CREATOR_DETAILS', {
+        creatorId: id,
+        error: err instanceof Error ? err.message : String(err),
+      })
     } finally {
       setLoading(false)
     }
@@ -152,7 +156,10 @@ export const useCreatorDetails = (creatorId: string | null) => {
       )
       setHasMorePosts(newHasMore)
     } catch (err) {
-      console.error('Load more posts error:', err)
+      logger.error('Load more posts error', 'USE_CREATOR_DETAILS', {
+        creatorId,
+        error: err instanceof Error ? err.message : String(err),
+      })
     } finally {
       setPostsLoadingMore(false)
       loadingMoreRef.current = false

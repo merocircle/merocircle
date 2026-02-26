@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   TrendingUp, 
@@ -62,6 +64,7 @@ const TIER_COLORS = {
 };
 
 export default function EarningsChart({ className }: EarningsChartProps) {
+  const { toast } = useToast();
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   const [loading, setLoading] = useState(true);
@@ -79,7 +82,8 @@ export default function EarningsChart({ className }: EarningsChartProps) {
         setEarningsData(data);
       }
     } catch (error) {
-      console.error('Error fetching earnings data:', error);
+      logger.error('Error fetching earnings data', 'EARNINGS_CHART', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Failed to load earnings', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

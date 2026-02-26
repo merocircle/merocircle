@@ -10,11 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Heart, ArrowLeft, Chrome, Shield, Zap, Users } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { useAuth } from '@/contexts/auth-context';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
   const { data: session, status } = useSession();
   const { userProfile } = useAuth();
 
@@ -34,8 +37,10 @@ export default function LoginPage() {
       
       // Will be redirected by the useEffect watching user state
     } catch (error: any) {
-      console.error('Login error:', error);
-      setError(error.message || 'Failed to sign in. Please try again.');
+      logger.error('Login error', 'LOGIN_PAGE', { error: error?.message });
+      const msg = error.message || 'Failed to sign in. Please try again.';
+      setError(msg);
+      toast({ title: 'Sign in failed', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
