@@ -69,25 +69,15 @@ export const authOptions: NextAuthOptions = {
 
           logger.info('New user created', 'NEXTAUTH', { userId: newUser?.id, email: user.email });
           
-          try {
-            const { sendWelcomeEmail } = await import('@/lib/email');
-            sendWelcomeEmail({
-              userEmail: user.email,
-              userName: user.name || user.email.split('@')[0],
-              userRole: 'supporter',
-            }).then(success => {
-              if (success) {
-                logger.info('Welcome email sent', 'NEXTAUTH', { email: user.email });
-              } else {
-                logger.warn('Welcome email failed (non-critical)', 'NEXTAUTH', { email: user.email });
-              }
-            }).catch(err => {
-              logger.warn('Welcome email error (non-critical)', 'NEXTAUTH', { error: err?.message });
-            });
-          } catch (emailError) {
-            logger.error('Failed to send welcome email', 'NEXTAUTH', {
-              error: emailError instanceof Error ? emailError.message : String(emailError),
-            });
+          // Queue welcome email (sent asynchronously via Hostinger SMTP by process-queue).
+          // Do not send inline here to avoid auth callback timeout; all sending is via lib/email (Hostinger).
+          const baseUrl = process.env.NEXTAUTH_URL?.trim() || '';
+          if (baseUrl && newUser?.id) {
+            fetch(`${baseUrl}/api/email/send-welcome`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: newUser.id }),
+            }).catch(() => {});
           }
           
           if (newUser) {

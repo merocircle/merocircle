@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { validatePostContent } from '@/lib/validation';
 import { sanitizeString } from '@/lib/validation';
-import { sendBulkPostNotifications } from '@/lib/email';
+import { sendPostNotificationEmail } from '@/lib/email';
+import { queueOrSend, triggerProcessQueue } from '@/lib/email-queue';
 import { logPostCreated } from './activity-logging-engine';
 
 /**
@@ -320,6 +321,7 @@ async function sendPostNotificationsToSupporters(
       .map((s: any) => ({
         email: s.user.email,
         name: s.user.display_name || 'Supporter',
+        id: s.user.id,
       }));
 
     if (supportersWithEmails.length === 0) {
@@ -330,22 +332,60 @@ async function sendPostNotificationsToSupporters(
       return;
     }
 
-    // Send bulk email notifications
-    const { sent, failed } = await sendBulkPostNotifications(supportersWithEmails, {
+    const isPoll = post.post_type === 'poll';
+    const emailType = isPoll ? ('poll_notification' as const) : ('post_notification' as const);
+    const basePayload = {
       creatorName,
       creatorUsername,
+      creatorId,
       postTitle: post.title || 'New Post',
       postContent: post.content || '',
       postImageUrl: post.image_url || (post.image_urls && post.image_urls[0]) || null,
       postUrl,
-      isPoll: post.post_type === 'poll',
-    });
+      isPoll,
+    };
 
-    logger.info('Post notification emails sent', 'POST_PUBLISHING_ENGINE', {
+    let queued = 0;
+    let sentDirect = 0;
+    let failed = 0;
+
+    for (const supporter of supportersWithEmails) {
+      const result = await queueOrSend(
+        supabase,
+        {
+          email_type: emailType,
+          recipient_email: supporter.email,
+          payload: {
+            ...basePayload,
+            supporterEmail: supporter.email,
+            supporterName: supporter.name,
+            supporterId: supporter.id,
+          },
+        },
+        () =>
+          sendPostNotificationEmail({
+            ...basePayload,
+            supporterEmail: supporter.email,
+            supporterName: supporter.name,
+            supporterId: supporter.id,
+          }),
+        { trigger: false }
+      );
+      if (result === 'queued') queued++;
+      else if (result === 'sent_direct') sentDirect++;
+      else failed++;
+    }
+
+    if (queued > 0) {
+      triggerProcessQueue();
+    }
+
+    logger.info('Post notification emails queued/sent', 'POST_PUBLISHING_ENGINE', {
       creatorId,
       postId: post.id,
       totalSupporters: supportersWithEmails.length,
-      sent,
+      queued,
+      sentDirect,
       failed,
     });
   } catch (error: any) {

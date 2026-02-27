@@ -6,6 +6,10 @@ import { render } from '@react-email/render';
 import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification, SubscriptionExpiringReminder, SubscriptionExpiredNotification } from '@/emails/templates';
 import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
+/**
+ * All transactional email is sent via Hostinger SMTP (or SMTP_* env).
+ * Supabase is only used for the email_queue table (storage); no Supabase SMTP is used.
+ */
 const createTransporter = () => {
   const smtpHost = process.env.SMTP_HOST || 'smtp.hostinger.com';
   const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10); // Changed to 587 (TLS)

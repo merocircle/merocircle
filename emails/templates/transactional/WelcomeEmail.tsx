@@ -102,28 +102,6 @@ export default function WelcomeEmail({
 
       <Hr style={divider} />
 
-      {/* Video — watch what we're building */}
-      <Section style={videoSection}>
-        <Text style={videoLabel}>See what we&apos;re building</Text>
-        <Link href="https://www.youtube.com/watch?v=PLACEHOLDER" style={videoLink}>
-          <Img
-            src={`${baseUrl}/email/video-thumbnail.jpg`}
-            alt="Watch: What is Mero Circle?"
-            style={videoThumbnail}
-            width="480"
-          />
-          {/* Play button overlay */}
-          <Section style={playButtonWrapper}>
-            <Text style={playButton}>&#9654;</Text>
-          </Section>
-        </Link>
-        <Text style={videoCaption}>
-          A 2-minute walkthrough of Mero Circle
-        </Text>
-      </Section>
-
-      <Hr style={divider} />
-
       {/* CTA */}
       <Section style={ctaSection}>
         <Link href={exploreUrl} style={ctaButton}>
@@ -213,60 +191,6 @@ const teamCaption = {
   lineHeight: '18px',
   color: '#a8a29e',
   fontStyle: 'italic' as const,
-};
-
-const videoSection = {
-  padding: '24px 40px 8px',
-  textAlign: 'center' as const,
-};
-
-const videoLabel = {
-  margin: '0 0 14px',
-  fontSize: '13px',
-  lineHeight: '18px',
-  fontWeight: '600',
-  color: '#78716c',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.8px',
-};
-
-const videoLink = {
-  display: 'block',
-  textDecoration: 'none',
-  position: 'relative' as const,
-};
-
-const videoThumbnail = {
-  width: '100%',
-  maxWidth: '480px',
-  height: 'auto',
-  borderRadius: '12px',
-  border: '1px solid #f0ebe6',
-};
-
-const playButtonWrapper = {
-  margin: '-60px auto 20px',
-  textAlign: 'center' as const,
-};
-
-const playButton = {
-  display: 'inline-block',
-  width: '52px',
-  height: '52px',
-  lineHeight: '52px',
-  fontSize: '20px',
-  color: '#ffffff',
-  backgroundColor: 'rgba(196, 56, 42, 0.9)',
-  borderRadius: '50%',
-  textAlign: 'center' as const,
-  margin: '0 auto',
-};
-
-const videoCaption = {
-  margin: '0 0 0',
-  fontSize: '13px',
-  lineHeight: '20px',
-  color: '#a8a29e',
 };
 
 const ctaSection = {
