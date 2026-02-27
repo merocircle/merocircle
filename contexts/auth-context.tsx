@@ -40,7 +40,7 @@ interface AuthContextType {
   isCreator: boolean;
   loading: boolean;
   updateUserRole: (role: 'user' | 'creator') => Promise<{ error: any }>;
-  createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>, vanityUsername?: string) => Promise<{ error: any }>;
+  createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>, vanityUsername?: string, displayName?: string) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle?: () => void; // Optional for compatibility
@@ -131,7 +131,8 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     bio: string,
     category: string,
     socialLinks?: Record<string, string>,
-    vanityUsername?: string
+    vanityUsername?: string,
+    displayName?: string
   ) => {
     if (!session?.user?.id) {
       return { error: 'Not authenticated' };
@@ -141,6 +142,18 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
       const { error: roleError } = await updateUserRole('creator');
       if (roleError) {
         return { error: roleError };
+      }
+
+      // Update display name in users table if provided
+      if (displayName) {
+        const { error: displayNameError } = await supabase
+          .from('users')
+          .update({ display_name: displayName.trim(), updated_at: new Date().toISOString() })
+          .eq('id', session.user.id);
+
+        if (displayNameError) {
+          return { error: displayNameError };
+        }
       }
 
       const payload: {
