@@ -39,9 +39,29 @@ export async function POST(request: NextRequest) {
         error: 'User not found',
       }, { status: 404 });
     }
-
-    // Always queue welcome email when requested (no "already sent" check —
-    // user may have deleted profile and recreated, or re-requested welcome)
+    
+    // Check if welcome email was already sent successfully
+    const { data: existingEmail } = await supabase
+      .from('email_queue')
+      .select('id, status, created_at')
+      .eq('email_type', 'welcome')
+      .eq('recipient_email', user.email)
+      .eq('status', 'sent')
+      .single();
+    
+    if (existingEmail) {
+      logger.info('Welcome email already sent', 'EMAIL', {
+        userId: user.id,
+        sentAt: existingEmail.created_at,
+      });
+      
+      return NextResponse.json({
+        message: 'Welcome email was already sent',
+        sentAt: existingEmail.created_at,
+        action: 'skipped',
+      });
+    }
+    
     // Queue new welcome email
     const { data: queuedEmail, error: queueError } = await supabase
       .from('email_queue')

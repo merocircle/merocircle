@@ -49,14 +49,13 @@ export async function POST(request: NextRequest) {
     const batchSize = 10; // Process 10 emails at a time
     const now = new Date().toISOString();
 
-    // Fetch pending emails that are scheduled to be sent (attempts < max_attempts)
-    // Use .or() for attempts to avoid PostgREST interpreting "max_attempts" as a value
+    // Fetch pending emails that are scheduled to be sent
     const { data: rawPending, error: fetchError } = await supabase
       .from('email_queue')
       .select('*')
       .in('status', ['pending', 'failed'])
       .lte('scheduled_for', now)
-      .or('attempts.eq.0,attempts.eq.1,attempts.eq.2')
+      .lt('attempts', 3)
       .order('created_at', { ascending: true })
       .limit(batchSize);
 
