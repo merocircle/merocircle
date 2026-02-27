@@ -803,7 +803,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                       )} />
                       <div className="flex-1 min-w-0">
                         <p className="text-foreground line-clamp-2">
-                          <span className="font-medium">{notif.actor?.display_name || 'Someone'}</span>{' '}
+                          <span className="font-medium">{notif.user?.name || 'Someone'}</span>{' '}
                           {notif.type === 'like' && 'liked your post'}
                           {notif.type === 'comment' && 'commented on your post'}
                           {notif.type === 'follow' && 'started following you'}
