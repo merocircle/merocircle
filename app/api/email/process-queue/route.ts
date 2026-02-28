@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch pending emails that are scheduled to be sent (attempts < max_attempts)
     // Use .or() for attempts to avoid PostgREST interpreting "max_attempts" as a literal value
-    const { data: pendingEmails, error: fetchError } = await supabase
+    const { data: rawPending, error: fetchError } = await supabase
       .from('email_queue')
       .select('*')
       .in('status', ['pending', 'failed'])
