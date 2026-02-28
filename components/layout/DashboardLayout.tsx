@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActivityBar } from '@/components/navigation/ActivityBar';
 import { BottomNav, MobileHeader } from '@/components/navigation/BottomNav';
@@ -77,13 +77,29 @@ export function DashboardLayout({
   showMobileTabs = true,
   className
 }: DashboardLayoutProps) {
+  const [isActivityBarExpanded, setIsActivityBarExpanded] = useState(() => {
+    // Check localStorage for saved preference, default to expanded
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('activityBarExpanded');
+      return saved !== null ? saved === 'true' : true; // Default to expanded
+    }
+    return true; // Default to expanded for SSR
+  });
+
+  // Save preference to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activityBarExpanded', isActivityBarExpanded.toString());
+    }
+  }, [isActivityBarExpanded]);
+
   const isFullWidth = fullWidth || FULL_WIDTH_VIEWS.includes(contextView);
   const shouldHideMobileHeader = !['explore'].includes(contextView);
 
   return (
     <div className={cn(
       'min-h-dvh bg-background',
-      contextView === 'chat' ? 'h-dvh min-h-0 flex flex-col overflow-hidden overscroll-none' : 'min-h-dvh', 
+      contextView === 'chat' ? 'h-dvh min-h-0 flex flex-col overflow-hidden overscroll-none' : 'min-h-dvh',
       className
     )}
     >
@@ -106,11 +122,17 @@ export function DashboardLayout({
           // Mobile: single column (3.5rem nav + safe area) — only when not chat so chat stays fixed
           contextView !== 'chat' && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]',
           // Desktop: 2-column with activity bar
-          'md:grid-cols-[64px_minmax(0,1fr)] md:pb-0',
+          cn(
+            isActivityBarExpanded ? 'md:grid-cols-[240px_minmax(0,1fr)]' : 'md:grid-cols-[68px_minmax(0,1fr)]',
+            'md:pb-0'
+          ),
         )}
       >
         {/* Activity Bar — desktop only */}
-        <aside className="hidden md:block">
+        <aside className={cn(
+          'hidden md:block transition-all duration-300 ease-in-out',
+          isActivityBarExpanded ? 'w-[240px]' : 'w-[68px]'
+        )}>
           <ActivityBar
             user={user}
             activeView={activeView}
@@ -118,6 +140,8 @@ export function DashboardLayout({
             unreadMessages={unreadMessages}
             unreadNotifications={unreadNotifications}
             favoriteCreators={favoriteCreators}
+            isExpanded={isActivityBarExpanded}
+            onToggleExpand={() => setIsActivityBarExpanded(!isActivityBarExpanded)}
           />
         </aside>
 

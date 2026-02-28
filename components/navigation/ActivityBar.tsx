@@ -17,7 +17,8 @@ import {
   Monitor,
   Shield,
   MessageCircleHeart,
-  Calendar
+  Calendar,
+  PanelRight
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
@@ -49,6 +50,8 @@ interface ActivityBarProps {
   }>;
   onCreatorClick?: (creatorId: string) => void;
   className?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 type NavItem = {
@@ -67,7 +70,9 @@ export function ActivityBar({
   unreadNotifications = 0,
   favoriteCreators = [],
   onCreatorClick,
-  className
+  className,
+  isExpanded = false,
+  onToggleExpand
 }: ActivityBarProps) {
   const pathname = usePathname();
   const { isCreator, creatorProfile } = useAuth();
@@ -144,35 +149,76 @@ export function ActivityBar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen w-[68px] flex-col items-center py-4 border-r border-border/40 bg-card/80 backdrop-blur-xl',
+          'fixed left-0 top-0 z-50 flex h-screen flex-col py-4 border-r border-border/40 bg-card/80 backdrop-blur-xl transition-all duration-300 ease-in-out',
+          isExpanded ? 'items-start w-[240px] px-4' : 'items-center w-[68px] px-2',
           className
         )}
       >
-        {/* Logo */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link href="/home" prefetch={true}>
-              <motion.div
-                className="mb-5 flex items-center justify-center w-10 h-10 cursor-pointer"
-                whileHover={{ scale: 1.1 }}
+        {/* Logo and Toggle */}
+        <div className={cn(
+          'flex items-center gap-3 mb-5',
+          isExpanded ? 'flex-row w-full gap-0.5' : 'flex-col'
+        )}>
+          <Link href="/home" prefetch={true}>
+            <motion.div
+              className="flex items-center justify-center w-10 h-10 cursor-pointer"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Logo className="w-6 h-6 text-primary object-contain"/>
+            </motion.div>
+          </Link>
+          
+          {isExpanded && (
+            <div className="flex items-center gap-2">
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="font-semibold text-foreground"
+              >
+                MeroCircle
+              </motion.span>
+              <span className="beta-neon-global text-[8px] font-bold tracking-[0.15em] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 select-none ml-0.5">
+                BETA
+              </span>
+            </div>
+          )}
+          
+          {!isExpanded && (
+            <span className="beta-neon-global text-[8px] font-bold tracking-[0.15em] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 mb-3 select-none">
+              BETA
+            </span>
+          )}
+          
+          {/* Toggle Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                onClick={onToggleExpand}
+                className={cn(
+                  'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
+                  isExpanded 
+                    ? 'text-primary bg-primary/10 hover:bg-primary/20 ml-2' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Logo className="w-6 h-6 text-primary object-contain"/>
-              </motion.div>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            <p>MeroCircle</p>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Beta Badge */}
-        <span className="beta-neon-global text-[8px] font-bold tracking-[0.15em] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 mb-3 select-none">
-          BETA
-        </span>
+                <PanelRight size={16} />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent side={isExpanded ? 'top' : 'right'} sideOffset={8}>
+              <p>{isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         {/* Main Navigation */}
-        <nav className="flex flex-col items-center gap-1">
+        <nav className={cn(
+          'flex gap-1',
+          isExpanded ? 'flex-col items-stretch w-full' : 'flex-col items-center'
+        )}>
           {navItems.map((item) => (
             <Tooltip key={item.id}>
               <TooltipTrigger asChild>
@@ -183,12 +229,16 @@ export function ActivityBar({
                     isActive={isActive(item)}
                     badge={item.badge}
                     href={item.view ? getRoute(item.view) : undefined}
+                    isExpanded={isExpanded}
+                    className={isExpanded ? 'w-full' : ''}
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                <p>{item.label}</p>
-              </TooltipContent>
+              {!isExpanded && (
+                <TooltipContent side="right" sideOffset={8}>
+                  <p>{item.label}</p>
+                </TooltipContent>
+              )}
             </Tooltip>
           ))}
 
@@ -202,12 +252,16 @@ export function ActivityBar({
                     label={creatorNavItem.label}
                     isActive={isActive(creatorNavItem)}
                     href={creatorNavItem.view ? getRoute(creatorNavItem.view) : undefined}
+                    isExpanded={isExpanded}
+                    className={isExpanded ? 'w-full' : ''}
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                <p>{creatorNavItem.label}</p>
-              </TooltipContent>
+              {!isExpanded && (
+                <TooltipContent side="right" sideOffset={8}>
+                  <p>{creatorNavItem.label}</p>
+                </TooltipContent>
+              )}
             </Tooltip>
           )}
 
@@ -220,12 +274,16 @@ export function ActivityBar({
                   label={eventsNavItem.label}
                   isActive={isActive(eventsNavItem)}
                   href={eventsNavItem.view ? getRoute(eventsNavItem.view) : undefined}
+                  isExpanded={isExpanded}
+                  className={isExpanded ? 'w-full' : ''}
                 />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              <p>{eventsNavItem.label}</p>
-            </TooltipContent>
+            {!isExpanded && (
+              <TooltipContent side="right" sideOffset={8}>
+                <p>{eventsNavItem.label}</p>
+              </TooltipContent>
+            )}
           </Tooltip>
 
           {/* Admin */}
@@ -238,75 +296,112 @@ export function ActivityBar({
                     label={adminNavItem.label}
                     isActive={pathname === '/admin'}
                     href="/admin"
+                    isExpanded={isExpanded}
+                    className={isExpanded ? 'w-full' : ''}
                   />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                <p>{adminNavItem.label}</p>
-              </TooltipContent>
+              {!isExpanded && (
+                <TooltipContent side="right" sideOffset={8}>
+                  <p>{adminNavItem.label}</p>
+                </TooltipContent>
+              )}
             </Tooltip>
           )}
         </nav>
 
         {/* Divider */}
-        <div className="my-3 w-7 h-px bg-border/60" />
+        <div className="my-3 w-full h-px bg-border/60" />
 
         {/* Favorite Creators */}
         {favoriteCreators.length > 0 && (
-          <div className="flex flex-col items-center gap-1.5 overflow-y-auto scrollbar-hide px-1 max-h-[calc(100vh-400px)]">
+          <div className={cn(
+            'flex gap-1.5 overflow-y-auto scrollbar-hide max-h-[calc(100vh-400px)]',
+            isExpanded ? 'flex-col px-0 w-full' : 'flex-col items-center'
+          )}>
             {favoriteCreators.slice(0, 5).map((creator) => (
               <Tooltip key={creator.id}>
                 <TooltipTrigger asChild>
                   {onCreatorClick ? (
                     <motion.button
                       onClick={() => handleCreatorClick(creator.id)}
-                      className="relative"
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.95 }}
+                      className={cn(
+                        "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
+                        isExpanded ? 'w-full' : ''
+                      )}
+                      whileHover={{ scale: isExpanded ? 1 : 1.08 }}
+                      whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
                     >
-                      <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all">
+                      <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0">
                         <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                           {creator.display_name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
+                      {isExpanded && (
+                        <span className="text-sm font-medium text-muted-foreground truncate">
+                          {creator.display_name}
+                        </span>
+                      )}
                     </motion.button>
                   ) : (
                     <Link href={`/creator/${creator.vanity_username || creator.id}`} prefetch={true}>
                       <motion.div
-                        className="relative"
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.95 }}
+                        className={cn(
+                          "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
+                          isExpanded ? 'w-full' : ''
+                        )}
+                        whileHover={{ scale: isExpanded ? 1 : 1.08 }}
+                        whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
                       >
-                        <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all">
+                        <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0">
                           <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
                           <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                             {creator.display_name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
+                        {isExpanded && (
+                          <span className="text-sm font-medium text-muted-foreground truncate">
+                            {creator.display_name}
+                          </span>
+                        )}
                       </motion.div>
                     </Link>
                   )}
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8}>
-                  <p>{creator.display_name}</p>
-                </TooltipContent>
+                {!isExpanded && (
+                  <TooltipContent side="right" sideOffset={8}>
+                    <p>{creator.display_name}</p>
+                  </TooltipContent>
+                )}
               </Tooltip>
             ))}
             {favoriteCreators.length > 5 && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <motion.button
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-muted/50 text-muted-foreground text-[10px] font-semibold hover:bg-muted transition-colors"
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
+                    className={cn(
+                      "flex items-center justify-center gap-3 p-2 rounded-lg bg-muted/50 text-muted-foreground hover:bg-muted transition-colors",
+                      isExpanded ? 'w-full justify-start' : 'w-9 h-9'
+                    )}
+                    whileHover={{ scale: isExpanded ? 1 : 1.08 }}
+                    whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
                   >
-                    +{favoriteCreators.length - 5}
+                    <span className="text-sm font-semibold">
+                      +{favoriteCreators.length - 5}
+                    </span>
+                    {isExpanded && (
+                      <span className="text-sm text-muted-foreground">
+                        more creators
+                      </span>
+                    )}
                   </motion.button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8}>
-                  <p>{favoriteCreators.length - 5} more</p>
-                </TooltipContent>
+                {!isExpanded && (
+                  <TooltipContent side="right" sideOffset={8}>
+                    <p>{favoriteCreators.length - 5} more</p>
+                  </TooltipContent>
+                )}
               </Tooltip>
             )}
           </div>
@@ -314,24 +409,36 @@ export function ActivityBar({
 
         {/* Spacer */}
         <div className="flex-1" />
+        <div className="my-3 w-full h-px bg-border/60" />
 
         {/* Bottom Section */}
-        <div className="flex flex-col items-center gap-1.5 py-2">
+        <div className={cn(
+          'flex flex-col gap-1.5 py-2',
+          isExpanded ? 'w-full' : 'items-center'
+        )}>
           {/* Feedback */}
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
                 onClick={() => setShowFeedback(true)}
-                className="flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                className={cn(
+                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors',
+                  isExpanded ? 'w-full justify-start' : 'w-10 h-10'
+                )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <MessageCircleHeart size={18} />
+                <MessageCircleHeart size={18} className="shrink-0" />
+                {isExpanded && (
+                  <span className="text-sm font-medium">Quick feedback</span>
+                )}
               </motion.button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              <p>Quick feedback</p>
-            </TooltipContent>
+            {!isExpanded && (
+              <TooltipContent side="right" sideOffset={8}>
+                <p>Quick feedback</p>
+              </TooltipContent>
+            )}
           </Tooltip>
 
           {/* Theme Toggle */}
@@ -339,16 +446,28 @@ export function ActivityBar({
             <TooltipTrigger asChild>
               <motion.button
                 onClick={toggleTheme}
-                className="flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                className={cn(
+                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors',
+                  isExpanded ? 'w-full justify-start' : 'w-10 h-10'
+                )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {!mounted ? <Monitor size={18} /> : theme === 'system' ? <Monitor size={18} /> : theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                <div className="shrink-0">
+                  {!mounted ? <Monitor size={18} /> : theme === 'system' ? <Monitor size={18} /> : theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                </div>
+                {isExpanded && (
+                  <span className="text-sm font-medium">
+                    {!mounted ? 'Theme' : theme === 'system' ? 'System Theme' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                  </span>
+                )}
               </motion.button>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              <p>{!mounted ? 'Theme' : theme === 'system' ? 'System Theme' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
-            </TooltipContent>
+            {!isExpanded && (
+              <TooltipContent side="right" sideOffset={8}>
+                <p>{!mounted ? 'Theme' : theme === 'system' ? 'System Theme' : theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
+              </TooltipContent>
+            )}
           </Tooltip>
 
           {/* Settings */}
@@ -360,12 +479,16 @@ export function ActivityBar({
                   label="Settings"
                   isActive={currentActiveView === 'settings'}
                   href="/settings"
+                  isExpanded={isExpanded}
+                  className={isExpanded ? 'w-full' : ''}
                 />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              <p>Settings</p>
-            </TooltipContent>
+            {!isExpanded && (
+              <TooltipContent side="right" sideOffset={8}>
+                <p>Settings</p>
+              </TooltipContent>
+            )}
           </Tooltip>
 
           {/* Profile */}
@@ -374,24 +497,38 @@ export function ActivityBar({
               <Link href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} prefetch={true}>
                 <motion.div
                   className={cn(
-                    "relative rounded-full p-0.5 mt-1",
-                    currentActiveView === 'profile' && "ring-2 ring-primary ring-offset-2 ring-offset-card"
+                    "relative flex items-center gap-3 p-2 rounded-lg transition-colors",
+                    currentActiveView === 'profile' && "bg-primary/10 text-primary",
+                    isExpanded ? 'w-full' : ''
                   )}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Avatar className="w-9 h-9">
+                  <Avatar className={cn(
+                    "w-9 h-9 shrink-0",
+                    currentActiveView === 'profile' && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                  )}>
                     <AvatarImage src={getValidAvatarUrl(user?.photo_url)} alt={user?.display_name} />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
                       {user?.display_name?.slice(0, 2).toUpperCase() || <User className="w-4 h-4" />}
                     </AvatarFallback>
                   </Avatar>
+                  {isExpanded && (
+                    <span className={cn(
+                      "text-sm font-medium text-muted-foreground truncate",
+                      currentActiveView === 'profile' && "text-primary"
+                    )}>
+                      {user?.display_name || 'Profile'}
+                    </span>
+                  )}
                 </motion.div>
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              <p>Profile</p>
-            </TooltipContent>
+            {!isExpanded && (
+              <TooltipContent side="right" sideOffset={8}>
+                <p>Profile</p>
+              </TooltipContent>
+            )}
           </Tooltip>
         </div>
       </aside>
