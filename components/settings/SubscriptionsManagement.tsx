@@ -9,6 +9,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar, CreditCard, AlertCircle, RefreshCw, ExternalLink, X } from 'lucide-react';
 import Link from 'next/link';
 import { getValidAvatarUrl } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 import { UnsubscribeDialog } from './UnsubscribeDialog';
 
 interface Subscription {
@@ -48,6 +50,7 @@ interface Subscription {
 
 export default function SubscriptionsManagement() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,8 +75,9 @@ export default function SubscriptionsManagement() {
       const data = await response.json();
       setSubscriptions(data.subscriptions || []);
     } catch (err: any) {
-      console.error('Error fetching subscriptions:', err);
+      logger.error('Error fetching subscriptions', 'SUBSCRIPTIONS_MANAGEMENT', { error: err?.message });
       setError(err.message);
+      toast({ title: 'Failed to load subscriptions', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -109,8 +113,8 @@ export default function SubscriptionsManagement() {
       setUnsubscribeDialogOpen(false);
       setSelectedSubscription(null);
     } catch (err: any) {
-      console.error('Error unsubscribing:', err);
-      alert(`Failed to unsubscribe: ${err.message}`);
+      logger.error('Error unsubscribing', 'SUBSCRIPTIONS_MANAGEMENT', { error: err?.message });
+      toast({ title: 'Failed to unsubscribe', description: err?.message, variant: 'destructive' });
     }
   };
 
@@ -135,8 +139,8 @@ export default function SubscriptionsManagement() {
       // Redirect to creator page with renew flag
       window.location.href = `/creator/${subscription.creatorId}?renew=true&tier=${subscription.tier.level}`;
     } catch (err: any) {
-      console.error('Error renewing subscription:', err);
-      alert(`Failed to renew: ${err.message}`);
+      logger.error('Error renewing subscription', 'SUBSCRIPTIONS_MANAGEMENT', { error: err?.message });
+      toast({ title: 'Failed to renew', description: err?.message, variant: 'destructive' });
     } finally {
       setRenewingId(null);
     }

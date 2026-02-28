@@ -1,18 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { sendWelcomeEmail, sendSubscriptionExpiringEmail, sendSubscriptionExpiredEmail } from '@/lib/email';
+import {
+  sendWelcomeEmail,
+  sendSubscriptionExpiringEmail,
+  sendSubscriptionExpiredEmail,
+  sendPostNotificationEmail,
+  sendSubscriptionConfirmationEmail,
+  sendNewSupporterNotificationEmail,
+  sendChannelMentionEmail,
+} from '@/lib/email';
 import { logger } from '@/lib/logger';
+
+/** Shape of a row from email_queue for processing */
+interface EmailQueueRow {
+  id: string;
+  email_type: string;
+  recipient_email: string;
+  payload: Record<string, unknown>;
+  status: string;
+  attempts: number;
+  max_attempts: number;
+}
 
 /**
  * Email Queue Processor
- * Processes pending emails from the email_queue table
- * 
+ * Processes pending emails from the email_queue table.
+ * All sending is done via Hostinger SMTP (lib/email.ts); Supabase is only used for queue storage.
+ *
  * Can be called:
  * 1. Via cron job (recommended): Vercel Cron or similar
  * 2. Manually: POST /api/email/process-queue
- * 3. After specific actions (like user signup)
- * 
- * Senior dev approach: Queue-based with retry logic
+ * 3. After specific actions (e.g. send-welcome API triggers this)
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -47,7 +65,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    if (!pendingEmails || pendingEmails.length === 0) {
+    const pendingEmails = (rawPending ?? []) as EmailQueueRow[];
+    if (pendingEmails.length === 0) {
       logger.info('No pending emails to process', 'EMAIL_QUEUE');
       return NextResponse.json({ 
         message: 'No pending emails',
@@ -64,7 +83,7 @@ export async function POST(request: NextRequest) {
     // Process each email
     for (const emailJob of pendingEmails) {
       // Mark as processing
-      await supabase
+      await (supabase as any)
         .from('email_queue')
         .update({ 
           status: 'processing',
@@ -79,40 +98,98 @@ export async function POST(request: NextRequest) {
         switch (emailJob.email_type) {
           case 'welcome':
             success = await sendWelcomeEmail({
-              userEmail: emailJob.payload.userEmail,
-              userName: emailJob.payload.userName,
-              userRole: emailJob.payload.userRole,
+              userEmail: emailJob.payload.userEmail as string,
+              userName: emailJob.payload.userName as string,
+              userRole: emailJob.payload.userRole as 'creator' | 'supporter',
             });
             break;
 
           case 'subscription_expiring_reminder':
             success = await sendSubscriptionExpiringEmail({
               supporterEmail: emailJob.recipient_email,
-              supporterName: emailJob.payload.supporterName,
-              creatorName: emailJob.payload.creatorName,
-              creatorUsername: emailJob.payload.creatorUsername,
-              creatorId: emailJob.payload.creatorId,
-              tierLevel: emailJob.payload.tierLevel,
-              expiryDate: emailJob.payload.expiryDate,
-              daysUntilExpiry: emailJob.payload.daysUntilExpiry,
-              renewUrl: emailJob.payload.renewUrl,
+              supporterName: emailJob.payload.supporterName as string,
+              creatorName: emailJob.payload.creatorName as string,
+              creatorUsername: emailJob.payload.creatorUsername as string | undefined,
+              creatorId: emailJob.payload.creatorId as string,
+              tierLevel: emailJob.payload.tierLevel as number,
+              expiryDate: emailJob.payload.expiryDate as string,
+              daysUntilExpiry: emailJob.payload.daysUntilExpiry as number,
+              renewUrl: emailJob.payload.renewUrl as string,
             });
             break;
 
           case 'subscription_expired':
             success = await sendSubscriptionExpiredEmail({
               supporterEmail: emailJob.recipient_email,
-              supporterName: emailJob.payload.supporterName,
-              creatorName: emailJob.payload.creatorName,
-              creatorUsername: emailJob.payload.creatorUsername,
-              creatorId: emailJob.payload.creatorId,
-              renewUrl: emailJob.payload.renewUrl,
+              supporterName: emailJob.payload.supporterName as string,
+              creatorName: emailJob.payload.creatorName as string,
+              creatorUsername: emailJob.payload.creatorUsername as string | undefined,
+              creatorId: emailJob.payload.creatorId as string,
+              renewUrl: emailJob.payload.renewUrl as string,
             });
             break;
 
-          // Add other email types here
           case 'post_notification':
           case 'poll_notification':
+            success = await sendPostNotificationEmail({
+              supporterEmail: emailJob.recipient_email,
+              supporterName: emailJob.payload.supporterName as string,
+              supporterId: emailJob.payload.supporterId as string,
+              creatorId: emailJob.payload.creatorId as string,
+              creatorName: emailJob.payload.creatorName as string,
+              creatorUsername: emailJob.payload.creatorUsername as string | undefined,
+              postTitle: emailJob.payload.postTitle as string,
+              postContent: emailJob.payload.postContent as string,
+              postImageUrl: emailJob.payload.postImageUrl as string | null | undefined,
+              postUrl: emailJob.payload.postUrl as string,
+              isPoll: emailJob.email_type === 'poll_notification' || (emailJob.payload.isPoll as boolean | undefined),
+            });
+            break;
+
+          case 'subscription_confirmation':
+            success = await sendSubscriptionConfirmationEmail({
+              supporterEmail: emailJob.recipient_email,
+              supporterName: emailJob.payload.supporterName as string,
+              creatorName: emailJob.payload.creatorName as string,
+              tierLevel: emailJob.payload.tierLevel as number,
+              tierName: emailJob.payload.tierName as string,
+              amount: emailJob.payload.amount as number,
+              currency: emailJob.payload.currency as string,
+              creatorProfileUrl: emailJob.payload.creatorProfileUrl as string,
+              chatUrl: emailJob.payload.chatUrl as string,
+            });
+            break;
+
+          case 'new_supporter_notification':
+            success = await sendNewSupporterNotificationEmail({
+              creatorEmail: emailJob.recipient_email,
+              creatorName: emailJob.payload.creatorName as string,
+              supporterName: emailJob.payload.supporterName as string,
+              tierLevel: emailJob.payload.tierLevel as number,
+              tierName: emailJob.payload.tierName as string,
+              amount: emailJob.payload.amount as number,
+              currency: emailJob.payload.currency as string,
+              supporterMessage: emailJob.payload.supporterMessage as string | null | undefined,
+            });
+            break;
+
+          case 'channel_mention':
+            success = await sendChannelMentionEmail({
+              memberEmail: emailJob.recipient_email,
+              memberName: emailJob.payload.memberName as string,
+              memberId: emailJob.payload.memberId as string,
+              creatorId: emailJob.payload.creatorId as string,
+              creatorName: emailJob.payload.creatorName as string,
+              creatorUsername: emailJob.payload.creatorUsername as string | undefined,
+              channelName: emailJob.payload.channelName as string,
+              channelId: emailJob.payload.channelId as string,
+              messageText: emailJob.payload.messageText as string,
+              senderName: emailJob.payload.senderName as string,
+              senderId: emailJob.payload.senderId as string,
+              mentionType: emailJob.payload.mentionType as 'you' | 'everyone' | undefined,
+            });
+            break;
+
           case 'payment_success':
           case 'payment_failed':
             logger.warn(`Email type ${emailJob.email_type} not implemented yet`, 'EMAIL_QUEUE');
@@ -126,7 +203,7 @@ export async function POST(request: NextRequest) {
 
         if (success) {
           // Mark as sent
-          await supabase
+          await (supabase as any)
             .from('email_queue')
             .update({ 
               status: 'sent',
@@ -150,7 +227,7 @@ export async function POST(request: NextRequest) {
         const maxedOut = newAttempts >= emailJob.max_attempts;
 
         // Update with error
-        await supabase
+        await (supabase as any)
           .from('email_queue')
           .update({ 
             status: maxedOut ? 'failed' : 'pending',
@@ -199,19 +276,16 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   // Get queue stats
-  const { data: stats } = await supabase
-    .from('email_queue')
-    .select('status')
-    .then(res => {
-      if (!res.data) return { data: null };
-      
-      const counts = res.data.reduce((acc, email) => {
-        acc[email.status] = (acc[email.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      return { data: counts };
-    });
+  const { data: rows } = await supabase.from('email_queue' as any).select('status');
+  const stats = Array.isArray(rows)
+    ? (rows as Array<{ status: string }>).reduce(
+        (acc, email) => {
+          acc[email.status] = (acc[email.status] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      )
+    : null;
 
   return NextResponse.json({
     message: 'Email queue processor',

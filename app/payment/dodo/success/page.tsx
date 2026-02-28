@@ -8,12 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import { BalloonBurst } from '@/components/animations/BalloonBurst';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 export const dynamic = 'force-dynamic';
 
 function DodoSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
@@ -40,34 +43,31 @@ function DodoSuccessContent() {
       const subscription_id = searchParams.get('subscription_id');
       const transaction_id = searchParams.get('transaction_id');
 
-      console.log('[DODO SUCCESS] Verifying subscription:', {
-        subscription_id,
-        transaction_id,
-      });
+      logger.info('Verifying Dodo subscription', 'DODO_SUCCESS', { subscription_id, transaction_id });
 
       if (!subscription_id || !transaction_id) {
-        console.error('[DODO SUCCESS] Missing parameters');
+        logger.error('Missing Dodo parameters', 'DODO_SUCCESS');
+        toast({ title: 'Verification failed', description: 'Missing parameters.', variant: 'destructive' });
         setIsVerifying(false);
         return;
       }
 
-      // Verify subscription with backend
       const response = await fetch(
         `/api/payment/dodo/subscription/verify?subscription_id=${subscription_id}&transaction_id=${transaction_id}`
       );
 
       const result = await response.json();
-      
-      console.log('[DODO SUCCESS] Verification result:', result);
 
       if (result.success && result.status === 'active') {
         setVerified(true);
         setSubscription(result.subscription);
       } else {
-        console.error('[DODO SUCCESS] Subscription verification failed:', result.error);
+        logger.error('Subscription verification failed', 'DODO_SUCCESS', { error: result.error });
+        toast({ title: 'Verification failed', description: result.error || 'Subscription could not be verified.', variant: 'destructive' });
       }
     } catch (error) {
-      console.error('[DODO SUCCESS] Verification error:', error);
+      logger.error('Dodo verification error', 'DODO_SUCCESS', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Verification failed', variant: 'destructive' });
     } finally {
       setIsVerifying(false);
     }

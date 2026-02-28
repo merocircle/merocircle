@@ -28,6 +28,8 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { useSession, signIn } from 'next-auth/react';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 import { Logo } from '@/components/ui/logo';
 import { CREATOR_CATEGORIES } from '@/lib/constants';
@@ -408,7 +410,7 @@ export default function CreatorSignupPage() {
         body: JSON.stringify({ photo_url: data.url }),
       });
     } catch (err) {
-      console.error('Photo upload error:', err);
+      logger.error('Photo upload error', 'CREATOR_SIGNUP', { error: err instanceof Error ? err.message : String(err) });
       setError(err instanceof Error ? err.message : 'Failed to upload photo');
     } finally {
       setUploadingPhoto(false);
@@ -427,7 +429,7 @@ export default function CreatorSignupPage() {
       
       // After OAuth redirect, the useEffect will handle the rest
     } catch (error: unknown) {
-      console.error('Creator signup error:', error);
+      logger.error('Creator signup error', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
       setError(error instanceof Error ? error.message : 'Failed to create account. Please try again.');
       localStorage.removeItem('isCreatorSignupFlow');
       setLoading(false);
@@ -475,7 +477,7 @@ export default function CreatorSignupPage() {
       setLoading(true);
       setError(null);
 
-      console.log('Creating creator profile for user:', user.id);
+      logger.info('Creating creator profile', 'CREATOR_SIGNUP', { userId: user.id });
 
       // Filter out empty social links
       const filteredSocialLinks = Object.fromEntries(
@@ -487,12 +489,12 @@ export default function CreatorSignupPage() {
       const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks, vanityUsername);
 
       if (error) {
-        console.error('Creator profile creation failed:', error);
+        logger.error('Creator profile creation failed', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
         setError(error.message || 'Failed to set up creator profile');
         return;
       }
 
-      console.log('Creator profile created successfully');
+      logger.info('Creator profile created successfully', 'CREATOR_SIGNUP', { userId: user.id });
 
       // Wait a moment for the database trigger to create default tiers
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -544,7 +546,7 @@ export default function CreatorSignupPage() {
       const errors = results.filter(r => r.error);
       
       if (errors.length > 0) {
-        console.error('Failed to update tier prices:', errors);
+        logger.error('Failed to update tier prices', 'CREATOR_SIGNUP', { errors });
         // Try upsert as fallback
         const { error: tierError } = await supabase
           .from('subscription_tiers')
@@ -562,11 +564,11 @@ export default function CreatorSignupPage() {
           );
         
         if (tierError) {
-          console.error('Upsert also failed:', tierError);
+          logger.error('Upsert tier failed', 'CREATOR_SIGNUP', { error: tierError instanceof Error ? tierError.message : String(tierError) });
           setError('Profile created but tier prices could not be updated. Please update them in your dashboard.');
         }
       } else {
-        console.log('Tier prices updated successfully');
+        logger.info('Tier prices updated successfully', 'CREATOR_SIGNUP');
       }
 
       setStep('complete');
@@ -577,7 +579,7 @@ export default function CreatorSignupPage() {
         router.push('/creator-studio');
       }, 2000);
     } catch (error: unknown) {
-      console.error('Creator setup error:', error);
+      logger.error('Creator setup error', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
       setError(error instanceof Error ? error.message : 'Failed to set up creator profile. Please try again.');
     } finally {
       setLoading(false);

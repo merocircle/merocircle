@@ -10,6 +10,8 @@ import { StreamChatProvider } from "@/contexts/stream-chat-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppBackground } from "@/components/ui/app-background";
 import { PageLoadingBar } from "@/components/common/PageLoadingBar";
+import { ToastProvider } from "@/contexts/toast-context";
+import { Toaster } from "@/components/ui/toaster";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -70,10 +72,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/logo/logo-favicon.svg", type: "image/svg+xml" },
-      { url: "/logo/logo-favicon.svg", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: { url: "/logo/logo-favicon.svg", sizes: "180x180" },
-    shortcut: "/logo/logo-favicon.svg",
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    shortcut: "/favicon.ico",
   },
   openGraph: {
     type: "website",
@@ -228,6 +232,7 @@ export default function RootLayout({
           strategy="lazyOnload"
         />
         <ErrorBoundary>
+        <ToastProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -240,6 +245,7 @@ export default function RootLayout({
             <AuthContextProvider>
               <StreamChatProvider>
                 <PageLoadingBar />
+                <Toaster />
                 <AppBackground>
                   {children}
                 </AppBackground>
@@ -248,6 +254,7 @@ export default function RootLayout({
           </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
+        </ToastProvider>
         </ErrorBoundary>
       </body>
     </html>

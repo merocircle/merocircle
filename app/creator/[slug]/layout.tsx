@@ -155,7 +155,8 @@ export async function generateMetadata({
       },
     };
   } catch (error) {
-    console.error('Error generating metadata:', error);
+    const { logger } = await import('@/lib/logger');
+    logger.error('Error generating metadata', 'CREATOR_LAYOUT', { error: error instanceof Error ? error.message : String(error) });
     return {
       title: 'Creator | MeroCircle',
       description: 'Discover and support amazing creators from Nepal',

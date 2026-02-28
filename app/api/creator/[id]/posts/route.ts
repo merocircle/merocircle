@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getOptionalUser, handleApiError } from '@/lib/api-utils'
+import { logger } from '@/lib/logger'
 
 const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 50
@@ -14,6 +15,7 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const limit = Math.min(MAX_LIMIT, parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10))
+    logger.info('Creator posts request', 'CREATOR_POSTS_API', { creatorId, limit, offset })
     const user = await getOptionalUser()
     const supabase = await createClient()
 

@@ -448,7 +448,8 @@
 
   .orbit-card-label { font-size: 0.5625rem; }
   .orbit-card-value { font-size: 0.8125rem; }
-  .orbit-card-value-sm { font-size: 0.6875rem; }
+  .orbit-card-value-sm { font-size: 0.6875rem; display: none; }
+  .orbit-card-revenue {gap: 0;}
 
   .orbit-stack-img {
     width: 24px;
@@ -472,7 +473,7 @@
   .orbit-pill-heart { top: 30%; left: 4%; }
   .orbit-pill-lock { top: 8%; left: 20%; }
 
-  .orbit-mini-1 { width: 40px; height: 40px; }
+  .orbit-mini-1 { right: -15%; }
   .orbit-mini-2 { width: 36px; height: 36px; }
 
   .showcase-benefits {
@@ -501,5 +502,26 @@
 @media (max-width: 380px) {
   .orbit-wrap {
     max-width: 290px;
+  }
+
+  .orbit-mini-1 {
+    right: -5%;
+    padding: .5rem;
+    height: auto;
+    span {
+      font-size: 12px;
+    }
+  }
+
+  .orbit-card-chat {
+    padding: .5rem;
+    gap: .25rem;
+    .orbit-card-icon {
+      width: 28px;
+      height: 28px;
+    }
+    div p {
+      font-size: 8px;
+    }
   }
 }

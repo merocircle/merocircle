@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { sendSubscriptionConfirmationEmail, sendNewSupporterNotificationEmail } from '@/lib/email';
+import { queueOrSend, triggerProcessQueue } from '@/lib/email-queue';
 import { getCreatorProfileUrl } from '@/emails/config';
 import { createSupportNotification } from '@/lib/notification-engine';
 import { logSupportGiven } from '@/lib/activity-logging-engine';
@@ -654,8 +655,9 @@ export async function manageSubscription(
       }
     }
 
-    // Step 8: Send confirmation emails (only for new subscriptions or upgrades)
-    const isNewSubscription = !existingSupporter || isUpgrade;
+    // Step 8: Send confirmation emails (new subscription, upgrade, or reactivation after unsubscribe)
+    const isReactivation = existingSupporter?.is_active === false;
+    const isNewSubscription = !existingSupporter || isUpgrade || isReactivation;
     if (isNewSubscription && supporterRecord && tierInfo) {
       try {
         // Get supporter and creator email addresses
@@ -675,10 +677,14 @@ export async function manageSubscription(
         const supporterUser = supporterResult.data;
         const creatorUser = creatorResult.data;
 
-        // Send email to supporter
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
+        const creatorProfileUrl = getCreatorProfileUrl(creatorUser?.username || creatorUser?.display_name || '');
+        const chatUrl = `${appUrl}/chat`;
+
+        // Queue or send emails (trigger process-queue once after both to avoid duplicate sends)
+        let anyQueued = false;
         if (supporterUser?.email) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://merocircle.app';
-          await sendSubscriptionConfirmationEmail({
+          const subConfPayload = {
             supporterEmail: supporterUser.email,
             supporterName: supporterUser.display_name || 'Supporter',
             creatorName: creatorUser?.display_name || 'Creator',
@@ -686,19 +692,28 @@ export async function manageSubscription(
             tierName: tierInfo.tierName,
             amount: newAmount,
             currency: 'NPR',
-            creatorProfileUrl: getCreatorProfileUrl(creatorUser?.username || creatorUser?.display_name || ''),
-            chatUrl: `${appUrl}/chat`,
-          }).catch((emailError: unknown) => {
-            logger.warn('Failed to send subscription confirmation email', 'SUBSCRIPTION_ENGINE', {
-              error: emailError instanceof Error ? emailError.message : 'Unknown',
+            creatorProfileUrl,
+            chatUrl,
+          };
+          const result = await queueOrSend(
+            supabase,
+            {
+              email_type: 'subscription_confirmation',
+              recipient_email: supporterUser.email,
+              payload: subConfPayload,
+            },
+            () => sendSubscriptionConfirmationEmail(subConfPayload),
+            { trigger: false }
+          );
+          if (result === 'queued') anyQueued = true;
+          if (result === 'failed') {
+            logger.warn('Subscription confirmation email queue and direct send failed', 'SUBSCRIPTION_ENGINE', {
               supporterEmail: supporterUser.email,
             });
-          });
+          }
         }
 
-        // Send email to creator
         if (creatorUser?.email) {
-          // Get supporter message from transaction if available
           let supporterMessage: string | null = null;
           if (transactionId) {
             const { data: transaction } = await supabase
@@ -708,8 +723,7 @@ export async function manageSubscription(
               .single();
             supporterMessage = transaction?.supporter_message || null;
           }
-
-          await sendNewSupporterNotificationEmail({
+          const newSupPayload = {
             creatorEmail: creatorUser.email,
             creatorName: creatorUser.display_name || 'Creator',
             supporterName: supporterUser?.display_name || 'Supporter',
@@ -718,12 +732,27 @@ export async function manageSubscription(
             amount: newAmount,
             currency: 'NPR',
             supporterMessage,
-          }).catch((emailError: unknown) => {
-            logger.warn('Failed to send new supporter notification email', 'SUBSCRIPTION_ENGINE', {
-              error: emailError instanceof Error ? emailError.message : 'Unknown',
+          };
+          const result = await queueOrSend(
+            supabase,
+            {
+              email_type: 'new_supporter_notification',
+              recipient_email: creatorUser.email,
+              payload: newSupPayload,
+            },
+            () => sendNewSupporterNotificationEmail(newSupPayload),
+            { trigger: false }
+          );
+          if (result === 'queued') anyQueued = true;
+          if (result === 'failed') {
+            logger.warn('New supporter notification email queue and direct send failed', 'SUBSCRIPTION_ENGINE', {
               creatorEmail: creatorUser.email,
             });
-          });
+          }
+        }
+
+        if (anyQueued) {
+          triggerProcessQueue();
         }
       } catch (emailError) {
         logger.warn('Error sending subscription emails', 'SUBSCRIPTION_ENGINE', {

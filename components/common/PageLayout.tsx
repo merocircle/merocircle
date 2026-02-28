@@ -9,6 +9,7 @@ import { DashboardProvider, type DashboardView } from '@/contexts/dashboard-cont
 import { useNotificationsData } from '@/hooks/useQueries';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 interface PageLayoutProps {
   children?: ReactNode;
@@ -104,8 +105,8 @@ function PageLayoutInner({
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const handleCreateClick = useCallback(() => {
+    logger.debug('Create post clicked', 'PAGE_LAYOUT');
     // TODO: Open create post modal
-    console.log('Create post clicked');
   }, []);
 
   // Settings navigation handled by Link components

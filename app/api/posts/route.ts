@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUser, requireCreatorRole, parsePaginationParams, handleApiError } from '@/lib/api-utils';
+import { sendPostNotificationEmail } from '@/lib/email';
+import { queueOrSend, triggerProcessQueue } from '@/lib/email-queue';
 
 export async function GET(request: NextRequest) {
   try {
@@ -138,8 +140,10 @@ export async function POST(request: NextRequest) {
       tier_required = 'free',
       post_type = 'post',
       poll_data,
-      sendNotifications: shouldNotify = true,
+      sendNotifications,
     } = body;
+
+    const shouldNotify = sendNotifications !== false; // Only false if explicitly set to false
 
     // Use unified post publishing engine
     const { publishPost } = await import('@/lib/post-publishing-engine');
@@ -219,7 +223,8 @@ async function sendPostNotificationsToSupporters(
       .filter((s: any) => s.user && s.user.email)
       .map((s: any) => ({
         email: s.user.email,
-        name: s.user.display_name || 'Supporter'
+        name: s.user.display_name || 'Supporter',
+        id: s.user.id,
       }));
 
     if (supportersWithEmails.length === 0) {
@@ -227,23 +232,61 @@ async function sendPostNotificationsToSupporters(
       return;
     }
 
-    // Send bulk email notifications
-    const { sent, failed } = await sendBulkPostNotifications(supportersWithEmails, {
+    const isPoll = post.post_type === 'poll';
+    const emailType = isPoll ? ('poll_notification' as const) : ('post_notification' as const);
+    const basePayload = {
       creatorName,
       creatorUsername,
+      creatorId,
       postTitle: post.title || 'New Post',
       postContent: post.content || '',
       postImageUrl: post.image_url || (post.image_urls && post.image_urls[0]) || null,
       postUrl,
-      isPoll: post.post_type === 'poll'
-    });
+      isPoll,
+    };
 
-    logger.info('Post notification emails sent', 'POSTS_API', {
+    let queued = 0;
+    let sentDirect = 0;
+    let failed = 0;
+
+    for (const supporter of supportersWithEmails) {
+      const result = await queueOrSend(
+        supabase,
+        {
+          email_type: emailType,
+          recipient_email: supporter.email,
+          payload: {
+            ...basePayload,
+            supporterEmail: supporter.email,
+            supporterName: supporter.name,
+            supporterId: supporter.id,
+          },
+        },
+        () =>
+          sendPostNotificationEmail({
+            ...basePayload,
+            supporterEmail: supporter.email,
+            supporterName: supporter.name,
+            supporterId: supporter.id,
+          }),
+        { trigger: false }
+      );
+      if (result === 'queued') queued++;
+      else if (result === 'sent_direct') sentDirect++;
+      else failed++;
+    }
+
+    if (queued > 0) {
+      triggerProcessQueue();
+    }
+
+    logger.info('Post notification emails queued/sent', 'POSTS_API', {
       creatorId,
       postId: post.id,
       totalSupporters: supportersWithEmails.length,
-      sent,
-      failed
+      queued,
+      sentDirect,
+      failed,
     });
   } catch (error: any) {
     // Don't throw - this is a background operation

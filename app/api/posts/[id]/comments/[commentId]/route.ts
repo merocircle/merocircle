@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   id: string;
@@ -20,6 +21,7 @@ export async function DELETE(
 ) {
   try {
     const { id: postId, commentId } = await params;
+    logger.info('Delete comment', 'POST_COMMENT_DELETE_API', { postId, commentId });
 
     const { user, errorResponse } = await getAuthenticatedUser();
     if (errorResponse || !user) {

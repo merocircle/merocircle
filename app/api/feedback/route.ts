@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { question, answer, user_id, display_name, is_creator, feedback_type = 'periodic' } = body;
 
-    console.log('[FEEDBACK_API] Received feedback submission:', {
+    logger.info('Received feedback submission', 'FEEDBACK_API', {
       question,
       answerLength: answer?.length,
       user_id,
@@ -15,14 +16,13 @@ export async function POST(request: Request) {
     });
 
     if (!answer || !answer.trim()) {
-      console.log('[FEEDBACK_API] Validation failed: answer is empty');
+      logger.warn('Validation failed: answer is empty', 'FEEDBACK_API');
       return NextResponse.json({ error: 'Answer is required' }, { status: 400 });
     }
 
-    // Store feedback in database (use admin client to bypass RLS)
     const supabase = createAdminClient();
     const feedbackData = {
-      question: question || null, // Can be null for user_initiated feedback
+      question: question || null,
       answer: answer.trim(),
       user_id: user_id || null,
       display_name: display_name || 'Anonymous',
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       feedback_type: feedback_type || 'periodic',
     };
 
-    console.log('[FEEDBACK_API] Inserting feedback:', feedbackData);
+    logger.debug('Inserting feedback', 'FEEDBACK_API', feedbackData);
 
     const { data, error: dbError } = await supabase
       .from('feedback')
@@ -39,15 +39,17 @@ export async function POST(request: Request) {
       .single();
 
     if (dbError) {
-      console.error('[FEEDBACK_API] Failed to store feedback:', dbError);
+      logger.error('Failed to store feedback', 'FEEDBACK_API', { error: dbError.message });
       return NextResponse.json({ error: 'Failed to store feedback' }, { status: 500 });
     }
 
-    console.log('[FEEDBACK_API] Feedback stored successfully:', { id: data?.id });
+    logger.info('Feedback stored successfully', 'FEEDBACK_API', { id: data?.id });
 
     return NextResponse.json({ success: true, id: data?.id });
   } catch (error) {
-    console.error('[FEEDBACK_API] Error:', error);
+    logger.error('Feedback submission error', 'FEEDBACK_API', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Failed to submit feedback' }, { status: 500 });
   }
 }

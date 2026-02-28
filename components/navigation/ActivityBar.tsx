@@ -142,14 +142,11 @@ export function ActivityBar({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <motion.aside
+      <aside
         className={cn(
           'fixed left-0 top-0 z-50 flex h-screen w-[68px] flex-col items-center py-4 border-r border-border/40 bg-card/80 backdrop-blur-xl',
           className
         )}
-        initial={{ x: -68, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       >
         {/* Logo */}
         <Tooltip>
@@ -397,7 +394,7 @@ export function ActivityBar({
             </TooltipContent>
           </Tooltip>
         </div>
-      </motion.aside>
+      </aside>
 
       <FeedbackSheet
         open={showFeedback}
