@@ -32,6 +32,8 @@ interface EmailQueueRow {
  * 2. Manually: POST /api/email/process-queue
  * 3. After specific actions (e.g. send-welcome API triggers this)
  */
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
