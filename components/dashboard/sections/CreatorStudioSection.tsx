@@ -18,12 +18,10 @@ import {
   MessageCircle,
   ExternalLink,
   Pencil,
-  Inbox,
   TrendingUp,
   Eye,
   Heart,
   MessageSquare,
-  Bell,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -31,7 +29,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { OnboardingBanner } from '@/components/dashboard/OnboardingBanner';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost, useNotificationsData } from '@/hooks/useQueries';
+import { useCreatorAnalytics, useCreatorDashboardData, usePublishPost } from '@/hooks/useQueries';
 import {
   StatsCards,
   AnalyticsCharts,
@@ -42,14 +40,12 @@ import {
   SupportersList,
 } from './creator-studio';
 import { EditProfilePricingModal } from './EditProfilePricingModal';
-import { formatDistanceToNow } from 'date-fns';
 
 // Tab configuration
 const tabs = [
   { id: "posts", label: "Posts", icon: FileText },
   { id: "analytics", label: "Analytics", icon: TrendingUp },
   { id: "supporters", label: "Supporters", icon: Users },
-  { id: "inbox", label: "Inbox", icon: Inbox },
 ];
 
 const CreatorStudioSection = memo(function CreatorStudioSection() {
@@ -81,7 +77,6 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
   const { data: analyticsData, isLoading: analyticsLoading } = useCreatorAnalytics();
   const { data: dashboardData, isLoading: dashboardLoading } = useCreatorDashboardData();
-  const { data: notificationsData } = useNotificationsData();
   const queryClient = useQueryClient();
   const { mutate: publishPost, isPending: isPublishing } = usePublishPost();
 
@@ -544,7 +539,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             >
               <a href={`/creator/${creatorSlug}`}>
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">View</span>
+                <span className="hidden sm:inline">View Profile</span>
               </a>
             </Button>
             <Button
@@ -554,18 +549,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               onClick={() => setShowEditProfilePricingModal(true)}
             >
               <Pencil className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Edit</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0" 
-              asChild
-            >
-              <Link href="/chat">
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Chat</span>
-              </Link>
+              <span className="hidden sm:inline">Edit Profile</span>
             </Button>
           </div>
         </div>
@@ -624,11 +608,6 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               >
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}
-                {tab.id === 'inbox' && notificationsData?.unreadCount > 0 && (
-                  <span className="ml-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1">
-                    {notificationsData.unreadCount}
-                  </span>
-                )}
               </button>
             );
           })}
@@ -766,81 +745,6 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               supporters={dashboardData?.supporters || []}
               totalCount={stats.supporters}
             />
-          </motion.div>
-        )}
-
-        {/* Inbox Tab */}
-        {activeTab === 'inbox' && (
-          <motion.div
-            key="inbox"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-5"
-          >
-            {/* Recent Notifications */}
-            <div className="rounded-xl border border-border/40 bg-card">
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border/30">
-                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-primary" />
-                  Recent Activity
-                </h3>
-                <Link href="/notifications" className="text-xs text-primary hover:underline">
-                  View all
-                </Link>
-              </div>
-              <div className="divide-y divide-border/30">
-                {notificationsData?.notifications?.length > 0 ? (
-                  notificationsData.notifications.slice(0, 8).map((notif: any) => (
-                    <div key={notif.id} className={cn(
-                      "px-5 py-3 flex items-start gap-3 text-sm",
-                      !notif.read && "bg-primary/5"
-                    )}>
-                      <div className={cn(
-                        "w-2 h-2 rounded-full mt-1.5 shrink-0",
-                        !notif.read ? "bg-primary" : "bg-transparent"
-                      )} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-foreground line-clamp-2">
-                          <span className="font-medium">{notif.actor?.display_name || 'Someone'}</span>{' '}
-                          {notif.type === 'like' && 'liked your post'}
-                          {notif.type === 'comment' && 'commented on your post'}
-                          {notif.type === 'follow' && 'started following you'}
-                          {notif.type === 'payment' && 'joined your circle'}
-                          {notif.type === 'mention' && 'mentioned you'}
-                          {!['like', 'comment', 'follow', 'payment', 'mention'].includes(notif.type) && notif.type}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-                    No recent activity
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Chat Access */}
-            <div className="rounded-xl border border-border/40 bg-card p-5">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
-                <MessageCircle className="w-4 h-4 text-primary" />
-                Messages
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Chat with your supporters and manage community conversations.
-              </p>
-              <Button variant="outline" size="sm" className="gap-1.5 rounded-lg" asChild>
-                <Link href="/chat">
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  Open Chat
-                </Link>
-              </Button>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
