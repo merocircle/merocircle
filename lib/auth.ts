@@ -68,16 +68,32 @@ export const authOptions: NextAuthOptions = {
           }
 
           logger.info('New user created', 'NEXTAUTH', { userId: newUser?.id, email: user.email });
-          
-          // Queue welcome email (sent asynchronously via Hostinger SMTP by process-queue).
-          // Do not send inline here to avoid auth callback timeout; all sending is via lib/email (Hostinger).
+
+          // Send welcome email in same flow so it's reliable (no dependency on process-queue or cron).
           const baseUrl = process.env.NEXTAUTH_URL?.trim() || '';
           if (baseUrl && newUser?.id) {
-            fetch(`${baseUrl}/api/email/send-welcome`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: newUser.id }),
-            }).catch(() => {});
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25_000);
+            try {
+              await Promise.race([
+                fetch(`${baseUrl}/api/email/send-welcome`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: newUser.id }),
+                  signal: controller.signal,
+                }),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error('timeout')), 25_000)
+                ),
+              ]);
+            } catch (err: any) {
+              logger.warn('Welcome email request failed', 'NEXTAUTH', {
+                error: err?.message ?? 'Unknown',
+                userId: newUser.id,
+              });
+            } finally {
+              clearTimeout(timeoutId);
+            }
           }
           
           if (newUser) {
