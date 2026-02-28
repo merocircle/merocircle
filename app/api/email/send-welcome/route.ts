@@ -9,6 +9,8 @@ import { sendWelcomeEmail } from '@/lib/email';
  *
  * Body: { userId: string } or { email: string }
  */
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
