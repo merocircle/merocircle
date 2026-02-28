@@ -32,6 +32,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-email/components": "^1.0.6",
     "@react-email/render": "^2.0.4",
+    "@sentry/nextjs": "^10.40.0",
     "@stream-io/node-sdk": "^0.7.36",
     "@stream-io/video-react-sdk": "^1.31.5",
     "@supabase/ssr": "^0.6.1",
