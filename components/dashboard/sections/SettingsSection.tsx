@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Card } from '@/components/ui/card';
@@ -43,9 +43,11 @@ interface NavigationProps {
   setShowFeedback: (show: boolean) => void;
   signOut: () => void;
   userProfile: any;
+  setMobileMenuOpen?: (open: boolean) => void;
+  onFeedbackOpen?: () => void;
 }
 
-const MobileNavigation = ({ activeTab, setActiveTab, showFeedback, setShowFeedback, signOut, userProfile }: NavigationProps) => (
+const MobileNavigation = ({ activeTab, setActiveTab, showFeedback, setShowFeedback, signOut, userProfile, setMobileMenuOpen, onFeedbackOpen }: NavigationProps) => (
   <nav className="p-4 space-y-1">
     {tabs.map((tab) => {
       const Icon = tab.icon;
@@ -74,6 +76,11 @@ const MobileNavigation = ({ activeTab, setActiveTab, showFeedback, setShowFeedba
     <button
       onClick={() => {
         setShowFeedback(true);
+        setMobileMenuOpen?.(false);
+        // Call onFeedbackOpen after a short delay to ensure sidebar starts closing
+        setTimeout(() => {
+          onFeedbackOpen?.();
+        }, 50);
       }}
       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground"
     >
@@ -170,9 +177,17 @@ const SettingsSection = memo(function SettingsSection() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const feedbackInputRef = useRef<{ focus: () => void }>(null);
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleFeedbackOpen = () => {
+    // Focus the feedback input after the sidebar has closed
+    setTimeout(() => {
+      feedbackInputRef.current?.focus();
+    }, 200);
   };
 
   return (
@@ -235,6 +250,8 @@ const SettingsSection = memo(function SettingsSection() {
                     setShowFeedback={setShowFeedback}
                     signOut={signOut}
                     userProfile={userProfile}
+                    setMobileMenuOpen={setMobileMenuOpen}
+                    onFeedbackOpen={handleFeedbackOpen}
                   />
                 </div>
               </SheetContent>
@@ -377,6 +394,9 @@ const SettingsSection = memo(function SettingsSection() {
         userId={user?.id}
         displayName={userProfile?.display_name}
         isCreator={isCreator}
+        onMount={(ref) => {
+          feedbackInputRef.current = ref;
+        }}
       />
     </div>
   );
