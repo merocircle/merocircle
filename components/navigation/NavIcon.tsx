@@ -15,6 +15,7 @@ interface NavIconProps {
   href?: string;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
+  isExpanded?: boolean;
   className?: string;
   disabled?: boolean; // For disabled items like "Coming Soon"
 }
@@ -29,6 +30,7 @@ export function NavIcon({
   href,
   size = 'md',
   showLabel = false,
+  isExpanded = false,
   className,
   disabled = false
 }: NavIconProps) {
@@ -101,7 +103,7 @@ export function NavIcon({
       {/* Custom Badge Text (e.g., "Coming Soon") - Positioned relative to container */}
       {badgeText && (
         <motion.span
-          className="absolute top-0 right-0 px-1 py-0.5 flex items-center justify-center text-[6px] font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-sm leading-none whitespace-nowrap min-w-[18px] h-[12px]"
+          className="absolute top-0 right-0 px-1 py-0.5 flex items-center justify-center text-[6px] font-semibold text-white bg-linear-to-r from-purple-500 to-pink-500 rounded-full shadow-sm leading-none whitespace-nowrap min-w-[18px] h-[12px]"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 500, damping: 15 }}
@@ -112,9 +114,9 @@ export function NavIcon({
       )}
 
       {/* Label */}
-      {showLabel && (
+      {(showLabel || isExpanded) && (
         <span className={cn(
-          'text-[10px] font-medium transition-colors',
+          'text-sm font-medium transition-colors ml-3',
           isActive ? 'text-primary' : 'text-muted-foreground'
         )}>
           {label}
@@ -124,11 +126,12 @@ export function NavIcon({
   );
 
   const baseClasses = cn(
-    'relative flex flex-col items-center justify-center gap-1 rounded-xl transition-colors',
+    'relative flex items-center rounded-xl transition-colors',
     sizeClasses[size],
+    isExpanded ? 'w-full justify-start px-3 py-2' : 'justify-center',
     isActive
-      ? 'text-primary'
-      : 'text-muted-foreground hover:text-foreground',
+      ? 'text-primary bg-primary/10'
+      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
     disabled && 'opacity-50 cursor-not-allowed',
     className
   );
