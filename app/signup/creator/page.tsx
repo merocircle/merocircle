@@ -496,6 +496,16 @@ export default function CreatorSignupPage() {
 
       logger.info('Creator profile created successfully', 'CREATOR_SIGNUP', { userId: user.id });
 
+      // Send creator welcome email (tips + onboarding CTA); fire-and-forget
+      const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      if (appUrl && user?.id) {
+        fetch(`${appUrl}/api/email/send-creator-welcome`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id }),
+        }).catch(() => {});
+      }
+
       // Wait a moment for the database trigger to create default tiers
       await new Promise(resolve => setTimeout(resolve, 500));
 
