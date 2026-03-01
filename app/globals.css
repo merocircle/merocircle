@@ -129,7 +129,7 @@
   --bauhaus-chronicle-hover-fg: #ffffff;
 
   /* Fonts */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --font-serif: 'Merriweather', serif;
 

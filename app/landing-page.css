@@ -4,6 +4,7 @@
   min-height: 100vh;
   background: #ffffff;
   overflow-x: hidden;
+  font-family: var(--font-roboto), var(--font-sans);
 }
 
 .landing-page-content {

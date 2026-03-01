@@ -12,15 +12,27 @@ export function LandingNav() {
       <div className="landing-nav-inner">
         <Link href="/" className="landing-nav-logo">
           <Logo className="w-6 h-6 text-primary object-contain"/>
-          <span className="landing-nav-logo-text">MeroCircle</span>
+          <span 
+            className="landing-nav-logo-text" 
+            style={{
+              fontWeight: '800 !important',
+              fontSize: '1.0625rem !important', 
+              color: '#0f0f0f !important', 
+              letterSpacing: '-0.02em !important',
+              fontFamily: 'Roboto, sans-serif !important'
+            }}
+          >MeroCircle</span>
           <span className="ml-2 text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-full border border-primary/40 text-primary bg-primary/5 animate-pulse">
             BETA
           </span>
         </Link>
 
         <div className="landing-nav-right">
-          <Link href="/about" className="landing-nav-about">
+          {/* <Link href="/about" className="landing-nav-about">
             About
+          </Link> */}
+          <Link href="/join-us" className="landing-nav-about">
+            Join Us
           </Link>
           <Link href="/auth" className="landing-nav-cta">
             Get Started
