@@ -1,22 +1,28 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { 
-  Facebook, 
-  Instagram, 
-  Youtube, 
-  MessageCircle, 
-  Twitter, 
-  Link as LinkIcon, 
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import {
+  Facebook,
+  Instagram,
+  Youtube,
+  MessageCircle,
+  Twitter,
+  Link as LinkIcon,
   Check,
-  Share2 
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { logger } from '@/lib/logger';
-import { useToast } from '@/hooks/use-toast';
+  Share2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+import { useToast } from "@/hooks/use-toast";
 
 interface ShareModalProps {
   open: boolean;
@@ -47,13 +53,13 @@ export function ShareModal({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  const creatorIdentifier = creatorSlug || creator?.vanity_username || creatorId;
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/creator/${creatorIdentifier}?post=${postId}`
-    : '';
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/post/${postId}`
+      : "";
 
-  const safeContent = postContent || '';
-  const shareText = `${postTitle || ''}\n\n${safeContent.substring(0, 100)}${safeContent.length > 100 ? '...' : ''}`;
+  const safeContent = postContent || "";
+  const shareText = `${postTitle || ""}\n\n${safeContent.substring(0, 100)}${safeContent.length > 100 ? "..." : ""}`;
 
   const handleCopyLink = async () => {
     try {
@@ -61,13 +67,19 @@ export function ShareModal({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      logger.error('Failed to copy share link', 'SHARE_MODAL', { error: error instanceof Error ? error.message : String(error) });
-      toast({ title: 'Copy failed', description: 'Please copy the link manually.', variant: 'destructive' });
+      logger.error("Failed to copy share link", "SHARE_MODAL", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      toast({
+        title: "Copy failed",
+        description: "Please copy the link manually.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleNativeShare = async () => {
-    if (typeof navigator !== 'undefined' && navigator.share) {
+    if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
           title: postTitle,
@@ -76,7 +88,9 @@ export function ShareModal({
         });
         onClose();
       } catch (error) {
-        logger.debug('Share cancelled or failed', 'SHARE_MODAL', { error: error instanceof Error ? error.message : String(error) });
+        logger.debug("Share cancelled or failed", "SHARE_MODAL", {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     } else {
       // Fallback to copy link
@@ -90,23 +104,23 @@ export function ShareModal({
     const encodedText = encodeURIComponent(shareText);
     const encodedTitle = encodeURIComponent(postTitle);
 
-    let shareLink = '';
+    let shareLink = "";
 
     switch (platform) {
-      case 'facebook':
+      case "facebook":
         shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
         break;
-      case 'twitter':
+      case "twitter":
         shareLink = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
         break;
-      case 'whatsapp':
+      case "whatsapp":
         shareLink = `https://wa.me/?text=${encodedText}%0A%0A${encodedUrl}`;
         break;
-      case 'instagram':
+      case "instagram":
         // Instagram doesn't support direct sharing via URL, copy link instead
         handleCopyLink();
         return;
-      case 'youtube':
+      case "youtube":
         // YouTube doesn't support direct sharing, copy link instead
         handleCopyLink();
         return;
@@ -115,48 +129,49 @@ export function ShareModal({
     }
 
     if (shareLink) {
-      window.open(shareLink, '_blank', 'width=600,height=400');
+      window.open(shareLink, "_blank", "width=600,height=400");
       onClose();
     }
   };
 
   const platforms = [
     {
-      id: 'facebook',
-      name: 'Facebook',
+      id: "facebook",
+      name: "Facebook",
       icon: Facebook,
-      color: 'from-blue-600 to-blue-700',
-      hoverColor: 'hover:from-blue-700 hover:to-blue-800',
+      color: "from-blue-600 to-blue-700",
+      hoverColor: "hover:from-blue-700 hover:to-blue-800",
     },
     {
-      id: 'whatsapp',
-      name: 'WhatsApp',
+      id: "whatsapp",
+      name: "WhatsApp",
       icon: MessageCircle,
-      color: 'from-green-500 to-green-600',
-      hoverColor: 'hover:from-green-600 hover:to-green-700',
+      color: "from-green-500 to-green-600",
+      hoverColor: "hover:from-green-600 hover:to-green-700",
     },
     {
-      id: 'twitter',
-      name: 'Twitter / X',
+      id: "twitter",
+      name: "Twitter / X",
       icon: Twitter,
-      color: 'from-sky-500 to-sky-600',
-      hoverColor: 'hover:from-sky-600 hover:to-sky-700',
+      color: "from-sky-500 to-sky-600",
+      hoverColor: "hover:from-sky-600 hover:to-sky-700",
     },
     {
-      id: 'instagram',
-      name: 'Instagram',
+      id: "instagram",
+      name: "Instagram",
       icon: Instagram,
-      color: 'from-pink-500 via-purple-500 to-orange-500',
-      hoverColor: 'hover:from-pink-600 hover:via-purple-600 hover:to-orange-600',
-      note: 'Copy link to share',
+      color: "from-pink-500 via-purple-500 to-orange-500",
+      hoverColor:
+        "hover:from-pink-600 hover:via-purple-600 hover:to-orange-600",
+      note: "Copy link to share",
     },
     {
-      id: 'youtube',
-      name: 'YouTube',
+      id: "youtube",
+      name: "YouTube",
       icon: Youtube,
-      color: 'from-red-600 to-red-700',
-      hoverColor: 'hover:from-red-700 hover:to-red-800',
-      note: 'Copy link to share',
+      color: "from-red-600 to-red-700",
+      hoverColor: "hover:from-red-700 hover:to-red-800",
+      note: "Copy link to share",
     },
   ];
 
@@ -177,7 +192,7 @@ export function ShareModal({
 
         <div className="space-y-4 py-2">
           {/* Native Share Button */}
-          {typeof window !== 'undefined' && 'share' in navigator && (
+          {typeof window !== "undefined" && "share" in navigator && (
             <Button
               onClick={handleNativeShare}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
@@ -199,10 +214,12 @@ export function ShareModal({
                     key={platform.id}
                     onClick={() => handlePlatformShare(platform.id)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium',
-                      'transition-colors hover:opacity-80',
-                      'border border-border/60 bg-muted/30 hover:bg-muted/50',
-                      platform.color.replace('from-', 'text-').replace(' to-', '')
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
+                      "transition-colors hover:opacity-80",
+                      "border border-border/60 bg-muted/30 hover:bg-muted/50",
+                      platform.color
+                        .replace("from-", "text-")
+                        .replace(" to-", ""),
                     )}
                     title={platform.name}
                   >
@@ -223,11 +240,12 @@ export function ShareModal({
               </div>
               <Button
                 onClick={handleCopyLink}
-                variant={copied ? 'default' : 'outline'}
+                variant={copied ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  'transition-colors',
-                  copied && 'bg-green-600 hover:bg-green-700 text-white border-green-600'
+                  "transition-colors",
+                  copied &&
+                    "bg-green-600 hover:bg-green-700 text-white border-green-600",
                 )}
               >
                 {copied ? (

@@ -12,15 +12,39 @@ interface FeedbackSheetProps {
   userId?: string;
   displayName?: string;
   isCreator?: boolean;
+  onMount?: (ref: { focus: () => void }) => void;
 }
 
-export function FeedbackSheet({ open, onOpenChange, userId, displayName, isCreator }: FeedbackSheetProps) {
+export function FeedbackSheet({ open, onOpenChange, userId, displayName, isCreator, onMount }: FeedbackSheetProps) {
   const [answer, setAnswer] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   React.useEffect(() => setMounted(true), []);
+
+  React.useEffect(() => {
+    if (onMount) {
+      onMount({
+        focus: () => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+          }
+        }
+      });
+    }
+  }, [onMount]);
+
+  React.useEffect(() => {
+    if (open && mounted && textareaRef.current) {
+      // Longer delay to ensure the mobile sidebar is fully closed
+      const timeout = setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [open, mounted]);
 
   const handleSubmit = async () => {
     if (!answer.trim()) return;
@@ -92,6 +116,7 @@ export function FeedbackSheet({ open, onOpenChange, userId, displayName, isCreat
 
               {/* Answer */}
               <textarea
+                ref={textareaRef}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="Share your thoughts, report bugs, or suggest features..."
@@ -101,7 +126,6 @@ export function FeedbackSheet({ open, onOpenChange, userId, displayName, isCreat
                   "placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40",
                   "transition-all"
                 )}
-                autoFocus
               />
 
               {/* Submit */}
