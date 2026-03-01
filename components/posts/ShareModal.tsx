@@ -30,7 +30,7 @@ interface ShareModalProps {
   postId: string;
   postTitle: string;
   postContent: string;
-  /** Vanity slug for /creator/[slug]; when set, share URL uses /creator/slug?post=... */
+  /** Username (vanity slug) for share URL; when set, link is /creator/username?post=... so ID is not exposed */
   creatorSlug?: string;
   creatorId: string;
   /** Creator object containing vanity_username fallback */
@@ -53,9 +53,12 @@ export function ShareModal({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
+  const username = creatorSlug ?? creator?.vanity_username ?? null;
   const shareUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/post/${postId}`
+      ? username
+        ? `${window.location.origin}/creator/${encodeURIComponent(username)}?post=${encodeURIComponent(postId)}`
+        : `${window.location.origin}/post/${postId}`
       : "";
 
   const safeContent = postContent || "";
