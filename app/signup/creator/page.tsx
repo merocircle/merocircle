@@ -32,6 +32,7 @@ import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
 
 import { Logo } from '@/components/ui/logo';
+import { VerificationModal } from '@/components/dashboard/VerificationModal';
 import { CREATOR_CATEGORIES } from '@/lib/constants';
 
 const SOCIAL_PLATFORMS = [
@@ -77,6 +78,7 @@ export default function CreatorSignupPage() {
   const [socialLinkErrors, setSocialLinkErrors] = useState<Record<string, string>>({});
   const [addedSocialPlatforms, setAddedSocialPlatforms] = useState<string[]>([]);
   const [selectedPlatformToAdd, setSelectedPlatformToAdd] = useState<string>('');
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const lastAddedLinkInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -574,16 +576,20 @@ export default function CreatorSignupPage() {
       setStep('complete');
       try { sessionStorage.removeItem(DRAFT_KEY); } catch (_) {}
 
-      // Redirect to Creator Studio
-      setTimeout(() => {
-        router.push('/creator-studio');
-      }, 2000);
+      // Show verification modal instead of immediate redirect
+      setShowVerificationModal(true);
     } catch (error: unknown) {
       logger.error('Creator setup error', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
       setError(error instanceof Error ? error.message : 'Failed to set up creator profile. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerificationModalClose = () => {
+    setShowVerificationModal(false);
+    // Redirect to Creator Studio when modal is closed
+    router.push('/creator-studio');
   };
 
   return (
@@ -1344,6 +1350,13 @@ export default function CreatorSignupPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Verification Modal */}
+      <VerificationModal
+        isOpen={showVerificationModal}
+        onClose={handleVerificationModalClose}
+        creatorId={user?.id}
+      />
     </div>
   );
 } 
