@@ -3,7 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { logger } from './logger';
 import { render } from '@react-email/render';
-import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification, SubscriptionExpiringReminder, SubscriptionExpiredNotification } from '@/emails/templates';
+import { PostNotification, PollNotification, WelcomeEmail, CreatorWelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification, SubscriptionExpiringReminder, SubscriptionExpiredNotification } from '@/emails/templates';
 import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
 /**
@@ -434,6 +434,82 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     return true;
   } catch (error: any) {
     logger.error('Failed to send welcome email', 'EMAIL', {
+      error: error.message,
+      recipient: data.userEmail,
+    });
+    return false;
+  }
+}
+
+export interface CreatorWelcomeEmailData {
+  userEmail: string;
+  userName: string;
+}
+
+/**
+ * Sends creator welcome email when someone completes creator signup.
+ * Includes tips for keeping supporters engaged and CTA to complete onboarding.
+ */
+export async function sendCreatorWelcomeEmail(data: CreatorWelcomeEmailData): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping creator welcome email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app || 'https://merocircle.app';
+    const dashboardUrl = `${appUrl}/dashboard`;
+    const settingsUrl = EMAIL_CONFIG.urls.settings || `${appUrl}/settings`;
+    const helpUrl = EMAIL_CONFIG.urls.help || `${appUrl}/help`;
+    const firstName = data.userName.split(' ')[0] || data.userName;
+
+    const cidLogo = 'logo@merocircle.app';
+    const cidTeam = 'team@merocircle.app';
+    const publicDir = path.join(process.cwd(), 'public');
+    const logoPath = path.join(publicDir, 'logo', 'logo-light.png');
+    const teamPath = path.join(publicDir, 'team.jpg');
+
+    const html = await render(
+      CreatorWelcomeEmail({
+        firstName,
+        dashboardUrl,
+        settingsUrl,
+        helpUrl,
+        appUrl,
+        logoSrc: `cid:${cidLogo}`,
+        teamImageSrc: `cid:${cidTeam}`,
+      })
+    );
+
+    const messageId = generateMessageId(`creator-${data.userEmail.replace('@', '-at-')}`);
+
+    const mailOptions = {
+      from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
+      to: data.userEmail,
+      subject: EMAIL_SUBJECTS.creatorWelcome(firstName),
+      html,
+      messageId,
+      attachments: [
+        { filename: 'logo-light.png', path: logoPath, cid: cidLogo },
+        { filename: 'team.jpg', path: teamPath, cid: cidTeam },
+      ],
+      headers: {
+        ...getNoThreadHeaders(messageId),
+        'X-Priority': '3',
+      },
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('Creator welcome email sent', 'EMAIL', {
+      recipient: data.userEmail,
+      firstName,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send creator welcome email', 'EMAIL', {
       error: error.message,
       recipient: data.userEmail,
     });
