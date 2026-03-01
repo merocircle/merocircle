@@ -50,6 +50,7 @@ export default function CreatorSignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'signup' | 'creator-details' | 'tier-pricing' | 'complete'>('signup');
   const [creatorData, setCreatorData] = useState({
+    display_name: '',
     username: '',
     bio: '',
     category: '',
@@ -100,7 +101,7 @@ export default function CreatorSignupPage() {
         addedSocialPlatforms?: string[];
       };
       if (draft.step && draft.step !== 'signup') {
-        if (draft.creatorData) setCreatorData(draft.creatorData);
+        if (draft.creatorData) setCreatorData({ ...creatorData, ...draft.creatorData });
         if (draft.tierPrices) setTierPrices(draft.tierPrices);
         if (draft.tierExtraPerks) setTierExtraPerks(draft.tierExtraPerks);
         if (draft.estimatedSupporters) setEstimatedSupporters(draft.estimatedSupporters);
@@ -309,6 +310,7 @@ export default function CreatorSignupPage() {
             } else {
               // Profile is incomplete - load existing data and allow completion
               setCreatorData({
+                display_name: userProfile.display_name || '',
                 username: creatorProfile.vanity_username || '',
                 bio: creatorProfile.bio || '',
                 category: creatorProfile.category || '',
@@ -437,7 +439,7 @@ export default function CreatorSignupPage() {
   };
 
   const handleCreatorSetup = async () => {
-    if (!user || !creatorData.category) return;
+    if (!user || !creatorData.category || !creatorData.display_name) return;
 
     const trimmedUsername = creatorData.username.trim().toLowerCase();
     if (!trimmedUsername) {
@@ -486,7 +488,7 @@ export default function CreatorSignupPage() {
 
       // Create creator profile (vanity username for /creator/[slug])
       const vanityUsername = creatorData.username.trim().toLowerCase() || undefined;
-      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks, vanityUsername);
+      const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks, vanityUsername, creatorData.display_name.trim());
 
       if (error) {
         logger.error('Creator profile creation failed', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
@@ -784,8 +786,31 @@ export default function CreatorSignupPage() {
                     </div>
                   </div>
 
+                  {/* Display Name Field */}
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-1">1. Creator page URL (username)</p>
+                    <Label htmlFor="display_name" className="text-sm font-medium">
+                      Display Name *
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+                      This is how your name will appear to supporters. Can be your real name or a brand name.
+                    </p>
+                    <input
+                      id="display_name"
+                      type="text"
+                      value={creatorData.display_name}
+                      onChange={(e) => setCreatorData({ ...creatorData, display_name: e.target.value.slice(0, 100) })}
+                      placeholder="Your name or brand name"
+                      className="mt-1 w-full min-w-0 rounded-lg border bg-background px-3 sm:px-4 py-2.5 sm:py-3 text-foreground focus:ring-2 focus:ring-ring focus:border-primary border-input"
+                      maxLength={100}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {creatorData.display_name.length}/100 characters
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-1">2. Creator page URL (username)</p>
                     <Label htmlFor="username" className="text-sm font-medium">
                       Username *
                     </Label>
