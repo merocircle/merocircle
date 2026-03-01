@@ -19,6 +19,7 @@ import { useStreamChat } from '@/contexts/stream-chat-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
+import { ChannelSearchProvider } from './contexts/ChannelSearchContext';
 import { CustomQuotedMessage } from './CustomQuotedMessage';
 import { CustomMessageOptions } from './CustomMessageOptions';
 import { CustomMessage } from './CustomMessage';
@@ -993,21 +994,23 @@ export function StreamChatWrapper({
           <div className="flex-1 flex min-w-0 overflow-hidden bg-background">
             <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${showInfoPanel ? 'border-r border-border' : ''}`}>
               {activeChannel ? (
-                <Channel 
-                  channel={activeChannel} 
-                  CustomMessageActionsList={CustomMessageActionsList}
-                  QuotedMessage={CustomQuotedMessage}
-                  MessageOptions={CustomMessageOptions}
-                  MessageRepliesCountButton={NoOpMessageRepliesCountButton}
-                  Message={CustomMessage}
-                >
-                  <Window>
-                    <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
-                    <MessageList />
-                    <MessageInput focus />
-                  </Window>
-                  <NoOpThread />
-                </Channel>
+                <ChannelSearchProvider>
+                  <Channel 
+                    channel={activeChannel} 
+                    CustomMessageActionsList={CustomMessageActionsList}
+                    QuotedMessage={CustomQuotedMessage}
+                    MessageOptions={CustomMessageOptions}
+                    MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                    Message={CustomMessage}
+                  >
+                    <Window>
+                      <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
+                      <MessageList />
+                      <MessageInput focus />
+                    </Window>
+                    <NoOpThread />
+                  </Channel>
+                </ChannelSearchProvider>
               ) : channelError ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center p-8">
@@ -1221,15 +1224,16 @@ export function StreamChatWrapper({
 
           {mobileView === "chat" && activeChannel && (
             <div className="h-full min-h-0 flex flex-col overflow-hidden min-w-0 w-full">
-              <Channel
-                channel={activeChannel}
-                CustomMessageActionsList={CustomMessageActionsList}
-                QuotedMessage={CustomQuotedMessage}
-                MessageOptions={CustomMessageOptions}
-                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
-                Message={CustomMessage}
-              >
-                <Window>
+              <ChannelSearchProvider>
+                <Channel
+                  channel={activeChannel}
+                  CustomMessageActionsList={CustomMessageActionsList}
+                  QuotedMessage={CustomQuotedMessage}
+                  MessageOptions={CustomMessageOptions}
+                  MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                  Message={CustomMessage}
+                >
+                  <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
                     <button
                       onClick={goBackToServers}
@@ -1284,6 +1288,7 @@ export function StreamChatWrapper({
                 </Window>
                 <NoOpThread />
               </Channel>
+              </ChannelSearchProvider>
             </div>
           )}
 
@@ -1723,6 +1728,22 @@ export function StreamChatWrapper({
         }
         .str-chat__li:hover .str-chat__message-data time {
           opacity: 0.8 !important;
+        }
+
+        /* Search: message wrapper for scroll target, no extra layout */
+        .channel-search-message-wrapper {
+          display: contents;
+        }
+        /* Yellow highlighter on the searched word (marker style) */
+        .channel-search-highlight {
+          background: #fef08a;
+          color: inherit;
+          border-radius: 2px;
+          padding: 0 2px;
+        }
+        .dark .channel-search-highlight {
+          background: #ca8a04;
+          color: #fef08a;
         }
 
         /* ── Emoji reactions styling ── */
