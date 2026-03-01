@@ -47,6 +47,9 @@ export function OnboardingBanner({ onDismiss, creatorId }: OnboardingBannerProps
                   <p className="text-gray-700 dark:text-gray-300 mb-4">
                     To activate your creator profile on MeroCircle, please schedule a quick 10-minute call with our team. This helps us complete your onboarding, align on expectations, and ensure everything is set up properly before you go live.
                   </p>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4 italic">
+                    *If you have already booked a meeting, please ignore this banner.
+                  </p>
 
                   <div className="flex flex-wrap gap-3">
                     <a
