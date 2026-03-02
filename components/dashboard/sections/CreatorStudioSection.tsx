@@ -607,7 +607,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
 
       {/* Tab Navigation */}
       <div className="mb-5">
-        <div className="flex gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/30 overflow-x-auto scrollbar-hide">
+        <div className="text-muted-foreground items-center lg:justify-center md:justify-center justify-start [&.flex]:h-auto inline-flex xs:justify-start w-full h-11 bg-muted p-1 gap-1 overflow-x-auto overflow-y-clip scrollbar-hide rounded-md">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActiveTab = activeTab === tab.id;
@@ -616,11 +616,10 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap',
-                  isActiveTab
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                  "dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 border border-transparent transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap",
+                  isActiveTab && "data-[state=active]"
                 )}
+                data-state={isActiveTab ? "active" : "inactive"}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}
