@@ -20,7 +20,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, getValidAvatarUrl } from "@/lib/utils";
 import { getBlurDataURL, imageSizes } from "@/lib/image-utils";
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from "@/lib/youtube";
 import { useAuth } from "@/contexts/auth-context";
@@ -113,8 +113,33 @@ export default function PostDetailPage({
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
+  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null }>>([]);
+  const [likersLoading, setLikersLoading] = useState(false);
+  const [likersHover, setLikersHover] = useState(false);
 
   const commentInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchLikers = useCallback(async () => {
+    if (likers.length > 0) return;
+    setLikersLoading(true);
+    try {
+      const res = await fetch(`/api/posts/${id}/likes`);
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.likers)) setLikers(data.likers);
+    } catch {
+      // ignore
+    } finally {
+      setLikersLoading(false);
+    }
+  }, [id, likers.length]);
+
+  useEffect(() => {
+    if (likersHover && likesCount > 0) fetchLikers();
+  }, [likersHover, likesCount, fetchLikers]);
+
+  useEffect(() => {
+    setLikers([]);
+  }, [likesCount]);
 
   // Fetch the post (includes is_liked + is_supporter from the API)
   useEffect(() => {
@@ -546,10 +571,7 @@ export default function PostDetailPage({
           {/* ── Action bar ──────────────────────────────────────────────── */}
           <div className="flex items-center justify-between py-4 border-t border-b border-border/40 mb-6">
             <div className="flex items-center gap-5">
-              <motion.button
-                onClick={handleLike}
-                disabled={!currentUser || likeMutation.isPending}
-                whileTap={{ scale: 0.9 }}
+              <div
                 className={cn(
                   "flex items-center gap-1.5 text-sm font-medium transition-colors",
                   isLiked
@@ -557,9 +579,68 @@ export default function PostDetailPage({
                     : "text-muted-foreground hover:text-rose-500",
                 )}
               >
-                <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
-                <span>{likesCount > 0 ? likesCount : "Like"}</span>
-              </motion.button>
+                <motion.button
+                  onClick={handleLike}
+                  disabled={!currentUser || likeMutation.isPending}
+                  whileTap={{ scale: 0.9 }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
+                  {likesCount > 0 ? (
+                    <span
+                      className="cursor-default"
+                      onMouseEnter={() => setLikersHover(true)}
+                      onMouseLeave={() => setLikersHover(false)}
+                      title="Hover to see who liked"
+                    >
+                      {likesCount}
+                    </span>
+                  ) : (
+                    <span>Like</span>
+                  )}
+                </motion.button>
+                {likesCount > 0 && (
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setLikersHover(true)}
+                    onMouseLeave={() => setLikersHover(false)}
+                  >
+                    {likersHover && (
+                      <div
+                        className="absolute bottom-full left-0 mb-1 z-50 w-64 max-h-72 overflow-y-auto rounded-md border border-border bg-popover py-1 shadow-md animate-in fade-in-0 zoom-in-95"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {likersLoading ? (
+                          <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading…
+                          </div>
+                        ) : likers.length > 0 ? (
+                          likers.map((u) => (
+                            <Link
+                              key={u.id}
+                              href={`/creator/${u.id}`}
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                            >
+                              <Avatar className="h-7 w-7">
+                                <AvatarImage src={getValidAvatarUrl(u.photo_url)} alt="" />
+                                <AvatarFallback className="text-xs">
+                                  {(u.display_name || "?").slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate">{u.display_name || "Someone"}</span>
+                            </Link>
+                          ))
+                        ) : (
+                          <div className="p-3 text-sm text-muted-foreground">
+                            No one has liked this yet.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/*<motion.button
                 onClick={() => commentInputRef.current?.focus()}
