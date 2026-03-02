@@ -80,10 +80,58 @@ export function StreamChatWrapper({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
   const [hasMounted, setHasMounted] = useState(false);
+  const messageInputTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const messageInputResizeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
+  // Auto-resize Stream Chat message input textarea as user types (it’s not our MessageInput component)
+  useEffect(() => {
+    if (!activeChannel) return;
+    const MIN_H = 24;
+    const MAX_H = 320;
+    const resize = () => {
+      const ta = messageInputTextareaRef.current;
+      if (!ta) return;
+      ta.style.height = "0";
+      ta.style.overflowY = "hidden";
+      const h = Math.max(MIN_H, Math.min(ta.scrollHeight, MAX_H));
+      ta.style.height = `${h}px`;
+      ta.style.overflowY = ta.scrollHeight > MAX_H ? "auto" : "hidden";
+    };
+    const attach = (textarea: HTMLTextAreaElement) => {
+      messageInputTextareaRef.current = textarea;
+      messageInputResizeRef.current = resize;
+      resize();
+      textarea.addEventListener("input", resize);
+    };
+    const find = () => {
+      const wrapper = document.querySelector(".stream-chat-wrapper");
+      if (!wrapper) return;
+      const ta = wrapper.querySelector(".str-chat__textarea__textarea") as HTMLTextAreaElement | null;
+      if (ta && ta !== messageInputTextareaRef.current) {
+        if (messageInputTextareaRef.current && messageInputResizeRef.current) {
+          messageInputTextareaRef.current.removeEventListener("input", messageInputResizeRef.current);
+        }
+        attach(ta);
+      }
+    };
+    const t1 = setTimeout(find, 0);
+    const t2 = setTimeout(find, 150);
+    const t3 = setTimeout(find, 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (messageInputTextareaRef.current && messageInputResizeRef.current) {
+        messageInputTextareaRef.current.removeEventListener("input", messageInputResizeRef.current);
+        messageInputTextareaRef.current = null;
+        messageInputResizeRef.current = null;
+      }
+    };
+  }, [activeChannel?.id]);
 
   // Custom hooks
   const { otherServers, myServer, loading, fetchChannels } = useChannels(user);
@@ -1663,6 +1711,8 @@ export function StreamChatWrapper({
         .str-chat__input-flat textarea {
           font-size: 14px !important;
           line-height: 1.5 !important;
+          min-height: 24px !important;
+          resize: none !important;
         }
 
         /* Send button — circular, prominent */
