@@ -34,7 +34,7 @@ import PaymentMethods from '@/components/settings/PaymentMethods';
 import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
 
-type SettingsTab = 'notifications' | 'memberships' | 'billing' | 'payment-methods';
+type SettingsTab = 'notifications' | 'memberships' | 'billing' | 'payment-methods' | 'account';
 
 interface NavigationProps {
   activeTab: SettingsTab;
@@ -165,6 +165,7 @@ const tabs = [
   { id: 'memberships' as SettingsTab, label: 'Memberships', icon: Users, description: 'Manage your active memberships' },
   { id: 'billing' as SettingsTab, label: 'Billing History', icon: Receipt, description: 'View past transactions' },
   { id: 'payment-methods' as SettingsTab, label: 'Payment Methods', icon: CreditCard, description: 'Manage your payment options' },
+  { id: 'account' as SettingsTab, label: 'Account', icon: User, description: 'Manage your account settings' },
 ];
 
 const SettingsSection = memo(function SettingsSection() {
@@ -309,78 +310,140 @@ const SettingsSection = memo(function SettingsSection() {
               <PaymentMethods />
             )}
 
-            {activeTab === 'billing' && (
-              <div className="mt-8 pt-6 border-t border-border/30">
-                <Card className="p-5 border-destructive/20 bg-destructive/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
-                    <h3 className="text-sm font-semibold text-destructive">Delete Account</h3>
+            {activeTab === 'account' && (
+              <div className="space-y-6">
+                {/* Account Info */}
+                <Card className="p-6 border-border/50">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Account Information</h3>
+                      <p className="text-sm text-muted-foreground">Your basic account details</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                    Permanently delete your account and all associated data including posts, memberships, and transactions. This action cannot be undone.
-                  </p>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Display Name</p>
+                      <p className="font-medium">{userProfile?.display_name || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Email Address</p>
+                      <p className="font-medium">{user?.email || 'Not available'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Account Type</p>
+                      <div className="flex items-center gap-2">
+                        {isCreator ? (
+                          <>
+                            <Badge variant="default" className="bg-primary">
+                              <Crown className="w-3 h-3 mr-1" />
+                              Creator Account
+                            </Badge>
+                          </>
+                        ) : (
+                          <Badge variant="secondary">Supporter Account</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
 
-                  {!showDeleteConfirm ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="rounded-full text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Delete My Account
-                    </Button>
-                  ) : (
-                    <div className="space-y-3 p-4 rounded-xl border border-destructive/30 bg-background">
-                      <p className="text-xs text-muted-foreground">
-                        Type <span className="font-mono font-bold text-destructive">DELETE</span> to confirm
-                      </p>
-                      <input
-                        type="text"
-                        value={deleteConfirmText}
-                        onChange={(e) => setDeleteConfirmText(e.target.value)}
-                        placeholder="DELETE"
-                        className="w-full rounded-lg border border-destructive/30 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-destructive focus:border-destructive outline-none"
-                      />
-                      {deleteError && (
-                        <p className="text-xs text-destructive">{deleteError}</p>
-                      )}
-                      <div className="flex gap-2">
+                {/* Danger Zone */}
+                <Card className="p-6 border-red-200/30 bg-red-50/30 dark:border-red-900/20 dark:bg-red-900/10">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-red-700 dark:text-red-400">Danger Zone</h3>
+                      <p className="text-sm text-red-600/80 dark:text-red-300/80">Irreversible actions that will permanently affect your account</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg border border-red-200/50 bg-red-50/50 dark:border-red-900/20 dark:bg-red-900/10">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-medium text-red-700 dark:text-red-300">Delete Account</h4>
+                          <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                            Permanently delete your account and all associated data including posts, memberships, and transactions. This action cannot be undone.
+                          </p>
+                        </div>
+                      </div>
+
+                      {!showDeleteConfirm ? (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteError(null); }}
-                          className="rounded-full"
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="border-red-300/50 text-red-600 hover:bg-red-100 hover:text-red-700 dark:border-red-800/30 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 gap-2 transition-all duration-200"
                         >
-                          Cancel
+                          <Trash2 className="w-4 h-4" />
+                          Delete My Account
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={deleteConfirmText !== 'DELETE' || deleting}
-                          onClick={async () => {
-                            setDeleting(true);
-                            setDeleteError(null);
-                            try {
-                              const res = await fetch('/api/account/delete', { method: 'DELETE' });
-                              if (!res.ok) {
-                                const data = await res.json().catch(() => ({}));
-                                throw new Error(data.error || 'Failed to delete account');
-                              }
-                              signOut();
-                            } catch (e) {
-                              setDeleteError(e instanceof Error ? e.message : 'Something went wrong');
-                              setDeleting(false);
-                            }
-                          }}
-                          className="rounded-full gap-1.5"
-                        >
-                          {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                          {deleting ? 'Deleting...' : 'Permanently Delete'}
-                        </Button>
-                      </div>
+                      ) : (
+                        <div className="space-y-4 p-4 rounded-lg border border-red-200/50 bg-white/80 dark:bg-red-950/60 backdrop-blur-sm">
+                          <div className="flex items-center gap-2 mb-3">
+                            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 animate-pulse" />
+                            <p className="text-sm font-medium text-red-700 dark:text-red-300">This action is permanent and cannot be undone</p>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <p className="text-sm text-red-700 dark:text-red-200">
+                              Type <span className="font-mono font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 px-2 py-1 rounded">DELETE</span> to confirm account deletion
+                            </p>
+                            <input
+                              type="text"
+                              value={deleteConfirmText}
+                              onChange={(e) => setDeleteConfirmText(e.target.value)}
+                              placeholder="DELETE"
+                              className="w-full rounded-lg border border-red-300/50 bg-red-50/50 text-red-900 dark:border-red-700/30 dark:bg-red-950/40 dark:text-red-100 px-3 py-2 text-sm placeholder:text-red-400/50 dark:placeholder:text-red-300/50 focus:ring-2 focus:ring-red-500 focus:border-red-400 outline-none transition-all duration-200"
+                            />
+                            {deleteError && (
+                              <p className="text-sm text-red-700 dark:text-red-400 bg-red-100/50 dark:bg-red-900/40 p-2 rounded">{deleteError}</p>
+                            )}
+                            <div className="flex gap-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); setDeleteError(null); }}
+                                className="border-red-300/50 text-red-600 hover:bg-red-100 dark:border-red-700/30 dark:text-red-400 dark:hover:bg-red-900/20"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={deleteConfirmText !== 'DELETE' || deleting}
+                                onClick={async () => {
+                                  setDeleting(true);
+                                  setDeleteError(null);
+                                  try {
+                                    const res = await fetch('/api/account/delete', { method: 'DELETE' });
+                                    if (!res.ok) {
+                                      const data = await res.json().catch(() => ({}));
+                                      throw new Error(data.error || 'Failed to delete account');
+                                    }
+                                    signOut();
+                                  } catch (e) {
+                                    setDeleteError(e instanceof Error ? e.message : 'Something went wrong');
+                                    setDeleting(false);
+                                  }
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white border-red-500/50 gap-2 transition-all duration-200"
+                              >
+                                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                {deleting ? 'Deleting Account...' : 'Permanently Delete Account'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </Card>
               </div>
             )}
