@@ -190,15 +190,28 @@ export function StreamChatWrapper({
       }, 1000); // Debounce by 1 second
     };
 
+    const handleMarkRead = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        // Force immediate update when marking as read
+        if (!creatorId) {
+          fetchUnreadCounts(true);
+          fetchDMChannels();
+        } else {
+          fetchUnreadCounts(true);
+        }
+      }, 200); // Reduced debounce for faster response when marking as read
+    };
+
     chatClient.on("message.new", handleNewMessage);
     chatClient.on("notification.message_new", handleNewMessage);
-    chatClient.on("notification.mark_read", handleNewMessage);
+    chatClient.on("notification.mark_read", handleMarkRead);
 
     return () => {
       clearTimeout(debounceTimer);
       chatClient.off("message.new", handleNewMessage);
       chatClient.off("notification.message_new", handleNewMessage);
-      chatClient.off("notification.mark_read", handleNewMessage);
+      chatClient.off("notification.mark_read", handleMarkRead);
     };
   }, [chatClient, fetchUnreadCounts, fetchDMChannels, creatorId]);
 
@@ -381,7 +394,8 @@ export function StreamChatWrapper({
         setActiveChannel(streamChannel);
         setMobileView("chat");
         await streamChannel.markRead();
-        fetchUnreadCounts();
+        // Add a small delay to ensure the markRead operation is processed before fetching counts
+        setTimeout(() => fetchUnreadCounts(true), 100);
       } catch (err: any) {
         // If channel doesn't exist or user not a member, provide clearer error
         if (
@@ -438,8 +452,11 @@ export function StreamChatWrapper({
         setSelectedServer(null); // Clear server when opening DM
         setMobileView("chat");
         await dmChannel.channel.markRead();
-        fetchUnreadCounts();
-        fetchDMChannels();
+        // Add a small delay to ensure the markRead operation is processed before fetching counts
+        setTimeout(() => {
+          fetchUnreadCounts(true);
+          fetchDMChannels();
+        }, 100);
       } catch (err) {
         setChannelError("Unable to open this conversation.");
       }
@@ -550,7 +567,8 @@ export function StreamChatWrapper({
             setActiveChannel(streamChannel);
             setMobileView("chat");
             await streamChannel.markRead();
-            fetchUnreadCounts();
+            // Add a small delay to ensure the markRead operation is processed before fetching counts
+            setTimeout(() => fetchUnreadCounts(true), 100);
           } catch (err: any) {
             // If direct access fails, try to resync channels
             if (err?.message?.includes("not allowed") || err?.code === 17) {
