@@ -146,7 +146,7 @@ export function ActivityBar({
   };
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={isExpanded ? 0 : 600} key={isExpanded ? 'expanded' : 'collapsed'}>
       <aside
         className={cn(
           'fixed left-0 top-0 z-50 flex h-screen flex-col py-4 border-r border-border/40 bg-card/80 backdrop-blur-xl transition-all duration-300 ease-in-out',
