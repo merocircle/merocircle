@@ -172,10 +172,11 @@ export function ActivityBar({
           {isExpanded && (
             <div className="flex items-center gap-2">
               <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                className="font-semibold text-foreground"
+                initial={{ opacity: 0, scaleX: 0.8 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                exit={{ opacity: 0, scaleX: 0.8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="font-semibold text-foreground origin-left"
               >
                 MeroCircle
               </motion.span>
