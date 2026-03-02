@@ -64,7 +64,7 @@ export function PreLaunchEventSection() {
         {/* Background image with overlay */}
         <div className="pre-launch-background">
           <img 
-            src="https://images.unsplash.com/photo-1543286386-713bdd548da4?w=1200&h=600&fit=crop&crop=center"
+            src="/event.jpeg"
             alt="Pre-launch event background"
             className="pre-launch-bg-image"
           />
