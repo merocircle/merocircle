@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState, useEffect } from 'react';
 import {
   MessageSimple,
   useChannelStateContext,
@@ -9,6 +9,18 @@ import {
   useMessageComposer,
 } from 'stream-chat-react';
 import { Crown, Reply, Smile, X } from 'lucide-react';
+import { useChannelSearch } from './contexts/ChannelSearchContext';
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightText(text: string, query: string): string {
+  if (!query.trim()) return text;
+  const escaped = escapeRegex(query.trim());
+  const re = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(re, '<mark class="channel-search-highlight">$1</mark>');
+}
 
 const LONG_PRESS_MS = 450;
 const DRAG_THRESHOLD_PX = 50;
@@ -31,6 +43,8 @@ export function CustomMessage(props: any) {
   const { channel } = useChannelStateContext();
   const { client } = useChatContext();
   const messageComposer = useMessageComposer();
+  const searchContext = useChannelSearch();
+  const messageRootRef = useRef<HTMLDivElement>(null);
 
   // null = closed; 'open' = visible
   const [menuOpen, setMenuOpen] = useState(false);
@@ -138,13 +152,26 @@ export function CustomMessage(props: any) {
     }
   }, []);
 
+  // Highlight search term when this message is in search results; restore plain text when search is cleared or query changes
+  const searchQuery = searchContext?.searchQuery ?? '';
+  const matchIds = searchContext?.matchIds ?? [];
+  const isSearchMatch = searchQuery.length > 0 && message?.id && matchIds.includes(message.id);
+  useLayoutEffect(() => {
+    if (!messageRootRef.current || !message?.text) return;
+    const textEl = messageRootRef.current.querySelector('.str-chat__message-text');
+    if (!textEl) return;
+    const raw = String(message.text);
+    const wrap = textEl.querySelector('p') || textEl;
+    if (isSearchMatch) {
+      wrap.innerHTML = highlightText(raw, searchQuery);
+    } else {
+      wrap.textContent = raw;
+    }
+  }, [isSearchMatch, searchQuery, message?.id, message?.text]);
+
   const mobileLongPressHandlers = isMobile
     ? { onTouchStart, onTouchMove, onTouchEnd }
     : {};
-
-  if (isSystemMessage) {
-    return <MessageSimple {...props} />;
-  }
 
   const messageContent = (
     <>
@@ -209,6 +236,20 @@ export function CustomMessage(props: any) {
     </>
   );
 
+  const wrapper = (
+    <div
+      ref={messageRootRef}
+      data-channel-search-message-id={message?.id}
+      className="channel-search-message-wrapper"
+    >
+      {messageContent}
+    </div>
+  );
+
+  if (isSystemMessage) {
+    return wrapper;
+  }
+
   if (isCreatorMessage) {
     return (
       <div className={`creator-message-row ${isMyMessage ? 'right' : ''}`}>
@@ -218,7 +259,7 @@ export function CustomMessage(props: any) {
           <span>Creator Message</span>
         </div>
         <div className="mobile-long-press-wrapper md:contents" {...mobileLongPressHandlers}>
-          {messageContent}
+          {wrapper}
         </div>
       </div>
     );
@@ -226,7 +267,7 @@ export function CustomMessage(props: any) {
 
   return (
     <div className="mobile-long-press-wrapper md:contents" {...mobileLongPressHandlers}>
-      {messageContent}
+      {wrapper}
     </div>
   );
 }
