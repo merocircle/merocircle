@@ -7,12 +7,12 @@ export function useUnreadCounts(chatClient: StreamChat | null, user: { id: strin
   const lastFetchRef = useRef<number>(0);
   const isFetchingRef = useRef<boolean>(false);
 
-  const fetchUnreadCounts = useCallback(async () => {
+  const fetchUnreadCounts = useCallback(async (forceUpdate = false) => {
     if (!chatClient || !user) return;
 
-    // Throttle requests to prevent rate limiting (max once per 2 seconds)
+    // Throttle requests to prevent rate limiting (max once per 2 seconds), unless forced
     const now = Date.now();
-    if (isFetchingRef.current || (now - lastFetchRef.current < 2000)) {
+    if (!forceUpdate && (isFetchingRef.current || (now - lastFetchRef.current < 2000))) {
       return;
     }
 
