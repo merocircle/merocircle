@@ -10,7 +10,7 @@ import { NotificationItem } from "./NotificationItem";
 import { CardSkeleton } from "@/components/atoms/skeletons/CardSkeleton";
 import { staggerContainer, fadeInUp } from "@/components/animations/variants";
 
-type NotificationType = "like" | "comment" | "payment" | "follow" | "mention" | "announcement";
+type NotificationType = "like" | "comment" | "payment" | "mention" | "announcement";
 
 interface Notification {
   id: string;
@@ -43,7 +43,6 @@ const filterOptions: { value: NotificationType | "all"; label: string }[] = [
   { value: "like", label: "Likes" },
   { value: "comment", label: "Comments" },
   { value: "payment", label: "Payments" },
-  { value: "follow", label: "Follows" },
 ];
 
 export function NotificationList({
