@@ -320,6 +320,7 @@ const FeedSection = memo(function FeedSection() {
                         showActions={true}
                         showAuthor={true}
                         isSupporter={post.is_supporter || false}
+                        supporterTierLevel={post.supporter_tier_level ?? 0}
                       />
                     ),
                   )}

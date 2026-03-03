@@ -139,6 +139,15 @@ export async function publishPost(
     }
     // If is_public=true and no required_tiers, leave it as null (public post)
 
+    // tier_required for DB: must match the minimum tier in required_tiers so fallback access control gates correctly (e.g. Inner Circle only -> '2', not '1')
+    let tierRequiredForDb = tier_required || 'free';
+    if (finalRequiredTiers && finalRequiredTiers.length > 0) {
+      const tierNums = finalRequiredTiers.map((t) => parseInt(t, 10)).filter((n) => !isNaN(n) && n >= 1 && n <= 3);
+      if (tierNums.length > 0) {
+        tierRequiredForDb = String(Math.min(...tierNums));
+      }
+    }
+
     // Create the post
     const { data: post, error: postError } = await supabase
       .from('posts')
@@ -149,7 +158,7 @@ export async function publishPost(
         image_url: finalImageUrls.length > 0 ? finalImageUrls[0] : null, // Keep first image in image_url for backward compatibility
         image_urls: finalImageUrls.length > 0 ? finalImageUrls : [],
         is_public: is_public ?? true,
-        tier_required: tier_required || 'free', // Keep for backward compatibility
+        tier_required: tierRequiredForDb,
         required_tiers: finalRequiredTiers,
         post_type: post_type || 'post',
       })

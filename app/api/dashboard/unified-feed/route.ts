@@ -216,6 +216,7 @@ export async function GET(request: NextRequest) {
         comments_count: p.comments_count || 0,
         is_liked: user ? userLikedPostIds.has(p.id) : false,
         is_supporter: isSupporterOfThisCreator,
+        supporter_tier_level: supporterTierLevel,
       };
     });
 
