@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import type { Channel as StreamChannel, UserResponse, OwnUserResponse } from 'stream-chat';
 import { useSession } from 'next-auth/react';
 import { useAuth } from './auth-context';
+import { logger } from '@/lib/logger';
 
 // Stream Chat client type — use `any` at runtime to avoid importing the heavy module at top level
 type StreamChatClient = any;
@@ -34,7 +35,7 @@ export function StreamChatProvider({ children }: { children: React.ReactNode }) 
   // Function to connect to Stream
   const connectToStream = useCallback(async () => {
     if (!apiKey) {
-      console.warn('Stream API key not configured');
+      logger.warn('Stream API key not configured', 'STREAM_CHAT_CONTEXT');
       return;
     }
 
@@ -115,7 +116,7 @@ export function StreamChatProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     return () => {
       if (chatClient) {
-        chatClient.disconnectUser().catch(console.error);
+        chatClient.disconnectUser().catch((err) => logger.error('Disconnect error', 'STREAM_CHAT_CONTEXT', { error: err instanceof Error ? err.message : String(err) }));
       }
     };
   }, [chatClient]);

@@ -15,40 +15,39 @@ interface WelcomeEmailProps {
   exploreUrl: string;
   settingsUrl: string;
   helpUrl: string;
+  appUrl?: string;
+  logoSrc?: string;
+  teamImageSrc?: string;
 }
 
 /**
  * Welcome email — a concise personal note from the Mero Circle team
  * Triggered when someone creates an account.
  */
+const DEFAULT_APP_URL = 'https://merocircle.app';
+
 export default function WelcomeEmail({
   firstName = 'there',
-  exploreUrl = 'https://merocircle.app/explore',
-  settingsUrl = 'https://merocircle.app/settings',
-  helpUrl = 'https://merocircle.app/help',
+  exploreUrl = `${DEFAULT_APP_URL}/explore`,
+  settingsUrl = `${DEFAULT_APP_URL}/settings`,
+  helpUrl = `${DEFAULT_APP_URL}/help`,
+  appUrl,
+  logoSrc,
+  teamImageSrc,
 }: WelcomeEmailProps) {
+  const baseUrl = appUrl?.trim() || DEFAULT_APP_URL;
+  const teamPhotoUrl = teamImageSrc ?? `${baseUrl}/email/team-photo.jpg`;
   return (
     <EmailLayout
       preview={`Hi ${firstName}, welcome to Mero Circle — we're glad you're here.`}
       settingsUrl={settingsUrl}
       helpUrl={helpUrl}
       hideCreatorInfo
-      appUrl={appUrl}
+      appUrl={baseUrl}
       logoSrc={logoSrc}
     >
       {/* Top accent */}
       <Section style={topAccent} />
-
-      {/* Logo */}
-      <Section style={logoSection}>
-        <Img
-          src={`${appUrl}/logo/logo.png`}
-          alt="MeroCircle"
-          style={logo}
-          width="122"
-          height="72"
-        />
-      </Section>
 
       {/* Letter */}
       <Section style={letterSection}>
@@ -91,35 +90,13 @@ export default function WelcomeEmail({
       {/* Team photo */}
       <Section style={teamPhotoSection}>
         <Img
-          src={`${appUrl}/email/team-photo.jpg`}
+          src={teamPhotoUrl}
           alt="The Mero Circle Team"
           style={teamPhoto}
           width="480"
         />
         <Text style={teamCaption}>
           Building this carefully, from Kathmandu
-        </Text>
-      </Section>
-
-      <Hr style={divider} />
-
-      {/* Video — watch what we're building */}
-      <Section style={videoSection}>
-        <Text style={videoLabel}>See what we&apos;re building</Text>
-        <Link href="https://www.youtube.com/watch?v=PLACEHOLDER" style={videoLink}>
-          <Img
-            src={`${appUrl}/email/video-thumbnail.jpg`}
-            alt="Watch: What is Mero Circle?"
-            style={videoThumbnail}
-            width="480"
-          />
-          {/* Play button overlay */}
-          <Section style={playButtonWrapper}>
-            <Text style={playButton}>&#9654;</Text>
-          </Section>
-        </Link>
-        <Text style={videoCaption}>
-          A 2-minute walkthrough of Mero Circle
         </Text>
       </Section>
 
@@ -144,16 +121,6 @@ const topAccent = {
   height: '4px',
   background: 'linear-gradient(90deg, #c4382a 0%, #e76f51 50%, #f4a261 100%)',
   borderRadius: '16px 16px 0 0',
-};
-
-const logoSection = {
-  textAlign: 'center' as const,
-  padding: '32px 0 8px',
-};
-
-const logo = {
-  margin: '0 auto',
-  borderRadius: '12px',
 };
 
 const letterSection = {
@@ -224,60 +191,6 @@ const teamCaption = {
   lineHeight: '18px',
   color: '#a8a29e',
   fontStyle: 'italic' as const,
-};
-
-const videoSection = {
-  padding: '24px 40px 8px',
-  textAlign: 'center' as const,
-};
-
-const videoLabel = {
-  margin: '0 0 14px',
-  fontSize: '13px',
-  lineHeight: '18px',
-  fontWeight: '600',
-  color: '#78716c',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.8px',
-};
-
-const videoLink = {
-  display: 'block',
-  textDecoration: 'none',
-  position: 'relative' as const,
-};
-
-const videoThumbnail = {
-  width: '100%',
-  maxWidth: '480px',
-  height: 'auto',
-  borderRadius: '12px',
-  border: '1px solid #f0ebe6',
-};
-
-const playButtonWrapper = {
-  margin: '-60px auto 20px',
-  textAlign: 'center' as const,
-};
-
-const playButton = {
-  display: 'inline-block',
-  width: '52px',
-  height: '52px',
-  lineHeight: '52px',
-  fontSize: '20px',
-  color: '#ffffff',
-  backgroundColor: 'rgba(196, 56, 42, 0.9)',
-  borderRadius: '50%',
-  textAlign: 'center' as const,
-  margin: '0 auto',
-};
-
-const videoCaption = {
-  margin: '0 0 0',
-  fontSize: '13px',
-  lineHeight: '20px',
-  color: '#a8a29e',
 };
 
 const ctaSection = {

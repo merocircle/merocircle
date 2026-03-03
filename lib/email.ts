@@ -3,9 +3,13 @@ import path from 'path';
 import crypto from 'crypto';
 import { logger } from './logger';
 import { render } from '@react-email/render';
-import { PostNotification, PollNotification, WelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification, SubscriptionExpiringReminder, SubscriptionExpiredNotification } from '@/emails/templates';
+import { PostNotification, PollNotification, WelcomeEmail, CreatorWelcomeEmail, ChannelMentionNotification, SubscriptionConfirmation, NewSupporterNotification, SubscriptionExpiringReminder, SubscriptionExpiredNotification } from '@/emails/templates';
 import { EMAIL_CONFIG, EMAIL_SUBJECTS, getCreatorProfileUrl } from '@/emails/config';
 
+/**
+ * All transactional email is sent via Hostinger SMTP (or SMTP_* env).
+ * Supabase is only used for the email_queue table (storage); no Supabase SMTP is used.
+ */
 const createTransporter = () => {
   const smtpHost = process.env.SMTP_HOST || 'smtp.hostinger.com';
   const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10); // Changed to 587 (TLS)
@@ -45,12 +49,28 @@ const createTransporter = () => {
   });
 };
 
+/** Unique Message-ID so each email is a new conversation (no reply threading). */
+function generateMessageId(suffix: string): string {
+  return `<${Date.now()}-${crypto.randomUUID()}-${suffix}@merocircle.app>`;
+}
+
+/** Headers so each email appears as a separate conversation, not a reply (Gmail + others). */
+function getNoThreadHeaders(messageId: string): Record<string, string> {
+  return {
+    'Message-ID': messageId,
+    'X-Entity-Ref-ID': messageId, // unique per message → Gmail shows separate conversations
+    'Auto-Submitted': 'auto-generated',
+    'X-Mailer': 'MeroCircle',
+  };
+}
+
 interface PostNotificationEmailData {
   supporterEmail: string;
   supporterName: string;
   supporterId: string;
   creatorId: string;
   creatorName: string;
+  creatorUsername?: string;
   postTitle: string;
   postContent: string;
   postImageUrl?: string | null;
@@ -90,7 +110,7 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
 
     // Render email using appropriate template
     const EmailTemplate = data.isPoll ? PollNotification : PostNotification;
@@ -126,8 +146,7 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
       ? EMAIL_SUBJECTS.pollNotification(data.creatorName)
       : EMAIL_SUBJECTS.postNotification(data.creatorName);
 
-    // Generate unique Message-ID to prevent email threading
-    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.supporterId}@merocircle.app>`;
+    const messageId = generateMessageId(data.supporterId);
 
     const mailOptions = {
       from: {
@@ -140,8 +159,7 @@ export async function sendPostNotificationEmail(data: PostNotificationEmailData)
       html: emailHtml,
       messageId,
       headers: {
-        'Message-ID': messageId,
-        'X-Mailer': 'MeroCircle',
+        ...getNoThreadHeaders(messageId),
         'X-Priority': '3',
         'Precedence': 'bulk',
       },
@@ -241,7 +259,7 @@ Your support helps ${data.creatorName} create more amazing content.
 You're part of a community that matters.
 
 Notification Settings: ${appUrl}/settings
-View Profile: ${appUrl}/${data.creatorName}
+View Profile: ${appUrl}/${data.creatorUsername || data.creatorName}
 
 MeroCircle © ${new Date().getFullYear()}
   `.trim();
@@ -360,10 +378,10 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
       return false;
     }
 
-    const appUrl = EMAIL_CONFIG.urls.app;
+    const appUrl = EMAIL_CONFIG.urls.app || 'https://merocircle.app';
     const exploreUrl = `${appUrl}/explore`;
-    const settingsUrl = EMAIL_CONFIG.urls.settings;
-    const helpUrl = EMAIL_CONFIG.urls.help;
+    const settingsUrl = EMAIL_CONFIG.urls.settings || `${appUrl}/settings`;
+    const helpUrl = EMAIL_CONFIG.urls.help || `${appUrl}/help`;
 
     // Extract first name for personalization
     const firstName = data.userName.split(' ')[0] || data.userName;
@@ -388,7 +406,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
       })
     );
 
-    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.userEmail.replace('@', '-at-')}@merocircle.app>`;
+    const messageId = generateMessageId(data.userEmail.replace('@', '-at-'));
 
     const mailOptions = {
       from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
@@ -401,8 +419,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
         { filename: 'team.jpg', path: teamPath, cid: cidTeam },
       ],
       headers: {
-        'Message-ID': messageId,
-        'X-Mailer': 'MeroCircle',
+        ...getNoThreadHeaders(messageId),
         'X-Priority': '3',
       },
     };
@@ -424,12 +441,90 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   }
 }
 
+export interface CreatorWelcomeEmailData {
+  userEmail: string;
+  userName: string;
+}
+
+/**
+ * Sends creator welcome email when someone completes creator signup.
+ * Includes tips for keeping supporters engaged and CTA to complete onboarding.
+ */
+export async function sendCreatorWelcomeEmail(data: CreatorWelcomeEmailData): Promise<boolean> {
+  try {
+    const transporter = createTransporter();
+    if (!transporter) {
+      logger.warn('Email transporter not configured, skipping creator welcome email', 'EMAIL');
+      return false;
+    }
+
+    const appUrl = EMAIL_CONFIG.urls.app || 'https://merocircle.app';
+    const dashboardUrl = `${appUrl}/dashboard`;
+    const settingsUrl = EMAIL_CONFIG.urls.settings || `${appUrl}/settings`;
+    const helpUrl = EMAIL_CONFIG.urls.help || `${appUrl}/help`;
+    const firstName = data.userName.split(' ')[0] || data.userName;
+
+    const cidLogo = 'logo@merocircle.app';
+    const cidTeam = 'team@merocircle.app';
+    const publicDir = path.join(process.cwd(), 'public');
+    const logoPath = path.join(publicDir, 'logo', 'logo-light.png');
+    const teamPath = path.join(publicDir, 'team.jpg');
+
+    const html = await render(
+      CreatorWelcomeEmail({
+        firstName,
+        dashboardUrl,
+        settingsUrl,
+        helpUrl,
+        appUrl,
+        logoSrc: `cid:${cidLogo}`,
+        teamImageSrc: `cid:${cidTeam}`,
+      })
+    );
+
+    const messageId = generateMessageId(`creator-${data.userEmail.replace('@', '-at-')}`);
+
+    const mailOptions = {
+      from: `${EMAIL_CONFIG.from.name} <${EMAIL_CONFIG.from.email}>`,
+      to: data.userEmail,
+      subject: EMAIL_SUBJECTS.creatorWelcome(firstName),
+      html,
+      messageId,
+      attachments: [
+        { filename: 'logo-light.png', path: logoPath, cid: cidLogo },
+        { filename: 'team.jpg', path: teamPath, cid: cidTeam },
+      ],
+      headers: {
+        ...getNoThreadHeaders(messageId),
+        'X-Priority': '3',
+      },
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    logger.info('Creator welcome email sent', 'EMAIL', {
+      recipient: data.userEmail,
+      firstName,
+    });
+
+    return true;
+  } catch (error: any) {
+    logger.error('Failed to send creator welcome email', 'EMAIL', {
+      error: error.message,
+      recipient: data.userEmail,
+    });
+    return false;
+  }
+}
+
 interface ChannelMentionEmailData {
   memberEmail: string;
   memberName: string;
   memberId: string;
   creatorId: string;
   creatorName: string;
+  /** Creator's URL slug (username or vanity_username). Used to build the profile link. */
+  creatorUsername?: string;
   channelName: string;
   channelId: string;
   messageText: string;
@@ -452,7 +547,7 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
     const channelUrl = `${appUrl}/chat?channel=${data.channelId}`;
     const mentionType = data.mentionType ?? 'everyone';
 
@@ -476,8 +571,7 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
       ? `${data.senderName} mentioned you in ${data.channelName}`
       : `${data.senderName} mentioned everyone in ${data.channelName}`;
 
-    // Generate unique Message-ID to prevent email threading
-    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.memberId}@merocircle.app>`;
+    const messageId = generateMessageId(data.memberId);
 
     const mailOptions = {
       from: {
@@ -489,8 +583,7 @@ export async function sendChannelMentionEmail(data: ChannelMentionEmailData): Pr
       html: emailHtml,
       messageId,
       headers: {
-        'Message-ID': messageId,
-        'X-Mailer': 'MeroCircle',
+        ...getNoThreadHeaders(messageId),
         'X-Priority': '3',
         'Precedence': 'bulk',
       },
@@ -605,7 +698,7 @@ export async function sendSubscriptionConfirmationEmail(data: SubscriptionConfir
       })
     );
 
-    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.supporterEmail.replace('@', '-at-')}@merocircle.app>`;
+    const messageId = generateMessageId(`sub-${data.supporterEmail.replace('@', '-at-')}`);
 
     const mailOptions = {
       from: {
@@ -617,8 +710,7 @@ export async function sendSubscriptionConfirmationEmail(data: SubscriptionConfir
       html,
       messageId,
       headers: {
-        'Message-ID': messageId,
-        'X-Mailer': 'MeroCircle',
+        ...getNoThreadHeaders(messageId),
         'X-Priority': '3',
       },
     };
@@ -686,7 +778,7 @@ export async function sendNewSupporterNotificationEmail(data: NewSupporterNotifi
       })
     );
 
-    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${data.creatorEmail.replace('@', '-at-')}@merocircle.app>`;
+    const messageId = generateMessageId(`newsup-${data.creatorEmail.replace('@', '-at-')}`);
 
     const mailOptions = {
       from: {
@@ -698,8 +790,7 @@ export async function sendNewSupporterNotificationEmail(data: NewSupporterNotifi
       html,
       messageId,
       headers: {
-        'Message-ID': messageId,
-        'X-Mailer': 'MeroCircle',
+        ...getNoThreadHeaders(messageId),
         'X-Priority': '3',
       },
     };
@@ -730,6 +821,8 @@ export async function sendSubscriptionExpiringEmail(data: {
   supporterEmail: string;
   supporterName: string;
   creatorName: string;
+  /** Creator's URL slug (username or vanity_username). Used to build the profile link. */
+  creatorUsername?: string;
   creatorId: string;
   tierLevel: number;
   expiryDate: string;
@@ -744,7 +837,7 @@ export async function sendSubscriptionExpiringEmail(data: {
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
 
     const emailHtml = await render(
       SubscriptionExpiringReminder({
@@ -759,7 +852,7 @@ export async function sendSubscriptionExpiringEmail(data: {
       })
     );
 
-    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-expiring-${data.supporterEmail.replace('@', '-at-')}@merocircle.app>`;
+    const messageId = generateMessageId(`expiring-${data.supporterEmail.replace('@', '-at-')}`);
 
     const mailOptions = {
       from: {
@@ -771,8 +864,7 @@ export async function sendSubscriptionExpiringEmail(data: {
       html: emailHtml,
       messageId,
       headers: {
-        'Message-ID': messageId,
-        'X-Mailer': 'MeroCircle',
+        ...getNoThreadHeaders(messageId),
         'X-Priority': '1', // High priority
       },
     };
@@ -802,6 +894,8 @@ export async function sendSubscriptionExpiredEmail(data: {
   supporterEmail: string;
   supporterName: string;
   creatorName: string;
+  /** Creator's URL slug (username or vanity_username). Used to build the profile link. */
+  creatorUsername?: string;
   creatorId: string;
   renewUrl: string;
 }): Promise<boolean> {
@@ -813,7 +907,7 @@ export async function sendSubscriptionExpiredEmail(data: {
     }
 
     const appUrl = EMAIL_CONFIG.urls.app;
-    const creatorProfileUrl = getCreatorProfileUrl(data.creatorName);
+    const creatorProfileUrl = getCreatorProfileUrl(data.creatorUsername || data.creatorName);
 
     const emailHtml = await render(
       SubscriptionExpiredNotification({
@@ -825,7 +919,7 @@ export async function sendSubscriptionExpiredEmail(data: {
       })
     );
 
-    const messageId = `<${Date.now()}-${Math.random().toString(36).substring(2, 15)}-expired-${data.supporterEmail.replace('@', '-at-')}@merocircle.app>`;
+    const messageId = generateMessageId(`expired-${data.supporterEmail.replace('@', '-at-')}`);
 
     const mailOptions = {
       from: {
@@ -837,8 +931,7 @@ export async function sendSubscriptionExpiredEmail(data: {
       html: emailHtml,
       messageId,
       headers: {
-        'Message-ID': messageId,
-        'X-Mailer': 'MeroCircle',
+        ...getNoThreadHeaders(messageId),
         'X-Priority': '3',
       },
     };

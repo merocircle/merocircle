@@ -8,5 +8,6 @@ export { TrustSection } from "./TrustSection";
 export { ProcessSection } from "./ProcessSection";
 export { PaymentSection } from "./PaymentSection";
 export { TeamSection } from "./TeamSection";
+export { PreLaunchEventSection } from "./PreLaunchEventSection";
 export { CTASection } from "./CTASection";
 export { Footer } from "./Footer";

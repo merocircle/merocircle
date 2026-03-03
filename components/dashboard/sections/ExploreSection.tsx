@@ -81,7 +81,7 @@ const ExploreSection = memo(function ExploreSection() {
   const suggestedCreators = filterByCategory(feed?.suggested_creators || []);
 
   return (
-    <div className="space-y-6 pb-8 pt-8">
+    <div className="space-y-6 pb-8 pt-2">
       {/* ── Search + Categories sticky header ── */}
       <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-xl -mx-3 sm:-mx-4 px-3 sm:px-4 py-4 border-b border-border/20">
         <div className="relative mb-3">

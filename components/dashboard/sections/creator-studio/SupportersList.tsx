@@ -43,7 +43,7 @@ export function SupportersList({ supporters, totalCount }: SupportersListProps) 
           >
             <Avatar className="w-12 h-12">
               <AvatarImage src={supporter.avatar || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground">
+              <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-primary-foreground">
                 {supporter.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>

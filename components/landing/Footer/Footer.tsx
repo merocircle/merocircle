@@ -18,7 +18,7 @@ export function Footer() {
           <div className="landing-footer-links">
             <Link href="/about">About</Link>
             <a href="mailto:team@merocircle.app">Contact</a>
-            <Link href="/privacy">Privacy</Link>
+            {/* <Link href="/privacy">Privacy</Link> */}
           </div>
         </div>
 

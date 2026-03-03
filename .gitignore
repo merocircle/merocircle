@@ -5,9 +5,13 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+/.windsurf/
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+/e2e/.auth/
 
 # next.js
 /.next/
@@ -51,3 +55,6 @@ Thumbs.db
 # Email previews
 email-preview.html
 *.email-preview.html
+
+# Sentry Config File
+.env.sentry-build-plugin

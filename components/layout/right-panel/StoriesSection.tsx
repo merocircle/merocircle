@@ -27,7 +27,7 @@ export function StoriesSection({ stories }: StoriesSectionProps) {
       <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
         {/* Add Story Button */}
         <motion.button
-          className="flex flex-col items-center gap-1 flex-shrink-0"
+          className="flex flex-col items-center gap-1 shrink-0"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -41,7 +41,7 @@ export function StoriesSection({ stories }: StoriesSectionProps) {
         {stories.map((story) => (
           <motion.button
             key={story.id}
-            className="flex flex-col items-center gap-1 flex-shrink-0"
+            className="flex flex-col items-center gap-1 shrink-0"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -49,7 +49,7 @@ export function StoriesSection({ stories }: StoriesSectionProps) {
               className={cn(
                 'relative w-14 h-14 rounded-full p-0.5',
                 story.hasNewStory
-                  ? 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500'
+                  ? 'bg-linear-to-tr from-yellow-400 via-red-500 to-purple-500'
                   : 'bg-muted'
               )}
             >

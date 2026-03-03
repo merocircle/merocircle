@@ -70,6 +70,8 @@ type TierData = { tier_level: number; price: number; tier_name: string; descript
 import { useAuth } from '@/contexts/auth-context';
 import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { signIn } from 'next-auth/react';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { useRealtimeCreatorPosts } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
@@ -90,6 +92,54 @@ const PaymentGatewaySelector = dynamic(
   { loading: () => null, ssr: false }
 );
 
+/** Sentinel that triggers load more when scrolled into view (batch load like home feed) */
+function CreatorPostsLoadMore({
+  onLoadMore,
+  hasMore,
+  isLoading,
+}: {
+  onLoadMore: () => void;
+  hasMore: boolean;
+  isLoading: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const hasMoreRef = useRef(hasMore);
+  const isLoadingRef = useRef(isLoading);
+  hasMoreRef.current = hasMore;
+  isLoadingRef.current = isLoading;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: '200px', threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onLoadMore]);
+
+  if (!hasMore && !isLoading) return null;
+
+  return (
+    <div ref={ref} className="min-h-px py-4 flex justify-center">
+      {isLoading && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <span>Loading more...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface CreatorProfileSectionProps {
   creatorId: string;
   initialHighlightedPostId?: string | null;
@@ -101,9 +151,11 @@ interface CreatorProfileSectionProps {
 export default function CreatorProfileSection({ creatorId, initialHighlightedPostId, defaultTab, renewFromUrl, subscriptionIdFromUrl }: CreatorProfileSectionProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const membershipTabRef = useRef<HTMLDivElement>(null);
 
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const [tempHighlightPostId, setTempHighlightPostId] = useState<string | null>(null);
@@ -133,8 +185,25 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     loading,
     error,
     refreshCreatorDetails,
-    updateSupporterTier
+    updateSupporterTier,
+    loadMorePosts,
+    hasMorePosts,
+    postsLoadingMore
   } = useCreatorDetails(creatorId);
+
+  // Redirect from /creator/id to /creator/username when username is available
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const pathname = window.location.pathname;
+    const username = creatorDetails?.username;
+    
+    // Check if current path is /creator/id and we have a username
+    if (username && pathname.startsWith('/creator/') && pathname === `/creator/${creatorId}`) {
+      const newPath = `/creator/${username}`;
+      window.history.replaceState({}, '', newPath);
+    }
+  }, [creatorDetails, creatorId]);
 
   const creatorPostIds = useMemo(() => recentPosts.map((p) => String(p.id)), [recentPosts]);
   useRealtimeCreatorPosts(creatorPostIds, refreshCreatorDetails);
@@ -301,6 +370,16 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
   const { subscribe, unsubscribe } = useSubscription();
 
+  const handleJoinCircle = useCallback(() => {
+    setActiveTab('membership');
+    // Scroll to membership content after a short delay to ensure tab content is rendered
+    setTimeout(() => {
+      if (membershipTabRef.current) {
+        membershipTabRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  }, []);
+
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
 
@@ -418,7 +497,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       bio: creatorDetails.bio || '',
       category: creatorDetails.category || '',
     });
-    setEditVanityUsername(creatorDetails.vanity_username || '');
+    setEditVanityUsername(creatorDetails.username || '');
     const links = creatorDetails.social_links || {};
     setEditSocialLinks(links);
     setEditPlatformIds(Object.keys(links));
@@ -671,8 +750,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           throw new Error(result.error || 'Payment failed');
         }
       } catch (error) {
-        console.error('Direct payment error:', error);
-        alert(error instanceof Error ? error.message : 'Failed to register support. Please try again.');
+        logger.error('Direct payment error', 'CREATOR_PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+        toast({ title: 'Payment failed', description: error instanceof Error ? error.message : 'Failed to register support. Please try again.', variant: 'destructive' });
         setPaymentLoading(false);
       } finally {
         setPendingPayment(null);
@@ -784,8 +863,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       // Unexpected response shape
       throw new Error(result.error || 'eSewa payment failed');
     } catch (error: unknown) {
-      console.error('[PAYMENT] Error:', error);
-      alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
+      logger.error('Payment error', 'CREATOR_PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Payment failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
       setPaymentLoading(false);
       setPendingPayment(null);
     }
@@ -824,8 +903,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         throw new Error(result.error || 'Failed to join');
       }
     } catch (error) {
-      console.error('Free support error:', error);
-      alert(error instanceof Error ? error.message : 'Could not join as supporter. Please try again.');
+      logger.error('Free support error', 'CREATOR_PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Could not join', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
     } finally {
       setPaymentLoading(false);
     }
@@ -923,7 +1002,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         refreshCreatorDetails();
       }
     } catch (err) {
-      console.error('Avatar upload error:', err);
+      logger.error('Avatar upload error', 'CREATOR_PROFILE_SECTION', { error: err instanceof Error ? err.message : String(err) });
+      toast({ title: 'Avatar upload failed', variant: 'destructive' });
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -948,7 +1028,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         refreshCreatorDetails();
       }
     } catch (err) {
-      console.error('Cover upload error:', err);
+      logger.error('Cover upload error', 'CREATOR_PROFILE_SECTION', { error: err instanceof Error ? err.message : String(err) });
+      toast({ title: 'Cover upload failed', variant: 'destructive' });
     } finally {
       setIsUploadingCover(false);
     }
@@ -967,6 +1048,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       image_url: post.image_url ? String(post.image_url) : undefined,
       image_urls: Array.isArray(post.image_urls) ? post.image_urls : undefined,
       media_url: post.media_url ? String(post.media_url) : undefined,
+      preview_image_url: post.preview_image_url ? String(post.preview_image_url) : undefined,
       is_public: typeof post.is_public === 'boolean' ? post.is_public : true,
       tier_required: String(post.tier_required || 'free'),
       post_type: String(post.post_type || 'post'),
@@ -1107,7 +1189,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   currentUserId={user?.id}
                   showActions={true}
                   isSupporter={isSupporter}
-                  showAuthor={false}
+                  showAuthor={true}
                   onNavigateToMembership={() => setActiveTab('membership')}
                   creatorSlug={creatorDetails?.username ?? undefined}
                 />
@@ -1461,7 +1543,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     </Badge>
                   ) : (
                     <Button
-                      onClick={() => setActiveTab('membership')}
+                      onClick={handleJoinCircle}
                       className="gap-2 px-5 h-9 text-sm font-semibold shadow-md shadow-primary/15"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -1501,32 +1583,32 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       {/* Tabs Section */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-16">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="sticky top-0.5 z-30 bg-background/50 rounded-lg backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-4 min-w-0">
-            <TabsList className="inline-flex w-full min-w-0 h-11 bg-muted border-0 shadow-none p-1 gap-1 justify-start lg:justify-center overflow-x-auto scrollbar-hide rounded-md">
-              <TabsTrigger value="posts" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+          <div className="sticky top-0 z-30 bg-background/50 rounded-lg backdrop-blur-xl border-b border-border/30 -mx-4 px-4 pt-4 pb-4 min-w-0">
+            <TabsList className="inline-flex xs:justify-start w-full h-11 bg-muted p-1 gap-1 overflow-x-auto overflow-y-clip scrollbar-hide rounded-md">
+              <TabsTrigger value="posts" className="flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-sm px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <FileText className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Posts
               </TabsTrigger>
               {!isOwnProfile && (
-              <TabsTrigger value="membership" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="membership" className="flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Sparkles className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Membership
               </TabsTrigger>
               )}
-              <TabsTrigger value="chat" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="chat" className="flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <MessageCircle className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Chat
               </TabsTrigger>
-              <TabsTrigger value="shop" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="shop" className="flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <ShoppingBag className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 Shop
               </TabsTrigger>
-              <TabsTrigger value="about" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+              <TabsTrigger value="about" className="flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                 <Info className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                 About
               </TabsTrigger>
               {isOwnProfile && (
-                <TabsTrigger value="edit" className="lg:flex-1 flex-0 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                <TabsTrigger value="edit" className="flex-none lg:flex-1 data-[state=active]:bg-card data-[state=active]:shadow-none data-[state=active]:text-primary rounded-md px-3 sm:px-4 py-2.5 text-[13px] font-medium whitespace-nowrap">
                   <Edit className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                   Edit Profile
                 </TabsTrigger>
@@ -1536,7 +1618,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
               <TabsContent value="chat" className="mt-3">
                 <div className="relative">
-                  {isSupporter ? (
+                  {isSupporter || isOwnProfile ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
                       <div className="h-[400px] sm:h-[500px] lg:h-[600px]">
                         <StreamCommunitySection creatorId={creatorId} />
@@ -1591,7 +1673,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                 <Button 
                                   size="lg" 
                                   className="w-full shadow-lg shadow-primary/20 rounded-full" 
-                                  onClick={() => setActiveTab('membership')}
+                                  onClick={handleJoinCircle}
                                 >
                                   <span>Join the Circle</span>
                                 </Button>
@@ -1605,7 +1687,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </div>
               </TabsContent>
 
-              <TabsContent value="membership" className="pt-6">
+              <TabsContent value="membership" className="pt-6" ref={membershipTabRef}>
                 <div className="max-w-4xl mx-auto">
                   {isOwnProfile ? (
                     <Card className="border-border/50 p-12 text-center">
@@ -1707,10 +1789,14 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   <>
                     <TimelineFeed
                       emptyMessage="This creator hasn't shared any content yet. Check back soon!"
-                      onRefresh={refreshCreatorDetails}
                     >
                       {renderTimelinePosts}
                     </TimelineFeed>
+                    <CreatorPostsLoadMore
+                      onLoadMore={loadMorePosts}
+                      hasMore={hasMorePosts}
+                      isLoading={postsLoadingMore}
+                    />
                     {showSupportBanner && <div className="h-24" />}
                   </>
                 ) : (
@@ -2069,18 +2155,18 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       )}
 
       <Dialog open={!!showConfirmFreeSupport} onOpenChange={(open) => !open && setShowConfirmFreeSupport(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Join as Supporter (Free)</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-sm mx-4 sm:mx-auto sm:max-w-md" showCloseButton={false}>
+          <DialogHeader className="text-center sm:text-left">
+            <DialogTitle className="text-lg sm:text-xl">Join as Supporter (Free)</DialogTitle>
+            <DialogDescription className="text-sm mt-2">
               You&apos;ll get access to community chat and posts. No payment required.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex gap-3 mt-4">
-            <Button variant="outline" className="flex-1" onClick={() => setShowConfirmFreeSupport(null)} disabled={paymentLoading}>
+          <div className="flex gap-3 mt-6">
+            <Button variant="outline" className="flex-1 h-10 text-sm" onClick={() => setShowConfirmFreeSupport(null)} disabled={paymentLoading}>
               Cancel
             </Button>
-            <Button className="flex-1" onClick={handleConfirmFreeSupport} disabled={paymentLoading}>
+            <Button className="flex-1 h-10 text-sm" onClick={handleConfirmFreeSupport} disabled={paymentLoading}>
               {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm'}
             </Button>
           </div>

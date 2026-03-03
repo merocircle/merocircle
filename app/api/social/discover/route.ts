@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    parseInt(searchParams.get('limit') || '20')
-    
+    const limit = parseInt(searchParams.get('limit') || '20')
+    logger.info('Discovery feed request', 'SOCIAL_DISCOVER_API', { limit })
+
     const supabase = await createClient()
 
     // Fetch creators ordered by supporters (people who have paid)
@@ -111,6 +113,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
+    logger.error('Discovery feed failed', 'SOCIAL_DISCOVER_API', { error: error instanceof Error ? error.message : String(error) })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

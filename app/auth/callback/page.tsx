@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 const MAX_SESSION_CHECK_ATTEMPTS = 10;
 const SESSION_CHECK_INTERVAL_MS = 500;
@@ -36,7 +37,7 @@ async function waitForSession(maxAttempts: number): Promise<boolean> {
         return true;
       }
     } catch (error) {
-      console.error('Session check error:', error);
+      logger.error('Session check error', 'AUTH_CALLBACK', { error: error instanceof Error ? error.message : String(error), attempt });
     }
     
     // Wait before next attempt
@@ -79,7 +80,7 @@ function AuthCallbackContent() {
         // Redirect regardless of session status (session might be set via cookies)
         handleRedirect(redirectPath);
       } catch (error) {
-        console.error('Callback error:', error);
+        logger.error('Callback error', 'AUTH_CALLBACK', { error: error instanceof Error ? error.message : String(error) });
         // On error, still try to redirect
         const redirectPath = getAndClearRedirectPath();
         handleRedirect(redirectPath);

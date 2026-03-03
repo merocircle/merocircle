@@ -135,16 +135,14 @@ export async function createNotification(
       }
     }
 
-    // Check for duplicate notification (same type, user, actor, post/comment within last minute)
-    // This prevents spam notifications
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    // Check for duplicate: same creator (user_id), post, actor — if exists, do not create
+    // For 'like': no time window — one notification per (creator, post, liker) ever
     const duplicateQuery = supabase
       .from('notifications')
       .select('id')
       .eq('user_id', userId)
       .eq('type', type)
       .eq('actor_id', actorId)
-      .gte('created_at', oneMinuteAgo)
       .limit(1);
 
     if (postId) {
@@ -152,6 +150,11 @@ export async function createNotification(
     }
     if (commentId) {
       duplicateQuery.eq('comment_id', commentId);
+    }
+    // For non-like types, only treat as duplicate within last minute (spam guard)
+    if (type !== 'like') {
+      const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+      duplicateQuery.gte('created_at', oneMinuteAgo);
     }
 
     const { data: duplicates } = await duplicateQuery;

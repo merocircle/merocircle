@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthenticatedUser, getOptionalUser, handleApiError } from '@/lib/api-utils'
 import { toggleLike, getPostLikeStatus } from '@/lib/like-engine'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
     const { postId, action } = await request.json()
-    
+    logger.info('Like/unlike request', 'SOCIAL_LIKE_API', { postId, action })
+
     if (!postId || !action || !['like', 'unlike'].includes(action)) {
       return NextResponse.json(
         { error: 'Post ID and valid action (like/unlike) required' },

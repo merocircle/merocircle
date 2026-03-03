@@ -19,13 +19,14 @@ import { useStreamChat } from '@/contexts/stream-chat-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
+import { ChannelSearchProvider } from './contexts/ChannelSearchContext';
 import { CustomQuotedMessage } from './CustomQuotedMessage';
 import { CustomMessageOptions } from './CustomMessageOptions';
 import { CustomMessage } from './CustomMessage';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send,
-  Search, Info, X
+  Search, Info, X, Hash
 } from 'lucide-react';
 import { useChannels, useDMChannels, useUnreadCounts } from './hooks';
 import { 
@@ -38,6 +39,7 @@ import {
 import { ChannelInfoPanel } from './components/ChannelInfoPanel';
 import type { MobileView, DMChannel } from './types';
 import type { Server, SupabaseChannel } from './hooks/useChannels';
+import { logger } from '@/lib/logger';
 import 'stream-chat-react/dist/css/v2/index.css';
 
 interface StreamChatWrapperProps {
@@ -78,6 +80,59 @@ export function StreamChatWrapper({
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
+  const [hasMounted, setHasMounted] = useState(false);
+  const messageInputTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const messageInputResizeRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Auto-resize Stream Chat message input textarea as user types (it’s not our MessageInput component)
+  useEffect(() => {
+    if (!activeChannel) return;
+    const MIN_H = 24;
+    const MAX_H = 320;
+    const resize = () => {
+      const ta = messageInputTextareaRef.current;
+      if (!ta) return;
+      ta.style.height = "0";
+      ta.style.overflowY = "hidden";
+      const h = Math.max(MIN_H, Math.min(ta.scrollHeight, MAX_H));
+      ta.style.height = `${h}px`;
+      ta.style.overflowY = ta.scrollHeight > MAX_H ? "auto" : "hidden";
+    };
+    const attach = (textarea: HTMLTextAreaElement) => {
+      messageInputTextareaRef.current = textarea;
+      messageInputResizeRef.current = resize;
+      resize();
+      textarea.addEventListener("input", resize);
+    };
+    const find = () => {
+      const wrapper = document.querySelector(".stream-chat-wrapper");
+      if (!wrapper) return;
+      const ta = wrapper.querySelector(".str-chat__textarea__textarea") as HTMLTextAreaElement | null;
+      if (ta && ta !== messageInputTextareaRef.current) {
+        if (messageInputTextareaRef.current && messageInputResizeRef.current) {
+          messageInputTextareaRef.current.removeEventListener("input", messageInputResizeRef.current);
+        }
+        attach(ta);
+      }
+    };
+    const t1 = setTimeout(find, 0);
+    const t2 = setTimeout(find, 150);
+    const t3 = setTimeout(find, 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (messageInputTextareaRef.current && messageInputResizeRef.current) {
+        messageInputTextareaRef.current.removeEventListener("input", messageInputResizeRef.current);
+        messageInputTextareaRef.current = null;
+        messageInputResizeRef.current = null;
+      }
+    };
+  }, [activeChannel?.id]);
 
   // Custom hooks
   const { otherServers, myServer, loading, fetchChannels } = useChannels(user);
@@ -140,6 +195,30 @@ export function StreamChatWrapper({
     initialExpandDoneRef.current = true;
     setExpandedServers(allIds);
   }, [loading, filteredOtherServers, filteredMyServer]);
+
+  // Ensure selectedServer is set when activeChannel changes (fallback for timing issues)
+  useEffect(() => {
+    if (!activeChannel || selectedServer || mobileView !== 'chat') return;
+    
+    // Find which server this channel belongs to
+    const allServers = [
+      ...(filteredMyServer ? [filteredMyServer] : []),
+      ...filteredOtherServers,
+    ];
+    
+    const activeChannelId = (activeChannel.data as any)?.id;
+    if (!activeChannelId) return;
+
+    for (const server of allServers) {
+      const channel = server.channels.find(
+        (ch: SupabaseChannel) => ch.stream_channel_id === activeChannelId
+      );
+      if (channel) {
+        setSelectedServer(server);
+        break;
+      }
+    }
+  }, [activeChannel, selectedServer, mobileView, filteredMyServer, filteredOtherServers]);
 
   // Listen for new messages (debounced to prevent rate limiting)
   useEffect(() => {
@@ -204,13 +283,10 @@ export function StreamChatWrapper({
             });
 
             if (!response.ok) {
-              console.error(
-                "Failed to send @everyone mention emails:",
-                await response.text(),
-              );
+              logger.error("Failed to send @everyone mention emails", "STREAM_CHAT", { text: await response.text() });
             }
           } catch (error) {
-            console.error("Error calling @everyone mention API:", error);
+            logger.error("Error calling @everyone mention API", "STREAM_CHAT", { error: error instanceof Error ? error.message : String(error) });
           }
         }
 
@@ -234,18 +310,15 @@ export function StreamChatWrapper({
               });
 
               if (!response.ok) {
-                console.error(
-                  "Failed to send user mention emails:",
-                  await response.text(),
-                );
+                logger.error("Failed to send user mention emails", "STREAM_CHAT", { text: await response.text() });
               }
             } catch (error) {
-              console.error("Error calling user mention API:", error);
+              logger.error("Error calling user mention API", "STREAM_CHAT", { error: error instanceof Error ? error.message : String(error) });
             }
           }
         }
       } catch (error) {
-        console.error("Error handling mentions:", error);
+        logger.error("Error handling mentions", "STREAM_CHAT", { error: error instanceof Error ? error.message : String(error) });
       }
     };
 
@@ -302,12 +375,6 @@ export function StreamChatWrapper({
       }
       return next;
     });
-  }, []);
-
-  const selectServerMobile = useCallback((server: Server) => {
-    setSelectedServer(server);
-    setMobileView("channels");
-    setExpandedServers((prev) => new Set([...prev, server.id]));
   }, []);
 
   const goBackToServers = useCallback(() => {
@@ -399,11 +466,25 @@ export function StreamChatWrapper({
     [chatClient, fetchUnreadCounts, fetchChannels],
   );
 
+  const selectServerMobile = useCallback(async (server: Server) => {
+    setSelectedServer(server);
+    setExpandedServers((prev) => new Set([...prev, server.id]));
+    const firstChannel = server.channels.find(ch => ch.stream_channel_id);
+    if (firstChannel) {
+      // Use requestAnimationFrame to ensure selectedServer state is applied before selectChannel completes
+      await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
+      await selectChannel(firstChannel); // sets mobileView = "chat" internally
+    } else {
+      setMobileView("channels"); // fallback: no channels yet
+    }
+  }, [selectChannel]);
+
   const selectDMChannel = useCallback(
     async (dmChannel: DMChannel) => {
       try {
         await dmChannel.channel.watch();
         setActiveChannel(dmChannel.channel);
+        setSelectedServer(null); // Clear server when opening DM
         setMobileView("chat");
         await dmChannel.channel.markRead();
         fetchUnreadCounts();
@@ -543,14 +624,10 @@ export function StreamChatWrapper({
           }
         })();
       } else if (hasChannels) {
-        console.warn(
-          `Channel ${urlChannelId} not found in available channels`,
-          {
-            availableChannels: allServers.flatMap((s) =>
-              s.channels.map((ch) => ch.stream_channel_id),
-            ),
-          },
-        );
+        logger.warn("Channel not found in available channels", "STREAM_CHAT", {
+          urlChannelId,
+          availableChannels: allServers.flatMap((s) => s.channels.map((ch) => ch.stream_channel_id)),
+        });
       }
     }
   }, [
@@ -604,11 +681,12 @@ export function StreamChatWrapper({
         await channel.create();
         await channel.watch();
         setActiveChannel(channel);
+        setSelectedServer(null); // Clear server when starting DM
         setSelectedUser(null);
         setMobileView("chat");
         fetchDMChannels();
       } catch (err) {
-        console.error("Failed to create DM:", err);
+        logger.error("Failed to create DM", "STREAM_CHAT", { error: err instanceof Error ? err.message : String(err), userId });
       }
     },
     [chatClient, user, fetchDMChannels],
@@ -758,13 +836,26 @@ export function StreamChatWrapper({
   }, [channelUnreadCounts, selectServerMobile]);
 
 
-  // Loading/Error states
+  // Loading/Error states — only use after mount to avoid hydration mismatch (server vs client connection state)
+  if (!hasMounted) {
+    return (
+      <div
+        className={`flex items-center justify-center h-full bg-background ${className}`}
+      >
+        <div className="text-center p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
+          <p className="text-muted-foreground">Connecting to chat...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isConnecting) {
     return (
       <div
         className={`flex items-center justify-center h-full bg-background ${className}`}
       >
-        <div className="text-center">
+        <div className="text-center p-6">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
           <p className="text-muted-foreground">Connecting to chat...</p>
         </div>
@@ -799,7 +890,7 @@ export function StreamChatWrapper({
     if (user) {
       return (
         <div className={`flex items-center justify-center h-full bg-background ${className}`}>
-          <div className="text-center">
+          <div className="text-center p-6">
             <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
             <p className="text-muted-foreground">Connecting to chat...</p>
           </div>
@@ -951,21 +1042,23 @@ export function StreamChatWrapper({
           <div className="flex-1 flex min-w-0 overflow-hidden bg-background">
             <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${showInfoPanel ? 'border-r border-border' : ''}`}>
               {activeChannel ? (
-                <Channel 
-                  channel={activeChannel} 
-                  CustomMessageActionsList={CustomMessageActionsList}
-                  QuotedMessage={CustomQuotedMessage}
-                  MessageOptions={CustomMessageOptions}
-                  MessageRepliesCountButton={NoOpMessageRepliesCountButton}
-                  Message={CustomMessage}
-                >
-                  <Window>
-                    <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
-                    <MessageList />
-                    <MessageInput focus />
-                  </Window>
-                  <NoOpThread />
-                </Channel>
+                <ChannelSearchProvider>
+                  <Channel 
+                    channel={activeChannel} 
+                    CustomMessageActionsList={CustomMessageActionsList}
+                    QuotedMessage={CustomQuotedMessage}
+                    MessageOptions={CustomMessageOptions}
+                    MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                    Message={CustomMessage}
+                  >
+                    <Window>
+                      <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
+                      <MessageList />
+                      <MessageInput focus />
+                    </Window>
+                    <NoOpThread />
+                  </Channel>
+                </ChannelSearchProvider>
               ) : channelError ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center p-8">
@@ -997,7 +1090,7 @@ export function StreamChatWrapper({
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden h-full flex flex-col overflow-hidden min-w-0 w-full max-w-[100vw]">
+        <div className="md:hidden h-full min-h-0 flex flex-col overflow-hidden min-w-0 w-full max-w-[100vw]">
           {mobileView === "servers" && (
             <div className="h-full flex flex-col bg-background overflow-hidden min-w-0 w-full">
               <div className="px-4 sm:px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm flex-shrink-0 min-w-0">
@@ -1178,30 +1271,72 @@ export function StreamChatWrapper({
           )}
 
           {mobileView === "chat" && activeChannel && (
-            <div className="h-full flex flex-col overflow-hidden min-w-0 w-full">
-              <Channel
-                channel={activeChannel}
-                CustomMessageActionsList={CustomMessageActionsList}
-                QuotedMessage={CustomQuotedMessage}
-                MessageOptions={CustomMessageOptions}
-                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
-                Message={CustomMessage}
-              >
-                <Window>
+            <div className="h-full min-h-0 flex flex-col overflow-hidden min-w-0 w-full">
+              <ChannelSearchProvider>
+                <Channel
+                  channel={activeChannel}
+                  CustomMessageActionsList={CustomMessageActionsList}
+                  QuotedMessage={CustomQuotedMessage}
+                  MessageOptions={CustomMessageOptions}
+                  MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                  Message={CustomMessage}
+                >
+                  <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
                     <button
-                      onClick={goBackToChannels}
-                      className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+                      onClick={goBackToServers}
+                      className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
                     >
                       <ArrowLeft className="h-5 w-5 text-foreground" />
                     </button>
-                    <MobileChannelHeader />
+                    <MobileChannelHeader selectedServer={selectedServer} />
                   </div>
+                  {/* Horizontal channel switcher strip — show when multiple channels or creator's own server (for + button) */}
+                  {selectedServer && (selectedServer.channels.length >= 1 || (selectedServer.id === myServer?.id && isCreator)) && (
+                    <div className="flex overflow-x-auto gap-1.5 px-3 py-2 border-b border-border bg-card/40 flex-shrink-0 channel-strip-scroll">
+                      {selectedServer.channels.map(ch => {
+                        const isActive = activeChannel?.id === ch.stream_channel_id;
+                        const unread = ch.stream_channel_id ? channelUnreadCounts[ch.stream_channel_id] || 0 : 0;
+                        return (
+                          <button
+                            key={ch.id}
+                            onClick={() => selectChannel(ch)}
+                            disabled={!ch.stream_channel_id}
+                            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                              isActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            } ${!ch.stream_channel_id ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <Hash className="h-2.5 w-2.5" />
+                            {ch.name}
+                            {unread > 0 && (
+                              <span className="ml-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-destructive text-white text-[9px] flex items-center justify-center">
+                                {unread > 99 ? '99+' : unread}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                      {/* Creator: add channel button at end of strip (scrollable with channels) */}
+                      {selectedServer.id === myServer?.id && isCreator && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateChannel(true)}
+                          className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                          aria-label="Create channel"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <MessageList />
                   <MessageInput focus />
                 </Window>
                 <NoOpThread />
               </Channel>
+              </ChannelSearchProvider>
             </div>
           )}
 
@@ -1303,6 +1438,241 @@ export function StreamChatWrapper({
           box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
         }
 
+        /* ═══════════════════════════════════════════
+           CHAT ANIMATIONS
+           ═══════════════════════════════════════════ */
+
+        /* ── Keyframes ── */
+
+        /* New message: slides up from slightly below */
+        @keyframes msgSlideUp {
+          0%   { opacity: 0; transform: translateY(16px) scale(0.97); }
+          60%  { opacity: 1; transform: translateY(-3px) scale(1.01); }
+          100% { opacity: 1; transform: translateY(0)   scale(1);    }
+        }
+
+        /* Other messages: slide up from slight left offset */
+        @keyframes msgSlideUpLeft {
+          0%   { opacity: 0; transform: translateY(16px) translateX(-8px) scale(0.97); }
+          60%  { opacity: 1; transform: translateY(-3px) translateX(0)     scale(1.01); }
+          100% { opacity: 1; transform: translateY(0)    translateX(0)     scale(1);    }
+        }
+
+        /* Emoji pop-in (used per emoji with delay) */
+        @keyframes emojiPop {
+          0%   { opacity: 0; transform: scale(0.3) translateY(6px); }
+          70%  { opacity: 1; transform: scale(1.25) translateY(-2px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Action menu card scale-in from center-bottom */
+        @keyframes menuScaleIn {
+          0%   { opacity: 0; transform: translateX(-50%) scale(0.88) translateY(12px); }
+          70%  { opacity: 1; transform: translateX(-50%) scale(1.02) translateY(-2px); }
+          100% { opacity: 1; transform: translateX(-50%) scale(1)    translateY(0);    }
+        }
+
+        /* Backdrop fade-in */
+        @keyframes backdropFadeIn {
+          from { opacity: 0; backdrop-filter: blur(0px); }
+          to   { opacity: 1; backdrop-filter: blur(6px);  }
+        }
+
+        /* Reaction badge pop when added */
+        @keyframes reactionBadgePop {
+          0%   { transform: scale(0); }
+          65%  { transform: scale(1.35); }
+          100% { transform: scale(1); }
+        }
+
+        /* Send button pulse on click */
+        @keyframes sendPulse {
+          0%   { transform: scale(1);    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 40%, transparent); }
+          50%  { transform: scale(0.9);  box-shadow: 0 0 0 6px transparent; }
+          100% { transform: scale(1);    box-shadow: 0 0 0 0 transparent; }
+        }
+
+        @keyframes slideDown {
+          0%   { opacity: 0; transform: translateY(-10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        /* ── Apply to new messages ── */
+        .str-chat__message-list .str-chat__li {
+          animation-duration: 0.42s;
+          animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+          animation-fill-mode: both;
+        }
+        .str-chat__message-simple--me {
+          animation-name: msgSlideUp;
+        }
+        .str-chat__message-simple:not(.str-chat__message-simple--me):not(.str-chat__message--system) {
+          animation-name: msgSlideUpLeft;
+        }
+        .str-chat__message--system {
+          animation: none !important;
+        }
+
+        /* ── Bubble interactions ── */
+        .str-chat__message-bubble {
+          transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+                      box-shadow 0.18s ease !important;
+          will-change: transform;
+        }
+        .str-chat__li:hover .str-chat__message-bubble {
+          transform: translateY(-2px) scale(1.012) !important;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+        }
+        /* Don't lift on mobile (long-press handles interaction) */
+        @media (hover: none) {
+          .str-chat__li:hover .str-chat__message-bubble {
+            transform: none !important;
+            box-shadow: inherit !important;
+          }
+        }
+
+        /* ── Reaction badge pop ── */
+        .str-chat__simple-reactions-list-item {
+          animation: reactionBadgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        /* ── Send button press feedback ── */
+        .str-chat__send-button:active {
+          animation: sendPulse 0.28s ease-out !important;
+        }
+
+        /* ── Long-press action menu (centered, animated) ── */
+
+        /* Full-screen backdrop */
+        .chat-menu-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 40;
+          background: rgba(0,0,0,0.35);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          animation: backdropFadeIn 0.22s ease-out both;
+        }
+
+        /* Centered card */
+        .chat-action-menu {
+          position: fixed;
+          left: 50%;
+          bottom: calc(5rem + env(safe-area-inset-bottom));
+          z-index: 50;
+          width: min(320px, 90vw);
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12);
+          animation: menuScaleIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          transform-origin: center bottom;
+        }
+
+        /* Emoji reaction row */
+        .chat-reaction-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+          padding: 14px 16px 10px;
+          gap: 4px;
+        }
+
+        .chat-reaction-btn {
+          width: 44px;
+          height: 44px;
+          font-size: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          transition: transform 0.12s ease, background 0.12s ease;
+          animation: emojiPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+          animation-delay: var(--delay, 0ms);
+        }
+
+        .chat-reaction-btn:hover,
+        .chat-reaction-btn:active {
+          background: color-mix(in srgb, var(--muted) 80%, transparent);
+          transform: scale(1.3);
+        }
+
+        /* Divider */
+        .chat-action-divider {
+          height: 1px;
+          background: var(--border);
+          margin: 0;
+        }
+
+        /* Action row button (Reply etc.) */
+        .chat-action-row-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 18px;
+          font-size: 15px;
+          font-weight: 500;
+          color: var(--foreground);
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.12s ease;
+        }
+        .chat-action-row-btn:hover,
+        .chat-action-row-btn:active {
+          background: var(--muted);
+        }
+
+        /* Close pill */
+        .chat-action-close {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 12px 18px;
+          font-size: 14px;
+          color: var(--muted-foreground);
+          background: color-mix(in srgb, var(--muted) 60%, transparent);
+          border: none;
+          border-top: 1px solid var(--border);
+          cursor: pointer;
+          transition: background 0.12s ease;
+        }
+        .chat-action-close:hover,
+        .chat-action-close:active {
+          background: var(--muted);
+          color: var(--foreground);
+        }
+
+        /* ── Mobile view transitions ── */
+        @media (max-width: 768px) {
+          .stream-chat-wrapper .md\\:hidden {
+            transition: transform 0.4s ease-out, opacity 0.3s ease-out;
+            will-change: transform, opacity;
+          }
+          .channel-strip-scroll {
+            animation: slideDown 0.3s ease-out;
+          }
+          .str-chat__message-list {
+            animation: fadeIn 0.3s ease-out;
+          }
+          .str-chat__channel-header {
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+          }
+        }
+
         /* ── Larger avatars in message list (36px) ── */
         .str-chat__message .str-chat__avatar {
           width: 36px !important;
@@ -1346,6 +1716,8 @@ export function StreamChatWrapper({
         .str-chat__input-flat textarea {
           font-size: 14px !important;
           line-height: 1.5 !important;
+          min-height: 24px !important;
+          resize: none !important;
         }
 
         /* Send button — circular, prominent */
@@ -1406,6 +1778,22 @@ export function StreamChatWrapper({
         }
         .str-chat__li:hover .str-chat__message-data time {
           opacity: 0.8 !important;
+        }
+
+        /* Search: message wrapper for scroll target, no extra layout */
+        .channel-search-message-wrapper {
+          display: contents;
+        }
+        /* Yellow highlighter on the searched word (marker style) */
+        .channel-search-highlight {
+          background: #fef08a;
+          color: inherit;
+          border-radius: 2px;
+          padding: 0 2px;
+        }
+        .dark .channel-search-highlight {
+          background: #ca8a04;
+          color: #fef08a;
         }
 
         /* ── Emoji reactions styling ── */
@@ -1814,13 +2202,132 @@ export function StreamChatWrapper({
           background: var(--border) !important;
         }
 
+        /* ── Hide date separators below messages on mobile ── */
+        @media (max-width: 768px) {
+          /* Hide the last date separator in the message list (the one near the bottom/input area) */
+          .str-chat__message-list .str-chat__date-separator:last-child {
+            display: none !important;
+          }
+          /* Hide date separators that come after the last message */
+          .str-chat__message-list > .str-chat__date-separator:last-of-type {
+            display: none !important;
+          }
+        }
+
         /* ── Message options (action icons) - show on hover ── */
-        .str-chat__message-options-wrapper {
+        .str-chat__message-options-wrapper,
+        .str-chat__message-options {
           opacity: 0;
           transition: opacity 0.15s ease !important;
         }
-        .str-chat__li:hover .str-chat__message-options-wrapper {
+        .str-chat__li:hover .str-chat__message-options-wrapper,
+        .str-chat__li:hover .str-chat__message-options {
           opacity: 1;
+        }
+
+        /* ── Touch devices: always show message options (desktop / tablet only) ── */
+        @media (hover: none) and (min-width: 769px) {
+          .str-chat__message-options-wrapper,
+          .str-chat__message-options {
+            opacity: 1 !important;
+          }
+        }
+
+        /* ── Mobile: hide message options (long-press menu used instead) ── */
+        @media (max-width: 768px) {
+          .str-chat__message-options-wrapper,
+          .str-chat__message-options {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+          }
+          /* Remove reserved space for options so bubbles sit flush */
+          .str-chat__message--other .str-chat__message-inner,
+          .str-chat__message--me .str-chat__message-inner {
+            margin-inline-start: 0 !important;
+            margin-inline-end: 0 !important;
+          }
+          /* Prevent Safari/iOS text selection on long-press so reaction menu can open */
+          .mobile-long-press-wrapper {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+          }
+        }
+
+        /* ── iOS safe-area insets for message input ── */
+        .str-chat__message-input {
+          padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+        }
+
+        /* ── Message bubble max-width on mobile ── */
+        @media (max-width: 640px) {
+          .str-chat__message-bubble {
+            max-width: 82vw !important;
+          }
+        }
+
+        /* ── Prevent overscroll bleed ── */
+        .str-chat__message-list {
+          overscroll-behavior: contain !important;
+        }
+
+        /* ── Mobile: fixed chat container, only message list scrolls ── */
+        @media (max-width: 768px) {
+          .stream-chat-wrapper {
+            height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat,
+          .stream-chat-wrapper .str-chat__channel,
+          .stream-chat-wrapper .str-chat__container {
+            height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat__main-panel {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat__main-panel-inner {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .stream-chat-wrapper .str-chat__list {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+          }
+          .stream-chat-wrapper .str-chat__message-input {
+            flex-shrink: 0 !important;
+          }
+        }
+
+        /* ── Channel strip scrollbar hiding ── */
+        .channel-strip-scroll {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+        }
+        .channel-strip-scroll::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
         }
       `}</style>
     </div>

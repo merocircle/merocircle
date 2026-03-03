@@ -2,7 +2,7 @@
  * Utility functions for notification processing
  */
 
-type NotificationType = 'like' | 'comment' | 'payment' | 'follow' | 'mention' | 'announcement';
+type NotificationType = 'like' | 'comment' | 'payment' | 'mention' | 'announcement';
 
 export const mapNotificationType = (type: string): NotificationType => {
   const typeMap: Record<string, NotificationType> = {
@@ -10,9 +10,8 @@ export const mapNotificationType = (type: string): NotificationType => {
     comment: 'comment',
     payment: 'payment',
     support: 'payment',
-    follow: 'follow',
   };
-  
+
   return typeMap[type] || 'announcement';
 };
 

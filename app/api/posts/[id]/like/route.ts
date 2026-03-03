@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
 import { toggleLike } from '@/lib/like-engine';
+import { logger } from '@/lib/logger';
 
 interface Params {
   id: string;
@@ -13,7 +14,7 @@ export async function POST(
   const { id: postId } = await params;
 
   try {
-    // Authenticate user
+    logger.info('Like post', 'POST_LIKE_API', { postId });
     const { user, errorResponse } = await getAuthenticatedUser();
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

@@ -79,8 +79,8 @@ export function CreateChannelModal({ onClose, onCreate }: CreateChannelModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card rounded-lg w-full max-w-lg mx-4 max-h-[80vh] flex flex-col border border-border">
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+      <div className="bg-card rounded-t-2xl sm:rounded-lg w-full sm:max-w-lg sm:mx-4 max-h-[85vh] flex flex-col border border-border">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">Create Channel</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -173,7 +173,7 @@ export function CreateChannelModal({ onClose, onCreate }: CreateChannelModalProp
                     </div>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                       {supporter.user.photo_url ? (
-                        <img src={supporter.user.photo_url} alt="" className="w-full h-full object-cover" />
+                        <img src={supporter.user.photo_url} alt={supporter.user.display_name || 'User Avatar'} className="w-full h-full object-cover" />
                       ) : (
                         <Users className="h-4 w-4 text-primary" />
                       )}
@@ -192,7 +192,7 @@ export function CreateChannelModal({ onClose, onCreate }: CreateChannelModalProp
             )}
           </div>
 
-          <div className="p-4 border-t border-border flex gap-3">
+          <div className="p-4 pb-[calc(3.5rem+env(safe-area-inset-bottom))] sm:pb-4 border-t border-border flex gap-3 bg-card">
             <Button
               type="button"
               variant="outline"

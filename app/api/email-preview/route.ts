@@ -12,15 +12,17 @@ import {
   SubscriptionExpiredNotification,
   ChannelMentionNotification,
 } from '@/emails/templates';
+import { logger } from '@/lib/logger';
 
 /**
  * Email preview route — view all email templates in the browser
- * 
+ *
  * Visit /api/email-preview to see the full index.
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const type = searchParams.get('type');
+  logger.debug('Email preview request', 'EMAIL_PREVIEW_API', { type: type ?? 'index' });
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   const allTypes = [

@@ -11,6 +11,10 @@ export default function SettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
+    document.title = 'Settings — MeroCircle';
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/auth');
     }

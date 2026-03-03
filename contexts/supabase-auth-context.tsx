@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 interface UserProfile {
   id: string;
@@ -120,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCreatorProfile(null);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      logger.error('Error loading profile', 'SUPABASE_AUTH', { error: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -139,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await loadProfile(currentSession.user.id);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        logger.error('Error initializing auth', 'SUPABASE_AUTH', { error: error instanceof Error ? error.message : String(error) });
       } finally {
         if (mounted) {
           setLoading(false);
@@ -162,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
               await loadProfile(newSession.user.id);
             } catch (error) {
-              console.error('Error loading profile on sign in:', error);
+              logger.error('Error loading profile on sign in', 'SUPABASE_AUTH', { error: error instanceof Error ? error.message : String(error) });
             } finally {
               if (mounted) {
                 setLoading(false);
@@ -229,21 +230,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const createCreatorProfile = async (bio: string, category: string, socialLinks?: Record<string, string>, vanityUsername?: string) => {
     if (!user) return { error: new Error('Not authenticated') };
 
-    console.log('[createCreatorProfile] Starting for user:', user.id);
+    logger.info('Creating creator profile', 'SUPABASE_AUTH', { userId: user.id });
 
     try {
-      // Step 1: Ensure user exists in public.users
       const { data: existingUser, error: userFetchError } = await supabase
         .from('users')
         .select('id, role')
         .eq('id', user.id)
         .single();
 
-      console.log('[createCreatorProfile] Existing user check:', { existingUser, error: userFetchError?.code });
-
       if (userFetchError && userFetchError.code === 'PGRST116') {
-        // User doesn't exist, create them FIRST
-        console.log('[createCreatorProfile] Creating user in public.users');
         const { data: newUser, error: createUserError } = await supabase
           .from('users')
           .insert({
@@ -262,43 +258,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (createUserError && createUserError.code !== '23505') {
-          console.error('[createCreatorProfile] Failed to create user:', createUserError);
+          logger.error('Failed to create user', 'SUPABASE_AUTH', { error: createUserError.message });
           return { error: createUserError };
         }
-        console.log('[createCreatorProfile] User created:', newUser?.id);
+        logger.info('User created', 'SUPABASE_AUTH', { userId: newUser?.id });
       } else if (existingUser && existingUser.role !== 'creator') {
-        // Step 2: Update role to creator if needed
-        console.log('[createCreatorProfile] Updating user role to creator');
         const { error: updateError } = await supabase
           .from('users')
           .update({ role: 'creator' })
           .eq('id', user.id);
 
         if (updateError) {
-          console.error('[createCreatorProfile] Failed to update role:', updateError);
+          logger.error('Failed to update role', 'SUPABASE_AUTH', { error: updateError.message });
           return { error: updateError };
         }
-        console.log('[createCreatorProfile] Role updated to creator');
-      } else {
-        console.log('[createCreatorProfile] User already exists as creator');
+        logger.debug('Role updated to creator', 'SUPABASE_AUTH');
       }
 
-      // Step 3: Verify user now exists before creating profile
       const { data: verifyUser } = await supabase
         .from('users')
         .select('id, role')
         .eq('id', user.id)
         .single();
 
-      console.log('[createCreatorProfile] Verified user exists:', verifyUser);
-
       if (!verifyUser) {
-        console.error('[createCreatorProfile] User still does not exist after creation attempt');
+        logger.error('User still does not exist after creation attempt', 'SUPABASE_AUTH');
         return { error: new Error('Failed to create user record') };
       }
 
-      // Step 4: Create creator profile - trigger will auto-create channels
-      console.log('[createCreatorProfile] Creating creator profile');
       const payload: { user_id: string; bio: string; category: string; social_links: Record<string, string>; vanity_username?: string | null } = {
         user_id: user.id,
         bio,
@@ -312,18 +299,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .insert(payload);
 
       if (profileError) {
-        console.error('[createCreatorProfile] Failed to create creator profile:', profileError);
+        logger.error('Failed to create creator profile', 'SUPABASE_AUTH', { error: profileError.message });
         return { error: profileError };
       }
 
-      console.log('[createCreatorProfile] Creator profile created successfully');
+      logger.info('Creator profile created successfully', 'SUPABASE_AUTH', { userId: user.id });
 
-      // Step 5: Wait for database trigger to create default channels
-      // The trigger creates channels asynchronously, so we need a small delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Step 6: Sync channels to Stream Chat
-      console.log('[createCreatorProfile] Syncing channels to Stream Chat');
       try {
         const syncResponse = await fetch('/api/stream/sync-channels', {
           method: 'POST',
@@ -333,19 +316,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (syncResponse.ok) {
           const syncResult = await syncResponse.json();
-          console.log('[createCreatorProfile] Stream channels synced:', syncResult);
+          logger.info('Stream channels synced', 'SUPABASE_AUTH', syncResult);
         } else {
-          console.warn('[createCreatorProfile] Failed to sync Stream channels, but creator profile created');
+          logger.warn('Failed to sync Stream channels', 'SUPABASE_AUTH', { hint: 'creator profile was created' });
         }
       } catch (syncError) {
-        console.warn('[createCreatorProfile] Stream sync error:', syncError);
-        // Don't fail the whole operation if Stream sync fails
+        logger.warn('Stream sync error', 'SUPABASE_AUTH', { error: syncError instanceof Error ? syncError.message : String(syncError) });
       }
 
       await loadProfile(user.id);
       return { error: null };
     } catch (error: any) {
-      console.error('[createCreatorProfile] Unexpected error:', error);
+      logger.error('createCreatorProfile unexpected error', 'SUPABASE_AUTH', { error: error?.message ?? String(error) });
       return { error };
     }
   };

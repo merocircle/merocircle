@@ -8,7 +8,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { DashboardProvider, type DashboardView } from '@/contexts/dashboard-context';
 import { useNotificationsData } from '@/hooks/useQueries';
 import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 interface PageLayoutProps {
   children?: ReactNode;
@@ -84,12 +86,14 @@ function PageLayoutInner({
   const [isPending, startTransition] = useTransition();
   const { data: notificationsData } = useNotificationsData();
   const { data: supportedCreatorsData } = useSupportedCreators();
+  const { totalUnreadCount } = useUnreadMessages();
   const supportedCreators = supportedCreatorsData?.creators || [];
 
   // Get active view from pathname
   const getActiveViewFromPath = (): DashboardView => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
+    if (pathname === '/events') return 'events';
     if (pathname === '/chat') return 'chat';
     if (pathname === '/notifications') return 'notifications';
     if (pathname === '/settings') return 'settings';
@@ -104,8 +108,8 @@ function PageLayoutInner({
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const handleCreateClick = useCallback(() => {
+    logger.debug('Create post clicked', 'PAGE_LAYOUT');
     // TODO: Open create post modal
-    console.log('Create post clicked');
   }, []);
 
   // Settings navigation handled by Link components
@@ -114,6 +118,7 @@ function PageLayoutInner({
     switch (view) {
       case 'home': return 'explore';
       case 'explore': return 'explore';
+      case 'events': return 'explore';
       case 'chat': return 'chat';
       case 'notifications': return 'notifications';
       case 'creator-studio': return 'creator-studio';
@@ -157,6 +162,7 @@ function PageLayoutInner({
           const routeMap: Record<DashboardView, string> = {
             'home': '/home',
             'explore': '/explore',
+            'events': '/events',
             'chat': '/chat',
             'notifications': '/notifications',
             'settings': '/settings',
@@ -169,7 +175,7 @@ function PageLayoutInner({
       }}
       contextView={mapViewToContext(activeView) as any}
       unreadNotifications={notificationsData?.unreadCount || 0}
-      unreadMessages={0}
+      unreadMessages={totalUnreadCount}
       favoriteCreators={favoriteCreators}
       selectedCategory={selectedCategory}
       onCategoryChange={setSelectedCategory}

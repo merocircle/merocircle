@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getOptionalUser, parsePaginationParams, handleApiError, checkPostAccess } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
       .from('posts')
       .select(`
         id, title, content, image_url, image_urls, is_public,
-        tier_required, post_type, created_at, updated_at, creator_id,
+        tier_required, required_tiers, post_type, created_at, updated_at, creator_id,
         likes_count, comments_count,
         polls(id, question, allows_multiple_answers, expires_at)
       `)
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest) {
     const { data: allPosts, error: postsError } = await postsQuery.range(offset, offset + limit - 1);
 
     if (postsError) {
-      console.error('Error fetching posts:', postsError);
+      logger.error('Error fetching posts', 'UNIFIED_FEED_API', { error: postsError.message });
       return NextResponse.json({ error: 'Failed to fetch posts', details: postsError.message }, { status: 500 });
     }
 
@@ -189,9 +190,10 @@ export async function GET(request: NextRequest) {
         title: p.title,
         // Hide text content for non-supporters
         content: shouldHideContent ? null : p.content,
-        // Send image URLs so the UI can still show a blurred preview
-        image_url: p.image_url,
-        image_urls: p.image_urls || [],
+        // Non-supporters get only preview URL; full image URLs never sent for gated posts
+        image_url: shouldHideContent ? null : p.image_url,
+        image_urls: shouldHideContent ? [] : (p.image_urls || []),
+        preview_image_url: shouldHideContent ? `/api/post-preview-image?postId=${p.id}&index=0` : null,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
         required_tiers: p.required_tiers || null,

@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getOptionalUser, parsePaginationParams, handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 /**
  * Discovery feed: posts from creators the user does NOT follow.
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const { limit, offset } = parsePaginationParams(searchParams);
+    logger.info('Discover feed request', 'DASHBOARD_DISCOVER_API', { limit, offset, userId: user?.id });
 
     // Get supported creator IDs to exclude
     let supportedCreatorIds: string[] = [];
@@ -51,6 +53,7 @@ export async function GET(request: NextRequest) {
     const { data: allPosts, error: postsError } = await postsQuery.range(offset, offset + limit - 1);
 
     if (postsError) {
+      logger.error('Failed to fetch discover posts', 'DASHBOARD_DISCOVER_API', { error: postsError.message });
       return NextResponse.json({ error: 'Failed to fetch discover posts' }, { status: 500 });
     }
 
@@ -100,8 +103,10 @@ export async function GET(request: NextRequest) {
         id: p.id,
         title: p.title,
         content: isSupporterOnly ? null : p.content,
-        image_url: p.image_url,
-        image_urls: p.image_urls || [],
+        // Discover shows non-supported creators; gated posts get only preview URL
+        image_url: isSupporterOnly ? null : p.image_url,
+        image_urls: isSupporterOnly ? [] : (p.image_urls || []),
+        preview_image_url: isSupporterOnly ? `/api/post-preview-image?postId=${p.id}&index=0` : null,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
         required_tiers: p.required_tiers || null,

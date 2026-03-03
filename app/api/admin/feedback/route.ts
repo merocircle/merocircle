@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser } from '@/lib/api-utils';
 import { isAdmin } from '@/lib/admin-middleware';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: Request) {
   try {
     const { user, errorResponse } = await getAuthenticatedUser();
     if (errorResponse) return errorResponse;
 
-    // Check if user is admin
     if (!isAdmin(user.id)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
@@ -18,9 +18,8 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    console.log('[ADMIN_FEEDBACK_API] Fetching feedback:', { limit, offset, adminUserId: user.id });
+    logger.info('Fetching feedback', 'ADMIN_FEEDBACK_API', { limit, offset, adminUserId: user.id });
 
-    // Fetch feedback with user info
     const { data: feedback, error } = await supabase
       .from('feedback')
       .select(`
@@ -38,20 +37,11 @@ export async function GET(request: Request) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('[ADMIN_FEEDBACK_API] Error fetching feedback:', error);
+      logger.error('Error fetching feedback', 'ADMIN_FEEDBACK_API', { error: error.message });
       return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 });
     }
 
-    console.log('[ADMIN_FEEDBACK_API] Fetched feedback:', {
-      count: feedback?.length || 0,
-      feedback: feedback?.map((f) => ({
-        id: f.id,
-        question: f.question,
-        display_name: f.display_name,
-        is_creator: f.is_creator,
-        created_at: f.created_at,
-      })),
-    });
+    logger.debug('Fetched feedback', 'ADMIN_FEEDBACK_API', { count: feedback?.length || 0 });
 
     // Get user emails for feedback with user_id
     const userIds = feedback
@@ -85,10 +75,7 @@ export async function GET(request: Request) {
       .from('feedback')
       .select('*', { count: 'exact', head: true });
 
-    console.log('[ADMIN_FEEDBACK_API] Response:', {
-      total: count || 0,
-      enrichedCount: enrichedFeedback?.length || 0,
-    });
+    logger.info('Feedback fetched for admin', 'ADMIN_FEEDBACK_API', { total: count || 0, enrichedCount: enrichedFeedback?.length || 0 });
 
     return NextResponse.json({
       success: true,
@@ -96,7 +83,9 @@ export async function GET(request: Request) {
       total: count || 0,
     });
   } catch (error) {
-    console.error('Admin feedback API error:', error);
+    logger.error('Admin feedback API error', 'ADMIN_FEEDBACK_API', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -27,6 +27,8 @@ import {
   Circle,
   CheckCircle2,
   ChevronDown,
+  Mail,
+  BellOff,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -329,6 +331,7 @@ export default function CreatePostPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [visibility, setVisibility] = useState<string | string[]>('public');
   const [showPreview, setShowPreview] = useState(true);
+  const [notifyByEmail, setNotifyByEmail] = useState(true);
 
   // Poll states
   const [pollQuestion, setPollQuestion] = useState('');
@@ -477,6 +480,7 @@ export default function CreatePostPage() {
       tier_required: isPublic ? 'free' : (Array.isArray(visibility) ? '1' : visibility), // Backward compatibility
       required_tiers: requiredTiers,
       post_type: postType,
+      sendNotifications: notifyByEmail,
     };
 
     if (postType === 'poll') {
@@ -510,6 +514,7 @@ export default function CreatePostPage() {
     pollOptions,
     publishPost,
     showError,
+    notifyByEmail,
     router,
   ]);
 
@@ -952,6 +957,38 @@ export default function CreatePostPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Email notification toggle */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md mt-6">
+                  <div className="flex items-center gap-2.5">
+                    {notifyByEmail ? (
+                      <Mail className="w-4 h-4 text-primary" />
+                    ) : (
+                      <BellOff className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    <div>
+                      <span className="text-sm font-medium text-foreground">Notify supporters via email</span>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {notifyByEmail ? 'Supporters will receive an email about this post' : 'No email notification will be sent'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNotifyByEmail(!notifyByEmail)}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                      notifyByEmail ? "bg-primary" : "bg-muted-foreground/30"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm",
+                        notifyByEmail ? "translate-x-6" : "translate-x-1"
+                      )}
+                    />
+                  </button>
+                </div>
 
                 {/* Onboarding Warning */}
                 {!onboardingCompleted && (

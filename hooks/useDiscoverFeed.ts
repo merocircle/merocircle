@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 const BATCH_SIZE = 10;
 
@@ -40,7 +41,9 @@ export function useDiscoverFeed() {
       setPosts((prev) => [...prev, ...newPosts]);
       setHasMore(newHasMore);
     } catch (err) {
-      console.error('Failed to load discover posts:', err);
+      logger.error('Failed to load discover posts', 'USE_DISCOVER_FEED', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setIsLoading(false);
       loadingRef.current = false;

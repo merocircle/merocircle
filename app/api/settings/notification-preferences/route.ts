@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser, handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
     const { user, errorResponse } = await getAuthenticatedUser();
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    logger.info('Fetch notification preferences', 'NOTIFICATION_PREFS_API', { userId: user.id });
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('user_notification_preferences')
@@ -33,6 +35,7 @@ export async function PATCH(request: NextRequest) {
     const { user, errorResponse } = await getAuthenticatedUser();
     if (errorResponse || !user) return errorResponse || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    logger.info('Update notification preferences', 'NOTIFICATION_PREFS_API', { userId: user.id });
     const body = await request.json();
     const {
       email_everyone_mentions,

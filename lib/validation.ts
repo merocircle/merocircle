@@ -62,8 +62,7 @@ export function sanitizeString(input: string): string {
   
   return input
     .trim()
-    .replace(/[<>]/g, '') // Remove potential HTML tags
-    .substring(0, 1000); // Limit length
+    .replace(/[<>]/g, ''); // Remove potential HTML tags
 }
 
 /**

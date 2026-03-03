@@ -28,6 +28,8 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { useSession, signIn } from 'next-auth/react';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 import { Logo } from '@/components/ui/logo';
 import { CREATOR_CATEGORIES } from '@/lib/constants';
@@ -288,18 +290,72 @@ export default function CreatorSignupPage() {
       if (userProfile.role === 'creator') {
         // Check if creator profile exists
         const checkCreatorProfile = async () => {
-          const { data } = await supabase
+          const { data: creatorProfile } = await supabase
             .from('creator_profiles')
             .select('*')
             .eq('user_id', user.id)
             .single();
 
-          if (!data) {
+          if (!creatorProfile) {
             // Creator profile doesn't exist: only move to creator-details if we're still on signup (don't overwrite restored draft step)
             setStep((s) => (s === 'signup' ? 'creator-details' : s));
           } else {
-            // Creator profile exists, redirect to Creator Studio
-            router.push('/creator-studio');
+            // Creator profile exists - check if it's complete (has required fields)
+            const isComplete = creatorProfile.vanity_username && creatorProfile.category;
+            
+            if (isComplete) {
+              // Profile is complete - redirect to Creator Studio
+              router.push('/creator-studio');
+            } else {
+              // Profile is incomplete - load existing data and allow completion
+              setCreatorData({
+                username: creatorProfile.vanity_username || '',
+                bio: creatorProfile.bio || '',
+                category: creatorProfile.category || '',
+                socialLinks: creatorProfile.social_links || {}
+              });
+              
+              // Load existing social platforms
+              if (creatorProfile.social_links) {
+                const platforms = Object.keys(creatorProfile.social_links);
+                setAddedSocialPlatforms(platforms);
+              }
+              
+              // Load existing profile photo
+              if (userProfile.photo_url) {
+                setProfilePhotoUrl(userProfile.photo_url);
+              }
+              
+              // Load existing tier data
+              const { data: tierData } = await supabase
+                .from('subscription_tiers')
+                .select('*')
+                .eq('creator_id', user.id)
+                .order('tier_level', { ascending: true });
+                
+              if (tierData && tierData.length > 0) {
+                const newTierPrices = { ...tierPrices };
+                const newTierExtraPerks = { ...tierExtraPerks };
+                
+                tierData.forEach(tier => {
+                  if (tier.tier_level === 1) {
+                    newTierExtraPerks[1] = tier.extra_perks || [];
+                  } else if (tier.tier_level === 2) {
+                    newTierPrices.tier2 = tier.price.toString();
+                    newTierExtraPerks[2] = tier.extra_perks || [];
+                  } else if (tier.tier_level === 3) {
+                    newTierPrices.tier3 = tier.price.toString();
+                    newTierExtraPerks[3] = tier.extra_perks || [];
+                  }
+                });
+                
+                setTierPrices(newTierPrices);
+                setTierExtraPerks(newTierExtraPerks);
+              }
+              
+              // Set to creator-details step to complete the profile
+              setStep('creator-details');
+            }
           }
         };
 
@@ -354,7 +410,7 @@ export default function CreatorSignupPage() {
         body: JSON.stringify({ photo_url: data.url }),
       });
     } catch (err) {
-      console.error('Photo upload error:', err);
+      logger.error('Photo upload error', 'CREATOR_SIGNUP', { error: err instanceof Error ? err.message : String(err) });
       setError(err instanceof Error ? err.message : 'Failed to upload photo');
     } finally {
       setUploadingPhoto(false);
@@ -373,7 +429,7 @@ export default function CreatorSignupPage() {
       
       // After OAuth redirect, the useEffect will handle the rest
     } catch (error: unknown) {
-      console.error('Creator signup error:', error);
+      logger.error('Creator signup error', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
       setError(error instanceof Error ? error.message : 'Failed to create account. Please try again.');
       localStorage.removeItem('isCreatorSignupFlow');
       setLoading(false);
@@ -421,7 +477,7 @@ export default function CreatorSignupPage() {
       setLoading(true);
       setError(null);
 
-      console.log('Creating creator profile for user:', user.id);
+      logger.info('Creating creator profile', 'CREATOR_SIGNUP', { userId: user.id });
 
       // Filter out empty social links
       const filteredSocialLinks = Object.fromEntries(
@@ -433,12 +489,22 @@ export default function CreatorSignupPage() {
       const { error } = await createCreatorProfile(creatorData.bio, creatorData.category, filteredSocialLinks, vanityUsername);
 
       if (error) {
-        console.error('Creator profile creation failed:', error);
+        logger.error('Creator profile creation failed', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
         setError(error.message || 'Failed to set up creator profile');
         return;
       }
 
-      console.log('Creator profile created successfully');
+      logger.info('Creator profile created successfully', 'CREATOR_SIGNUP', { userId: user.id });
+
+      // Send creator welcome email (tips + onboarding CTA); fire-and-forget
+      const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      if (appUrl && user?.id) {
+        fetch(`${appUrl}/api/email/send-creator-welcome`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id }),
+        }).catch(() => {});
+      }
 
       // Wait a moment for the database trigger to create default tiers
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -490,7 +556,7 @@ export default function CreatorSignupPage() {
       const errors = results.filter(r => r.error);
       
       if (errors.length > 0) {
-        console.error('Failed to update tier prices:', errors);
+        logger.error('Failed to update tier prices', 'CREATOR_SIGNUP', { errors });
         // Try upsert as fallback
         const { error: tierError } = await supabase
           .from('subscription_tiers')
@@ -508,11 +574,11 @@ export default function CreatorSignupPage() {
           );
         
         if (tierError) {
-          console.error('Upsert also failed:', tierError);
+          logger.error('Upsert tier failed', 'CREATOR_SIGNUP', { error: tierError instanceof Error ? tierError.message : String(tierError) });
           setError('Profile created but tier prices could not be updated. Please update them in your dashboard.');
         }
       } else {
-        console.log('Tier prices updated successfully');
+        logger.info('Tier prices updated successfully', 'CREATOR_SIGNUP');
       }
 
       setStep('complete');
@@ -523,7 +589,7 @@ export default function CreatorSignupPage() {
         router.push('/creator-studio');
       }, 2000);
     } catch (error: unknown) {
-      console.error('Creator setup error:', error);
+      logger.error('Creator setup error', 'CREATOR_SIGNUP', { error: error instanceof Error ? error.message : String(error) });
       setError(error instanceof Error ? error.message : 'Failed to set up creator profile. Please try again.');
     } finally {
       setLoading(false);
@@ -535,16 +601,17 @@ export default function CreatorSignupPage() {
       {/* Header */}
       <header className="relative z-10 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 top-0">
         <div className="w-full max-w-6xl mx-auto flex h-14 sm:h-16 items-center justify-between gap-3 px-4 sm:px-6 min-w-0">
-          <Link href="/" className="flex items-center gap-2 min-w-0 flex-shrink">
-            <Logo className="w-6 h-6 text-primary object-contain flex-shrink-0"/>
-            <span className="text-lg sm:text-xl font-bold text-foreground truncate">MeroCircle</span>
-          </Link>
-          <Link href="/profile" className="flex-shrink-0">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground text-sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Profile
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Link href="/profile" className="flex-shrink-0">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link href="/" className="flex items-center gap-2 min-w-0 flex-shrink">
+              <Logo className="w-6 h-6 text-primary object-contain flex-shrink-0"/>
+              <span className="text-lg sm:text-xl font-bold text-foreground truncate">MeroCircle</span>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -553,7 +620,7 @@ export default function CreatorSignupPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className={`w-full max-w-full min-w-0 ${step === 'tier-pricing' ? 'max-w-6xl' : 'max-w-2xl'}`}
+          className={`w-full min-w-0 ${step === 'tier-pricing' ? 'max-w-6xl xl:max-w-7xl' : 'max-w-3xl lg:max-w-4xl'}`}
         >
           {step === 'signup' && (
             <motion.div
@@ -682,9 +749,9 @@ export default function CreatorSignupPage() {
                     </p>
                     <div className="flex items-center gap-4">
                       <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-dashed border-border flex-shrink-0">
-                        {(profilePhotoUrl || user?.user_metadata?.avatar_url) ? (
+                        {(profilePhotoUrl || user?.photo_url) ? (
                           <img
-                            src={profilePhotoUrl || user?.user_metadata?.avatar_url}
+                            src={(profilePhotoUrl || user?.photo_url) ?? undefined}
                             alt="Profile"
                             className="w-full h-full object-cover"
                           />
@@ -718,7 +785,7 @@ export default function CreatorSignupPage() {
                           >
                             <span className="cursor-pointer">
                               <Camera className="w-4 h-4 mr-2" />
-                              {profilePhotoUrl || user?.user_metadata?.avatar_url ? 'Change Photo' : 'Upload Photo'}
+                              {profilePhotoUrl || user?.photo_url ? 'Change Photo' : 'Upload Photo'}
                             </span>
                           </Button>
                         </label>

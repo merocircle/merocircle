@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { logger } from '@/lib/logger'
+
+const POSTS_BATCH_SIZE = 10
 
 export interface PaymentMethod {
   id: string
@@ -76,6 +79,9 @@ export const useCreatorDetails = (creatorId: string | null) => {
   const [profile, setProfile] = useState<CreatorProfile | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasMorePosts, setHasMorePosts] = useState(true)
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false)
+  const loadingMoreRef = useRef(false)
 
   const fetchCreatorDetails = async (id: string) => {
     try {
@@ -99,15 +105,20 @@ export const useCreatorDetails = (creatorId: string | null) => {
         is_supporter: data.creatorDetails.is_supporter || false
       } : null;
       
+      const initialPosts = data.posts || []
       setProfile({
         creatorDetails,
         paymentMethods: data.paymentMethods || [],
         subscriptionTiers: data.tiers || data.subscriptionTiers || [],
-        posts: data.posts || []
+        posts: initialPosts
       });
+      setHasMorePosts(initialPosts.length >= POSTS_BATCH_SIZE)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load creator')
-      console.error('Creator details error:', err)
+      logger.error('Creator details error', 'USE_CREATOR_DETAILS', {
+        creatorId: id,
+        error: err instanceof Error ? err.message : String(err),
+      })
     } finally {
       setLoading(false)
     }
@@ -124,6 +135,36 @@ export const useCreatorDetails = (creatorId: string | null) => {
       fetchCreatorDetails(creatorId)
     }
   }, [creatorId])
+
+  const loadMorePosts = useCallback(async () => {
+    if (!creatorId || !profile || loadingMoreRef.current || !hasMorePosts || postsLoadingMore) return
+    loadingMoreRef.current = true
+    setPostsLoadingMore(true)
+    try {
+      const offset = profile.posts.length
+      const res = await fetch(
+        `/api/creator/${creatorId}/posts?limit=${POSTS_BATCH_SIZE}&offset=${offset}`
+      )
+      if (!res.ok) throw new Error('Failed to load more posts')
+      const data = await res.json()
+      const nextPosts = data.posts || []
+      const newHasMore = data.has_more ?? (nextPosts.length === POSTS_BATCH_SIZE)
+      setProfile((prev) =>
+        prev
+          ? { ...prev, posts: [...prev.posts, ...nextPosts] }
+          : prev
+      )
+      setHasMorePosts(newHasMore)
+    } catch (err) {
+      logger.error('Load more posts error', 'USE_CREATOR_DETAILS', {
+        creatorId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    } finally {
+      setPostsLoadingMore(false)
+      loadingMoreRef.current = false
+    }
+  }, [creatorId, profile, hasMorePosts, postsLoadingMore])
 
   const updateSupporterTier = useCallback((tierLevel: number) => {
     setProfile(prev => {
@@ -148,7 +189,10 @@ export const useCreatorDetails = (creatorId: string | null) => {
     loading,
     error,
     refreshCreatorDetails: refetch,
-    updateSupporterTier
+    updateSupporterTier,
+    loadMorePosts,
+    hasMorePosts,
+    postsLoadingMore
   }
 }
 

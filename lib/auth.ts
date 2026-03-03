@@ -1,8 +1,8 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
-// Validate required env vars at load time
 const requiredEnvVars = [
   "NEXTAUTH_URL",
   "NEXTAUTH_SECRET",
@@ -11,7 +11,7 @@ const requiredEnvVars = [
 ] as const;
 const missing = requiredEnvVars.filter((key) => !process.env[key]?.trim());
 if (missing.length > 0) {
-  console.error("[NextAuth] Missing required env vars:", missing.join(", "));
+  logger.error('Missing required env vars', 'NEXTAUTH', { missing: missing.join(', ') });
 }
 
 export const authOptions: NextAuthOptions = {
@@ -27,20 +27,16 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('[NextAuth] SignIn callback triggered for:', user.email);
+      logger.info('SignIn callback triggered', 'NEXTAUTH', { email: user.email });
       
       if (!user.email) {
-        console.error('[NextAuth] No email provided');
+        logger.error('No email provided in signIn', 'NEXTAUTH');
         return false;
       }
 
       try {
-        console.log('[NextAuth] Creating client...');
-        // Use regular client now that RLS is disabled
         const supabase = await createClient();
-        console.log('[NextAuth] Client created successfully');
         
-        // Check if user exists in Supabase
         const { data: existingUser, error: fetchError } = await supabase
           .from('users')
           .select('*')
@@ -48,13 +44,12 @@ export const authOptions: NextAuthOptions = {
           .single();
 
         if (fetchError && fetchError.code !== 'PGRST116') {
-          console.error('Error fetching user:', fetchError);
+          logger.error('Error fetching user in signIn', 'NEXTAUTH', { error: fetchError.message });
           return false;
         }
 
-        // If user doesn't exist, create them
         if (!existingUser) {
-          console.log('Creating new user:', user.email);
+          logger.info('Creating new user', 'NEXTAUTH', { email: user.email });
           
           const { data: newUser, error: createError } = await supabase
             .from('users')
@@ -68,49 +63,52 @@ export const authOptions: NextAuthOptions = {
             .single();
 
           if (createError) {
-            console.error('Error creating user:', createError);
+            logger.error('Error creating user', 'NEXTAUTH', { error: createError.message });
             return false;
           }
 
-          console.log('New user created:', newUser?.id);
-          
-          // 🚀 SENIOR DEV: Send welcome email immediately (simple & reliable)
-          try {
-            // Import dynamically to avoid blocking
-            const { sendWelcomeEmail } = await import('@/lib/email');
-            
-            // Send in background (fire & forget)
-            sendWelcomeEmail({
-              userEmail: user.email,
-              userName: user.name || user.email.split('@')[0],
-              userRole: 'supporter',
-            }).then(success => {
-              if (success) {
-                console.log('✅ Welcome email sent to:', user.email);
-              } else {
-                console.warn('⚠️ Welcome email failed (non-critical):', user.email);
-              }
-            }).catch(err => {
-              console.warn('⚠️ Welcome email error (non-critical):', err.message);
-            });
-          } catch (emailError) {
-            // Never block signup if email fails
-            console.error('Failed to send welcome email:', emailError);
+          logger.info('New user created', 'NEXTAUTH', { userId: newUser?.id, email: user.email });
+
+          // Send welcome email in same flow so it's reliable (no dependency on process-queue or cron).
+          const baseUrl = process.env.NEXTAUTH_URL?.trim() || '';
+          if (baseUrl && newUser?.id) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25_000);
+            try {
+              await Promise.race([
+                fetch(`${baseUrl}/api/email/send-welcome`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: newUser.id }),
+                  signal: controller.signal,
+                }),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error('timeout')), 25_000)
+                ),
+              ]);
+            } catch (err: any) {
+              logger.warn('Welcome email request failed', 'NEXTAUTH', {
+                error: err?.message ?? 'Unknown',
+                userId: newUser.id,
+              });
+            } finally {
+              clearTimeout(timeoutId);
+            }
           }
           
-          // Store the new user's ID for the JWT token
           if (newUser) {
             user.id = newUser.id;
           }
         } else {
-          console.log('User exists:', existingUser.id);
-          // User exists, use their existing ID
+          logger.debug('User exists', 'NEXTAUTH', { userId: existingUser.id });
           user.id = existingUser.id;
         }
 
         return true;
       } catch (error) {
-        console.error('SignIn callback error:', error);
+        logger.error('SignIn callback error', 'NEXTAUTH', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         return false;
       }
     },
@@ -128,7 +126,7 @@ export const authOptions: NextAuthOptions = {
             .single();
 
           if (profileError) {
-            console.error('Error fetching profile in session:', profileError);
+            logger.error('Error fetching profile in session', 'NEXTAUTH', { error: profileError.message });
           }
 
           if (userProfile) {
@@ -136,7 +134,9 @@ export const authOptions: NextAuthOptions = {
             session.user.profile = userProfile;
           }
         } catch (error) {
-          console.error('Session callback error:', error);
+          logger.error('Session callback error', 'NEXTAUTH', {
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
       return session;

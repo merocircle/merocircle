@@ -64,7 +64,7 @@ export default function PostNotification({
         {postImageUrl && (
           <Section style={imageWrapper}>
             <Link href={postUrl} style={imageLink}>
-              <Img src={postImageUrl} alt="" style={heroImage} />
+              <Img src={postImageUrl} alt={postTitle} style={heroImage} />
             </Link>
           </Section>
         )}

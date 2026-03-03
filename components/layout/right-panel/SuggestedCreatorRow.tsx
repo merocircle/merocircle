@@ -27,12 +27,12 @@ export function SuggestedCreatorRow({
       {/* Avatar */}
       <motion.div
         onClick={onClick}
-        className="cursor-pointer flex-shrink-0"
+        className="cursor-pointer shrink-0"
         whileHover={{ scale: 1.05 }}
       >
         <Avatar className="w-11 h-11">
           <AvatarImage src={creator.avatar_url || undefined} />
-          <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-primary-foreground text-sm">
+          <AvatarFallback className="bg-linear-to-br from-primary to-pink-500 text-primary-foreground text-sm">
             {creator.display_name.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>

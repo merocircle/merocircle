@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { StreamChat } from 'stream-chat';
 import type { DMChannel } from '../types';
+import { logger } from '@/lib/logger';
 
 export function useDMChannels(chatClient: StreamChat | null, user: { id: string } | null) {
   const [dmChannels, setDmChannels] = useState<DMChannel[]>([]);
@@ -64,9 +65,8 @@ export function useDMChannels(chatClient: StreamChat | null, user: { id: string 
 
       setDmChannels(dms);
     } catch (err: any) {
-      // Silently handle rate limiting errors
       if (err?.code !== 9) {
-      console.error('Failed to fetch DM channels:', err);
+        logger.error('Failed to fetch DM channels', 'USE_DM_CHANNELS', { error: err?.message ?? String(err) });
       }
     } finally {
       isFetchingRef.current = false;

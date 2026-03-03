@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -16,6 +17,7 @@ export async function GET(
   try {
     const { username } = await params;
     const decoded = decodeURIComponent(username || '').trim().toLowerCase();
+    logger.info('Resolve creator username', 'CREATOR_RESOLVE_API', { username: decoded });
 
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid username' }, { status: 400 });

@@ -1,5 +1,8 @@
 // Production-ready logging utility
 // Only logs in development or when explicitly enabled
+// Sends errors and warnings to Sentry; info/debug as breadcrumbs
+
+import * as Sentry from '@sentry/nextjs';
 
 // Check multiple ways to determine if we're in development
 const isDevelopment = 
@@ -13,6 +16,28 @@ const isLoggingEnabled = process.env.ENABLE_LOGGING === 'true' || isDevelopment;
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
+function sendToSentry(level: LogLevel, message: string, context?: string, data?: Record<string, unknown>) {
+  const extra = { ...(data || {}), context };
+  if (level === 'error') {
+    const err = data?.error instanceof Error ? data.error : undefined;
+    if (err) {
+      Sentry.captureException(err, { extra: { message, context, ...data } });
+    } else {
+      Sentry.captureMessage(message, { level: 'error', extra: { context, ...data } });
+    }
+    return;
+  }
+  if (level === 'warn') {
+    Sentry.captureMessage(message, { level: 'warning', extra: { context, ...data } });
+    return;
+  }
+  Sentry.addBreadcrumb({
+    category: context || 'log',
+    message,
+    data: data as Record<string, string> | undefined,
+    level: level === 'debug' ? 'debug' : 'info',
+  });
+}
 
 class Logger {
   private formatMessage(level: LogLevel, message: string, context?: string, data?: Record<string, unknown>): string {
@@ -32,6 +57,7 @@ class Logger {
     if (level === 'error') {
       const formatted = this.formatMessage(level, message, context, data);
       console.error(formatted);
+      sendToSentry(level, message, context, data);
       return;
     }
 
@@ -40,9 +66,6 @@ class Logger {
     const formatted = this.formatMessage(level, message, context, data);
     
     switch (level) {
-      case 'error':
-        console.error(formatted);
-        break;
       case 'warn':
         console.warn(formatted);
         break;
@@ -55,8 +78,7 @@ class Logger {
         console.log(formatted);
     }
 
-    // In production, you could send to a logging service here
-    // Example: Sentry.captureMessage(message, { level, extra: data });
+    sendToSentry(level, message, context, data);
   }
 
   info(message: string, context?: string, data?: Record<string, unknown>) {

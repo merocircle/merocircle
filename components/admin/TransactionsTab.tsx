@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, DollarSign, TrendingUp, Clock, CheckCircle2, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 import { PayoutDialog } from './PayoutDialog';
 import {
   Table,
@@ -91,7 +92,8 @@ export function TransactionsTab() {
         setUnpaidByCreator(data.unpaidByCreator || []);
       }
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      logger.error('Failed to fetch admin stats', 'TRANSACTIONS_TAB', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Error', description: 'Failed to load stats', variant: 'destructive' });
     }
   };
 

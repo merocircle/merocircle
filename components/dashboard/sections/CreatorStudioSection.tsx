@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 import {
   Crown,
   BarChart3,
@@ -335,7 +337,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         const newUrls = await Promise.all(uploadPromises);
         setUploadedImages((prev) => [...prev, ...newUrls]);
       } catch (error) {
-        console.error("Upload error:", error);
+        logger.error("Upload error", "CREATOR_STUDIO_SECTION", { error: error instanceof Error ? error.message : String(error) });
         const errorMessage =
           error instanceof Error ? error.message : "File upload failed.";
         showError(errorMessage);
@@ -485,7 +487,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const creatorSlug = creatorProfile?.vanity_username?.trim() || userProfile?.username || user?.id;
 
   return (
-    <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto overflow-y-auto h-full">
+    <div className="py-4 sm:py-6 px-3 sm:px-4 md:px-6 max-w-7xl mx-auto h-full">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -512,18 +514,18 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             <Button
               variant="default"
               size="sm"
-              className="gap-1.5 rounded-lg h-8 text-xs sm:h-9 sm:text-sm"
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px]"
               asChild
             >
               <Link href="/create-post">
                 <Plus className="w-3.5 h-3.5" />
-                <span>New Post</span>
+                <span className="inline">Create Post</span>
               </Link>
             </Button>
             <Button
               variant={shareCopied ? "default" : "outline"}
-              size="icon"
-              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0"
+              size="sm"
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0"
               onClick={handleShareProfile}
             >
               {shareCopied ? (
@@ -532,23 +534,34 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 <Share2 className="w-3.5 h-3.5" />
               )}
               <span className="hidden sm:inline">{shareCopied ? 'Copied!' : 'Share'}</span>
+              <span className="sm:hidden">{shareCopied ? '✓' : 'Share'}</span>
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0" asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0" 
+              asChild
+            >
               <a href={`/creator/${creatorSlug}`}>
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">View</span>
               </a>
             </Button>
             <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0"
               onClick={() => setShowEditProfilePricingModal(true)}
             >
               <Pencil className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Edit</span>
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1.5 shrink-0" asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 rounded-lg h-10 min-w-[44px] text-xs sm:h-10 sm:text-sm sm:min-w-[80px] shrink-0" 
+              asChild
+            >
               <Link href="/chat">
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Chat</span>
@@ -790,7 +803,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                       )} />
                       <div className="flex-1 min-w-0">
                         <p className="text-foreground line-clamp-2">
-                          <span className="font-medium">{notif.actor?.display_name || 'Someone'}</span>{' '}
+                          <span className="font-medium">{notif.user?.name || 'Someone'}</span>{' '}
                           {notif.type === 'like' && 'liked your post'}
                           {notif.type === 'comment' && 'commented on your post'}
                           {notif.type === 'follow' && 'started following you'}

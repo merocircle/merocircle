@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/lib/api-utils';
+import { logger } from '@/lib/logger';
 
 /** Allowed: lowercase letters, numbers, underscore. Min 3, max 30. */
 const USERNAME_REGEX = /^[a-z0-9_]{3,30}$/;
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const raw = searchParams.get('username');
     const username = (raw ?? '').trim().toLowerCase();
+    logger.info('Check username availability', 'CREATOR_CHECK_USERNAME_API', { username });
 
     if (!username) {
       return NextResponse.json({ available: false, error: 'Username is required' }, { status: 400 });

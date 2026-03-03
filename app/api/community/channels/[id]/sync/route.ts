@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-utils';
 import { syncChannelToStream } from '@/lib/stream-channel-engine';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    logger.info('Sync channel to Stream', 'CHANNEL_SYNC_API', { channelId: id });
     const result = await syncChannelToStream(id);
 
     if (!result.success) {

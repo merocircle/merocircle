@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
+import { logger } from '@/lib/logger';
 
 interface SupportedCreator {
   id: string;
@@ -83,7 +84,9 @@ export function useSupportHistory(limit = 20) {
         const data = await response.json();
         setHistory(data.history || []);
       } catch (err) {
-        console.error('Error fetching support history:', err);
+        logger.error('Error fetching support history', 'USE_SUPPORTER_DASHBOARD', {
+          error: err instanceof Error ? err.message : String(err),
+        });
         setError('Error loading support history');
       } finally {
         setLoading(false);

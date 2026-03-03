@@ -30,6 +30,8 @@ import { getBlurDataURL, imageSizes } from "@/lib/image-utils";
 import { extractVideoIdFromContent, getYouTubeEmbedUrl } from "@/lib/youtube";
 import { useAuth } from "@/contexts/auth-context";
 import { useLikePost, useAddComment } from "@/hooks/useQueries";
+import { logger } from "@/lib/logger";
+import { useToast } from "@/hooks/use-toast";
 import ThreadedComments from "./ThreadedComments";
 import { ShareModal } from "./ShareModal";
 import { RichContent } from "./RichContent";
@@ -54,6 +56,7 @@ interface Post {
   image_url?: string;
   image_urls?: string[];
   media_url?: string;
+  preview_image_url?: string;
   is_public?: boolean;
   tier_required: string;
   post_type?: "post" | "poll";
@@ -110,6 +113,7 @@ export function PostDetailModal({
   const likeMutation = useLikePost();
   const commentMutation = useAddComment();
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(externalIsLiked ?? false);
@@ -274,6 +278,38 @@ export function PostDetailModal({
     );
   };
 
+  const handleDeleteComment = useCallback(
+    async (commentId: string) => {
+      if (!post) return;
+      try {
+        const res = await fetch(
+          `/api/posts/${post.id}/comments/${commentId}`,
+          { method: "DELETE" },
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to delete comment");
+        }
+        setComments((prev) => {
+          const toRemove = new Set<string>();
+          const addDescendants = (id: string) => {
+            toRemove.add(id);
+            prev
+              .filter((c) => c.parent_comment_id === id)
+              .forEach((c) => addDescendants(c.id));
+          };
+          addDescendants(commentId);
+          setCommentsCount((count) => Math.max(0, count - toRemove.size));
+          return prev.filter((c) => !toRemove.has(c.id));
+        });
+      } catch (err) {
+        logger.error("Delete comment error", "POST_DETAIL_MODAL", { postId: post.id, error: err instanceof Error ? err.message : String(err) });
+        toast({ title: "Failed to delete comment", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" });
+      }
+    },
+    [post?.id],
+  );
+
   if (!post) return null;
 
   return (
@@ -377,13 +413,14 @@ export function PostDetailModal({
 
             {shouldBlur && (
               <div className="relative w-full aspect-16/10 bg-linear-to-br from-muted to-muted/50 shrink-0">
-                {allImages.length > 0 && (
+                {post?.preview_image_url && (
                   <Image
-                    src={allImages[0]}
+                    src={post.preview_image_url}
                     alt="Preview"
                     fill
                     className="object-cover opacity-15 blur-2xl scale-110"
                     sizes="1200px"
+                    unoptimized
                   />
                 )}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -499,7 +536,9 @@ export function PostDetailModal({
                     postId={post.id}
                     comments={comments}
                     currentUserId={currentUserId}
+                    postCreatorId={post.creator?.id}
                     onAddComment={handleAddComment}
+                    onDeleteComment={handleDeleteComment}
                     isSubmitting={commentMutation.isPending}
                   />
                 )}

@@ -6,6 +6,8 @@ import { CheckCircle2, Circle, Clock, ChevronDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 interface PollOption {
   id: string;
@@ -32,6 +34,7 @@ interface PollCardProps {
 const VISIBLE_OPTIONS_LIMIT = 5;
 
 export function PollCard({ pollId, currentUserId, showResults = false, isCreator = false }: PollCardProps) {
+  const { toast } = useToast();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [options, setOptions] = useState<PollOption[]>([]);
   const [totalVotes, setTotalVotes] = useState(0);
@@ -60,7 +63,8 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
         setSelectedOptions(data.userVotes || []);
       }
     } catch (error) {
-      console.error('Error fetching poll:', error);
+      logger.error('Error fetching poll', 'POLL_CARD', { pollId, error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Could not load poll', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -95,7 +99,8 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
         await fetchPollData();
       }
     } catch (error) {
-      console.error('Error voting:', error);
+      logger.error('Error voting', 'POLL_CARD', { pollId, optionId, error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Vote failed', description: 'Please try again.', variant: 'destructive' });
     } finally {
       setVoting(false);
     }

@@ -8,12 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import { BalloonBurst } from '@/components/animations/BalloonBurst';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 
 export const dynamic = 'force-dynamic';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { toast } = useToast();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
@@ -67,26 +70,20 @@ function PaymentSuccessContent() {
             if (decoded.product_code) product_code = decoded.product_code;
           }
         } catch (e) {
-          console.warn('[SUCCESS] Could not parse eSewa data param', e);
+          logger.warn('Could not parse eSewa data param', 'PAYMENT_SUCCESS', { error: e instanceof Error ? e.message : String(e) });
         }
       }
 
-      console.log('[SUCCESS] Verifying payment:', {
+      logger.info('Verifying payment', 'PAYMENT_SUCCESS', {
         transaction_uuid,
-        total_amount,
-        product_code,
         gateway,
         creator_id,
-        ref_id,
-        subscription_id,
-        transaction_id,
-        pidx,
-        amountParam,
       });
 
       if (gateway === 'dodo') {
         if (!subscription_id || !transaction_id) {
-          console.error('[SUCCESS] Missing Dodo parameters');
+          logger.error('Missing Dodo parameters', 'PAYMENT_SUCCESS');
+          toast({ title: 'Verification failed', description: 'Missing parameters.', variant: 'destructive' });
           setIsVerifying(false);
           return;
         }
@@ -96,14 +93,13 @@ function PaymentSuccessContent() {
         );
 
         const result = await response.json();
-        
-        console.log('[SUCCESS] Dodo verification result:', result);
 
         if (result.success && result.status === 'active') {
           setVerified(true);
           setTransaction(result.subscription || { id: transaction_id, status: 'active' });
         } else {
-          console.error('[SUCCESS] Dodo subscription verification failed:', result.error);
+          logger.error('Dodo subscription verification failed', 'PAYMENT_SUCCESS', { error: result.error });
+          toast({ title: 'Verification failed', description: result.error || 'Subscription could not be verified.', variant: 'destructive' });
         }
         setIsVerifying(false);
         return;
@@ -123,9 +119,9 @@ function PaymentSuccessContent() {
         return;
       }
 
-      // Handle other payment gateways (eSewa, Direct). Params may come from URL or eSewa's Base64 "data".
       if (!transaction_uuid || !total_amount) {
-        console.error('[SUCCESS] Missing parameters (transaction_uuid/total_amount or eSewa data param)');
+        logger.error('Missing parameters', 'PAYMENT_SUCCESS', { hint: 'transaction_uuid/total_amount or eSewa data param' });
+        toast({ title: 'Verification failed', description: 'Missing payment parameters.', variant: 'destructive' });
         setIsVerifying(false);
         return;
       }
@@ -150,17 +146,17 @@ function PaymentSuccessContent() {
       );
 
       const result = await response.json();
-      
-      console.log('[SUCCESS] Verification result:', result);
 
       if (result.success && result.status === 'completed') {
         setVerified(true);
         setTransaction(result.transaction);
       } else {
-        console.error('[SUCCESS] Payment verification failed:', result.error);
+        logger.error('Payment verification failed', 'PAYMENT_SUCCESS', { error: result.error });
+        toast({ title: 'Verification failed', description: result.error || 'Payment could not be verified.', variant: 'destructive' });
       }
     } catch (error) {
-      console.error('[SUCCESS] Verification error:', error);
+      logger.error('Verification error', 'PAYMENT_SUCCESS', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Verification failed', variant: 'destructive' });
     } finally {
       setIsVerifying(false);
     }

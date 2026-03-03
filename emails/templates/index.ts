@@ -13,6 +13,7 @@ export { default as ChannelMentionNotification } from './notifications/ChannelMe
 
 // Transactional (account & payment related)
 export { default as WelcomeEmail } from './transactional/WelcomeEmail';
+export { default as CreatorWelcomeEmail } from './transactional/CreatorWelcomeEmail';
 export { default as PaymentSuccess } from './transactional/PaymentSuccess';
 export { default as PaymentFailed } from './transactional/PaymentFailed';
 export { default as SubscriptionConfirmation } from './transactional/SubscriptionConfirmation';

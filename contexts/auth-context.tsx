@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 interface UserProfile {
   id: string;
@@ -62,7 +63,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         .single();
 
       if (profileError) {
-        console.error('Error loading profile:', profileError);
+        logger.error('Error loading profile', 'AUTH_CONTEXT', { error: profileError.message });
         return;
       }
 
@@ -83,7 +84,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         }
       }
     } catch (error) {
-      console.error('Error in loadProfile:', error);
+      logger.error('Error in loadProfile', 'AUTH_CONTEXT', { error: error instanceof Error ? error.message : String(error) });
     } finally {
       setLoading(false);
     }
@@ -196,7 +197,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         redirect: true 
       });
     } catch (error) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error', 'AUTH_CONTEXT', { error: error instanceof Error ? error.message : String(error) });
       // Fallback: force redirect
       window.location.href = '/';
     } finally {

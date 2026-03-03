@@ -6,26 +6,30 @@ Welcome to the MeroCircle documentation! This guide will help you understand the
 
 ### Core Documentation
 
-1. **[Technical Overview](01-TECHNICAL-OVERVIEW.md)** 📋
+1. **[Running Tests](TESTING.md)** 🧪
+   - Commands for Vitest and Playwright
+   - Auth in tests, CI, troubleshooting
+
+2. **[Technical Overview](01-TECHNICAL-OVERVIEW.md)** 📋
    - Technology stack overview
    - Project structure
    - Key features summary
    - Development workflow
 
-2. **[Architecture Documentation](02-ARCHITECTURE.md)** 🏗️
+3. **[Architecture Documentation](02-ARCHITECTURE.md)** 🏗️
    - System architecture diagrams
    - Unified engines (payment, subscription, notification, etc.)
    - Data flow and integration patterns
    - Frontend and backend architecture
 
-3. **[Third-Party Integrations](03-THIRD-PARTY-INTEGRATIONS.md)** 🔌
+4. **[Third-Party Integrations](03-THIRD-PARTY-INTEGRATIONS.md)** 🔌
    - Payment gateways (eSewa, Khalti, Dodo)
    - Stream Chat integration
    - Email service setup
    - Supabase configuration
    - Environment variables reference
 
-4. **[Database Schema](07-DATABASE-SCHEMA.md)** 🗄️
+5. **[Database Schema](07-DATABASE-SCHEMA.md)** 🗄️
    - Complete schema documentation
    - Table relationships
    - Indexes and constraints
@@ -33,7 +37,7 @@ Welcome to the MeroCircle documentation! This guide will help you understand the
 
 ### Feature-Specific Documentation
 
-5. **[Subscription System](SUBSCRIPTION-SYSTEM.md)** ⭐ **COMPREHENSIVE**
+6. **[Subscription System](SUBSCRIPTION-SYSTEM.md)** ⭐ **COMPREHENSIVE**
    - Complete subscription lifecycle
    - Payment gateway types and differences
    - Tier changes (upgrades, downgrades, renewals)
@@ -43,7 +47,7 @@ Welcome to the MeroCircle documentation! This guide will help you understand the
    - Testing and troubleshooting
    - **Read this for complete understanding of subscriptions!**
 
-6. **[Dodo Payments Integration](DODO-PAYMENTS-INTEGRATION.md)** 💳
+7. **[Dodo Payments Integration](DODO-PAYMENTS-INTEGRATION.md)** 💳
    - Visa/Mastercard payment processing
    - Checkout sessions and products
    - Webhook handling
@@ -158,14 +162,28 @@ Full API reference: [Subscription System - API Endpoints](SUBSCRIPTION-SYSTEM.md
 
 ## Testing
 
-### Test Scripts
+6. **[Running Tests](TESTING.md)** 🧪
+   - How to run unit/integration tests (Vitest) locally
+   - How to run E2E tests (Playwright) locally
+   - Test commands, auth in tests, and CI behaviour
+   - Troubleshooting
+
+### Test commands (quick reference)
+
+- **Unit + integration:** `npm test` or `npm run test:watch`
+- **Coverage:** `npm run test:coverage`
+- **E2E:** `npm run test:e2e` (requires app at http://localhost:3000)
+
+Full details: [TESTING.md](TESTING.md)
+
+### Other test scripts
 
 - `scripts/test-subscription-expiry.ts` - Test subscription expiry system
 - `scripts/test-dodo-payments.ts` - Test Dodo Payments integration
 - `scripts/test-email-system.js` - Test email queue and sending
 - `scripts/clear-stream-channels.ts` - Clear Stream Chat channels (testing)
 
-### Manual Testing
+### Manual testing
 
 See testing sections in:
 - [Subscription System - Testing](SUBSCRIPTION-SYSTEM.md#testing)

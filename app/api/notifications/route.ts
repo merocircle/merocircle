@@ -45,7 +45,12 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     if (type) {
-      query = query.eq('type', type);
+      // Payments tab shows both 'payment' (money received) and 'support' (new supporter) notifications
+      if (type === 'payment') {
+        query = query.in('type', ['payment', 'support']);
+      } else {
+        query = query.eq('type', type);
+      }
     }
 
     if (unreadOnly) {

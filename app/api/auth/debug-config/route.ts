@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 /**
  * Debug endpoint to verify NextAuth env vars are loaded.
@@ -9,6 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Not available in production" }, { status: 404 });
   }
 
+  logger.debug('Auth debug config requested', 'AUTH_DEBUG_CONFIG');
   const checks = {
     NEXTAUTH_URL: !!process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
 
 // Lazy load the explore component
@@ -30,6 +30,10 @@ function ExploreLoadingSkeleton() {
 }
 
 export default function ExplorePage() {
+  useEffect(() => {
+    document.title = 'Explore — MeroCircle';
+  }, []);
+
   return (
     <PageLayout>
       <Suspense fallback={<ExploreLoadingSkeleton />}>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 
 export interface Creator {
   user_id: string
@@ -82,9 +83,11 @@ export const useCreatorSearch = () => {
       const data = await response.json()
       setResults(data.data || [])
     } catch (err) {
-      console.error('Search error:', err)
-      setError(err instanceof Error ? err.message : 'Search failed')
-      setResults([])
+      logger.error('Creator search error', 'USE_SOCIAL', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      setError(err instanceof Error ? err.message : 'Search failed');
+      setResults([]);
     } finally {
       setLoading(false)
     }

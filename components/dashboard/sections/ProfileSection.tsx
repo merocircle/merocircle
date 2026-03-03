@@ -6,6 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -75,6 +77,7 @@ const creatorTabs = [
 
 export default function ProfileSection() {
   const { user, userProfile, creatorProfile, isAuthenticated, loading, isCreator, refreshProfile } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [posts, setPosts] = useState<Array<any>>([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -131,7 +134,8 @@ export default function ProfileSection() {
             })));
           }
         } catch (error) {
-          console.error('Failed to fetch posts:', error);
+          logger.error('Failed to fetch posts', 'PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+          toast({ title: 'Failed to load posts', variant: 'destructive' });
         } finally {
           setPostsLoading(false);
         }
@@ -178,7 +182,8 @@ export default function ProfileSection() {
           setExtraPerks(perks);
         }
       } catch (err) {
-        console.error('Failed to fetch tiers:', err);
+        logger.error('Failed to fetch tiers', 'PROFILE_SECTION', { error: err instanceof Error ? err.message : String(err) });
+        toast({ title: 'Failed to load tiers', variant: 'destructive' });
       }
     };
     fetchTiers();
@@ -206,7 +211,8 @@ export default function ProfileSection() {
         }
       }
     } catch (error) {
-      console.error('Cover upload error:', error);
+      logger.error('Cover upload error', 'PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Cover upload failed', variant: 'destructive' });
     } finally {
       setIsUploadingCover(false);
     }
@@ -230,7 +236,8 @@ export default function ProfileSection() {
         setIsEditing(false);
       }
     } catch (error) {
-      console.error('Save error:', error);
+      logger.error('Save error', 'PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Save failed', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -264,7 +271,8 @@ export default function ProfileSection() {
         }
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error', 'PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
+      toast({ title: 'Upload failed', variant: 'destructive' });
     } finally {
       setIsUploadingAvatar(false);
     }
