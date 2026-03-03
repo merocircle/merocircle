@@ -75,6 +75,26 @@ const PollCard = dynamic(
   },
 );
 
+const TIER_LABELS: Record<string, string> = {
+  "1": "Supporters",
+  "2": "Inner Circle",
+  "3": "Core Member",
+};
+
+function getPostTierLabel(post: { required_tiers?: string[] | null; tier_required?: string | null; is_public?: boolean }): string {
+  if (post.required_tiers && post.required_tiers.length > 0) {
+    const labels = post.required_tiers
+      .map((t) => TIER_LABELS[t] || t)
+      .filter(Boolean);
+    return labels.length > 0 ? labels.join(", ") : "Supporters";
+  }
+  if (post.tier_required && post.tier_required !== "free") {
+    return TIER_LABELS[post.tier_required] || post.tier_required;
+  }
+  if (post.is_public === false) return "Supporters";
+  return "Supporters";
+}
+
 interface Post {
   id: string;
   title: string;
@@ -85,6 +105,7 @@ interface Post {
   preview_image_url?: string;
   is_public?: boolean;
   tier_required: string;
+  required_tiers?: string[] | null;
   post_type?: "post" | "poll";
   created_at: string;
   creator_id?: string;
@@ -115,6 +136,7 @@ interface EnhancedPostCardProps {
   onShare?: (postId: string) => void;
   showActions?: boolean;
   isSupporter?: boolean;
+  supporterTierLevel?: number; // User's tier level for this creator (0 if not a supporter)
   showAuthor?: boolean;
   onNavigateToMembership?: () => void;
   creatorSlug?: string;
@@ -136,6 +158,7 @@ export function EnhancedPostCard({
   onShare,
   showActions = true,
   isSupporter = false,
+  supporterTierLevel = 0,
   showAuthor = true,
   onNavigateToMembership,
   creatorSlug,
@@ -226,21 +249,51 @@ export function EnhancedPostCard({
     return raw || null;
   }, [post]);
 
+  // Fallback: when backend doesn't return supporter_tier_level, treat isSupporter as tier 1 so legacy posts still show
+  const effectiveTierLevel = supporterTierLevel > 0 ? supporterTierLevel : (isSupporter ? 1 : 0);
+
   const shouldBlur = useMemo(() => {
-    const isPublicAndFree =
-      (post.is_public === true || post.is_public === undefined) &&
-      (post.tier_required === "free" || !post.tier_required);
-    if (isPublicAndFree) return false;
-    const isSupporterOnly =
-      post.is_public === false ||
-      (post.tier_required && post.tier_required !== "free");
-    if (!isSupporterOnly) return false;
-    if (isSupporter || currentUserId === creator.id) return false;
-    return true;
+    // Creator always has access
+    if (currentUserId === creator.id) return false;
+
+    // Public posts with no tier requirements (fallback: missing required_tiers = show for public)
+    if (post.is_public && (!post.required_tiers || post.required_tiers.length === 0) &&
+        (!post.tier_required || post.tier_required === 'free')) {
+      return false;
+    }
+
+    // Check if post has required_tiers (new tier-based posts)
+    if (post.required_tiers && post.required_tiers.length > 0) {
+      const requiredTierNumbers = post.required_tiers
+        .map((t) => parseInt(t, 10))
+        .filter((n) => !isNaN(n) && n >= 1 && n <= 3);
+      if (effectiveTierLevel > 0 && requiredTierNumbers.includes(effectiveTierLevel)) {
+        return false;
+      }
+      return true;
+    }
+
+    // Backward compatibility: tier_required or older posts without required_tiers — show if user is supporter at required level
+    if (post.tier_required && post.tier_required !== 'free') {
+      const requiredTier = parseInt(post.tier_required, 10);
+      if (!isNaN(requiredTier) && requiredTier >= 1 && requiredTier <= 3) {
+        if (effectiveTierLevel >= requiredTier) return false;
+        return true;
+      }
+    }
+
+    // Legacy: is_public=false with no required_tiers — any supporter (tier 1+) can see
+    if (!post.is_public) {
+      return effectiveTierLevel < 1;
+    }
+
+    return false;
   }, [
     post.is_public,
     post.tier_required,
+    post.required_tiers,
     isSupporter,
+    effectiveTierLevel,
     currentUserId,
     creator.id,
   ]);
@@ -452,7 +505,9 @@ export function EnhancedPostCard({
     [post.id, toast],
   );
 
-  const isSupporterOnly = post.tier_required && post.tier_required !== "free";
+  const isSupporterOnly = (post.required_tiers && post.required_tiers.length > 0) ||
+    (post.tier_required && post.tier_required !== "free") ||
+    post.is_public === false;
   const hasMedia = allImages.length > 0 || youtubeVideoId;
   const contentLength = post.content?.length || 0;
   const CONTENT_PREVIEW_LENGTH = 280;
@@ -544,7 +599,7 @@ export function EnhancedPostCard({
               : "rounded-xl border border-border/50 hover:border-border/80 hover:shadow-[0_2px_16px_rgba(0,0,0,0.06)]",
           )}
         >
-          {/* Supporters only badge – top right */}
+          {/* Who this post is for – top right */}
           {isSupportersOnlyPost && (
             <div className="hidden sm:block absolute top-3 right-3 z-10">
               <span
@@ -556,8 +611,8 @@ export function EnhancedPostCard({
                   "shadow-[0_0_12px_rgba(234,88,12,0.15)]",
                 )}
               >
-                <UsersRound className="w-3.5 h-3.5" />
-                Supporters only
+                <UsersRound className="w-3.5 h-3.5 shrink-0" />
+                {getPostTierLabel(post)}
               </span>
             </div>
           )}
@@ -618,7 +673,6 @@ export function EnhancedPostCard({
                     draggable={false}
                   />
                 </div>
-
                 {allImages.length > 1 && (
                   <div>
                     {currentImageIndex > 0 && (
@@ -659,14 +713,14 @@ export function EnhancedPostCard({
               data-blurred-section
               onClick={(e) => e.stopPropagation()}
             >
-              {post.preview_image_url && (
+              {(post.preview_image_url || allImages[0]) && (
                 <Image
-                  src={post.preview_image_url}
+                  src={post.preview_image_url || allImages[0]}
                   alt="Preview"
                   fill
                   className="object-cover opacity-15 blur-md scale-110"
                   sizes="630px"
-                  unoptimized
+                  unoptimized={!!post.preview_image_url}
                 />
               )}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -676,7 +730,7 @@ export function EnhancedPostCard({
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground mb-0.5">
-                      Supporters Only Post
+                      For: {getPostTierLabel(post)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Start supporting this creator to view this post
@@ -744,7 +798,7 @@ export function EnhancedPostCard({
                 >
                   {shouldBlur ? (
                     <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] cursor-pointer">
-                      Subscribe to access this post.
+                      For: {getPostTierLabel(post)}. Subscribe to access this post.
                     </p>
                   ) : (
                     <RichContent
