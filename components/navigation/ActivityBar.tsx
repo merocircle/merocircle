@@ -146,7 +146,7 @@ export function ActivityBar({
   };
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={isExpanded ? 0 : 600} key={isExpanded ? 'expanded' : 'collapsed'}>
       <aside
         className={cn(
           'fixed left-0 top-0 z-50 flex h-screen flex-col py-4 border-r border-border/40 bg-card/80 backdrop-blur-xl transition-all duration-300 ease-in-out',
@@ -172,10 +172,11 @@ export function ActivityBar({
           {isExpanded && (
             <div className="flex items-center gap-2">
               <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                className="font-semibold text-foreground"
+                initial={{ opacity: 0, scaleX: 0.8 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                exit={{ opacity: 0, scaleX: 0.8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="font-semibold text-foreground origin-left"
               >
                 MeroCircle
               </motion.span>
