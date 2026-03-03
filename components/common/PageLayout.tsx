@@ -143,7 +143,8 @@ function PageLayoutInner({
     .map((c) => ({
       id: c.id,
       display_name: c.name,
-      photo_url: c.photo_url
+      photo_url: c.photo_url,
+      vanity_username: c.vanity_username || null
     }));
 
   // Determine layout options based on active view

@@ -43,17 +43,17 @@ export function BottomNav({
   const pathname = usePathname();
   const { isCreator, userProfile, creatorProfile } = useAuth();
   const [currentActiveView, setCurrentActiveView] =
-    useState<DashboardView>("home");
+    useState<DashboardView | null>(null);
 
   // Views that are represented in the bottom navigation
   const bottomNavViews: DashboardView[] = ["home", "explore", "chat", "profile"];
 
   // Check if a view should be active in bottom nav
   const isBottomNavActive = (view: DashboardView): boolean => {
-    return currentActiveView === view && bottomNavViews.includes(currentActiveView);
+    return currentActiveView === view && bottomNavViews.includes(view);
   };
 
-  const getActiveViewFromPath = (): DashboardView => {
+  const getActiveViewFromPath = (): DashboardView | null => {
     if (pathname === "/home") return "home";
     if (pathname === "/explore") return "explore";
     if (pathname === "/chat") return "chat";
@@ -65,7 +65,7 @@ export function BottomNav({
     // Don't auto-detect profile routes anymore - let useEffect handle the specific case
     // of viewing your own profile
 
-    return "home";
+    return null; // No fallback - only exact matches should be active
   };
 
   useEffect(() => {
@@ -109,7 +109,10 @@ export function BottomNav({
       }
     }
 
-    setCurrentActiveView(newActiveView);
+    // Only set state if we have a valid view, otherwise keep current state
+    if (newActiveView !== null) {
+      setCurrentActiveView(newActiveView);
+    }
   }, [pathname, userProfile, creatorProfile]);
 
   const isCreatorStudioActive = pathname === "/creator-studio";

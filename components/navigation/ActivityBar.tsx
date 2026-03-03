@@ -103,7 +103,7 @@ export function ActivityBar({
     }
   };
 
-  const getActiveViewFromPath = (): DashboardView => {
+  const getActiveViewFromPath = (): DashboardView | null => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
     if (pathname === '/events') return 'events';
@@ -113,7 +113,7 @@ export function ActivityBar({
     if (pathname === '/profile') return 'profile';
     if (isCreator && creatorProfile?.vanity_username && pathname === `/creator/${creatorProfile.vanity_username}`) return 'profile';
     if (pathname === '/creator-studio') return 'creator-studio';
-    return 'home';
+    return null; // No fallback - only exact matches should be active
   };
 
   const currentActiveView = getActiveViewFromPath();
@@ -138,6 +138,22 @@ export function ActivityBar({
   const isActive = (item: NavItem) => {
     return item.view === currentActiveView;
   };
+
+  // Check if current pathname matches a supported creator
+  const getActiveCreatorId = () => {
+    const creatorMatch = pathname.match(/^\/creator\/([^\/]+)/);
+    if (creatorMatch) {
+      const creatorSlug = creatorMatch[1];
+      // Find the creator in favoriteCreators by either vanity_username or id
+      const creator = favoriteCreators.find(c => 
+        c.vanity_username === creatorSlug || c.id === creatorSlug
+      );
+      return creator?.id;
+    }
+    return null;
+  };
+
+  const activeCreatorId = getActiveCreatorId();
 
   const handleCreatorClick = (creatorId: string) => {
     if (onCreatorClick) {
@@ -327,19 +343,26 @@ export function ActivityBar({
                       onClick={() => handleCreatorClick(creator.id)}
                       className={cn(
                         "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
-                        isExpanded ? 'w-full' : ''
+                        isExpanded ? 'w-full' : '',
+                        activeCreatorId === creator.id && "bg-primary/10 text-primary"
                       )}
                       whileHover={{ scale: isExpanded ? 1 : 1.08 }}
                       whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
                     >
-                      <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0">
+                      <Avatar className={cn(
+                        "w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0",
+                        activeCreatorId === creator.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                      )}>
                         <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                           {creator.display_name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       {isExpanded && (
-                        <span className="text-sm font-medium text-muted-foreground truncate">
+                        <span className={cn(
+                          "text-sm font-medium text-muted-foreground truncate",
+                          activeCreatorId === creator.id && "text-primary"
+                        )}>
                           {creator.display_name}
                         </span>
                       )}
@@ -349,19 +372,26 @@ export function ActivityBar({
                       <motion.div
                         className={cn(
                           "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
-                          isExpanded ? 'w-full' : ''
+                          isExpanded ? 'w-full' : '',
+                          activeCreatorId === creator.id && "bg-primary/10 text-primary"
                         )}
                         whileHover={{ scale: isExpanded ? 1 : 1.08 }}
                         whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
                       >
-                        <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0">
+                        <Avatar className={cn(
+                          "w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0",
+                          activeCreatorId === creator.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        )}>
                           <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
                           <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                             {creator.display_name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         {isExpanded && (
-                          <span className="text-sm font-medium text-muted-foreground truncate">
+                          <span className={cn(
+                            "text-sm font-medium text-muted-foreground truncate",
+                            activeCreatorId === creator.id && "text-primary"
+                          )}>
                             {creator.display_name}
                           </span>
                         )}
