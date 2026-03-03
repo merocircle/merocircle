@@ -56,9 +56,7 @@ export function ShareModal({
   const username = creatorSlug ?? creator?.vanity_username ?? null;
   const shareUrl =
     typeof window !== "undefined"
-      ? username
-        ? `${window.location.origin}/creator/${encodeURIComponent(username)}?post=${encodeURIComponent(postId)}`
-        : `${window.location.origin}/post/${postId}`
+      ? `${window.location.origin}/post/${postId}`
       : "";
 
   const safeContent = postContent || "";
