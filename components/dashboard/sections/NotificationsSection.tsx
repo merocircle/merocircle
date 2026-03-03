@@ -9,7 +9,7 @@ import { fadeInUp } from '@/components/animations/variants';
 import { NotificationList } from '@/components/organisms/notifications/NotificationList';
 import { mapNotificationType, generateNotificationLink } from './notifications/utils';
 
-type NotificationType = 'like' | 'comment' | 'payment' | 'follow' | 'mention' | 'announcement';
+type NotificationType = 'like' | 'comment' | 'payment' | 'mention' | 'announcement';
 
 const NotificationsSection = memo(function NotificationsSection() {
   const router = useRouter();
