@@ -7,6 +7,7 @@ import { CheckCircle, ArrowLeft, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { BalloonBurst } from '@/components/animations/BalloonBurst';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +18,8 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
+  const queryClient = useQueryClient();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
   const [transaction, setTransaction] = useState<{
@@ -97,6 +99,11 @@ function PaymentSuccessContent() {
         if (result.success && result.status === 'active') {
           setVerified(true);
           setTransaction(result.subscription || { id: transaction_id, status: 'active' });
+          // Force refetch supported creators query to refresh ActivityBar after a small delay
+          logger.info('Refetching supported creators after Dodo payment success', 'PAYMENT_SUCCESS');
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
+          }, 1000); // Wait 1 second for database to be updated
         } else {
           logger.error('Dodo subscription verification failed', 'PAYMENT_SUCCESS', { error: result.error });
           toast({ title: 'Verification failed', description: result.error || 'Subscription could not be verified.', variant: 'destructive' });
@@ -115,6 +122,10 @@ function PaymentSuccessContent() {
           status: 'completed',
           created_at: new Date().toISOString(),
         });
+        // Force refetch supported creators query to refresh ActivityBar after a small delay
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
+        }, 1000); // Wait 1 second for database to be updated
         setIsVerifying(false);
         return;
       }
@@ -136,6 +147,10 @@ function PaymentSuccessContent() {
           status: 'completed',
           created_at: new Date().toISOString(),
         });
+        // Force refetch supported creators query to refresh ActivityBar after a small delay
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
+        }, 1000); // Wait 1 second for database to be updated
         setIsVerifying(false);
         return;
       }
@@ -150,6 +165,10 @@ function PaymentSuccessContent() {
       if (result.success && result.status === 'completed') {
         setVerified(true);
         setTransaction(result.transaction);
+        // Force refetch supported creators query to refresh ActivityBar after a small delay
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
+        }, 1000); // Wait 1 second for database to be updated
       } else {
         logger.error('Payment verification failed', 'PAYMENT_SUCCESS', { error: result.error });
         toast({ title: 'Verification failed', description: result.error || 'Payment could not be verified.', variant: 'destructive' });
