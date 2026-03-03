@@ -32,9 +32,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { RichContent } from '@/components/posts/RichContent';
+import { MentionInput } from '@/components/atoms/inputs/MentionInput';
+import { MentionTextarea } from '@/components/atoms/inputs/MentionTextarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -249,14 +250,7 @@ function PreviewPost({
             )}
             {postType !== 'poll' && content && (
               <div className="min-w-0 overflow-hidden">
-                <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] warp-break-word">
-                  {content.length > 300 ? content.slice(0, 300) + '...' : content}
-                </p>
-                {content.length > 300 && (
-                  <span className="text-sm text-primary font-medium mt-2 inline-block">
-                    Show more
-                  </span>
-                )}
+                <RichContent content={content} truncateLength={300} linksOnly={images.length > 0} />
               </div>
             )}
 
@@ -802,10 +796,10 @@ export default function CreatePostPage() {
                       <label className="text-sm font-medium text-foreground mb-2 block">
                         Title <span className="text-red-500">*</span>
                       </label>
-                      <Input
+                      <MentionInput
                         placeholder="Enter post title..."
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={setTitle}
                         className="border-border rounded-md bg-muted"
                         maxLength={200}
                       />
@@ -818,12 +812,12 @@ export default function CreatePostPage() {
                       <label className="text-sm font-medium text-foreground mb-2 block">
                         Description <span className="text-red-500">*</span>
                       </label>
-                      <Textarea
+                      <MentionTextarea
                         placeholder="Write a detailed description..."
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                        onChange={setContent}
                         rows={8}
-                        className="bg-muted resize-none border-border rounded-md"
+                        className="bg-muted border-border rounded-md"
                         maxLength={20000}
                       />
                       <p className="text-xs text-muted-foreground mt-1">

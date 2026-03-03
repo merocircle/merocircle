@@ -806,6 +806,7 @@ export function EnhancedPostCard({
                       truncateLength={DESCRIPTION_PREVIEW_LENGTH}
                       onClickExpand={handlePostClick}
                       linksOnly={allImages.length > 0}
+                      creatorId={post.creator?.id ?? post.creator_id}
                     />
                   )}
                 </div>
