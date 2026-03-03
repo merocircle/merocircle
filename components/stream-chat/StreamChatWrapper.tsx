@@ -23,6 +23,7 @@ import { ChannelSearchProvider } from './contexts/ChannelSearchContext';
 import { CustomQuotedMessage } from './CustomQuotedMessage';
 import { CustomMessageOptions } from './CustomMessageOptions';
 import { CustomMessage } from './CustomMessage';
+import { CustomMessageStatus } from './CustomMessageStatus';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send,
@@ -1068,6 +1069,7 @@ export function StreamChatWrapper({
                     MessageOptions={CustomMessageOptions}
                     MessageRepliesCountButton={NoOpMessageRepliesCountButton}
                     Message={CustomMessage}
+                    MessageStatus={CustomMessageStatus}
                   >
                     <Window>
                       <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
@@ -1298,6 +1300,7 @@ export function StreamChatWrapper({
                   MessageOptions={CustomMessageOptions}
                   MessageRepliesCountButton={NoOpMessageRepliesCountButton}
                   Message={CustomMessage}
+                  MessageStatus={CustomMessageStatus}
                 >
                   <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
