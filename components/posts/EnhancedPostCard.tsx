@@ -117,6 +117,7 @@ interface Post {
     role: string;
   };
   creator_profile?: {
+    username?: string;
     category?: string;
     is_verified?: boolean;
   };
@@ -138,6 +139,7 @@ interface EnhancedPostCardProps {
   isSupporter?: boolean;
   supporterTierLevel?: number; // User's tier level for this creator (0 if not a supporter)
   showAuthor?: boolean;
+  clickAuthor?: boolean;
   onNavigateToMembership?: () => void;
   creatorSlug?: string;
 }
@@ -160,6 +162,7 @@ export function EnhancedPostCard({
   isSupporter = false,
   supporterTierLevel = 0,
   showAuthor = true,
+  clickAuthor = true,
   onNavigateToMembership,
   creatorSlug,
 }: EnhancedPostCardProps) {
@@ -620,7 +623,7 @@ export function EnhancedPostCard({
           {showAuthor && (
             <div className="px-4 sm:px-5 pt-4 sm:pt-5">
               <Link
-                href={creatorProfileLink}
+                href={clickAuthor ? creatorProfileLink : ""}
                 className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
               >
                 <Avatar className="h-9 w-9">

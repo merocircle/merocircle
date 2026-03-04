@@ -17,6 +17,7 @@ import { fadeInUp, cardHover, countUp } from "@/components/animations/variants";
 
 interface CreatorCardProps {
   id: string;
+  username: string;
   displayName: string;
   bio?: string | null;
   photoUrl?: string | null;
@@ -32,6 +33,7 @@ interface CreatorCardProps {
 
 export function CreatorCard({
   id,
+  username,
   displayName,
   bio,
   photoUrl,
@@ -58,7 +60,7 @@ export function CreatorCard({
         )}
       >
         {/* Cover image */}
-        <div className="relative h-28 bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden">
+        <div className="relative h-28 bg-linear-to-br from-primary/20 via-primary/10 to-background overflow-hidden">
           {coverImageUrl && (
             <Image
               src={coverImageUrl}
@@ -67,7 +69,7 @@ export function CreatorCard({
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-card via-transparent to-transparent" />
 
           {/* Bookmark button */}
           {onBookmark && (
@@ -84,7 +86,7 @@ export function CreatorCard({
         {/* Content */}
         <div className="relative px-4 pb-4">
           {/* Avatar */}
-          <Link href={`/creator/${id}`}>
+          <Link href={`/creator/${username}`}>
             <motion.div
               className="absolute -top-8 left-4 cursor-pointer"
               whileHover={{ scale: 1.05 }}
@@ -105,7 +107,7 @@ export function CreatorCard({
             <div className="flex items-start justify-between">
               <div>
                 <Link
-                  href={`/creator/${id}`}
+                  href={`/creator/${username}`}
                   className="flex items-center gap-1.5 group/name cursor-pointer"
                 >
                   <h3 className="font-semibold text-lg group-hover/name:text-primary transition-colors">
@@ -149,7 +151,7 @@ export function CreatorCard({
               className="w-full mt-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
               asChild
             >
-              <Link href={`/creator/${id}`}>
+              <Link href={`/creator/${username}`}>
                 View Profile
               </Link>
             </Button>

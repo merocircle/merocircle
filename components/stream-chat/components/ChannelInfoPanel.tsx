@@ -123,8 +123,8 @@ export function ChannelInfoPanel({ channel, onClose }: ChannelInfoPanelProps) {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1.5">
                   Online ({onlineMembers.length})
                 </p>
-                {onlineMembers.map((member: any) => (
-                  <MemberRow key={member.user_id} member={member} isCreator={member.user_id === creatorId} />
+                {onlineMembers.map((member: any, index: number) => (
+                  <MemberRow key={`online-${index}`} member={member} isCreator={member.user_id === creatorId} />
                 ))}
               </div>
             )}
@@ -133,8 +133,8 @@ export function ChannelInfoPanel({ channel, onClose }: ChannelInfoPanelProps) {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1.5">
                   Offline ({offlineMembers.length})
                 </p>
-                {offlineMembers.map((member: any) => (
-                  <MemberRow key={member.user_id} member={member} isCreator={member.user_id === creatorId} />
+                {offlineMembers.map((member: any, index: number) => (
+                  <MemberRow key={`offline-${index}`} member={member} isCreator={member.user_id === creatorId} />
                 ))}
               </div>
             )}

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       const { data: supportedUsers } = await supabase
         .from('users')
         .select(`
-          id, display_name, photo_url,
+          id, display_name, photo_url, username,
           creator_profiles(bio, category, is_verified, supporters_count, posts_count, vanity_username)
         `)
         .in('id', supportedCreatorIds);
@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
           display_name: u.display_name || 'Creator',
           bio: cp?.bio || null,
           avatar_url: u.photo_url,
+          username: cp?.vanity_username || u.username || null,
           vanity_username: cp?.vanity_username || null,
           category: cp?.category || null,
           is_verified: cp?.is_verified || false,
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
         .from('creator_profiles')
         .select(`
           user_id, bio, category, is_verified, supporters_count, posts_count, vanity_username,
-          users!inner(id, display_name, photo_url)
+          users!inner(id, display_name, photo_url, username)
         `)
         .order('supporters_count', { ascending: false })
         .limit(12);
@@ -88,6 +89,7 @@ export async function GET(request: NextRequest) {
         display_name: cp.users?.display_name || 'Creator',
         bio: cp.bio,
         avatar_url: cp.users?.photo_url,
+        username: cp.vanity_username || cp.users?.username || null,
         vanity_username: cp.vanity_username || null,
         category: cp.category,
         is_verified: cp.is_verified,
@@ -142,7 +144,7 @@ export async function GET(request: NextRequest) {
     const postIds = allPosts.map((p: any) => p.id);
 
     const parallelQueries: Promise<any>[] = [
-      supabase.from('users').select('id, display_name, photo_url').in('id', creatorIds),
+      supabase.from('users').select('id, display_name, photo_url, username').in('id', creatorIds),
       supabase.from('creator_profiles').select('user_id, category, is_verified, vanity_username').in('user_id', creatorIds),
     ];
 
@@ -202,15 +204,16 @@ export async function GET(request: NextRequest) {
         updated_at: p.updated_at,
         creator_id: p.creator_id,
         creator: {
-          id: creator?.id || p.creator_id,
-          display_name: creator?.display_name || 'Creator',
-          photo_url: creator?.photo_url || null,
-          vanity_username: profile?.vanity_username || null,
+          id: (creator as any)?.id || p.creator_id,
+          display_name: (creator as any)?.display_name || 'Creator',
+          photo_url: (creator as any)?.photo_url || null,
+          username: (profile as any)?.vanity_username || (creator as any)?.username || null,
+          vanity_username: (profile as any)?.vanity_username || null,
           role: 'creator',
         },
         creator_profile: {
-          category: profile?.category || null,
-          is_verified: profile?.is_verified || false,
+          category: (profile as any)?.category || null,
+          is_verified: (profile as any)?.is_verified || false,
         },
         // Hide poll data for non-supporters viewing supporter-only posts
         poll: shouldHideContent ? null : (Array.isArray(p.polls) ? (p.polls[0] || null) : (p.polls || null)),

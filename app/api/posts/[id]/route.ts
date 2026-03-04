@@ -66,6 +66,13 @@ export async function GET(
       );
     }
 
+    // Fetch creator profile to get vanity_username
+    const { data: creatorProfile } = await supabase
+      .from("creator_profiles")
+      .select("user_id, vanity_username")
+      .eq("user_id", post.creator_id)
+      .single();
+
     // Enrich with per-user data if authenticated
     let is_liked = false;
     let is_supporter = false;
@@ -94,7 +101,15 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ ...post, is_liked, is_supporter });
+    return NextResponse.json({ 
+      ...post, 
+      is_liked, 
+      is_supporter,
+      creator_profile: {
+        user_id: creatorProfile?.user_id,
+        vanity_username: creatorProfile?.vanity_username
+      }
+    });
   } catch (error) {
     logger.error("Error fetching post", "POSTS_API", {
       error: error instanceof Error ? error.message : "Unknown",

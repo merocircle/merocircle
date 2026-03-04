@@ -9,8 +9,6 @@ import { PageLayout } from '@/components/common/PageLayout';
 import CreatorProfileSection from '@/components/dashboard/sections/CreatorProfileSection';
 import { motion } from 'framer-motion';
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function CreatorProfileContent() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -37,16 +35,7 @@ function CreatorProfileContent() {
         setLoading(true);
         setInvalid(false);
 
-        if (UUID_REGEX.test(slug.trim())) {
-          const res = await fetch(`/api/creator/${slug}`);
-          if (!res.ok) {
-            if (!cancelled) setInvalid(true);
-            return;
-          }
-          if (!cancelled) setCreatorId(slug);
-          return;
-        }
-
+        // Only resolve by username/vanity URL - no UUID fallback
         const res = await fetch(`/api/creator/resolve/${encodeURIComponent(slug)}`);
         if (!res.ok) {
           if (!cancelled) setInvalid(true);
