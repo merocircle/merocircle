@@ -25,7 +25,7 @@
 
 /* Dots */
 .hero-dot {
-  fill: rgba(153, 0, 0, 0.12);
+  fill: rgba(153, 0, 0, 0.25);
 }
 
 .hero-dot-1 { animation: hero-dot-float 6s ease-in-out infinite; }
@@ -46,9 +46,9 @@
 
 /* Lines */
 .hero-line {
-  stroke: rgba(153, 0, 0, 0.04);
-  stroke-width: 1;
-  stroke-dasharray: 6 8;
+  stroke: rgba(153, 0, 0, 0.08);
+  stroke-width: 1.5;
+  stroke-dasharray: 8 12;
 }
 
 .hero-line-1 { animation: hero-line-draw 4s ease-in-out infinite; }
@@ -86,12 +86,78 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 700px;
-  height: 700px;
+  width: 900px;
+  height: 900px;
   transform: translate(-50%, -55%);
-  background: radial-gradient(circle, rgba(153, 0, 0, 0.035) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(153, 0, 0, 0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
+}
+
+/* Floating icons */
+.hero-icons {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 4px 20px rgba(153, 0, 0, 0.1);
+  color: var(--primary);
+  transition: transform 0.3s ease;
+}
+
+.hero-icon-heart {
+  top: 20%;
+  left: 10%;
+  animation: hero-icon-float-1 8s ease-in-out infinite;
+}
+
+.hero-icon-message {
+  top: 30%;
+  right: 15%;
+  animation: hero-icon-float-2 7s ease-in-out 0.5s infinite;
+}
+
+.hero-icon-users {
+  bottom: 25%;
+  left: 8%;
+  animation: hero-icon-float-3 9s ease-in-out 1s infinite;
+}
+
+.hero-icon-sparkles {
+  bottom: 20%;
+  right: 12%;
+  animation: hero-icon-float-4 6s ease-in-out 0.3s infinite;
+}
+
+@keyframes hero-icon-float-1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+  50% { transform: translateY(-15px) rotate(5deg); opacity: 0.9; }
+}
+
+@keyframes hero-icon-float-2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+  50% { transform: translateY(-12px) rotate(-3deg); opacity: 1; }
+}
+
+@keyframes hero-icon-float-3 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+  50% { transform: translateY(-18px) rotate(2deg); opacity: 0.8; }
+}
+
+@keyframes hero-icon-float-4 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+  50% { transform: translateY(-10px) rotate(-2deg); opacity: 0.9; }
 }
 
 /* ── Content ── */
@@ -222,5 +288,31 @@
   /* Hide text labels on mobile to prevent overlap */
   .hero-connections text {
     display: none;
+  }
+
+  /* Adjust floating icons for mobile */
+  .hero-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hero-icon-heart {
+    top: 15%;
+    left: 5%;
+  }
+
+  .hero-icon-message {
+    top: 25%;
+    right: 8%;
+  }
+
+  .hero-icon-users {
+    bottom: 20%;
+    left: 4%;
+  }
+
+  .hero-icon-sparkles {
+    bottom: 15%;
+    right: 6%;
   }
 }
