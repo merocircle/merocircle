@@ -563,7 +563,7 @@ export default function PostDetailPage({
                     Subscribe to access this post.
                   </p>
                 ) : (
-                  <RichContent content={post.content} truncateLength={9999} />
+                  <RichContent content={post.content} truncateLength={9999} creatorId={post.creator?.id} />
                 )}
               </div>
             )}

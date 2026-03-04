@@ -2,8 +2,8 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { MentionInput } from '@/components/atoms/inputs/MentionInput';
+import { MentionTextarea } from '@/components/atoms/inputs/MentionTextarea';
 import {
   FileText,
   BarChart2,
@@ -217,23 +217,23 @@ export function PostCreationForm({
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Title</label>
-              <Input
+              <MentionInput
                 placeholder="Enter post title..."
                 value={postTitle}
-                onChange={(e) => onTitleChange(e.target.value)}
-                className="border-border rounded-xl"
+                onChange={onTitleChange}
                 maxLength={200}
+                className="border-border"
               />
               <p className="text-xs text-muted-foreground mt-1">{postTitle.length}/200 characters</p>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
-              <Textarea
+              <MentionTextarea
                 placeholder="Write a detailed description..."
                 value={postDescription}
-                onChange={(e) => onDescriptionChange(e.target.value)}
+                onChange={onDescriptionChange}
                 rows={6}
-                className="resize-none border-border rounded-xl"
+                className="border-border"
                 maxLength={5000}
               />
               <p className="text-xs text-muted-foreground mt-1">{postDescription.length}/5000 characters</p>
