@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { detectEmbeds, removeEmbedUrls, type EmbedInfo } from '@/lib/embeds';
 import { ExternalLink, Play, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SupporterMentionModal } from './SupporterMentionModal';
 
 interface RichContentProps {
   content: string | null | undefined;
@@ -12,6 +13,8 @@ interface RichContentProps {
   onClickExpand?: () => void;
   /** When true, render embeddable URLs as clickable links instead of iframes (e.g. when post has images) */
   linksOnly?: boolean;
+  /** Creator ID — required to load supporter profile when a @mention is clicked */
+  creatorId?: string;
 }
 
 /**
@@ -20,8 +23,9 @@ interface RichContentProps {
  *  - Inline embeds for YouTube, Instagram, TikTok, Twitter, Spotify
  *  - linksOnly mode: shows embeddable URLs as styled links instead of iframes
  */
-export function RichContent({ content, className, truncateLength = 280, onClickExpand, linksOnly = false }: RichContentProps) {
+export function RichContent({ content, className, truncateLength = 280, onClickExpand, linksOnly = false, creatorId }: RichContentProps) {
   const [showFull, setShowFull] = useState(false);
+  const [mentionModal, setMentionModal] = useState<{ displayName: string } | null>(null);
 
   const embeds = useMemo(() => detectEmbeds(content), [content]);
   const cleanedContent = useMemo(() => {
@@ -38,10 +42,13 @@ export function RichContent({ content, className, truncateLength = 280, onClickE
 
   return (
     <div className={cn('space-y-3', className)}>
-      {/* Text with clickable links */}
+      {/* Text with clickable links and @mentions */}
       {displayText && (
         <div className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[15px] break-words overflow-wrap-anywhere">
-          <LinkifyText text={displayText} />
+          <LinkifyText
+            text={displayText}
+            onMentionClick={creatorId ? (name) => setMentionModal({ displayName: name }) : undefined}
+          />
           {shouldTruncate && (
             <>
               <span className="text-muted-foreground">...</span>
@@ -83,40 +90,119 @@ export function RichContent({ content, className, truncateLength = 280, onClickE
           )}
         </div>
       )}
+
+      {/* Supporter mention modal */}
+      {mentionModal && creatorId && (
+        <SupporterMentionModal
+          displayName={mentionModal.displayName}
+          creatorId={creatorId}
+          open={!!mentionModal}
+          onClose={() => setMentionModal(null)}
+        />
+      )}
     </div>
   );
 }
 
 /**
- * Turns plain-text URLs into clickable <a> links. Preserves other text as-is.
+ * Splits text into segments: plain text, URLs, and @[name] mention tokens.
+ * Also handles the legacy @[name](userId) format (backward-compat) by
+ * silently stripping the ID portion — the display name is all we need.
  */
-function LinkifyText({ text }: { text: string }) {
-  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/gi;
-  const parts = text.split(urlRegex);
+function LinkifyText({
+  text,
+  onMentionClick,
+}: {
+  text: string;
+  onMentionClick?: (displayName: string) => void;
+}) {
+  // Group 1+2: new format  @[name]
+  // Group 3+4: legacy format @[name](anything) — ID is intentionally ignored
+  // Group 5:   plain URL
+  const combinedRegex =
+    /(@\[([^\]]+)\])(?!\()|(@\[([^\]]+)\]\([^)]*\))|(https?:\/\/[^\s<>"{}|\\^`[\]]+)/gi;
 
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  combinedRegex.lastIndex = 0;
+  while ((match = combinedRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={`txt-${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>);
+    }
+
+    if (match[1]) {
+      // New format: @[displayName]
+      const displayName = match[2];
+      parts.push(
+        <MentionChip
+          key={`mention-${match.index}`}
+          displayName={displayName}
+          onClick={onMentionClick}
+        />,
+      );
+    } else if (match[3]) {
+      // Legacy format: @[displayName](someId) — render the chip, ignore the ID
+      const displayName = match[4];
+      parts.push(
+        <MentionChip
+          key={`mention-${match.index}`}
+          displayName={displayName}
+          onClick={onMentionClick}
+        />,
+      );
+    } else if (match[5]) {
+      // URL
+      const url = match[5];
+      parts.push(
+        <a
+          key={`url-${match.index}`}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="text-primary hover:underline inline-flex items-center gap-0.5 break-all"
+        >
+          {truncateUrl(url)}
+          <ExternalLink className="w-3 h-3 flex-shrink-0 inline" />
+        </a>,
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(<span key="txt-end">{text.slice(lastIndex)}</span>);
+  }
+
+  return <>{parts}</>;
+}
+
+function MentionChip({
+  displayName,
+  onClick,
+}: {
+  displayName: string;
+  onClick?: (displayName: string) => void;
+}) {
   return (
-    <>
-      {parts.map((part, i) => {
-        if (urlRegex.test(part)) {
-          // Reset lastIndex since we used global flag
-          urlRegex.lastIndex = 0;
-          return (
-            <a
-              key={i}
-              href={part}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-primary hover:underline inline-flex items-center gap-0.5 break-all"
-            >
-              {truncateUrl(part)}
-              <ExternalLink className="w-3 h-3 flex-shrink-0 inline" />
-            </a>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </>
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.(displayName);
+      }}
+      className={cn(
+        'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[13px] font-medium transition-colors',
+        onClick
+          ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20 cursor-pointer'
+          : 'bg-violet-500/10 text-violet-600 dark:text-violet-400 cursor-default',
+      )}
+    >
+      @{displayName}
+    </button>
   );
 }
 

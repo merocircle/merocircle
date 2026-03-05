@@ -2,7 +2,7 @@
 .solution-section {
   padding: 12rem 2rem;
   overflow: hidden;
-  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+  font-family: var(--font-roboto), var(--font-sans);
   background: var(--card);
 }
 @media (max-width: 767px) {

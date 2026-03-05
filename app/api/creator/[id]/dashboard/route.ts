@@ -176,6 +176,7 @@ export async function GET(
         media_url: p.media_url,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
+        required_tiers: p.required_tiers || null,
         post_type: p.post_type || 'post',
         created_at: p.created_at,
         updated_at: p.updated_at,

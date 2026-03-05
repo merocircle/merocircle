@@ -51,6 +51,7 @@ export const EMAIL_SUBJECTS = {
   postNotification: (creatorName: string) => `${creatorName} shared an update`,
   pollNotification: (creatorName: string) => `New poll from ${creatorName}`,
   welcome: (firstName: string) => `Hi ${firstName}, welcome to Mero Circle`,
+  creatorWelcome: (firstName: string) => `Hi ${firstName}, you're all set as a creator`,
   paymentSuccess: (creatorName: string) => `Payment confirmed - Supporting ${creatorName}`,
   paymentFailed: () => 'Payment issue - Action required',
   channelMention: (senderName: string, channelName: string) => `${senderName} mentioned everyone in ${channelName}`,

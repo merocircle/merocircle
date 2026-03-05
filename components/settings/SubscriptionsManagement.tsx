@@ -150,25 +150,25 @@ export default function SubscriptionsManagement() {
     switch (subscription.state) {
       case 'active':
         return (
-          <Badge className="bg-green-500 text-white">
+          <Badge className="bg-green-200/30 text-primary-100 border border-emerald-300/50 font-medium">
             Active
           </Badge>
         );
       case 'expiring_soon':
         return (
-          <Badge className="bg-yellow-500 text-white">
+          <Badge className="bg-yellow-200/30 text-primary-100 border border-yellow-300/50 font-medium">
             Expiring Soon
           </Badge>
         );
       case 'expired':
         return (
-          <Badge className="bg-red-500 text-white">
+          <Badge className="bg-red-200/30 text-primary-100 border border-red-300/50 font-medium">
             Expired
           </Badge>
         );
       case 'cancelled':
         return (
-          <Badge variant="outline" className="text-gray-500">
+          <Badge variant="outline" className="text-foreground border-border/50 font-medium">
             Cancelled
           </Badge>
         );
@@ -186,14 +186,14 @@ export default function SubscriptionsManagement() {
     };
 
     const gatewayColors: Record<string, string> = {
-      esewa: 'bg-green-600',
-      khalti: 'bg-purple-600',
-      dodo: 'bg-blue-600',
-      direct: 'bg-gray-600',
+      esewa: 'bg-green-200/30 text-primary-100 border border-green-300/50',
+      khalti: 'bg-purple-200/30 text-primary-100 border border-purple-300/50',
+      dodo: 'bg-blue-200/30 text-primary-100 border border-blue-300/50',
+      direct: 'bg-gray-200/30 text-primary-100 border border-gray-300/50',
     };
 
     return (
-      <Badge className={`${gatewayColors[gateway] || 'bg-gray-500'} text-white text-xs`}>
+      <Badge className={`${gatewayColors[gateway] || 'bg-gray-200/80 text-gray-900 border-gray-300/50'} font-medium text-xs`}>
         {gatewayNames[gateway] || gateway}
       </Badge>
     );
@@ -277,7 +277,7 @@ export default function SubscriptionsManagement() {
                 <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
                   <div className="min-w-0 flex-1">
                     <h4 className="font-semibold text-base sm:text-lg truncate">{subscription.creator.displayName}</h4>
-                    <p className="text-sm text-gray-600 truncate">{subscription.tier.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">{subscription.tier.name}</p>
                   </div>
                   <div className="flex gap-2 flex-wrap flex-shrink-0">
                     {getStatusBadge(subscription)}
@@ -286,16 +286,16 @@ export default function SubscriptionsManagement() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <CreditCard className="w-4 h-4" />
                     <span>{subscription.currency} {subscription.amount.toLocaleString()}/month</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="w-4 h-4" />
                     {subscription.state === 'expired' ? (
                       <span className="text-red-600">Expired {formatDate(subscription.currentPeriodEnd)}</span>
                     ) : subscription.state === 'cancelled' ? (
-                      <span className="text-gray-500">Cancelled {subscription.cancelledAt ? formatDate(subscription.cancelledAt) : ''}</span>
+                      <span className="text-muted-foreground">Cancelled {subscription.cancelledAt ? formatDate(subscription.cancelledAt) : ''}</span>
                     ) : !subscription.currentPeriodEnd ? (
                       <span className="text-muted-foreground">Free tier (no expiry)</span>
                     ) : (

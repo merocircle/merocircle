@@ -19,9 +19,11 @@ import { useStreamChat } from '@/contexts/stream-chat-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { CustomChannelHeader } from './CustomChannelHeader';
+import { ChannelSearchProvider } from './contexts/ChannelSearchContext';
 import { CustomQuotedMessage } from './CustomQuotedMessage';
 import { CustomMessageOptions } from './CustomMessageOptions';
 import { CustomMessage } from './CustomMessage';
+import { CustomMessageStatus } from './CustomMessageStatus';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send,
@@ -80,10 +82,58 @@ export function StreamChatWrapper({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const urlChannelOpenedRef = useRef(false); // Track if URL channel has been opened
   const [hasMounted, setHasMounted] = useState(false);
+  const messageInputTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const messageInputResizeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
+  // Auto-resize Stream Chat message input textarea as user types (it’s not our MessageInput component)
+  useEffect(() => {
+    if (!activeChannel) return;
+    const MIN_H = 24;
+    const MAX_H = 320;
+    const resize = () => {
+      const ta = messageInputTextareaRef.current;
+      if (!ta) return;
+      ta.style.height = "0";
+      ta.style.overflowY = "hidden";
+      const h = Math.max(MIN_H, Math.min(ta.scrollHeight, MAX_H));
+      ta.style.height = `${h}px`;
+      ta.style.overflowY = ta.scrollHeight > MAX_H ? "auto" : "hidden";
+    };
+    const attach = (textarea: HTMLTextAreaElement) => {
+      messageInputTextareaRef.current = textarea;
+      messageInputResizeRef.current = resize;
+      resize();
+      textarea.addEventListener("input", resize);
+    };
+    const find = () => {
+      const wrapper = document.querySelector(".stream-chat-wrapper");
+      if (!wrapper) return;
+      const ta = wrapper.querySelector(".str-chat__textarea__textarea") as HTMLTextAreaElement | null;
+      if (ta && ta !== messageInputTextareaRef.current) {
+        if (messageInputTextareaRef.current && messageInputResizeRef.current) {
+          messageInputTextareaRef.current.removeEventListener("input", messageInputResizeRef.current);
+        }
+        attach(ta);
+      }
+    };
+    const t1 = setTimeout(find, 0);
+    const t2 = setTimeout(find, 150);
+    const t3 = setTimeout(find, 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (messageInputTextareaRef.current && messageInputResizeRef.current) {
+        messageInputTextareaRef.current.removeEventListener("input", messageInputResizeRef.current);
+        messageInputTextareaRef.current = null;
+        messageInputResizeRef.current = null;
+      }
+    };
+  }, [activeChannel?.id]);
 
   // Custom hooks
   const { otherServers, myServer, loading, fetchChannels } = useChannels(user);
@@ -190,15 +240,28 @@ export function StreamChatWrapper({
       }, 1000); // Debounce by 1 second
     };
 
+    const handleMarkRead = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        // Force immediate update when marking as read
+        if (!creatorId) {
+          fetchUnreadCounts(true);
+          fetchDMChannels();
+        } else {
+          fetchUnreadCounts(true);
+        }
+      }, 200); // Reduced debounce for faster response when marking as read
+    };
+
     chatClient.on("message.new", handleNewMessage);
     chatClient.on("notification.message_new", handleNewMessage);
-    chatClient.on("notification.mark_read", handleNewMessage);
+    chatClient.on("notification.mark_read", handleMarkRead);
 
     return () => {
       clearTimeout(debounceTimer);
       chatClient.off("message.new", handleNewMessage);
       chatClient.off("notification.message_new", handleNewMessage);
-      chatClient.off("notification.mark_read", handleNewMessage);
+      chatClient.off("notification.mark_read", handleMarkRead);
     };
   }, [chatClient, fetchUnreadCounts, fetchDMChannels, creatorId]);
 
@@ -381,7 +444,8 @@ export function StreamChatWrapper({
         setActiveChannel(streamChannel);
         setMobileView("chat");
         await streamChannel.markRead();
-        fetchUnreadCounts();
+        // Add a small delay to ensure the markRead operation is processed before fetching counts
+        setTimeout(() => fetchUnreadCounts(true), 100);
       } catch (err: any) {
         // If channel doesn't exist or user not a member, provide clearer error
         if (
@@ -438,8 +502,11 @@ export function StreamChatWrapper({
         setSelectedServer(null); // Clear server when opening DM
         setMobileView("chat");
         await dmChannel.channel.markRead();
-        fetchUnreadCounts();
-        fetchDMChannels();
+        // Add a small delay to ensure the markRead operation is processed before fetching counts
+        setTimeout(() => {
+          fetchUnreadCounts(true);
+          fetchDMChannels();
+        }, 100);
       } catch (err) {
         setChannelError("Unable to open this conversation.");
       }
@@ -550,7 +617,8 @@ export function StreamChatWrapper({
             setActiveChannel(streamChannel);
             setMobileView("chat");
             await streamChannel.markRead();
-            fetchUnreadCounts();
+            // Add a small delay to ensure the markRead operation is processed before fetching counts
+            setTimeout(() => fetchUnreadCounts(true), 100);
           } catch (err: any) {
             // If direct access fails, try to resync channels
             if (err?.message?.includes("not allowed") || err?.code === 17) {
@@ -993,21 +1061,24 @@ export function StreamChatWrapper({
           <div className="flex-1 flex min-w-0 overflow-hidden bg-background">
             <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${showInfoPanel ? 'border-r border-border' : ''}`}>
               {activeChannel ? (
-                <Channel 
-                  channel={activeChannel} 
-                  CustomMessageActionsList={CustomMessageActionsList}
-                  QuotedMessage={CustomQuotedMessage}
-                  MessageOptions={CustomMessageOptions}
-                  MessageRepliesCountButton={NoOpMessageRepliesCountButton}
-                  Message={CustomMessage}
-                >
-                  <Window>
-                    <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
-                    <MessageList />
-                    <MessageInput focus />
-                  </Window>
-                  <NoOpThread />
-                </Channel>
+                <ChannelSearchProvider>
+                  <Channel 
+                    channel={activeChannel} 
+                    CustomMessageActionsList={CustomMessageActionsList}
+                    QuotedMessage={CustomQuotedMessage}
+                    MessageOptions={CustomMessageOptions}
+                    MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                    Message={CustomMessage}
+                    MessageStatus={CustomMessageStatus}
+                  >
+                    <Window>
+                      <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
+                      <MessageList />
+                      <MessageInput focus />
+                    </Window>
+                    <NoOpThread />
+                  </Channel>
+                </ChannelSearchProvider>
               ) : channelError ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center p-8">
@@ -1221,15 +1292,17 @@ export function StreamChatWrapper({
 
           {mobileView === "chat" && activeChannel && (
             <div className="h-full min-h-0 flex flex-col overflow-hidden min-w-0 w-full">
-              <Channel
-                channel={activeChannel}
-                CustomMessageActionsList={CustomMessageActionsList}
-                QuotedMessage={CustomQuotedMessage}
-                MessageOptions={CustomMessageOptions}
-                MessageRepliesCountButton={NoOpMessageRepliesCountButton}
-                Message={CustomMessage}
-              >
-                <Window>
+              <ChannelSearchProvider>
+                <Channel
+                  channel={activeChannel}
+                  CustomMessageActionsList={CustomMessageActionsList}
+                  QuotedMessage={CustomQuotedMessage}
+                  MessageOptions={CustomMessageOptions}
+                  MessageRepliesCountButton={NoOpMessageRepliesCountButton}
+                  Message={CustomMessage}
+                  MessageStatus={CustomMessageStatus}
+                >
+                  <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
                     <button
                       onClick={goBackToServers}
@@ -1284,6 +1357,7 @@ export function StreamChatWrapper({
                 </Window>
                 <NoOpThread />
               </Channel>
+              </ChannelSearchProvider>
             </div>
           )}
 
@@ -1663,6 +1737,8 @@ export function StreamChatWrapper({
         .str-chat__input-flat textarea {
           font-size: 14px !important;
           line-height: 1.5 !important;
+          min-height: 24px !important;
+          resize: none !important;
         }
 
         /* Send button — circular, prominent */
@@ -1723,6 +1799,22 @@ export function StreamChatWrapper({
         }
         .str-chat__li:hover .str-chat__message-data time {
           opacity: 0.8 !important;
+        }
+
+        /* Search: message wrapper for scroll target, no extra layout */
+        .channel-search-message-wrapper {
+          display: contents;
+        }
+        /* Yellow highlighter on the searched word (marker style) */
+        .channel-search-highlight {
+          background: #fef08a;
+          color: inherit;
+          border-radius: 2px;
+          padding: 0 2px;
+        }
+        .dark .channel-search-highlight {
+          background: #ca8a04;
+          color: #fef08a;
         }
 
         /* ── Emoji reactions styling ── */

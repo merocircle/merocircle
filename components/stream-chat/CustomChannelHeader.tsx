@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useChannelStateContext } from 'stream-chat-react';
-import { Hash, Info, Search, X } from 'lucide-react';
-import { logger } from '@/lib/logger';
-import { useToast } from '@/hooks/use-toast';
+import { ChevronDown, ChevronUp, Hash, Info, Search, X } from 'lucide-react';
+import { useChannelSearch } from './contexts/ChannelSearchContext';
 
 interface CustomChannelData {
   name?: string;
@@ -20,12 +19,11 @@ interface CustomChannelHeaderProps {
 }
 
 export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChannelHeaderProps) {
-  const { channel } = useChannelStateContext();
-  const { toast } = useToast();
+  const { channel, messages: contextMessages } = useChannelStateContext();
+  const messages = contextMessages ?? (channel?.state?.messages ?? []) as any[];
+  const searchContext = useChannelSearch();
   const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
 
   if (!channel) return null;
 
@@ -36,24 +34,50 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
   const memberCount = members.length;
   const onlineCount = members.filter((m: any) => m.user?.online).length;
 
-  // Get first few online member avatars for the stack
   const avatarStack = members
     .filter((m: any) => m.user?.online && m.user?.image)
     .slice(0, 4);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    try {
-      const results = await channel.search({ query: searchQuery }, { limit: 20 });
-      setSearchResults(results.results?.map((r: any) => r.message) || []);
-    } catch (err) {
-      logger.error('Channel search failed', 'CUSTOM_CHANNEL_HEADER', { error: err instanceof Error ? err.message : String(err) });
-      toast({ title: 'Search failed', variant: 'destructive' });
-      setSearchResults([]);
-    }
-    setIsSearching(false);
+  // Client-side search: filter loaded messages by text, set results in context for highlight + nav
+  const runSearch = () => {
+    const query = searchInput.trim();
+    if (!query || !searchContext) return;
+    const q = query.toLowerCase();
+    const list = messages || [];
+    const matchIds = list
+      .filter((m: any) => m.text && String(m.text).toLowerCase().includes(q))
+      .map((m: any) => m.id);
+    searchContext.setSearchResults(query, matchIds);
   };
+
+  const closeSearch = () => {
+    setShowSearch(false);
+    setSearchInput('');
+    searchContext?.clearSearch();
+  };
+
+  const openSearch = () => {
+    setShowSearch(true);
+    if (searchContext?.searchQuery) {
+      setSearchInput(searchContext.searchQuery);
+    }
+  };
+
+  // Scroll to current match when index or match list changes (scroll the list item so it’s in view)
+  useEffect(() => {
+    if (!searchContext || searchContext.matchIds.length === 0) return;
+    const id = searchContext.matchIds[searchContext.currentIndex];
+    if (!id) return;
+    const wrapper = document.querySelector(`[data-channel-search-message-id="${id}"]`);
+    const listItem = wrapper?.closest('.str-chat__li');
+    if (listItem) {
+      listItem.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [searchContext?.currentIndex, searchContext?.matchIds]);
+
+  const { matchIds, currentIndex, searchQuery, goNext, goPrev } = searchContext || {};
+  const hasMatches = (matchIds?.length ?? 0) > 0;
+  const matchLabel = hasMatches ? `${currentIndex! + 1} of ${matchIds!.length}` : '0 results';
 
   return (
     <>
@@ -101,7 +125,8 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
 
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
-            onClick={() => { setShowSearch(!showSearch); if (showSearch) { setSearchQuery(''); setSearchResults([]); } }}
+            type="button"
+            onClick={() => (showSearch ? closeSearch() : openSearch())}
             className={`p-2 rounded-lg transition-colors ${
               showSearch ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
             }`}
@@ -111,6 +136,7 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
           </button>
           {onToggleInfo && (
             <button
+              type="button"
               onClick={onToggleInfo}
               className={`p-2 rounded-lg transition-colors ${
                 showInfoPanel ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -130,43 +156,60 @@ export function CustomChannelHeader({ onToggleInfo, showInfoPanel }: CustomChann
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && runSearch()}
                 placeholder="Search in this channel..."
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-muted/50 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
                 autoFocus
               />
             </div>
             <button
-              onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]); }}
+              type="button"
+              onClick={runSearch}
+              disabled={!searchInput.trim()}
+              className="shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-colors"
+            >
+              Search
+            </button>
+            <button
+              type="button"
+              onClick={closeSearch}
               className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"
+              title="Close search"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          {isSearching && (
-            <p className="text-[10px] text-muted-foreground mt-1.5">Searching...</p>
-          )}
-          {searchResults.length > 0 && (
-            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
-              {searchResults.map((msg: any) => (
-                <div key={msg.id} className="px-2 py-1.5 rounded-md bg-muted/50 text-xs">
-                  <span className="font-medium text-foreground">{msg.user?.name}: </span>
-                  <span className="text-muted-foreground">{msg.text?.slice(0, 100)}</span>
+          {searchQuery && (
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] text-muted-foreground">{matchLabel}</span>
+              {hasMatches && (
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                    title="Previous match"
+                  >
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                    title="Next match"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
-          )}
-          {searchQuery && !isSearching && searchResults.length === 0 && (
-            <p className="text-[10px] text-muted-foreground mt-1.5">No results found</p>
           )}
         </div>
       )}
-
     </>
   );
 }
-
 
 export default CustomChannelHeader;
