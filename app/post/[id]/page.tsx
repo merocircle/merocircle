@@ -116,6 +116,7 @@ export default function PostDetailPage({
   const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null }>>([]);
   const [likersLoading, setLikersLoading] = useState(false);
   const [likersHover, setLikersHover] = useState(false);
+  const likersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const commentInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,6 +141,28 @@ export default function PostDetailPage({
   useEffect(() => {
     setLikers([]);
   }, [likesCount]);
+
+  const handleLikersMouseEnter = () => {
+    if (likersTimeoutRef.current) {
+      clearTimeout(likersTimeoutRef.current);
+      likersTimeoutRef.current = null;
+    }
+    setLikersHover(true);
+  };
+
+  const handleLikersMouseLeave = () => {
+    likersTimeoutRef.current = setTimeout(() => {
+      setLikersHover(false);
+    }, 300); // 300ms delay to allow scrolling
+  };
+
+  useEffect(() => {
+    return () => {
+      if (likersTimeoutRef.current) {
+        clearTimeout(likersTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Fetch the post (includes is_liked + is_supporter from the API)
   useEffect(() => {
@@ -578,6 +601,8 @@ export default function PostDetailPage({
                     ? "text-rose-500"
                     : "text-muted-foreground hover:text-rose-500",
                 )}
+                onMouseEnter={handleLikersMouseEnter}
+                onMouseLeave={handleLikersMouseLeave}
               >
                 <motion.button
                   onClick={handleLike}
@@ -587,12 +612,7 @@ export default function PostDetailPage({
                 >
                   <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
                   {likesCount > 0 ? (
-                    <span
-                      className="cursor-default"
-                      onMouseEnter={() => setLikersHover(true)}
-                      onMouseLeave={() => setLikersHover(false)}
-                      title="Hover to see who liked"
-                    >
+                    <span className="cursor-default" title="Hover to see who liked">
                       {likesCount}
                     </span>
                   ) : (
@@ -600,42 +620,42 @@ export default function PostDetailPage({
                   )}
                 </motion.button>
                 {likesCount > 0 && (
-                  <div
-                    className="relative"
-                    onMouseEnter={() => setLikersHover(true)}
-                    onMouseLeave={() => setLikersHover(false)}
-                  >
+                  <div className="relative">
                     {likersHover && (
                       <div
-                        className="absolute bottom-full left-0 mb-1 z-50 w-64 max-h-72 overflow-y-auto rounded-md border border-border bg-popover py-1 shadow-md animate-in fade-in-0 zoom-in-95"
+                        className="absolute bottom-full left-0 mb-2 z-50 w-64 h-46 overflow-y-auto rounded-md border border-border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95"
                         onClick={(e) => e.stopPropagation()}
+                        onMouseEnter={handleLikersMouseEnter}
+                        onMouseLeave={handleLikersMouseLeave}
                       >
-                        {likersLoading ? (
-                          <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading…
-                          </div>
-                        ) : likers.length > 0 ? (
-                          likers.map((u) => (
-                            <Link
-                              key={u.id}
-                              href={`/creator/${u.id}`}
-                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-                            >
-                              <Avatar className="h-7 w-7">
-                                <AvatarImage src={getValidAvatarUrl(u.photo_url)} alt="" />
-                                <AvatarFallback className="text-xs">
-                                  {(u.display_name || "?").slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="truncate">{u.display_name || "Someone"}</span>
-                            </Link>
-                          ))
-                        ) : (
-                          <div className="p-3 text-sm text-muted-foreground">
-                            No one has liked this yet.
-                          </div>
-                        )}
+                        <div className="py-2">
+                          {likersLoading ? (
+                            <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading…
+                            </div>
+                          ) : likers.length > 0 ? (
+                            likers.map((u) => (
+                              <Link
+                                key={u.id}
+                                href={`/creator/${u.id}`}
+                                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                              >
+                                <Avatar className="h-7 w-7">
+                                  <AvatarImage src={getValidAvatarUrl(u.photo_url)} alt="" />
+                                  <AvatarFallback className="text-xs">
+                                    {(u.display_name || "?").slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="truncate">{u.display_name || "Someone"}</span>
+                              </Link>
+                            ))
+                          ) : (
+                            <div className="p-3 text-sm text-muted-foreground">
+                              No one has liked this yet.
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
