@@ -10,15 +10,15 @@ export async function GET() {
     // First get all users who exist (inner join approach)
     const { data: users } = await supabase
       .from('users')
-      .select('id, display_name, photo_url')
+      .select('id, display_name, photo_url, username')
       .not('display_name', 'is', null);
 
     if (!users || users.length === 0) {
       return NextResponse.json({ creators: [] });
     }
 
-    const validUserIds = users.map((u) => u.id);
-    const usersMap = new Map(users.map((u) => [u.id, u]));
+    const validUserIds = (users as any[]).map((u) => u.id);
+    const usersMap = new Map((users as any[]).map((u) => [u.id, u]));
 
     // Then get creator profiles only for existing users
     const { data: profiles, error } = await supabase
@@ -32,8 +32,8 @@ export async function GET() {
       return NextResponse.json({ creators: [] });
     }
 
-    const creators = profiles
-      .map((p) => {
+    const creators = (profiles as any[])
+      .map((p: any) => {
         const u = usersMap.get(p.user_id);
         if (!u || !u.display_name) return null;
         return {
@@ -44,6 +44,7 @@ export async function GET() {
           profileImage: u.photo_url || null,
           coverImage: p.cover_image_url || null,
           vanityUsername: p.vanity_username || null,
+          username: p.vanity_username || u.username || null,
         };
       })
       .filter(Boolean)

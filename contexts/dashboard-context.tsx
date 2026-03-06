@@ -87,12 +87,34 @@ function DashboardProviderInner({ children }: { children: ReactNode }) {
     setActiveViewState(view);
   }, []);
 
-  const openCreatorProfile = useCallback((creatorId: string, postId?: string) => {
+  const openCreatorProfile = useCallback(async (creatorId: string, postId?: string) => {
     // Use startTransition for smooth navigation
-    startTransition(() => {
-      // Navigate to creator's public profile page
-      const url = postId ? `/creator/${creatorId}?post=${postId}` : `/creator/${creatorId}`;
-      router.push(url);
+    startTransition(async () => {
+      try {
+        // Get creator username to avoid exposing ID in URL
+        const response = await fetch(`/api/creator/${creatorId}`);
+        if (response.ok) {
+          const data = await response.json();
+          const username = data.creatorDetails?.username || data.creatorDetails?.vanity_username;
+          if (username) {
+            // Navigate to creator's public profile page using username
+            const url = postId ? `/creator/${username}?post=${postId}` : `/creator/${username}`;
+            router.push(url);
+          } else {
+            // Fallback to ID if no username found (shouldn't happen with proper data)
+            const url = postId ? `/creator/${creatorId}?post=${postId}` : `/creator/${creatorId}`;
+            router.push(url);
+          }
+        } else {
+          // Fallback to ID if API fails
+          const url = postId ? `/creator/${creatorId}?post=${postId}` : `/creator/${creatorId}`;
+          router.push(url);
+        }
+      } catch (error) {
+        // Fallback to ID if fetch fails
+        const url = postId ? `/creator/${creatorId}?post=${postId}` : `/creator/${creatorId}`;
+        router.push(url);
+      }
     });
   }, [router, startTransition]);
 

@@ -47,6 +47,7 @@ interface ActivityBarProps {
     display_name: string;
     photo_url: string | null;
     vanity_username?: string | null;
+    username?: string | null;
   }>;
   onCreatorClick?: (creatorId: string) => void;
   className?: string;
@@ -346,7 +347,7 @@ export function ActivityBar({
                       )}
                     </motion.button>
                   ) : (
-                    <Link href={`/creator/${creator.vanity_username || creator.id}`} prefetch={true}>
+                    <Link href={`/creator/${creator.vanity_username || creator.username || creator.id}`} prefetch={true}>
                       <motion.div
                         className={cn(
                           "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",

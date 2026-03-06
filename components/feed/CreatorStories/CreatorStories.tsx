@@ -7,6 +7,7 @@ import "./CreatorStories.css";
 
 interface Creator {
   user_id: string;
+  username: string;
   display_name: string;
   avatar_url: string | null;
 }
@@ -50,7 +51,7 @@ export function CreatorStories({ creators, loading = false, currentUserId }: Cre
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link href={`/creator/${creator.user_id}`} className="creator-stories-link">
+                <Link href={`/creator/${creator.username}`} className="creator-stories-link">
                   {/* Gradient ring like Instagram stories */}
                   <div className="creator-stories-ring">
                     <div className="creator-stories-ring-inner">

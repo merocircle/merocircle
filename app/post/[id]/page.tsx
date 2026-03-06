@@ -247,7 +247,7 @@ export default function PostDetailPage({
     if (!post) return "/";
     return currentUser?.id === post.creator.id
       ? "/profile"
-      : `/creator/${post.creator.vanity_username || post.creator.id}`;
+      : `/creator/${post.creator_profile?.vanity_username || post.creator.id}`;
   }, [post, currentUser?.id]);
 
   const handleLike = useCallback(() => {
