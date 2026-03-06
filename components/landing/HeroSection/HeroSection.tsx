@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Heart, MessageSquare, Users, Sparkles } from "lucide-react";
 import "./HeroSection.css";
 
 export function HeroSection() {
@@ -40,6 +40,22 @@ export function HeroSection() {
 
       {/* Subtle radial glow */}
       <div className="hero-glow" aria-hidden />
+
+      {/* Floating decorative icons */}
+      <div className="hero-icons" aria-hidden>
+        <div className="hero-icon hero-icon-heart">
+          <Heart size={20} />
+        </div>
+        <div className="hero-icon hero-icon-message">
+          <MessageSquare size={18} />
+        </div>
+        <div className="hero-icon hero-icon-users">
+          <Users size={22} />
+        </div>
+        <div className="hero-icon hero-icon-sparkles">
+          <Sparkles size={16} />
+        </div>
+      </div>
 
       <div className="hero-inner">
         {/* Headline */}
