@@ -2,7 +2,7 @@
   padding: 3rem 0;
   background: var(--background);
   overflow: hidden;
-  font-family: var(--font-plus-jakarta-sans), var(--font-sans);
+  font-family: var(--font-roboto), var(--font-sans);
 }
 
 .payment-section-inner {

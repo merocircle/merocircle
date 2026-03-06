@@ -144,6 +144,7 @@ function PageLayoutInner({
       id: c.id,
       display_name: c.name,
       photo_url: c.photo_url,
+      username: c.username || c.vanity_username || null,
       vanity_username: c.vanity_username || null
     }));
 

@@ -14,12 +14,12 @@ export function useUnreadMessages() {
   const [isLoading, setIsLoading] = useState(false);
   const lastFetchRef = useRef<number>(0);
 
-  const fetchUnreadCount = useCallback(async () => {
+  const fetchUnreadCount = useCallback(async (forceUpdate = false) => {
     if (!chatClient || !isConnected || !user) return;
 
-    // Throttle requests to prevent rate limiting (max once per 2 seconds)
+    // Throttle requests to prevent rate limiting (max once per 2 seconds), unless forced
     const now = Date.now();
-    if (now - lastFetchRef.current < 2000) {
+    if (!forceUpdate && (now - lastFetchRef.current < 2000)) {
       return;
     }
     lastFetchRef.current = now;
@@ -74,20 +74,31 @@ export function useUnreadMessages() {
     const handleMarkRead = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        fetchUnreadCount();
-      }, 500);
+        fetchUnreadCount(true); // Force immediate update when marking as read
+      }, 200); // Reduced debounce for faster response when marking as read
+    };
+
+    const handleReadUpdated = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchUnreadCount(true); // Force immediate update for read state changes
+      }, 200); // Handle read state changes
     };
 
     // Listen for events that affect unread count
     chatClient.on('message.new', handleNewMessage);
     chatClient.on('notification.message_new', handleNewMessage);
     chatClient.on('notification.mark_read', handleMarkRead);
+    chatClient.on('channel.read', handleReadUpdated);
+    chatClient.on('channel.updated', handleReadUpdated); // Handle channel updates that might affect read state
 
     return () => {
       clearTimeout(debounceTimer);
       chatClient.off('message.new', handleNewMessage);
       chatClient.off('notification.message_new', handleNewMessage);
       chatClient.off('notification.mark_read', handleMarkRead);
+      chatClient.off('channel.read', handleReadUpdated);
+      chatClient.off('channel.updated', handleReadUpdated);
     };
   }, [chatClient, fetchUnreadCount]);
 

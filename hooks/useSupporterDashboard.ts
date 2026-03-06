@@ -7,6 +7,7 @@ interface SupportedCreator {
   id: string;
   name: string;
   photo_url: string | null;
+  username: string | null;
   vanity_username: string | null;
   category: string | null;
   bio: string | null;

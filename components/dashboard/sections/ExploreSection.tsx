@@ -138,7 +138,7 @@ const ExploreSection = memo(function ExploreSection() {
               {searchResults.map((creator) => (
                 <CreatorCard
                   key={creator.user_id}
-                  creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                  creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url, username: (creator as any).username || (creator as any).vanity_username || creator.user_id }}
                   variant="compact"
                 />
               ))}
@@ -196,7 +196,7 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.button
                         key={creator.user_id}
                         variants={itemVariants}
-                        onClick={() => router.push(`/creator/${creator.vanity_username || creator.user_id}`)}
+                        onClick={() => router.push(`/creator/${creator.username || creator.vanity_username || creator.user_id}`)}
                         className="flex flex-col items-center gap-1.5 shrink-0 w-16 group"
                       >
                         <div className="w-14 h-14 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all overflow-hidden bg-muted">
@@ -238,7 +238,7 @@ const ExploreSection = memo(function ExploreSection() {
                     {trendingCreators.slice(0, 6).map((creator: any, index: number) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <CreatorCard
-                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url, username: (creator as any).username || (creator as any).vanity_username || creator.user_id }}
                           variant="full"
                           rank={index}
                         />
@@ -248,7 +248,7 @@ const ExploreSection = memo(function ExploreSection() {
                 ) : (
                   <div className="rounded-xl border border-dashed border-border/50 bg-muted/20 p-6 text-center">
                     <TrendingUp className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">No trending creators yet</p>
+                    <p className="text-xs text-muted-foreground font-normal">No trending creators yet</p>
                   </div>
                 )}
               </motion.section>
@@ -274,7 +274,7 @@ const ExploreSection = memo(function ExploreSection() {
                     {suggestedCreators.slice(0, 8).map((creator: any) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <CreatorCard
-                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url, username: (creator as any).username || (creator as any).vanity_username || creator.user_id }}
                           variant="compact"
                         />
                       </motion.div>

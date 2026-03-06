@@ -10,6 +10,7 @@ interface CreatorCardProps {
     user_id?: string;
     id?: string;
     display_name: string;
+    username: string;
     avatar_url?: string | null;
     vanity_username?: string | null;
     bio?: string | null;
@@ -37,8 +38,7 @@ export function CreatorCard({
   rank,
   className,
 }: CreatorCardProps) {
-  const creatorId = creator.user_id || creator.id || "";
-  const creatorSlug = creator.vanity_username || creatorId;
+  const creatorSlug = creator.username || creator.vanity_username || creator.user_id || creator.id || "";
   const isCompact = variant === "compact";
 
   if (isCompact) {
@@ -51,7 +51,7 @@ export function CreatorCard({
             className,
           )}
         >
-          <div className="relative flex-shrink-0">
+          <div className="relative shrink-0">
             <Avatar className="h-10 w-10">
               <AvatarImage src={getValidAvatarUrl(creator.avatar_url)} alt={creator.display_name} />
               <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
@@ -80,7 +80,7 @@ export function CreatorCard({
             </div>
           </div>
 
-          <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 group-hover:text-primary transition-colors" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0 group-hover:text-primary transition-colors" />
         </div>
       </Link>
     );

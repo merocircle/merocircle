@@ -1149,6 +1149,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   showActions={true}
                   isSupporter={isSupporter}
                   showAuthor={true}
+                  clickAuthor={false}
                   onNavigateToMembership={() => setActiveTab('membership')}
                   creatorSlug={creatorDetails?.username ?? undefined}
                 />

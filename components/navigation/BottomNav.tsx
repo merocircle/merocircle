@@ -15,6 +15,8 @@ import {
   Monitor,
   ArrowLeft,
   Bell,
+  Calendar,
+  Compass,
 } from "lucide-react";
 import { BottomNavIcon } from "./NavIcon";
 import { cn } from "@/lib/utils";
@@ -60,6 +62,7 @@ export function BottomNav({
     if (pathname === "/notifications") return "notifications";
     if (pathname === "/settings") return "settings";
     if (pathname === "/profile") return "profile";
+    if (pathname === "/events") return "events";
     if (pathname === "/creator-studio") return "creator-studio";
 
     // Don't auto-detect profile routes anymore - let useEffect handle the specific case
@@ -90,6 +93,7 @@ export function BottomNav({
         "create-post",
         "notifications",
         "payment",
+        "events",
       ];
       if (
         !knownRoutes.includes(firstSegment) &&
@@ -137,7 +141,7 @@ export function BottomNav({
         href="/home"
       />
       <BottomNavIcon
-        icon={Search}
+        icon={Compass}
         label="Explore"
         isActive={isBottomNavActive("explore")}
         href="/explore"
@@ -226,6 +230,7 @@ export function MobileHeader({
         "/about",
         "/create-post",
         "/payment",
+        "/events",
       ];
 
       // Check if current path starts with any of these routes
@@ -253,6 +258,7 @@ export function MobileHeader({
           "create-post",
           "notifications",
           "payment",
+          "events",
         ];
 
         // If it's a dynamic route (not a known static route) and not the home page
@@ -328,6 +334,16 @@ export function MobileHeader({
                   {unreadNotifications > 99 ? '99+' : unreadNotifications}
                 </motion.span>
               )}
+            </motion.button>
+          </Link>
+          {/* Events */}
+          <Link href="/events" prefetch={true}>
+            <motion.button
+              className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"
+              whileTap={{ scale: 0.95 }}
+              aria-label="Events"
+            >
+              <Calendar className="w-4.5 h-4.5 text-muted-foreground" />
             </motion.button>
           </Link>
           {/* Theme Toggle */}

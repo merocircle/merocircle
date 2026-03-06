@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       .from('posts')
       .select(`
         id, title, content, image_url, image_urls, is_public,
-        tier_required, post_type, created_at, updated_at, creator_id,
+        tier_required, required_tiers, post_type, created_at, updated_at, creator_id,
         likes_count, comments_count,
         polls(id, question, allows_multiple_answers, expires_at)
       `)
@@ -109,6 +109,7 @@ export async function GET(request: NextRequest) {
         preview_image_url: isSupporterOnly ? `/api/post-preview-image?postId=${p.id}&index=0` : null,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
+        required_tiers: p.required_tiers || null,
         post_type: p.post_type || 'post',
         created_at: p.created_at,
         updated_at: p.updated_at,

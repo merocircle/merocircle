@@ -30,7 +30,7 @@ export function TopSupporters({ supporters }: TopSupportersProps) {
         {supporters.slice(0, 6).map((supporter, index) => (
           <motion.div
             key={supporter.id}
-            className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+            className="flex flex-col items-start gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors overflow-hidden"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}

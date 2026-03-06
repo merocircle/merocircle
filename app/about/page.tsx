@@ -103,8 +103,7 @@ export default function AboutPage() {
         <section className="about-team" id="team">
           <div className="about-team-inner">
             <header className="about-team-header">
-              <p className="about-team-eyebrow">The Team</p>
-              <h2 className="about-team-title">People behind MeroCircle</h2>
+                            <h2 className="about-team-title">People behind MeroCircle</h2>
             </header>
             <div className="about-team-grid">
               {TEAM.map((member) => (

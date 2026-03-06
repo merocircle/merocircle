@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { spacing, layout, responsive, colors, effects, typography } from '@/lib/tailwind-utils'
 
 interface CreatorCardProps {
-  creator: Creator
+  creator: Creator & { username: string }
 }
 
 function CreatorCard({ creator }: CreatorCardProps) {
@@ -25,8 +25,8 @@ function CreatorCard({ creator }: CreatorCardProps) {
     <Card className={cn('hover:shadow-lg transition-shadow duration-200')}>
       <CardContent className={spacing.card}>
         <div className={cn(layout.flexStart, 'space-x-4')}>
-          <Link href={`/creator/${creator.user_id}`} className="cursor-pointer">
-            <div className={cn('relative', responsive.avatar, effects.rounded.full, 'overflow-hidden bg-gray-200 flex-shrink-0 hover:ring-2 hover:ring-blue-500 transition-all')}>
+          <Link href={`/creator/${creator.username}`} className="cursor-pointer">
+            <div className={cn('relative', responsive.avatar, effects.rounded.full, 'overflow-hidden bg-gray-200 shrink-0 hover:ring-2 hover:ring-blue-500 transition-all')}>
               {creator.avatar_url ? (
                 <Image
                   src={creator.avatar_url}
@@ -44,7 +44,7 @@ function CreatorCard({ creator }: CreatorCardProps) {
 
           <div className="flex-1 min-w-0">
             <Link
-              href={`/creator/${creator.user_id}`}
+              href={`/creator/${creator.username}`}
               className={cn('font-semibold text-lg hover:text-blue-600 transition-colors cursor-pointer', colors.text.primary)}
             >
               {creator.display_name}
@@ -72,7 +72,7 @@ function CreatorCard({ creator }: CreatorCardProps) {
               className={cn('w-full sm:w-auto transition-all')}
               asChild
             >
-              <Link href={`/creator/${creator.user_id}`}>
+              <Link href={`/creator/${creator.username}`}>
                 <div className={cn(layout.flexRow, 'space-x-2')}>
                   <span>View Profile</span>
                   <ArrowRight className={responsive.icon} />

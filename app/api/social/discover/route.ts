@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
           total_earnings,
           vanity_username,
           created_at,
-          users!inner(id, display_name, photo_url, email)
+          users!inner(id, display_name, photo_url, email, username)
         `)
         .order('supporters_count', { ascending: false })
         .limit(10),
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
           total_earnings,
           vanity_username,
           created_at,
-          users!inner(id, display_name, photo_url, email)
+          users!inner(id, display_name, photo_url, email, username)
         `)
         .order('total_earnings', { ascending: false })
         .limit(10)
@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
       display_name: cp.users.display_name,
       bio: cp.bio,
       avatar_url: cp.users.photo_url,
+      username: cp.vanity_username || cp.users.username || null,
       vanity_username: cp.vanity_username || null,
       category: cp.category || null,
       is_verified: cp.is_verified || false,
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
       display_name: cp.users.display_name,
       bio: cp.bio,
       avatar_url: cp.users.photo_url,
+      username: cp.vanity_username || cp.users.username || null,
       vanity_username: cp.vanity_username || null,
       category: cp.category || null,
       is_verified: cp.is_verified || false,

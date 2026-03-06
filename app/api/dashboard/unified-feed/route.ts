@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getOptionalUser, parsePaginationParams, handleApiError } from '@/lib/api-utils';
+import { getOptionalUser, parsePaginationParams, handleApiError, checkPostAccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
@@ -11,16 +11,20 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const { page, limit, offset } = parsePaginationParams(searchParams);
 
-    // ── Get supported creator IDs ──
+    // ── Get supported creator IDs and tier levels ──
     let supportedCreatorIds: string[] = [];
+    const supporterTierMap = new Map<string, number>(); // creator_id -> tier_level
     if (user) {
       const { data: supporterData } = await supabase
         .from('supporters')
-        .select('creator_id')
+        .select('creator_id, tier_level')
         .eq('supporter_id', user.id)
         .eq('is_active', true);
 
       supportedCreatorIds = (supporterData || []).map((s: any) => s.creator_id);
+      (supporterData || []).forEach((s: any) => {
+        supporterTierMap.set(s.creator_id, s.tier_level || 1);
+      });
     }
 
     // ── Fetch creators for the circles strip ──
@@ -33,7 +37,7 @@ export async function GET(request: NextRequest) {
       const { data: supportedUsers } = await supabase
         .from('users')
         .select(`
-          id, display_name, photo_url,
+          id, display_name, photo_url, username,
           creator_profiles(bio, category, is_verified, supporters_count, posts_count, vanity_username)
         `)
         .in('id', supportedCreatorIds);
@@ -47,6 +51,7 @@ export async function GET(request: NextRequest) {
           display_name: u.display_name || 'Creator',
           bio: cp?.bio || null,
           avatar_url: u.photo_url,
+          username: cp?.vanity_username || u.username || null,
           vanity_username: cp?.vanity_username || null,
           category: cp?.category || null,
           is_verified: cp?.is_verified || false,
@@ -61,7 +66,7 @@ export async function GET(request: NextRequest) {
         .from('creator_profiles')
         .select(`
           user_id, bio, category, is_verified, supporters_count, posts_count, vanity_username,
-          users!inner(id, display_name, photo_url)
+          users!inner(id, display_name, photo_url, username)
         `)
         .order('supporters_count', { ascending: false })
         .limit(12);
@@ -84,6 +89,7 @@ export async function GET(request: NextRequest) {
         display_name: cp.users?.display_name || 'Creator',
         bio: cp.bio,
         avatar_url: cp.users?.photo_url,
+        username: cp.vanity_username || cp.users?.username || null,
         vanity_username: cp.vanity_username || null,
         category: cp.category,
         is_verified: cp.is_verified,
@@ -98,7 +104,7 @@ export async function GET(request: NextRequest) {
       .from('posts')
       .select(`
         id, title, content, image_url, image_urls, is_public,
-        tier_required, post_type, created_at, updated_at, creator_id,
+        tier_required, required_tiers, post_type, created_at, updated_at, creator_id,
         likes_count, comments_count,
         polls(id, question, allows_multiple_answers, expires_at)
       `)
@@ -138,7 +144,7 @@ export async function GET(request: NextRequest) {
     const postIds = allPosts.map((p: any) => p.id);
 
     const parallelQueries: Promise<any>[] = [
-      supabase.from('users').select('id, display_name, photo_url').in('id', creatorIds),
+      supabase.from('users').select('id, display_name, photo_url, username').in('id', creatorIds),
       supabase.from('creator_profiles').select('user_id, category, is_verified, vanity_username').in('user_id', creatorIds),
     ];
 
@@ -164,11 +170,22 @@ export async function GET(request: NextRequest) {
       const creator = creatorsMap.get(p.creator_id);
       const profile = profilesMap.get(p.creator_id);
       const isSupporterOfThisCreator = user ? supportedCreatorIds.includes(p.creator_id) : false;
+      const supporterTierLevel = user ? (supporterTierMap.get(p.creator_id) || 0) : 0;
       const isOwnPost = user ? user.id === p.creator_id : false;
 
-      // Gate supporter-only content on the backend
-      const isSupporterOnly = !p.is_public || (p.tier_required && p.tier_required !== 'free');
-      const shouldHideContent = isSupporterOnly && !isSupporterOfThisCreator && !isOwnPost;
+      // Check if user has access to this post using the helper function
+      const hasAccess = checkPostAccess(
+        {
+          is_public: p.is_public,
+          required_tiers: p.required_tiers,
+          tier_required: p.tier_required,
+          creator_id: p.creator_id,
+        },
+        user?.id || null,
+        p.creator_id,
+        supporterTierLevel
+      );
+      const shouldHideContent = !hasAccess;
 
       return {
         id: p.id,
@@ -181,20 +198,22 @@ export async function GET(request: NextRequest) {
         preview_image_url: shouldHideContent ? `/api/post-preview-image?postId=${p.id}&index=0` : null,
         is_public: p.is_public,
         tier_required: p.tier_required || 'free',
+        required_tiers: p.required_tiers || null,
         post_type: p.post_type || 'post',
         created_at: p.created_at,
         updated_at: p.updated_at,
         creator_id: p.creator_id,
         creator: {
-          id: creator?.id || p.creator_id,
-          display_name: creator?.display_name || 'Creator',
-          photo_url: creator?.photo_url || null,
-          vanity_username: profile?.vanity_username || null,
+          id: (creator as any)?.id || p.creator_id,
+          display_name: (creator as any)?.display_name || 'Creator',
+          photo_url: (creator as any)?.photo_url || null,
+          username: (profile as any)?.vanity_username || (creator as any)?.username || null,
+          vanity_username: (profile as any)?.vanity_username || null,
           role: 'creator',
         },
         creator_profile: {
-          category: profile?.category || null,
-          is_verified: profile?.is_verified || false,
+          category: (profile as any)?.category || null,
+          is_verified: (profile as any)?.is_verified || false,
         },
         // Hide poll data for non-supporters viewing supporter-only posts
         poll: shouldHideContent ? null : (Array.isArray(p.polls) ? (p.polls[0] || null) : (p.polls || null)),
@@ -202,6 +221,7 @@ export async function GET(request: NextRequest) {
         comments_count: p.comments_count || 0,
         is_liked: user ? userLikedPostIds.has(p.id) : false,
         is_supporter: isSupporterOfThisCreator,
+        supporter_tier_level: supporterTierLevel,
       };
     });
 
