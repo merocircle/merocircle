@@ -38,6 +38,12 @@ export const generateNotificationLink = ({
     return undefined;
   }
 
+  // For comment notifications, always go to the post detail page
+  if (notificationType === 'comment') {
+    return `/post/${postId}`;
+  }
+
+  // For like notifications, check if it's the user's own post
   const isOwnPost = currentUserId === creatorId;
 
   if (isOwnPost) {
