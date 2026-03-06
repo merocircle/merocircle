@@ -72,6 +72,7 @@ import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { signIn } from 'next-auth/react';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { useRealtimeCreatorPosts } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
@@ -152,6 +153,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -739,6 +741,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         const result = await response.json();
         
         if (result.success && result.transaction) {
+          // Invalidate supported creators query to refresh ActivityBar
+          queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
           setPaymentSuccess({
             transactionUuid: result.transaction.transaction_uuid,
             totalAmount: result.transaction.amount,
@@ -868,7 +872,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       setPaymentLoading(false);
       setPendingPayment(null);
     }
-  }, [pendingPayment, user, creatorId, refreshCreatorDetails]);
+  }, [pendingPayment, user, creatorId, refreshCreatorDetails, queryClient]);
 
   const handleConfirmFreeSupport = useCallback(async () => {
     if (!user || !showConfirmFreeSupport) return;
@@ -893,6 +897,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       if (result.success && result.transaction) {
         updateSupporterTier(1);
         refreshCreatorDetails();
+        // Invalidate supported creators query to refresh ActivityBar
+        queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
         setPaymentSuccess({
           transactionUuid: result.transaction.transaction_uuid,
           totalAmount: Number(result.transaction.amount ?? 0),
@@ -908,7 +914,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     } finally {
       setPaymentLoading(false);
     }
-  }, [user, creatorId, showConfirmFreeSupport, refreshCreatorDetails, updateSupporterTier]);
+  }, [user, creatorId, showConfirmFreeSupport, refreshCreatorDetails, updateSupporterTier, queryClient]);
 
   const handleSubscription = useCallback(async (tierId: string) => {
     if (!user) {
