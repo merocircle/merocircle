@@ -131,7 +131,7 @@ export function NavIcon({
     isExpanded ? 'w-full justify-start px-3 py-2' : 'justify-center',
     isActive
       ? 'text-primary bg-primary/10'
-      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+      : isExpanded ? 'text-muted-foreground hover:bg-muted/50' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
     disabled && 'opacity-50 cursor-not-allowed',
     className
   );
@@ -151,8 +151,8 @@ export function NavIcon({
       >
         <motion.div
           className={baseClasses}
-          whileHover={{ y: -2, scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           transition={{ type: 'spring', stiffness: 400, damping: 17 }}
         >
           {content}
@@ -164,8 +164,8 @@ export function NavIcon({
   return (
     <motion.div
       className={baseClasses}
-      whileHover={!disabled ? { y: -2, scale: 1.05 } : {}}
-      whileTap={!disabled ? { scale: 0.95 } : {}}
+      whileHover={!disabled ? { scale: 1.02 } : {}}
+      whileTap={!disabled ? { scale: 0.98 } : {}}
       transition={{ type: 'spring', stiffness: 400, damping: 17 }}
     >
       {onClick && !disabled ? (
