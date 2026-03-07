@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { MentionInput } from '@/components/atoms/inputs/MentionInput';
 import { MentionTextarea } from '@/components/atoms/inputs/MentionTextarea';
 import {
@@ -40,6 +41,7 @@ interface PostCreationFormProps {
   onAddPollOption: () => void;
   onRemovePollOption: (index: number) => void;
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilesSelected?: (files: File[]) => void;
   onRemoveImage: (index: number) => void;
   onPublish: () => void;
   onNotifyByEmailChange: (notify: boolean) => void;
@@ -66,6 +68,7 @@ export function PostCreationForm({
   onAddPollOption,
   onRemovePollOption,
   onImageUpload,
+  onFilesSelected,
   onRemoveImage,
   onPublish,
   onNotifyByEmailChange,
@@ -349,16 +352,66 @@ export function PostCreationForm({
 
         <div className="flex items-center justify-between pt-4 border-t border-border/50">
           {postType === 'post' && (
-            <div>
-              <input type="file" accept="image/*" multiple onChange={onImageUpload} className="hidden" id="image-upload" />
-              <label htmlFor="image-upload">
-                <Button variant="outline" size="sm" className="rounded-xl" asChild disabled={uploadedImages.length >= 10}>
-                  <span>
-                    {isUploadingImage ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-                    {isUploadingImage ? 'Uploading...' : uploadedImages.length > 0 ? 'Add More' : 'Add Images'}
-                  </span>
-                </Button>
-              </label>
+            <div className="flex flex-col gap-3">
+              {/* Desktop-only: Drag and drop zone */}
+              {onFilesSelected && (
+                <div className="hidden lg:block">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={onImageUpload}
+                    className="hidden"
+                    id="image-upload-desktop"
+                  />
+                  <label
+                    htmlFor="image-upload-desktop"
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
+                      if (files.length > 0) onFilesSelected(files);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    className={cn(
+                      'flex flex-col items-center justify-center min-h-[100px] rounded-xl border-2 border-dashed cursor-pointer transition-colors',
+                      'hover:border-primary/50 hover:bg-muted/30',
+                      uploadedImages.length >= 10 || isUploadingImage
+                        ? 'opacity-50 pointer-events-none border-border bg-muted/20'
+                        : 'border-border bg-muted/10'
+                    )}
+                  >
+                    {isUploadingImage ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground mb-2" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-muted-foreground mb-2" />
+                    )}
+                    <span className="text-sm font-medium text-foreground">
+                      {uploadedImages.length >= 10
+                        ? 'Maximum 10 images'
+                        : isUploadingImage
+                          ? 'Uploading...'
+                          : 'Drop images here or click to browse'}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-0.5">Max 10 images, 50MB each</span>
+                  </label>
+                </div>
+              )}
+              {/* Mobile: Button only */}
+              <div className={onFilesSelected ? 'lg:hidden' : ''}>
+                <input type="file" accept="image/*" multiple onChange={onImageUpload} className="hidden" id="image-upload" />
+                <label htmlFor="image-upload">
+                  <Button variant="outline" size="sm" className="rounded-xl" asChild disabled={uploadedImages.length >= 10 || isUploadingImage}>
+                    <span>
+                      {isUploadingImage ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />}
+                      {isUploadingImage ? 'Uploading...' : uploadedImages.length > 0 ? 'Add More' : 'Add Images'}
+                    </span>
+                  </Button>
+                </label>
+              </div>
             </div>
           )}
           <Button
