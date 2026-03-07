@@ -329,9 +329,10 @@ export default function ProfileSection() {
       // Save tiers
       const payload = [1, 2, 3].map((level) => {
         const t = tiers?.find((x) => x.tier_level === level);
+        const rawPrice = level === 1 ? 0 : parseFloat(tierPrices[level] ?? '0') || 0;
         return {
           tier_level: level,
-          price: level === 1 ? 0 : parseFloat(tierPrices[level] ?? '0') || 0,
+          price: level === 1 ? 0 : Math.max(0, rawPrice),
           tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
           description: t?.description ?? null,
           benefits: t?.benefits ?? [],
@@ -1057,7 +1058,19 @@ export default function ProfileSection() {
                               type="number"
                               min={0}
                               value={tierPrices[level] ?? ''}
-                              onChange={(e) => setTierPrices({ ...tierPrices, [level]: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || val === '-') {
+                                  setTierPrices({ ...tierPrices, [level]: val });
+                                  return;
+                                }
+                                const num = parseFloat(val);
+                                if (!isNaN(num) && num < 0) {
+                                  setTierPrices({ ...tierPrices, [level]: '0' });
+                                  return;
+                                }
+                                setTierPrices({ ...tierPrices, [level]: val });
+                              }}
                               className="rounded-xl w-28"
                             />
                             <span className="text-sm text-muted-foreground">NPR / month</span>
