@@ -33,6 +33,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { RichContent } from '@/components/posts/RichContent';
 import { MentionInput } from '@/components/atoms/inputs/MentionInput';
 import { MentionTextarea } from '@/components/atoms/inputs/MentionTextarea';
