@@ -24,7 +24,8 @@ export async function PATCH(request: NextRequest) {
       const { tier_level, price, tier_name, description, benefits, extra_perks } = t;
       if (!tier_level || !Number.isInteger(tier_level) || tier_level < 1 || tier_level > 3) continue;
 
-      const updates: Record<string, unknown> = { price: parseFloat(String(price)) || 0 };
+      const rawPrice = parseFloat(String(price)) || 0;
+      const updates: Record<string, unknown> = { price: Math.max(0, rawPrice) };
       if (tier_name !== undefined) updates.tier_name = tier_name;
       if (description !== undefined) updates.description = description;
       if (Array.isArray(benefits)) updates.benefits = benefits;

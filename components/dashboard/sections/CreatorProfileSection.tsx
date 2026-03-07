@@ -536,9 +536,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
       const payload = [1, 2, 3].map((level) => {
         const t = (subscriptionTiers || []).find((x: any) => x.tier_level === level);
+        const rawPrice = level === 1 ? 0 : parseFloat(editTierPrices[level] ?? '0') || 0;
         return {
           tier_level: level,
-          price: level === 1 ? 0 : parseFloat(editTierPrices[level] ?? '0') || 0,
+          price: level === 1 ? 0 : Math.max(0, rawPrice),
           tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
           description: t?.description ?? null,
           benefits: t?.benefits ?? [],
@@ -2071,7 +2072,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                     type="number"
                                     min={0}
                                     value={editTierPrices[level] ?? ''}
-                                    onChange={(e) => setEditTierPrices({ ...editTierPrices, [level]: e.target.value })}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === '' || val === '-') {
+                                        setEditTierPrices({ ...editTierPrices, [level]: val });
+                                        return;
+                                      }
+                                      const num = parseFloat(val);
+                                      if (!isNaN(num) && num < 0) {
+                                        setEditTierPrices({ ...editTierPrices, [level]: '0' });
+                                        return;
+                                      }
+                                      setEditTierPrices({ ...editTierPrices, [level]: val });
+                                    }}
                                     className="rounded-xl w-28"
                                   />
                                   <span className="text-sm text-muted-foreground">NPR / month</span>
