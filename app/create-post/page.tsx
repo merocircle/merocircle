@@ -33,6 +33,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { RichContent } from '@/components/posts/RichContent';
 import { MentionInput } from '@/components/atoms/inputs/MentionInput';
 import { MentionTextarea } from '@/components/atoms/inputs/MentionTextarea';
@@ -382,9 +383,8 @@ export default function CreatePostPage() {
     }
   }, []);
 
-  const handleImageUpload = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
+  const processFiles = useCallback(
+    async (files: File[]) => {
       if (!files || files.length === 0) return;
 
       if (images.length + files.length > 10) {
@@ -429,11 +429,35 @@ export default function CreatePostPage() {
         showError(errorMessage);
       } finally {
         setIsUploading(false);
-        event.target.value = '';
       }
     },
     [images.length, showError, prepareFileForUpload]
   );
+
+  const handleImageUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+      processFiles(Array.from(files));
+      event.target.value = '';
+    },
+    [processFiles]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
+      if (files.length > 0) processFiles(files);
+    },
+    [processFiles]
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
 
   const handlePublish = useCallback(() => {
     if (postType === 'poll') {
@@ -867,16 +891,57 @@ export default function CreatePostPage() {
                         </div>
                       )}
 
-                      <div>
+                      {/* Desktop-only: Drag and drop zone */}
+                      <div className="hidden lg:block">
                         <input
                           type="file"
                           accept="image/*"
                           multiple
                           onChange={handleImageUpload}
                           className="hidden"
-                          id="image-upload"
+                          id="image-upload-desktop"
                         />
-                        <label htmlFor="image-upload">
+                        <label
+                          htmlFor="image-upload-desktop"
+                          onDrop={handleDrop}
+                          onDragOver={handleDragOver}
+                          className={cn(
+                            'flex flex-col items-center justify-center min-h-[140px] rounded-lg border-2 border-dashed cursor-pointer transition-colors',
+                            'hover:border-primary/50 hover:bg-muted/30',
+                            images.length >= 10 || isUploading
+                              ? 'opacity-50 pointer-events-none border-border bg-muted/20'
+                              : 'border-border bg-muted/10'
+                          )}
+                        >
+                          {isUploading ? (
+                            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-2" />
+                          ) : (
+                            <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                          )}
+                          <span className="text-sm font-medium text-foreground">
+                            {images.length >= 10
+                              ? 'Maximum 10 images'
+                              : isUploading
+                                ? 'Uploading...'
+                                : 'Drop images here or click to browse'}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            Max 10 images, 50MB each
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Mobile: Button only (same as before) */}
+                      <div className="lg:hidden">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="image-upload-mobile"
+                        />
+                        <label htmlFor="image-upload-mobile">
                           <Button
                             variant="outline"
                             className="rounded-md w-full sm:w-auto"
