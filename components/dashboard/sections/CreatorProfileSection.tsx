@@ -158,6 +158,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const membershipTabRef = useRef<HTMLDivElement>(null);
+  const chatTabRef = useRef<HTMLDivElement>(null);
+  const shopTabRef = useRef<HTMLDivElement>(null);
+  const aboutTabRef = useRef<HTMLDivElement>(null);
+  const editTabRef = useRef<HTMLDivElement>(null);
 
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const [tempHighlightPostId, setTempHighlightPostId] = useState<string | null>(null);
@@ -381,6 +385,48 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       }
     }, 100);
   }, []);
+
+  // Auto-scroll to tab content when tab changes
+  useEffect(() => {
+    // Scroll to the appropriate tab content after a short delay to ensure content is fully rendered
+    const scrollTimeout = setTimeout(() => {
+      let targetRef: React.RefObject<HTMLDivElement | null> | null = null;
+      
+      switch (activeTab) {
+        case 'posts':
+          // For posts, scroll to top of page since posts start from top
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        case 'membership':
+          targetRef = membershipTabRef;
+          break;
+        case 'chat':
+          targetRef = chatTabRef;
+          break;
+        case 'shop':
+          targetRef = shopTabRef;
+          break;
+        case 'about':
+          targetRef = aboutTabRef;
+          break;
+        case 'edit':
+          targetRef = editTabRef;
+          break;
+        default:
+          return;
+      }
+
+      if (targetRef?.current) {
+        targetRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 150); // Slightly longer delay to ensure content is fully rendered
+
+    return () => clearTimeout(scrollTimeout);
+  }, [activeTab]);
 
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
@@ -1624,7 +1670,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             </TabsList>
           </div>
 
-              <TabsContent value="chat" className="mt-3">
+              <TabsContent value="chat" className="mt-3" ref={chatTabRef}>
                 <div className="relative">
                   {isSupporter || isOwnProfile ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
@@ -1824,7 +1870,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 )}
               </TabsContent>
 
-              <TabsContent value="shop" className="mt-3">
+              <TabsContent value="shop" className="mt-3" ref={shopTabRef}>
                 <Card className="p-16 text-center border-border/50">
                   <div className="flex flex-col items-center gap-4">
                     <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
@@ -1840,7 +1886,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </Card>
               </TabsContent>
 
-              <TabsContent value="about" className="mt-3">
+              <TabsContent value="about" className="mt-3" ref={aboutTabRef}>
                 <Card className="border-border/50 shadow-lg">
                   <div className="p-6 space-y-6">
                     {creatorDetails.bio && (
@@ -1905,7 +1951,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               </TabsContent>
 
               {isOwnProfile && (
-                <TabsContent value="edit" className="mt-3">
+                <TabsContent value="edit" className="mt-3" ref={editTabRef}>
                   <Card className="border-border/50 p-5 sm:p-6">
                     {/* Sub-tabs: Profile / Pricing */}
                     <div className="flex gap-2 p-1 bg-muted/50 rounded-xl w-fit border border-border/30 mb-6">
