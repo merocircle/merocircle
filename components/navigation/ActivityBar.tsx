@@ -348,8 +348,8 @@ export function ActivityBar({
                         isExpanded ? 'w-full' : '',
                         activeCreatorId === creator.id && "bg-primary/10 text-primary"
                       )}
-                      whileHover={{ scale: isExpanded ? 1 : 1.08 }}
-                      whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       <Avatar className={cn(
                         "w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0",
@@ -377,8 +377,8 @@ export function ActivityBar({
                           isExpanded ? 'w-full' : '',
                           activeCreatorId === creator.id && "bg-primary/10 text-primary"
                         )}
-                        whileHover={{ scale: isExpanded ? 1 : 1.08 }}
-                        whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
                         <Avatar className={cn(
                           "w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0",
@@ -416,8 +416,8 @@ export function ActivityBar({
                       "flex items-center justify-center gap-3 p-2 rounded-lg bg-muted/50 text-muted-foreground hover:bg-muted transition-colors",
                       isExpanded ? 'w-full justify-start' : 'w-9 h-9'
                     )}
-                    whileHover={{ scale: isExpanded ? 1 : 1.08 }}
-                    whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <span className="text-sm font-semibold">
                       +{favoriteCreators.length - 5}
@@ -457,8 +457,8 @@ export function ActivityBar({
                   'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors',
                   isExpanded ? 'w-full justify-start' : 'w-10 h-10'
                 )}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <MessageCircleHeart size={18} className="shrink-0" />
                 {isExpanded && (
@@ -479,11 +479,11 @@ export function ActivityBar({
               <motion.button
                 onClick={toggleTheme}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors',
-                  isExpanded ? 'w-full justify-start' : 'w-10 h-10'
+                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground transition-colors',
+                  isExpanded ? 'w-full justify-start hover:bg-muted/50' : 'w-10 h-10 hover:text-foreground hover:bg-muted/50'
                 )}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <div className="shrink-0">
                   {!mounted ? <Monitor size={18} /> : theme === 'system' ? <Monitor size={18} /> : theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -531,10 +531,10 @@ export function ActivityBar({
                   className={cn(
                     "relative flex items-center gap-3 p-2 rounded-lg transition-colors",
                     currentActiveView === 'profile' && "bg-primary/10 text-primary",
-                    isExpanded ? 'w-full' : ''
+                    isExpanded ? 'w-full hover:bg-muted/50' : ''
                   )}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <Avatar className={cn(
                     "w-9 h-9 shrink-0",
