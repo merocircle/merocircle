@@ -1420,12 +1420,6 @@ export function StreamChatWrapper({
           background: transparent !important;
         }
 
-        /* Hide file upload button */
-        .str-chat__file-input-container,
-        .str-chat__attachment-selector {
-          display: none !important;
-        }
-
         .str-chat__channel-preview-messenger--active {
           background: color-mix(
             in srgb,
