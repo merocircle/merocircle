@@ -1241,7 +1241,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   View All
                 </Button>
               </div>
-              {(recentPosts.slice(0, 3) as Array<Record<string, unknown>>).map((post) => (
+              {(recentPosts.slice(0, 3) as unknown as Array<Record<string, unknown>>).map((post) => (
                 <motion.div key={String(post.id)} variants={fadeInUp}>
                   <EnhancedPostCard
                     post={transformPost(post)}
@@ -1411,24 +1411,24 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               priority
             />
           ) : (
-            <>
+            <div>
               <div className="absolute inset-0 bg-linear-to-br from-primary/30 via-primary/10 to-pink-500/20" />
               {/* Decorative circles for default cover */}
               <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full border border-white/10" />
               <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full border border-white/10" />
               <div className="absolute top-1/2 left-1/3 w-24 h-24 rounded-full border border-white/5" />
-            </>
-          )}
+            </div>
+          )} 
           <div className="absolute inset-0 bg-linear-to-b from-black/10 via-transparent to-black/60" />
 
           {/* Floating buttons on cover */}
-          <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between z-10">
+          <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-end md:justify-between z-10">
             {!isOwnProfile ? (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleBack}
-                className="bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md h-9 w-9 border border-white/10"
+                className="hidden md:flex bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md h-9 w-9 border border-white/10"
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
