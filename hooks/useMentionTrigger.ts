@@ -10,12 +10,13 @@ export interface Supporter {
     display_name: string;
     photo_url: string | null;
   };
+  is_creator?: boolean;
 }
 
 /**
  * Shared hook that powers @-mention autocomplete for any text input.
- * Detects when the user types '@', filters the creator's supporters, and
- * provides helpers to insert the resulting mention token.
+ * Detects when the user types '@', fetches supporters + other creators,
+ * and provides helpers to insert the resulting mention token.
  */
 export function useMentionTrigger(
   value: string,
@@ -24,19 +25,31 @@ export function useMentionTrigger(
 ) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [supporters, setSupporters] = useState<Supporter[]>([]);
+  const [suggestions, setSuggestions] = useState<Supporter[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionStart, setMentionStart] = useState(-1);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Fetch supporters once on mount
+  // Fetch mention suggestions (supporters + creators) when dropdown is shown
   useEffect(() => {
-    fetch('/api/creator/supporters')
-      .then((r) => (r.ok ? r.json() : { supporters: [] }))
-      .then((data) => setSupporters(data.supporters || []))
-      .catch(() => {});
-  }, []);
+    if (!showDropdown) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`/api/creator/mention-suggestions?q=${encodeURIComponent(mentionQuery)}&limit=10`, {
+        signal: controller.signal,
+      })
+        .then((r) => (r.ok ? r.json() : { suggestions: [] }))
+        .then((data) => setSuggestions(data.suggestions || []))
+        .catch(() => setSuggestions([]));
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [showDropdown, mentionQuery]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -52,13 +65,7 @@ export function useMentionTrigger(
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredSupporters = supporters
-    .filter(
-      (s) =>
-        !mentionQuery ||
-        s.user.display_name.toLowerCase().includes(mentionQuery.toLowerCase()),
-    )
-    .slice(0, 8);
+  const filteredSupporters = suggestions.slice(0, 8);
 
   /** Call this inside the input/textarea onChange handler */
   const handleTextChange = useCallback(
@@ -82,7 +89,7 @@ export function useMentionTrigger(
     [onChange],
   );
 
-  /** Inserts the mention token and closes the dropdown */
+  /** Inserts the mention token and closes the dropdown. Works for both supporters and creators. */
   const insertMention = useCallback(
     (supporter: Supporter) => {
       const el = inputRef.current;

@@ -1,5 +1,6 @@
 'use client';
 
+import { User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Supporter } from '@/hooks/useMentionTrigger';
 
@@ -16,6 +17,7 @@ interface MentionDropdownProps {
 
 /**
  * Shared floating dropdown used by both MentionInput and MentionTextarea.
+ * Shows supporters and other creators for @-mention autocomplete.
  */
 export function MentionDropdown({
   dropdownRef,
@@ -40,7 +42,7 @@ export function MentionDropdown({
         style={positionStyle}
       >
         <p className="p-3 text-sm text-muted-foreground text-center">
-          No supporters found for &quot;{mentionQuery}&quot;
+          No supporters or creators found for &quot;{mentionQuery}&quot;
         </p>
       </div>
     );
@@ -56,7 +58,7 @@ export function MentionDropdown({
     >
       <div className="p-2 space-y-0.5">
         <p className="text-[11px] text-muted-foreground px-2 py-1 font-medium uppercase tracking-wide">
-          Mention a supporter
+          Mention a supporter or creator
         </p>
         {supporters.map((s, idx) => (
           <button
@@ -86,7 +88,13 @@ export function MentionDropdown({
                 </div>
               )}
             </div>
-            <span className="text-sm font-medium truncate">{s.user.display_name}</span>
+            <span className="text-sm font-medium truncate flex-1 min-w-0">{s.user.display_name}</span>
+            {s.is_creator && (
+              <span className="flex items-center gap-0.5 text-[10px] text-violet-500 font-medium shrink-0">
+                <User className="w-3 h-3" />
+                Creator
+              </span>
+            )}
           </button>
         ))}
       </div>
