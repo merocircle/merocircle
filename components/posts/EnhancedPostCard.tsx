@@ -209,7 +209,7 @@ export function EnhancedPostCard({
   const [newComment, setNewComment] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null }>>([]);
+  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean }>>([]);
   const [likersLoading, setLikersLoading] = useState(false);
   const [likersHover, setLikersHover] = useState(false);
   const likersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -892,19 +892,35 @@ export function EnhancedPostCard({
                                 </div>
                               ) : likers.length > 0 ? (
                                 likers.map((u) => (
-                                  <Link
-                                    key={u.id}
-                                    href={`/creator/${u.id}`}
-                                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
-                                  >
-                                    <Avatar className="h-7 w-7">
-                                      <AvatarImage src={getValidAvatarUrl(u.photo_url)} alt="" />
-                                      <AvatarFallback className="text-xs">
-                                        {(u.display_name || "?").slice(0, 2).toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="truncate">{u.display_name || "Someone"}</span>
-                                  </Link>
+                                  u.isCreator ? (
+                                    <Link
+                                      key={u.id}
+                                      href={`/creator/${u.id}`}
+                                      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
+                                    >
+                                      <Avatar className="h-7 w-7">
+                                        <AvatarImage src={getValidAvatarUrl(u.photo_url)} alt="" />
+                                        <AvatarFallback className="text-xs">
+                                          {(u.display_name || "?").slice(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="truncate font-normal text-foreground hover:text-foreground">{u.display_name || "Someone"}</span>
+                                      <Sparkles className="w-3 h-3 text-primary" />
+                                    </Link>
+                                  ) : (
+                                    <div
+                                      key={u.id}
+                                      className="flex items-center gap-2 px-3 py-2 text-sm cursor-default"
+                                    >
+                                      <Avatar className="h-7 w-7">
+                                        <AvatarImage src={getValidAvatarUrl(u.photo_url)} alt="" />
+                                        <AvatarFallback className="text-xs">
+                                          {(u.display_name || "?").slice(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="truncate font-normal text-foreground">{u.display_name || "Someone"}</span>
+                                    </div>
+                                  )
                                 ))
                               ) : (
                                 <div className="p-3 text-sm text-muted-foreground">
