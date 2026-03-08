@@ -6,50 +6,62 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
-    logger.info('Discovery feed request', 'SOCIAL_DISCOVER_API', { limit })
+    const category = searchParams.get('category')
+    logger.info('Discovery feed request', 'SOCIAL_DISCOVER_API', { limit, category })
 
     const supabase = await createClient()
 
+    // Build base queries
+    const baseTrendingQuery = supabase
+      .from('creator_profiles')
+      .select(`
+        user_id,
+        bio,
+        category,
+        is_verified,
+        supporters_count,
+        posts_count,
+        total_earnings,
+        vanity_username,
+        created_at,
+        users!inner(id, display_name, photo_url, email, username)
+      `)
+      .order('supporters_count', { ascending: false })
+      .limit(10)
+
+    const baseSuggestedQuery = supabase
+      .from('creator_profiles')
+      .select(`
+        user_id,
+        bio,
+        category,
+        is_verified,
+        supporters_count,
+        posts_count,
+        total_earnings,
+        vanity_username,
+        created_at,
+        users!inner(id, display_name, photo_url, email, username)
+      `)
+      .order('total_earnings', { ascending: false })
+      .limit(10)
+
+    // Add category filter if specified (and not 'all')
+    if (category && category !== 'all') {
+      baseTrendingQuery.eq('category', category)
+      baseSuggestedQuery.eq('category', category)
+    }
+
     // Fetch creators ordered by supporters (people who have paid)
     const [trendingResult, postsResult, suggestedResult] = await Promise.all([
-      supabase
-        .from('creator_profiles')
-        .select(`
-          user_id,
-          bio,
-          category,
-          is_verified,
-          supporters_count,
-          posts_count,
-          total_earnings,
-          vanity_username,
-          created_at,
-          users!inner(id, display_name, photo_url, email, username)
-        `)
-        .order('supporters_count', { ascending: false })
-        .limit(10),
+      baseTrendingQuery,
       supabase
         .from('posts')
         .select('*, users!inner(id, display_name, photo_url)')
         .eq('is_public', true)
         .order('created_at', { ascending: false })
         .limit(20),
-      supabase
-        .from('creator_profiles')
-        .select(`
-          user_id,
-          bio,
-          category,
-          is_verified,
-          supporters_count,
-          posts_count,
-          total_earnings,
-          vanity_username,
-          created_at,
-          users!inner(id, display_name, photo_url, email, username)
-        `)
-        .order('total_earnings', { ascending: false })
-        .limit(10)
+      baseSuggestedQuery
     ])
 
     const trendingCreators = trendingResult.data

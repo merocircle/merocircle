@@ -39,11 +39,16 @@ export interface DiscoveryFeed {
   suggested_creators: Creator[]
 }
 
-export const useDiscoveryFeed = () => {
+export const useDiscoveryFeed = (category?: string) => {
   return useQuery<DiscoveryFeed>({
-    queryKey: ['discovery', 'feed'],
+    queryKey: ['discovery', 'feed', category],
     queryFn: async () => {
-      const response = await fetch('/api/social/discover?limit=20');
+      const params = new URLSearchParams({ limit: '20' });
+      if (category && category !== 'all') {
+        params.append('category', category);
+      }
+      
+      const response = await fetch(`/api/social/discover?${params.toString()}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to fetch discovery feed' }));
@@ -54,6 +59,16 @@ export const useDiscoveryFeed = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 10 * 60 * 1000, // Auto-refresh every 10 minutes
+    enabled: true,
+    // Prevent cache pollution when switching categories
+    gcTime: 1000, // 1 second garbage collection time
+    retry: (failureCount, error) => {
+      // Don't retry on 404s or when category has no results
+      if (error?.message?.includes('No creators found') || error?.message?.includes('404')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 }
 

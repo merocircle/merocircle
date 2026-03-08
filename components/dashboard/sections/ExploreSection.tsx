@@ -11,6 +11,7 @@ import { useSupportedCreators } from '@/hooks/useSupporterDashboard';
 import { CreatorCard } from '@/components/explore/CreatorCard';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
 import { EXPLORE_CATEGORY_OPTIONS } from '@/lib/constants';
+import { useQueryClient } from '@tanstack/react-query';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -33,13 +34,21 @@ const categories = EXPLORE_CATEGORY_OPTIONS;
 
 const ExploreSection = memo(function ExploreSection() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  const { data: feed, isLoading: feedLoading, error: feedError } = useDiscoveryFeed();
+  const { data: feed, isLoading: feedLoading, error: feedError } = useDiscoveryFeed(selectedCategory);
   const { data: supportedCreatorsData, isLoading: supportedLoading } = useSupportedCreators();
   const { results: searchResults, loading: searchLoading, error: searchError, searchCreators, clearResults } = useCreatorSearch();
+
+  // Handle category change with cache invalidation
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    // Invalidate the discovery feed cache to ensure fresh data
+    queryClient.invalidateQueries({ queryKey: ['discovery', 'feed'] });
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -57,14 +66,6 @@ const ExploreSection = memo(function ExploreSection() {
   const isSearching = debouncedQuery.length >= 2;
   const showSearchResults = isSearching;
 
-  const filterByCategory = (creators: any[]) => {
-    if (selectedCategory === 'all') return creators;
-    return creators.filter((c: any) => {
-      const cat = c.creator_profile?.category ?? c.category;
-      return cat === selectedCategory;
-    });
-  };
-
   const supportedCreators = (supportedCreatorsData?.creators || []).map((creator: any) => ({
     user_id: creator.id || '',
     display_name: creator.name || 'Creator',
@@ -80,8 +81,8 @@ const ExploreSection = memo(function ExploreSection() {
     }
   }));
 
-  const trendingCreators = filterByCategory(feed?.trending_creators || []);
-  const suggestedCreators = filterByCategory(feed?.suggested_creators || []);
+  const trendingCreators = feed?.trending_creators || [];
+  const suggestedCreators = feed?.suggested_creators || [];
 
   return (
     <div className="space-y-6 pb-8 pt-2">
@@ -109,7 +110,7 @@ const ExploreSection = memo(function ExploreSection() {
             return (
               <button
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => handleCategoryChange(category.id)}
                 className={cn(
                   'flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all border shrink-0',
                   isSelected
