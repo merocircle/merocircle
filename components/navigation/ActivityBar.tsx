@@ -334,7 +334,7 @@ export function ActivityBar({
         {/* Favorite Creators */}
         {favoriteCreators.length > 0 && (
           <div className={cn(
-            'flex gap-1.5 overflow-y-auto scrollbar-hide max-h-[calc(100vh-400px)]',
+            'flex gap-1.5 overflow-y-auto max-h-[calc(100vh-400px)]',
             isExpanded ? 'flex-col px-0 w-full' : 'flex-col items-center'
           )}>
             {favoriteCreators.slice(0, 5).map((creator) => (
