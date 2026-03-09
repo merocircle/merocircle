@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { updateSupporterCount } from '@/lib/payment-utils';
 
 export async function DELETE() {
   try {
@@ -41,7 +42,19 @@ export async function DELETE() {
     await supabase.from('transactions').delete().or(`supporter_id.eq.${userId},creator_id.eq.${userId}`);
 
     // 6. Supporters (both as supporter and as creator)
+    // Get creator IDs that this user supported (so we can refresh their supporter count after delete)
+    const { data: supportedCreators } = await supabase
+      .from('supporters')
+      .select('creator_id')
+      .eq('supporter_id', userId);
+    const creatorIdsToRefresh = [...new Set((supportedCreators || []).map((r) => r.creator_id))];
+
     await supabase.from('supporters').delete().or(`supporter_id.eq.${userId},creator_id.eq.${userId}`);
+
+    // Refresh creator_profiles.supporters_count for each creator who had this user as a supporter
+    for (const creatorId of creatorIdsToRefresh) {
+      await updateSupporterCount(creatorId);
+    }
 
     // 7. Subscriptions
     await supabase.from('subscriptions').delete().or(`supporter_id.eq.${userId},creator_id.eq.${userId}`);
