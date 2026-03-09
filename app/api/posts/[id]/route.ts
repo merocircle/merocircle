@@ -46,11 +46,17 @@ export async function GET(
           created_at,
           updated_at,
           user:users(id, display_name, photo_url)
+        ),
+        polls(
+          id,
+          question,
+          allows_multiple_answers,
+          expires_at
         )
       `,
       )
       .eq("id", id)
-      .single();
+      .single() as any;
 
     if (error) {
       logger.error("Error fetching post by ID", "POSTS_API", {

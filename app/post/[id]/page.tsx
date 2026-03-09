@@ -79,6 +79,7 @@ interface Post {
   is_liked?: boolean;
   is_supporter?: boolean;
   poll?: { id: string } | Array<{ id: string }>;
+  polls?: { id: string } | Array<{ id: string }>;
 }
 
 interface Comment {
@@ -248,7 +249,7 @@ export default function PostDetailPage({
     if (!post) return "/";
     return currentUser?.id === post.creator.id
       ? "/profile"
-      : `/creator/${post.creator_profile?.vanity_username || post.creator.id}`;
+      : `/creator/${post.creator?.vanity_username || post.creator.id}`;
   }, [post, currentUser?.id]);
 
   const handleLike = useCallback(() => {
@@ -381,7 +382,7 @@ export default function PostDetailPage({
   }
 
   const pollData = (() => {
-    const raw = post.poll;
+    const raw = post.polls || post.poll;
     if (!raw) return null;
     if (Array.isArray(raw)) return raw[0] || null;
     return raw;
@@ -478,7 +479,7 @@ export default function PostDetailPage({
           )}
 
         {/* Locked / subscriber-only placeholder */}
-        {shouldBlur && (
+        {shouldBlur && post.post_type !== "poll" && (
           <div className="relative w-full aspect-video bg-gradient-to-br from-muted to-muted/50 rounded-xl overflow-hidden mb-6">
             {post.preview_image_url && (
               <Image
@@ -500,7 +501,7 @@ export default function PostDetailPage({
                     Subscribers only
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Join the circle to see this post
+                    Join circle to see this post
                   </p>
                 </div>
                 <Button
@@ -571,7 +572,7 @@ export default function PostDetailPage({
           {post.post_type === "poll" && pollData?.id && (
             <div className="mb-6">
               <PollCard
-                pollId={pollData.id}
+                pollId={pollData?.id}
                 currentUserId={currentUser?.id}
                 isCreator={currentUser?.id === post.creator?.id}
               />
