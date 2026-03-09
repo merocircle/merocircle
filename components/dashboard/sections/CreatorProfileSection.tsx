@@ -272,6 +272,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           const payData = await payRes.json();
           cleanUrlForPayment();
           if (payRes.ok && payData.success && payData.transaction) {
+            updateSupporterTier(tierLevel ?? 1);
             setPaymentSuccess({
               transactionUuid: payData.transaction.transaction_uuid,
               totalAmount: payData.transaction.amount,
@@ -372,7 +373,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         setActiveTab('membership');
       }
     })();
-  }, [renewFromUrl, subscriptionIdFromUrl, user, creatorId, refreshCreatorDetails]);
+  }, [renewFromUrl, subscriptionIdFromUrl, user, creatorId, refreshCreatorDetails, updateSupporterTier]);
 
   const { subscribe, unsubscribe } = useSubscription();
 
@@ -788,6 +789,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         const result = await response.json();
         
         if (result.success && result.transaction) {
+          updateSupporterTier(tierLevel);
+          refreshCreatorDetails();
           // Invalidate supported creators query to refresh ActivityBar
           queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
           setPaymentSuccess({
@@ -834,6 +837,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         const result = await response.json();
 
         if (result.success && result.transaction) {
+          updateSupporterTier(tierLevel);
+          refreshCreatorDetails();
           setPaymentSuccess({
             transactionUuid: result.transaction.transaction_uuid,
             totalAmount: result.transaction.amount,
@@ -919,7 +924,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       setPaymentLoading(false);
       setPendingPayment(null);
     }
-  }, [pendingPayment, user, creatorId, refreshCreatorDetails, queryClient]);
+  }, [pendingPayment, user, creatorId, refreshCreatorDetails, updateSupporterTier, queryClient]);
 
   const handleConfirmFreeSupport = useCallback(async () => {
     if (!user || !showConfirmFreeSupport) return;
