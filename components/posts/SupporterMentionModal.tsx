@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Heart, X } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import Link from 'next/link';
+import { Calendar, Heart, X, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface SupporterProfile {
   display_name: string;
   photo_url: string | null;
   joined_at: string | null;
+  is_creator?: boolean;
+  creator_slug?: string | null;
 }
 
 interface SupporterMentionModalProps {
@@ -63,6 +67,9 @@ export function SupporterMentionModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[300px] p-0 overflow-hidden rounded-2xl gap-0 border-border/60">
+        <DialogTitle className="sr-only">
+          Profile: {name}
+        </DialogTitle>
         {/* Gradient header band */}
         <div className="h-16 bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-pink-500/20" />
 
@@ -103,9 +110,23 @@ export function SupporterMentionModal({
             ) : (
               <>
                 <h3 className="text-base font-semibold text-foreground leading-tight">{name}</h3>
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
-                  <span className="text-xs font-medium text-pink-500">Supporter</span>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  {profile?.joined_at ? (
+                    <>
+                      <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
+                      <span className="text-xs font-medium text-pink-500">Supporter</span>
+                    </>
+                  ) : profile?.is_creator ? (
+                    <>
+                      <User className="w-3 h-3 text-violet-500" />
+                      <span className="text-xs font-medium text-violet-500">Creator</span>
+                    </>
+                  ) : (
+                    <>
+                      <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
+                      <span className="text-xs font-medium text-pink-500">Supporter</span>
+                    </>
+                  )}
                 </div>
                 {profile?.joined_at && (
                   <div className="flex items-center gap-1.5 mt-1">
@@ -114,6 +135,14 @@ export function SupporterMentionModal({
                       Joined {formatJoinedDate(profile.joined_at)}
                     </span>
                   </div>
+                )}
+                {profile?.is_creator && profile?.creator_slug && (
+                  <Link href={`/creator/${profile.creator_slug}`} onClick={onClose} className="mt-3 block">
+                    <Button variant="outline" size="sm" className="w-full rounded-xl gap-2">
+                      <User className="w-3.5 h-3.5" />
+                      Go to creator profile
+                    </Button>
+                  </Link>
                 )}
               </>
             )}

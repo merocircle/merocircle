@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import type { Creator } from '@/hooks/useSocial';
 
 interface EnhancedCreatorCardProps {
-  creator: Creator;
+  creator: Creator & { username: string };
 }
 
 export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
@@ -24,7 +24,7 @@ export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
   const [animatedPosts, setAnimatedPosts] = useState(0);
   const supporterCount = creator.supporter_count || 0;
 
-  const creatorLink = `/creator/${creator.user_id}`;
+  const creatorLink = `/creator/${creator.username}`;
 
   // Prefetch on hover for instant navigation
   const handlePrefetch = useCallback(() => {
@@ -82,10 +82,10 @@ export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
       whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
       className="w-full"
     >
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card to-card/50 shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card to-card/50 shadow-lg hover:shadow-xl transition-all duration-300">
         {/* Cover Image Background */}
-        <div className="relative h-32 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
+        <div className="relative h-32 bg-linear-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 overflow-hidden">
+          <div className="absolute inset-0 bg-linear-to-br from-primary/10 to-transparent" />
         </div>
 
         {/* Bookmark Button */}
@@ -111,7 +111,7 @@ export function EnhancedCreatorCard({ creator }: EnhancedCreatorCardProps) {
                   className="object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-full h-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center text-white font-bold text-xl">
                   {creator.display_name.charAt(0).toUpperCase()}
                 </div>
               )}

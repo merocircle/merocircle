@@ -13,11 +13,6 @@ export function ShowcaseSection() {
     <section className="showcase" ref={ref}>
       <div className={`showcase-inner ${isVisible ? "showcase-visible" : ""}`}>
 
-        {/* ═══ FOR CREATORS ═══ */}
-        <div className="showcase-audience-label">
-          <Sparkles size={12} className="mr-1.5" />
-          For Creators
-        </div>
 
         <h2 className="showcase-title">
           Your community. Your way.
@@ -148,13 +143,7 @@ export function ShowcaseSection() {
           </Link>
         </div>
 
-        {/* ═══ FOR SUPPORTERS ═══ */}
         <div className="showcase-divider" />
-
-        <div className="showcase-audience-label showcase-audience-label-alt">
-          <Users size={12} className="mr-1.5" />
-          For Supporters
-        </div>
 
         <h2 className="showcase-title">
           Get closer to the people you admire.

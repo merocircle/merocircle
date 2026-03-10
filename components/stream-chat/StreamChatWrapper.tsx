@@ -103,11 +103,20 @@ export function StreamChatWrapper({
       ta.style.height = `${h}px`;
       ta.style.overflowY = ta.scrollHeight > MAX_H ? "auto" : "hidden";
     };
+    const resizeAfterPaste = () => {
+      resize();                                             // immediate (value not yet set, but starts the process)
+      requestAnimationFrame(resize);                        // after browser paints pasted value
+      requestAnimationFrame(() => requestAnimationFrame(resize)); // after Stream Chat's own rAF handler
+      setTimeout(resize, 0);                               // after current JS task queue (post React re-render)
+      setTimeout(resize, 50);                              // safety net for slow environments
+    };
+
     const attach = (textarea: HTMLTextAreaElement) => {
       messageInputTextareaRef.current = textarea;
       messageInputResizeRef.current = resize;
       resize();
       textarea.addEventListener("input", resize);
+      textarea.addEventListener("paste", resizeAfterPaste);
     };
     const find = () => {
       const wrapper = document.querySelector(".stream-chat-wrapper");
@@ -129,6 +138,7 @@ export function StreamChatWrapper({
       clearTimeout(t3);
       if (messageInputTextareaRef.current && messageInputResizeRef.current) {
         messageInputTextareaRef.current.removeEventListener("input", messageInputResizeRef.current);
+        messageInputTextareaRef.current.removeEventListener("paste", resizeAfterPaste);
         messageInputTextareaRef.current = null;
         messageInputResizeRef.current = null;
       }
@@ -1420,12 +1430,6 @@ export function StreamChatWrapper({
           background: transparent !important;
         }
 
-        /* Hide file upload button */
-        .str-chat__file-input-container,
-        .str-chat__attachment-selector {
-          display: none !important;
-        }
-
         .str-chat__channel-preview-messenger--active {
           background: color-mix(
             in srgb,
@@ -1734,11 +1738,26 @@ export function StreamChatWrapper({
           box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent) !important;
         }
 
-        .str-chat__input-flat textarea {
+        /* Allow the textarea wrapper to grow with its content */
+        .str-chat__textarea {
+          height: auto !important;
+          max-height: none !important;
+          overflow: visible !important;
+        }
+
+        /* Target textarea via both selectors — the flat input wrapper and the direct class */
+        .str-chat__input-flat textarea,
+        .str-chat__textarea__textarea {
           font-size: 14px !important;
           line-height: 1.5 !important;
           min-height: 24px !important;
+          max-height: 320px !important;
           resize: none !important;
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+          white-space: pre-wrap !important;
+          overflow-x: hidden !important;
+          box-sizing: border-box !important;
         }
 
         /* Send button — circular, prominent */

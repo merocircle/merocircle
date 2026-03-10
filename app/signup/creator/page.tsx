@@ -523,17 +523,17 @@ export default function CreatorSignupPage() {
           benefits: ['Access to exclusive posts', 'Community chat'],
           extra_perks: tierExtraPerks[1].filter(p => p.trim() !== '')
         },
-        { 
-          tier_level: 2, 
-          price: parseFloat(tierPrices.tier2),
+        {
+          tier_level: 2,
+          price: Math.max(0, parseFloat(tierPrices.tier2) || 0),
           tier_name: 'Inner Circle',
           description: 'Posts + Community chat access',
           benefits: ['Access to exclusive posts', 'Community chat'],
           extra_perks: tierExtraPerks[2].filter(p => p.trim() !== '')
         },
-        { 
-          tier_level: 3, 
-          price: parseFloat(tierPrices.tier3),
+        {
+          tier_level: 3,
+          price: Math.max(0, parseFloat(tierPrices.tier3) || 0),
           tier_name: 'Core Member',
           description: 'Posts + Chat + Special perks',
           benefits: ['Access to exclusive posts', 'Community chat', 'Special perks'],
@@ -1107,9 +1107,21 @@ export default function CreatorSignupPage() {
                             <input
                               id="tier2"
                               type="number"
-                              min={Math.max(1, (parseInt(tierPrices.tier1) || 0) + 1)}
+                              min="0"
                               value={tierPrices.tier2}
-                              onChange={(e) => setTierPrices({ ...tierPrices, tier2: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || val === '-') {
+                                  setTierPrices({ ...tierPrices, tier2: val });
+                                  return;
+                                }
+                                const num = parseFloat(val);
+                                if (!isNaN(num) && num < 0) {
+                                  setTierPrices({ ...tierPrices, tier2: '0' });
+                                  return;
+                                }
+                                setTierPrices({ ...tierPrices, tier2: val });
+                              }}
                               className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 sm:py-3 text-foreground focus:ring-2 focus:ring-ring"
                             />
                             <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">per month</span>
@@ -1180,9 +1192,21 @@ export default function CreatorSignupPage() {
                             <input
                               id="tier3"
                               type="number"
-                              min={parseInt(tierPrices.tier2) + 1}
+                              min={Math.max(0, (parseFloat(tierPrices.tier2) || 0))}
                               value={tierPrices.tier3}
-                              onChange={(e) => setTierPrices({ ...tierPrices, tier3: e.target.value })}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || val === '-') {
+                                  setTierPrices({ ...tierPrices, tier3: val });
+                                  return;
+                                }
+                                const num = parseFloat(val);
+                                if (!isNaN(num) && num < 0) {
+                                  setTierPrices({ ...tierPrices, tier3: '0' });
+                                  return;
+                                }
+                                setTierPrices({ ...tierPrices, tier3: val });
+                              }}
                               className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 sm:py-3 text-foreground focus:ring-2 focus:ring-ring"
                             />
                             <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">per month</span>

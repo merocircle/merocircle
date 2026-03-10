@@ -30,7 +30,7 @@ export async function GET(
       .from('post_likes')
       .select(`
         user_id,
-        users(id, display_name, photo_url)
+        users(id, display_name, photo_url, role)
       `)
       .eq('post_id', postId)
       .order('created_at', { ascending: false });
@@ -46,11 +46,11 @@ export async function GET(
       );
     }
 
-    const likers = (likes || []).map((row: { user_id: string; users: { id: string; display_name: string; photo_url: string | null } | null }) => {
+    const likers = (likes || []).map((row: { user_id: string; users: { id: string; display_name: string; photo_url: string | null; role: 'user' | 'creator' | null } | null }) => {
       const u = row.users;
       return u
-        ? { id: u.id, display_name: u.display_name, photo_url: u.photo_url }
-        : { id: row.user_id, display_name: 'Unknown', photo_url: null as string | null };
+        ? { id: u.id, display_name: u.display_name, photo_url: u.photo_url, isCreator: u.role === 'creator' }
+        : { id: row.user_id, display_name: 'Unknown', photo_url: null as string | null, isCreator: false };
     });
 
     return NextResponse.json({ likers });

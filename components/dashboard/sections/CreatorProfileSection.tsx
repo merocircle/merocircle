@@ -72,6 +72,7 @@ import { useDashboardViewSafe } from '@/contexts/dashboard-context';
 import { signIn } from 'next-auth/react';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreatorDetails, useSubscription } from '@/hooks/useCreatorDetails';
 import { useRealtimeCreatorPosts } from '@/hooks/useRealtimeFeed';
 import { EnhancedPostCard } from '@/components/posts/EnhancedPostCard';
@@ -152,10 +153,15 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { closeCreatorProfile, setActiveView, isWithinProvider, highlightedPostId: contextHighlightedPostId } = useDashboardViewSafe();
   const highlightedPostRef = useRef<HTMLDivElement>(null);
   const postRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const membershipTabRef = useRef<HTMLDivElement>(null);
+  const chatTabRef = useRef<HTMLDivElement>(null);
+  const shopTabRef = useRef<HTMLDivElement>(null);
+  const aboutTabRef = useRef<HTMLDivElement>(null);
+  const editTabRef = useRef<HTMLDivElement>(null);
 
   const [localHighlightedPostId, setLocalHighlightedPostId] = useState<string | null>(initialHighlightedPostId || null);
   const [tempHighlightPostId, setTempHighlightPostId] = useState<string | null>(null);
@@ -266,6 +272,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
           const payData = await payRes.json();
           cleanUrlForPayment();
           if (payRes.ok && payData.success && payData.transaction) {
+            updateSupporterTier(tierLevel ?? 1);
             setPaymentSuccess({
               transactionUuid: payData.transaction.transaction_uuid,
               totalAmount: payData.transaction.amount,
@@ -366,7 +373,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         setActiveTab('membership');
       }
     })();
-  }, [renewFromUrl, subscriptionIdFromUrl, user, creatorId, refreshCreatorDetails]);
+  }, [renewFromUrl, subscriptionIdFromUrl, user, creatorId, refreshCreatorDetails, updateSupporterTier]);
 
   const { subscribe, unsubscribe } = useSubscription();
 
@@ -379,6 +386,48 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       }
     }, 100);
   }, []);
+
+  // Auto-scroll to tab content when tab changes
+  useEffect(() => {
+    // Scroll to the appropriate tab content after a short delay to ensure content is fully rendered
+    const scrollTimeout = setTimeout(() => {
+      let targetRef: React.RefObject<HTMLDivElement | null> | null = null;
+      
+      switch (activeTab) {
+        case 'posts':
+          // For posts, scroll to top of page since posts start from top
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        case 'membership':
+          targetRef = membershipTabRef;
+          break;
+        case 'chat':
+          targetRef = chatTabRef;
+          break;
+        case 'shop':
+          targetRef = shopTabRef;
+          break;
+        case 'about':
+          targetRef = aboutTabRef;
+          break;
+        case 'edit':
+          targetRef = editTabRef;
+          break;
+        default:
+          return;
+      }
+
+      if (targetRef?.current) {
+        targetRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 150); // Slightly longer delay to ensure content is fully rendered
+
+    return () => clearTimeout(scrollTimeout);
+  }, [activeTab]);
 
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
@@ -534,9 +583,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
       const payload = [1, 2, 3].map((level) => {
         const t = (subscriptionTiers || []).find((x: any) => x.tier_level === level);
+        const rawPrice = level === 1 ? 0 : parseFloat(editTierPrices[level] ?? '0') || 0;
         return {
           tier_level: level,
-          price: level === 1 ? 0 : parseFloat(editTierPrices[level] ?? '0') || 0,
+          price: level === 1 ? 0 : Math.max(0, rawPrice),
           tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
           description: t?.description ?? null,
           benefits: t?.benefits ?? [],
@@ -739,6 +789,10 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         const result = await response.json();
         
         if (result.success && result.transaction) {
+          updateSupporterTier(tierLevel);
+          refreshCreatorDetails();
+          // Invalidate supported creators query to refresh ActivityBar
+          queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
           setPaymentSuccess({
             transactionUuid: result.transaction.transaction_uuid,
             totalAmount: result.transaction.amount,
@@ -783,6 +837,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
         const result = await response.json();
 
         if (result.success && result.transaction) {
+          updateSupporterTier(tierLevel);
+          refreshCreatorDetails();
           setPaymentSuccess({
             transactionUuid: result.transaction.transaction_uuid,
             totalAmount: result.transaction.amount,
@@ -868,7 +924,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       setPaymentLoading(false);
       setPendingPayment(null);
     }
-  }, [pendingPayment, user, creatorId, refreshCreatorDetails]);
+  }, [pendingPayment, user, creatorId, refreshCreatorDetails, updateSupporterTier, queryClient]);
 
   const handleConfirmFreeSupport = useCallback(async () => {
     if (!user || !showConfirmFreeSupport) return;
@@ -893,6 +949,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       if (result.success && result.transaction) {
         updateSupporterTier(1);
         refreshCreatorDetails();
+        // Invalidate supported creators query to refresh ActivityBar
+        queryClient.invalidateQueries({ queryKey: ['supporter', 'creators', user?.id] });
         setPaymentSuccess({
           transactionUuid: result.transaction.transaction_uuid,
           totalAmount: Number(result.transaction.amount ?? 0),
@@ -908,7 +966,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     } finally {
       setPaymentLoading(false);
     }
-  }, [user, creatorId, showConfirmFreeSupport, refreshCreatorDetails, updateSupporterTier]);
+  }, [user, creatorId, showConfirmFreeSupport, refreshCreatorDetails, updateSupporterTier, queryClient]);
 
   const handleSubscription = useCallback(async (tierId: string) => {
     if (!user) {
@@ -1143,6 +1201,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   showActions={true}
                   isSupporter={isSupporter}
                   showAuthor={true}
+                  clickAuthor={false}
                   onNavigateToMembership={() => setActiveTab('membership')}
                   creatorSlug={creatorDetails?.username ?? undefined}
                 />
@@ -1234,7 +1293,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                   View All
                 </Button>
               </div>
-              {(recentPosts.slice(0, 3) as Array<Record<string, unknown>>).map((post) => (
+              {(recentPosts.slice(0, 3) as unknown as Array<Record<string, unknown>>).map((post) => (
                 <motion.div key={String(post.id)} variants={fadeInUp}>
                   <EnhancedPostCard
                     post={transformPost(post)}
@@ -1404,24 +1463,24 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               priority
             />
           ) : (
-            <>
+            <div>
               <div className="absolute inset-0 bg-linear-to-br from-primary/30 via-primary/10 to-pink-500/20" />
               {/* Decorative circles for default cover */}
               <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full border border-white/10" />
               <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full border border-white/10" />
               <div className="absolute top-1/2 left-1/3 w-24 h-24 rounded-full border border-white/5" />
-            </>
-          )}
+            </div>
+          )} 
           <div className="absolute inset-0 bg-linear-to-b from-black/10 via-transparent to-black/60" />
 
           {/* Floating buttons on cover */}
-          <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between z-10">
+          <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-end md:justify-between z-10">
             {!isOwnProfile ? (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleBack}
-                className="bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md h-9 w-9 border border-white/10"
+                className="hidden md:flex bg-black/30 hover:bg-black/50 text-white rounded-full backdrop-blur-md h-9 w-9 border border-white/10"
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
@@ -1616,7 +1675,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
             </TabsList>
           </div>
 
-              <TabsContent value="chat" className="mt-3">
+              <TabsContent value="chat" className="mt-3" ref={chatTabRef}>
                 <div className="relative">
                   {isSupporter || isOwnProfile ? (
                     <Card className="border-border/50 shadow-lg overflow-hidden">
@@ -1816,7 +1875,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 )}
               </TabsContent>
 
-              <TabsContent value="shop" className="mt-3">
+              <TabsContent value="shop" className="mt-3" ref={shopTabRef}>
                 <Card className="p-16 text-center border-border/50">
                   <div className="flex flex-col items-center gap-4">
                     <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
@@ -1832,7 +1891,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 </Card>
               </TabsContent>
 
-              <TabsContent value="about" className="mt-3">
+              <TabsContent value="about" className="mt-3" ref={aboutTabRef}>
                 <Card className="border-border/50 shadow-lg">
                   <div className="p-6 space-y-6">
                     {creatorDetails.bio && (
@@ -1897,7 +1956,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
               </TabsContent>
 
               {isOwnProfile && (
-                <TabsContent value="edit" className="mt-3">
+                <TabsContent value="edit" className="mt-3" ref={editTabRef}>
                   <Card className="border-border/50 p-5 sm:p-6">
                     {/* Sub-tabs: Profile / Pricing */}
                     <div className="flex gap-2 p-1 bg-muted/50 rounded-xl w-fit border border-border/30 mb-6">
@@ -2064,7 +2123,19 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                                     type="number"
                                     min={0}
                                     value={editTierPrices[level] ?? ''}
-                                    onChange={(e) => setEditTierPrices({ ...editTierPrices, [level]: e.target.value })}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === '' || val === '-') {
+                                        setEditTierPrices({ ...editTierPrices, [level]: val });
+                                        return;
+                                      }
+                                      const num = parseFloat(val);
+                                      if (!isNaN(num) && num < 0) {
+                                        setEditTierPrices({ ...editTierPrices, [level]: '0' });
+                                        return;
+                                      }
+                                      setEditTierPrices({ ...editTierPrices, [level]: val });
+                                    }}
                                     className="rounded-xl w-28"
                                   />
                                   <span className="text-sm text-muted-foreground">NPR / month</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +61,7 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
   const [estTier3, setEstTier3] = useState('10');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const wasOpenRef = useRef(false);
 
   const monthlyIncome = () => {
     const p2 = (parseFloat(tierPrices[2] ?? '0') || 0) * (parseFloat(estTier2) || 0);
@@ -68,25 +69,34 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
     return p2 + p3;
   };
 
+  // Only sync from props when the modal first opens. This prevents the modal from
+  // resetting (e.g. back to step 1) when profile/tiers get new references after
+  // a refetch (e.g. when user returns to the browser tab).
   useEffect(() => {
-    if (!open) return;
-    setStep(1);
-    setDisplayName(profile?.display_name ?? '');
-    setBio(profile?.bio ?? '');
-    setCategory(profile?.category ?? '');
-    setVanityUsername(profile?.vanity_username ?? '');
-    const links = profile?.social_links ?? {};
-    setSocialLinks(links);
-    setPlatformIds(Object.keys(links));
-    const prices: Record<number, string> = {};
-    const perks: Record<number, string[]> = { 1: [], 2: [], 3: [] };
-    (tiers || []).forEach((t) => {
-      prices[t.tier_level] = String(t.price);
-      perks[t.tier_level] = Array.isArray(t.extra_perks) ? [...t.extra_perks] : [];
-    });
-    setTierPrices(prices);
-    setExtraPerks(perks);
-    setErr(null);
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true;
+      setStep(1);
+      setDisplayName(profile?.display_name ?? '');
+      setBio(profile?.bio ?? '');
+      setCategory(profile?.category ?? '');
+      setVanityUsername(profile?.vanity_username ?? '');
+      const links = profile?.social_links ?? {};
+      setSocialLinks(links);
+      setPlatformIds(Object.keys(links));
+      const prices: Record<number, string> = {};
+      const perks: Record<number, string[]> = { 1: [], 2: [], 3: [] };
+      (tiers || []).forEach((t) => {
+        prices[t.tier_level] = String(t.price);
+        perks[t.tier_level] = Array.isArray(t.extra_perks) ? [...t.extra_perks] : [];
+      });
+      setTierPrices(prices);
+      setExtraPerks(perks);
+      setErr(null);
+    }
   }, [open, profile, tiers]);
 
   const addPlatform = (id: string) => {
@@ -141,9 +151,10 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
 
       const payload = [1, 2, 3].map((level) => {
         const t = tiers?.find((x) => x.tier_level === level);
+        const rawPrice = level === 1 ? 0 : parseFloat(tierPrices[level] ?? '0') || 0;
         return {
           tier_level: level,
-          price: level === 1 ? 0 : parseFloat(tierPrices[level] ?? '0') || 0,
+          price: level === 1 ? 0 : Math.max(0, rawPrice),
           tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
           description: t?.description ?? null,
           benefits: t?.benefits ?? [],
@@ -353,7 +364,19 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
                             type="number"
                             min={0}
                             value={tierPrices[level] ?? ''}
-                            onChange={(e) => setTierPrices({ ...tierPrices, [level]: e.target.value })}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '' || val === '-') {
+                                setTierPrices({ ...tierPrices, [level]: val });
+                                return;
+                              }
+                              const num = parseFloat(val);
+                              if (!isNaN(num) && num < 0) {
+                                setTierPrices({ ...tierPrices, [level]: '0' });
+                                return;
+                              }
+                              setTierPrices({ ...tierPrices, [level]: val });
+                            }}
                             className="rounded-xl w-28"
                           />
                           <span className="text-sm text-muted-foreground">NPR / month</span>

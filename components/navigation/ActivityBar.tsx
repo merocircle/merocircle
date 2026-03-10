@@ -47,6 +47,7 @@ interface ActivityBarProps {
     display_name: string;
     photo_url: string | null;
     vanity_username?: string | null;
+    username?: string | null;
   }>;
   onCreatorClick?: (creatorId: string) => void;
   className?: string;
@@ -103,7 +104,7 @@ export function ActivityBar({
     }
   };
 
-  const getActiveViewFromPath = (): DashboardView => {
+  const getActiveViewFromPath = (): DashboardView | null => {
     if (pathname === '/home') return 'home';
     if (pathname === '/explore') return 'explore';
     if (pathname === '/events') return 'events';
@@ -113,7 +114,7 @@ export function ActivityBar({
     if (pathname === '/profile') return 'profile';
     if (isCreator && creatorProfile?.vanity_username && pathname === `/creator/${creatorProfile.vanity_username}`) return 'profile';
     if (pathname === '/creator-studio') return 'creator-studio';
-    return 'home';
+    return null; // No fallback - only exact matches should be active
   };
 
   const currentActiveView = getActiveViewFromPath();
@@ -138,6 +139,22 @@ export function ActivityBar({
   const isActive = (item: NavItem) => {
     return item.view === currentActiveView;
   };
+
+  // Check if current pathname matches a supported creator
+  const getActiveCreatorId = () => {
+    const creatorMatch = pathname.match(/^\/creator\/([^\/]+)/);
+    if (creatorMatch) {
+      const creatorSlug = creatorMatch[1];
+      // Find the creator in favoriteCreators by either vanity_username or id
+      const creator = favoriteCreators.find(c => 
+        c.vanity_username === creatorSlug || c.id === creatorSlug
+      );
+      return creator?.id;
+    }
+    return null;
+  };
+
+  const activeCreatorId = getActiveCreatorId();
 
   const handleCreatorClick = (creatorId: string) => {
     if (onCreatorClick) {
@@ -328,41 +345,55 @@ export function ActivityBar({
                       onClick={() => handleCreatorClick(creator.id)}
                       className={cn(
                         "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
-                        isExpanded ? 'w-full' : ''
+                        isExpanded ? 'w-full' : '',
+                        activeCreatorId === creator.id && "bg-primary/10 text-primary"
                       )}
-                      whileHover={{ scale: isExpanded ? 1 : 1.08 }}
-                      whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0">
+                      <Avatar className={cn(
+                        "w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0",
+                        activeCreatorId === creator.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                      )}>
                         <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                           {creator.display_name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       {isExpanded && (
-                        <span className="text-sm font-medium text-muted-foreground truncate">
+                        <span className={cn(
+                          "text-sm font-medium text-muted-foreground truncate",
+                          activeCreatorId === creator.id && "text-primary"
+                        )}>
                           {creator.display_name}
                         </span>
                       )}
                     </motion.button>
                   ) : (
-                    <Link href={`/creator/${creator.vanity_username || creator.id}`} prefetch={true}>
+                    <Link href={`/creator/${creator.vanity_username || creator.username || creator.id}`} prefetch={true}>
                       <motion.div
                         className={cn(
                           "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
-                          isExpanded ? 'w-full' : ''
+                          isExpanded ? 'w-full' : '',
+                          activeCreatorId === creator.id && "bg-primary/10 text-primary"
                         )}
-                        whileHover={{ scale: isExpanded ? 1 : 1.08 }}
-                        whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <Avatar className="w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0">
+                        <Avatar className={cn(
+                          "w-9 h-9 ring-1.5 ring-border/40 hover:ring-primary/40 transition-all shrink-0",
+                          activeCreatorId === creator.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        )}>
                           <AvatarImage src={getValidAvatarUrl(creator.photo_url)} alt={creator.display_name} />
                           <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
                             {creator.display_name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         {isExpanded && (
-                          <span className="text-sm font-medium text-muted-foreground truncate">
+                          <span className={cn(
+                            "text-sm font-medium text-muted-foreground truncate",
+                            activeCreatorId === creator.id && "text-primary"
+                          )}>
                             {creator.display_name}
                           </span>
                         )}
@@ -385,8 +416,8 @@ export function ActivityBar({
                       "flex items-center justify-center gap-3 p-2 rounded-lg bg-muted/50 text-muted-foreground hover:bg-muted transition-colors",
                       isExpanded ? 'w-full justify-start' : 'w-9 h-9'
                     )}
-                    whileHover={{ scale: isExpanded ? 1 : 1.08 }}
-                    whileTap={{ scale: isExpanded ? 0.98 : 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <span className="text-sm font-semibold">
                       +{favoriteCreators.length - 5}
@@ -426,8 +457,8 @@ export function ActivityBar({
                   'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors',
                   isExpanded ? 'w-full justify-start' : 'w-10 h-10'
                 )}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <MessageCircleHeart size={18} className="shrink-0" />
                 {isExpanded && (
@@ -448,11 +479,11 @@ export function ActivityBar({
               <motion.button
                 onClick={toggleTheme}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors',
-                  isExpanded ? 'w-full justify-start' : 'w-10 h-10'
+                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground transition-colors',
+                  isExpanded ? 'w-full justify-start hover:bg-muted/50' : 'w-10 h-10 hover:text-foreground hover:bg-muted/50'
                 )}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <div className="shrink-0">
                   {!mounted ? <Monitor size={18} /> : theme === 'system' ? <Monitor size={18} /> : theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -500,10 +531,10 @@ export function ActivityBar({
                   className={cn(
                     "relative flex items-center gap-3 p-2 rounded-lg transition-colors",
                     currentActiveView === 'profile' && "bg-primary/10 text-primary",
-                    isExpanded ? 'w-full' : ''
+                    isExpanded ? 'w-full hover:bg-muted/50' : ''
                   )}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <Avatar className={cn(
                     "w-9 h-9 shrink-0",

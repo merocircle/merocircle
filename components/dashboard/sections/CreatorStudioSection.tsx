@@ -66,7 +66,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
   const [newPostDescription, setNewPostDescription] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [postVisibility, setPostVisibility] = useState('public');
+  const [postVisibility, setPostVisibility] = useState<string | string[]>('public');
   const [postType, setPostType] = useState<'post' | 'poll'>('post');
   const [notifyByEmail, setNotifyByEmail] = useState(true);
 
@@ -279,9 +279,8 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
     [],
   );
 
-  const handleImageUpload = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
+  const processFiles = useCallback(
+    async (files: File[]) => {
       if (!files || files.length === 0) return;
 
       if (uploadedImages.length + files.length > 10) {
@@ -338,10 +337,27 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
         showError(errorMessage);
       } finally {
         setIsUploadingImage(false);
-        event.target.value = "";
       }
     },
     [uploadedImages.length, showError, prepareFileForUpload],
+  );
+
+  const handleImageUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+      processFiles(Array.from(files));
+      event.target.value = "";
+    },
+    [processFiles],
+  );
+
+  const handleFilesSelected = useCallback(
+    (files: File[]) => {
+      const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+      if (imageFiles.length > 0) processFiles(imageFiles);
+    },
+    [processFiles],
   );
 
   const handlePublishPost = useCallback(() => {
@@ -776,6 +792,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
               onAddPollOption={addPollOption}
               onRemovePollOption={removePollOption}
               onImageUpload={handleImageUpload}
+              onFilesSelected={handleFilesSelected}
               onRemoveImage={(index) =>
                 setUploadedImages((prev) => prev.filter((_, i) => i !== index))
               }

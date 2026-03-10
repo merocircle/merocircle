@@ -15,7 +15,6 @@ export default function JoinUsPage() {
         {/* Careers Section */}
         <section className="join-us-form-header-section join-us-hero">
           <div className="join-us-form-header">
-            <p className="join-us-form-eyebrow">Careers</p>
             <h2 className="join-us-form-title">Join Our Team</h2>
             <p className="join-us-form-subtitle">
               We're always looking for talented people to join our mission. 
@@ -56,7 +55,6 @@ export default function JoinUsPage() {
         <section className="join-us-about-preview">
           <div className="join-us-about-preview-inner">
             <header className="join-us-about-preview-header">
-              <p className="join-us-about-preview-eyebrow">About Us</p>
               <h2 className="join-us-about-preview-title">Building the Future of Creator Support</h2>
               <p className="join-us-about-preview-subtitle">
                 We're creating meaningful connections between creators and supporters in Nepal, 
@@ -83,7 +81,6 @@ export default function JoinUsPage() {
         <section className="join-us-values-section">
           <div className="join-us-values-inner">
             <header className="join-us-values-header">
-              <p className="join-us-values-eyebrow">Our Values</p>
               <h2 className="join-us-values-title">What We Believe In</h2>
             </header>
             <div className="join-us-values-grid">

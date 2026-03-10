@@ -3,7 +3,7 @@
 import { useState, memo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, Sparkles, Users, Loader2, Crown } from 'lucide-react';
+import { Search, TrendingUp, Sparkles, Loader2, Crown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useDiscoveryFeed, useCreatorSearch } from '@/hooks/useSocial';
@@ -59,7 +59,10 @@ const ExploreSection = memo(function ExploreSection() {
 
   const filterByCategory = (creators: any[]) => {
     if (selectedCategory === 'all') return creators;
-    return creators.filter((c: any) => c.creator_profile?.category === selectedCategory);
+    return creators.filter((c: any) => {
+      const cat = c.creator_profile?.category ?? c.category;
+      return cat === selectedCategory;
+    });
   };
 
   const supportedCreators = (supportedCreatorsData?.creators || []).map((creator: any) => ({
@@ -138,7 +141,7 @@ const ExploreSection = memo(function ExploreSection() {
               {searchResults.map((creator) => (
                 <CreatorCard
                   key={creator.user_id}
-                  creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                  creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url, username: (creator as any).username || (creator as any).vanity_username || creator.user_id }}
                   variant="compact"
                 />
               ))}
@@ -196,7 +199,7 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.button
                         key={creator.user_id}
                         variants={itemVariants}
-                        onClick={() => router.push(`/creator/${creator.vanity_username || creator.user_id}`)}
+                        onClick={() => router.push(`/creator/${creator.username || creator.vanity_username || creator.user_id}`)}
                         className="flex flex-col items-center gap-1.5 shrink-0 w-16 group"
                       >
                         <div className="w-14 h-14 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all overflow-hidden bg-muted">
@@ -238,7 +241,7 @@ const ExploreSection = memo(function ExploreSection() {
                     {trendingCreators.slice(0, 6).map((creator: any, index: number) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <CreatorCard
-                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url, username: (creator as any).username || (creator as any).vanity_username || creator.user_id }}
                           variant="full"
                           rank={index}
                         />
@@ -248,7 +251,7 @@ const ExploreSection = memo(function ExploreSection() {
                 ) : (
                   <div className="rounded-xl border border-dashed border-border/50 bg-muted/20 p-6 text-center">
                     <TrendingUp className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">No trending creators yet</p>
+                    <p className="text-xs text-muted-foreground font-normal">No trending creators yet</p>
                   </div>
                 )}
               </motion.section>
@@ -274,7 +277,7 @@ const ExploreSection = memo(function ExploreSection() {
                     {suggestedCreators.slice(0, 8).map((creator: any) => (
                       <motion.div key={creator.user_id} variants={itemVariants}>
                         <CreatorCard
-                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url }}
+                          creator={{ ...creator, id: creator.user_id, avatar_url: creator.avatar_url, username: (creator as any).username || (creator as any).vanity_username || creator.user_id }}
                           variant="compact"
                         />
                       </motion.div>
@@ -286,48 +289,6 @@ const ExploreSection = memo(function ExploreSection() {
                     <p className="text-xs text-muted-foreground">No suggestions yet</p>
                   </div>
                 )}
-              </motion.section>
-
-              {/* Quick Category Grid */}
-              <motion.section
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="space-y-3"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
-                    <Users className="w-3 h-3 text-blue-500" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-foreground">Categories</h3>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {categories.slice(1).map((category) => {
-                    const Icon = category.icon;
-                    const isSelected = selectedCategory === category.id;
-                    return (
-                      <button
-                        key={category.id}
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={cn(
-                          "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all",
-                          isSelected
-                            ? "bg-primary/10 border border-primary/20"
-                            : "bg-card border border-border/40 hover:border-primary/20"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-                          isSelected ? "bg-primary/20" : "bg-muted"
-                        )}>
-                          <Icon className={cn("h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
-                        </div>
-                        <span className="text-[11px] font-medium">{category.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
               </motion.section>
             </>
           )}
