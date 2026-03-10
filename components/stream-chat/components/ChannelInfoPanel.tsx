@@ -2,14 +2,14 @@
 
 import React, { useMemo, useState } from 'react';
 import type { Channel as StreamChannelType } from 'stream-chat';
-import { X, Image as ImageIcon, FileText, Users, Hash, Crown } from 'lucide-react';
+import { X, Image as ImageIcon, FileText, Users, Hash, Crown, Pin } from 'lucide-react';
 
 interface ChannelInfoPanelProps {
   channel: StreamChannelType;
   onClose: () => void;
 }
 
-type Tab = 'members' | 'media' | 'files';
+type Tab = 'members' | 'media' | 'files' | 'pinned';
 
 export function ChannelInfoPanel({ channel, onClose }: ChannelInfoPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('members');
@@ -22,6 +22,12 @@ export function ChannelInfoPanel({ channel, onClose }: ChannelInfoPanelProps) {
   const members = useMemo(() => {
     return Object.values(channel.state.members || {}) as any[];
   }, [channel.state.members]);
+
+  const pinnedMessages = useMemo(() => {
+    const pinned = (channel.state as any)?.pinnedMessages;
+    if (!Array.isArray(pinned)) return [];
+    return [...pinned].reverse();
+  }, [(channel.state as any)?.pinnedMessages]);
 
   const onlineMembers = useMemo(() => members.filter(m => m.user?.online), [members]);
   const offlineMembers = useMemo(() => members.filter(m => !m.user?.online), [members]);
@@ -59,6 +65,7 @@ export function ChannelInfoPanel({ channel, onClose }: ChannelInfoPanelProps) {
 
   const tabs: { id: Tab; label: string; count: number; icon: React.ReactNode }[] = [
     { id: 'members', label: 'Members', count: members.length, icon: <Users className="h-3.5 w-3.5" /> },
+    { id: 'pinned', label: 'Pinned', count: pinnedMessages.length, icon: <Pin className="h-3.5 w-3.5" /> },
     { id: 'media', label: 'Media', count: sharedImages.length, icon: <ImageIcon className="h-3.5 w-3.5" /> },
     { id: 'files', label: 'Files', count: sharedFiles.length, icon: <FileText className="h-3.5 w-3.5" /> },
   ];
@@ -136,6 +143,53 @@ export function ChannelInfoPanel({ channel, onClose }: ChannelInfoPanelProps) {
                 {offlineMembers.map((member: any, index: number) => (
                   <MemberRow key={`offline-${index}`} member={member} isCreator={member.user_id === creatorId} />
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'pinned' && (
+          <div className="p-2">
+            {pinnedMessages.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <Pin className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-xs">No pinned messages</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pinnedMessages.map((msg: any) => {
+                  const text = msg.text?.slice(0, 120) || (msg.attachments?.length ? 'Attachment' : '');
+                  const by = msg.user?.name || msg.user?.id || 'Unknown';
+                  const date = msg.pinned_at || msg.created_at;
+                  const dateStr = date
+                    ? (typeof date === 'string' ? new Date(date) : date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
+                  const scrollToMessage = () => {
+                    const el = document.querySelector(`[data-channel-search-message-id="${msg.id}"]`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      el.classList.add('str-chat__message--highlighted');
+                      setTimeout(() => el.classList.remove('str-chat__message--highlighted'), 2000);
+                    }
+                  };
+                  return (
+                    <button
+                      type="button"
+                      key={msg.id}
+                      onClick={scrollToMessage}
+                      className="w-full rounded-lg border border-border bg-muted/50 p-2.5 text-left hover:bg-muted transition-colors"
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-primary flex items-center gap-1">
+                        <Pin className="h-2.5 w-2.5" />
+                        Pinned
+                      </p>
+                      <p className="text-xs text-foreground mt-1 line-clamp-2">{text || '—'}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1.5">
+                        {by} {dateStr ? `· ${dateStr}` : ''}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

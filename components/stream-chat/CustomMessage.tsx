@@ -46,7 +46,6 @@ export function CustomMessage(props: any) {
   const searchContext = useChannelSearch();
   const messageRootRef = useRef<HTMLDivElement>(null);
 
-  // null = closed; 'open' = visible
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
