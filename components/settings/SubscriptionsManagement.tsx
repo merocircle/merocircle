@@ -252,7 +252,8 @@ export default function SubscriptionsManagement() {
     <>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
-          <div>
+          <div className="sm:hidden">
+            {/* Mobile-only header for better UX */}
             <h3 className="text-lg font-semibold">Your Subscriptions</h3>
             <p className="text-sm text-gray-500">Manage all your creator subscriptions</p>
           </div>
