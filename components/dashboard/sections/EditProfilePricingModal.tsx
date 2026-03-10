@@ -439,7 +439,19 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
                       type="number"
                       min={0}
                       value={estTier2}
-                      onChange={(e) => setEstTier2(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || val === '-') {
+                          setEstTier2(val);
+                          return;
+                        }
+                        const num = parseFloat(val);
+                        if (!isNaN(num) && num < 0) {
+                          setEstTier2('0');
+                          return;
+                        }
+                        setEstTier2(val);
+                      }}
                       className="rounded-md"
                     />
                   </div>
@@ -449,7 +461,19 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
                       type="number"
                       min={0}
                       value={estTier3}
-                      onChange={(e) => setEstTier3(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || val === '-') {
+                          setEstTier3(val);
+                          return;
+                        }
+                        const num = parseFloat(val);
+                        if (!isNaN(num) && num < 0) {
+                          setEstTier3('0');
+                          return;
+                        }
+                        setEstTier3(val);
+                      }}
                       className="rounded-md"
                     />
                   </div>

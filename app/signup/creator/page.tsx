@@ -1276,7 +1276,19 @@ export default function CreatorSignupPage() {
                           type="number"
                           min="0"
                           value={estimatedSupporters.tier1}
-                          onChange={(e) => setEstimatedSupporters({ ...estimatedSupporters, tier1: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || val === '-') {
+                              setEstimatedSupporters({ ...estimatedSupporters, tier1: val });
+                              return;
+                            }
+                            const num = parseFloat(val);
+                            if (!isNaN(num) && num < 0) {
+                              setEstimatedSupporters({ ...estimatedSupporters, tier1: '0' });
+                              return;
+                            }
+                            setEstimatedSupporters({ ...estimatedSupporters, tier1: val });
+                          }}
                           className="mt-2 w-full min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 sm:py-3 text-foreground focus:ring-2 focus:ring-ring"
                         />
                       </div>
@@ -1287,7 +1299,19 @@ export default function CreatorSignupPage() {
                           type="number"
                           min="0"
                           value={estimatedSupporters.tier2}
-                          onChange={(e) => setEstimatedSupporters({ ...estimatedSupporters, tier2: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || val === '-') {
+                              setEstimatedSupporters({ ...estimatedSupporters, tier2: val });
+                              return;
+                            }
+                            const num = parseFloat(val);
+                            if (!isNaN(num) && num < 0) {
+                              setEstimatedSupporters({ ...estimatedSupporters, tier2: '0' });
+                              return;
+                            }
+                            setEstimatedSupporters({ ...estimatedSupporters, tier2: val });
+                          }}
                           className="mt-2 w-full min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 sm:py-3 text-foreground focus:ring-2 focus:ring-ring"
                         />
                       </div>
@@ -1298,7 +1322,19 @@ export default function CreatorSignupPage() {
                           type="number"
                           min="0"
                           value={estimatedSupporters.tier3}
-                          onChange={(e) => setEstimatedSupporters({ ...estimatedSupporters, tier3: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || val === '-') {
+                              setEstimatedSupporters({ ...estimatedSupporters, tier3: val });
+                              return;
+                            }
+                            const num = parseFloat(val);
+                            if (!isNaN(num) && num < 0) {
+                              setEstimatedSupporters({ ...estimatedSupporters, tier3: '0' });
+                              return;
+                            }
+                            setEstimatedSupporters({ ...estimatedSupporters, tier3: val });
+                          }}
                           className="mt-2 w-full min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 sm:py-3 text-foreground focus:ring-2 focus:ring-ring"
                         />
                       </div>
