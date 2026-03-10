@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, CornerDownRight, ChevronDown, ChevronUp, MessageCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AutoResizeCommentInput } from '@/components/ui/auto-resize-comment-input';
 import { useRealtimeComments } from '@/hooks/useRealtimeFeed';
 
 interface User {
@@ -185,15 +186,14 @@ export function ThreadedComments({
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   onSubmit={(e) => handleReplySubmit(e, comment.id)}
-                  className="mt-2 flex items-center gap-2"
+                  className="mt-2 flex items-end gap-2"
                 >
-                  <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                  <input
-                    type="text"
+                  <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-1" />
+                  <AutoResizeCommentInput
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder={`Reply to ${comment.user.display_name}...`}
-                    className="flex-1 bg-muted/40 text-sm rounded-full px-3.5 py-1.5 outline-none focus:ring-2 focus:ring-primary/30 border border-border/40 placeholder:text-muted-foreground"
+                    className="flex-1 min-w-0 bg-muted/40 text-sm rounded-xl px-3.5 focus:ring-2 focus:ring-primary/30 border border-border/40 placeholder:text-muted-foreground"
                     autoFocus
                   />
                   <Button
