@@ -2,6 +2,7 @@
 
 import { Suspense, lazy, useEffect } from 'react';
 import { PageLayout } from '@/components/common/PageLayout';
+import { AdminClearUnreadButton } from '@/components/dashboard/AdminClearUnreadButton';
 
 // Lazy load the feed component for main engagement
 const FeedSection = lazy(() => import('@/components/dashboard/sections/FeedSection'));
@@ -43,6 +44,7 @@ export default function HomePage() {
 
   return (
     <PageLayout>
+      <AdminClearUnreadButton />
       <Suspense fallback={<FeedLoadingSkeleton />}>
         <FeedSection />
       </Suspense>
