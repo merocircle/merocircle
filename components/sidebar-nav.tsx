@@ -217,7 +217,7 @@ export function SidebarNav() {
         <div className="p-4 border-b border-gray-200 dark:border-gray-800">
           <Link href="/" className="flex items-center space-x-2 group">
             <Heart className="w-6 h-6 text-red-500 fill-red-500" />
-            <span className="text-lg font-bold bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
+            <span className="text-lg font-bold bg-gradient-to-r from-red-500 via-orange-500 to-blue-500 bg-clip-text text-transparent">
               MeroCircle
             </span>
           </Link>
@@ -229,7 +229,7 @@ export function SidebarNav() {
             <div className="flex items-center space-x-3">
               <Avatar className="w-10 h-10">
                 <AvatarImage src={userProfile?.photo_url || undefined} alt={userProfile?.display_name || 'User'} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-orange-500 text-white">
                   {userProfile?.display_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -309,7 +309,7 @@ export function SidebarNav() {
                   >
                     <Avatar className="w-6 h-6">
                       <AvatarImage src={item.avatar} alt={item.name} />
-                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                      <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-orange-500 text-white">
                         {item.name[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

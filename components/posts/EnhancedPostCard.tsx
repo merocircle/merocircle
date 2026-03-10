@@ -569,8 +569,8 @@ export function EnhancedPostCard({
         return {
           icon: BarChart3,
           label: "Poll",
-          color: "text-violet-500",
-          bg: "bg-violet-50 dark:bg-violet-950/30",
+          color: "text-orange-500",
+          bg: "bg-orange-50 dark:bg-orange-950/30",
         };
       case "video":
         return {

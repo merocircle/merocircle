@@ -503,7 +503,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-5"
+        className="mb-5 max-w-5xl mx-auto"
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -606,7 +606,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       />
 
       {/* Tab Navigation */}
-      <div className="mb-5">
+      <div className="mb-5 max-w-5xl mx-auto">
         <div className="text-muted-foreground items-center lg:justify-center md:justify-center justify-start [&.flex]:h-auto inline-flex xs:justify-start w-full h-11 bg-muted p-1 gap-1 overflow-x-auto overflow-y-clip scrollbar-hide rounded-md">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -622,7 +622,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 data-state={isActiveTab ? "active" : "inactive"}
               >
                 <Icon className="w-3.5 h-3.5" />
-                {tab.label}
+                {tab.label} {tab.label === "Posts" && stats.posts > 0 && `(${stats.posts})`} {tab.label === "Supporters" && stats.supporters > 0 && `(${stats.supporters})`}
               </button>
             );
           })}
@@ -641,7 +641,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             transition={{ duration: 0.2 }}
           >
             {/* Quick Stats Row */}
-            <div className="flex items-center gap-4 mb-5 flex-wrap">
+            {/* <div className="flex items-center gap-4 mb-5 max-w-5xl mx-auto flex-wrap">
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <FileText className="w-4 h-4" />
                 <span className="font-medium text-foreground">{stats.posts}</span> posts
@@ -654,10 +654,10 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
                 <Users className="w-4 h-4" />
                 <span className="font-medium text-foreground">{stats.supporters}</span> supporters
               </div>
-            </div>
+            </div> */}
 
             {/* Create Post CTA */}
-            <Link href="/create-post" className="block mb-5">
+            <Link href="/create-post" className="block mb-5 max-w-5xl mx-auto">
               <div className="flex items-center gap-3 p-4 rounded-xl border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <Plus className="w-5 h-5 text-primary" />
@@ -688,7 +688,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="space-y-5"
+            className="space-y-5 max-w-5xl mx-auto"
           >
             {/* Stats Cards */}
             <StatsCards stats={stats} />

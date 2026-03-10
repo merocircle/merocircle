@@ -146,7 +146,7 @@ export function PostCreationForm({
               className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                 (Array.isArray(postVisibility) && postVisibility.includes('1')) || postVisibility === 'supporters'
-                  ? "bg-purple-500/20 text-purple-600 border border-purple-500/30"
+                  ? "bg-orange-500/20 text-orange-600 border border-orange-500/30"
                   : "bg-background text-muted-foreground hover:text-foreground border border-border"
               )}
             >
@@ -417,7 +417,7 @@ export function PostCreationForm({
           <Button
             onClick={onPublish}
             disabled={!onboardingCompleted || isPublishing}
-            className="bg-linear-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl"
+            className="bg-primary text-white rounded-xl"
           >
             {isPublishing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
             Publish

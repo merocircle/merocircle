@@ -75,7 +75,7 @@ export function Header() {
             <Heart className="absolute inset-0 fill-red-500" />
             <Heart className="absolute inset-0 animate-pulse" />
           </div>
-          <span className={cn('text-lg sm:text-xl font-bold bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent')}>
+          <span className={cn('text-lg sm:text-xl font-bold bg-gradient-to-r from-red-500 via-orange-500 to-blue-500 bg-clip-text text-transparent')}>
             MeroCircle
           </span>
         </Link>
@@ -119,7 +119,7 @@ export function Header() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-orange-500 flex items-center justify-center">
                       <User className="w-4 h-4 text-white" />
                     </div>
                   )}
