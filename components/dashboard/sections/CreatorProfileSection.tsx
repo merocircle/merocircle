@@ -1772,15 +1772,6 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                     <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                       Join {creatorDetails.display_name}&apos;s Circle
                     </h2>
-                    <p className="text-muted-foreground text-base max-w-xl mx-auto">
-                      {creatorDetails.bio || `Be part of an inner circle of ${creatorDetails.supporter_count || 0} people who get closer access, exclusive content, and a direct line.`}
-                    </p>
-                    {creatorDetails.supporter_count > 0 && (
-                      <div className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <span><span className="font-semibold text-foreground">{creatorDetails.supporter_count}</span> in the circle</span>
-                      </div>
-                    )}
                   </div>
                   
                   {isSupporter ? (
