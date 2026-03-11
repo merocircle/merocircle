@@ -1793,9 +1793,8 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                           <div>
                             <p className="text-sm text-muted-foreground">You're supporting at</p>
                             <p className="text-2xl font-bold text-foreground">
-                              {creatorDetails?.supporter_tier_level === 1 && 'Supporter'}
-                              {creatorDetails?.supporter_tier_level === 2 && 'Inner Circle'}
-                              {creatorDetails?.supporter_tier_level === 3 && 'Core Member'}
+                              {(subscriptionTiers || []).find((t: TierData) => t.tier_level === creatorDetails?.supporter_tier_level)?.tier_name ||
+                                (creatorDetails?.supporter_tier_level === 1 ? 'Supporter' : creatorDetails?.supporter_tier_level === 2 ? 'Inner Circle' : 'Core Member')}
                             </p>
                           </div>
                         </div>
