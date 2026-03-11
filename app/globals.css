@@ -568,6 +568,13 @@ html:not(.dark) {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
+.mention-chip {
+  min-height: 32px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  border-radius: 8px !important;
+}
+
 /* ===========================================
    LOADING STATES
    =========================================== */
