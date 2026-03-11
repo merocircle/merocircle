@@ -114,7 +114,7 @@ export default function PostDetailPage({
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
-  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean }>>([]);
+  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean; username: string | null }>>([]);
   const [likersLoading, setLikersLoading] = useState(false);
   const [likersHover, setLikersHover] = useState(false);
   const likersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,7 +127,9 @@ export default function PostDetailPage({
     try {
       const res = await fetch(`/api/posts/${id}/likes`);
       const data = await res.json();
-      if (res.ok && Array.isArray(data.likers)) setLikers(data.likers);
+      if (res.ok && Array.isArray(data.likers)) {
+        setLikers(data.likers);
+      }
     } catch {
       // ignore
     } finally {
@@ -637,10 +639,10 @@ export default function PostDetailPage({
                             </div>
                           ) : likers.length > 0 ? (
                             likers.map((u) => (
-                              u.isCreator ? (
+                              u.isCreator && u.username ? (
                                 <Link
                                   key={u.id}
-                                  href={`/creator/${u.id}`}
+                                  href={`/creator/${u.username}`}
                                   className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
                                 >
                                   <Avatar className="h-7 w-7">
