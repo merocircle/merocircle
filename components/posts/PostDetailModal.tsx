@@ -33,6 +33,7 @@ import { useLikePost, useAddComment } from "@/hooks/useQueries";
 import { logger } from "@/lib/logger";
 import { useToast } from "@/hooks/use-toast";
 import ThreadedComments from "./ThreadedComments";
+import { AutoResizeCommentInput } from "@/components/ui/auto-resize-comment-input";
 import { ShareModal } from "./ShareModal";
 import { RichContent } from "./RichContent";
 import dynamic from "next/dynamic";
@@ -550,7 +551,7 @@ export function PostDetailModal({
             <div className="absolute bottom-16 sm:bottom-[72px] left-0 right-0 px-4 sm:px-5 py-3 border-t border-border/40 bg-card/95 backdrop-blur-sm z-30">
               <form
                 onSubmit={handleSubmitComment}
-                className="flex items-center gap-3"
+                className="flex items-end gap-3"
               >
                 <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={currentUser?.photo_url || undefined} alt={currentUser?.display_name} />
@@ -558,12 +559,11 @@ export function PostDetailModal({
                     {currentUser?.display_name?.charAt(0).toUpperCase() || currentUserId?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <input
-                  type="text"
+                <AutoResizeCommentInput
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Write a comment..."
-                  className="flex-1 bg-muted/50 border border-border/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
+                  className="flex-1 min-w-0 bg-muted/50 border border-border/60 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                 />
                 <button
                   type="submit"
@@ -630,7 +630,7 @@ export function PostDetailModal({
             {currentUserId && !shouldStickCommentInput && (
               <form
                 onSubmit={handleSubmitComment}
-                className="flex items-center gap-3 mt-4 pt-3 border-t border-border/30"
+                className="flex items-end gap-3 mt-4 pt-3 border-t border-border/30"
               >
                 <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={currentUser?.photo_url || undefined} alt={currentUser?.display_name} />
@@ -638,12 +638,11 @@ export function PostDetailModal({
                     {currentUser?.display_name?.charAt(0).toUpperCase() || currentUserId?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <input
-                  type="text"
+                <AutoResizeCommentInput
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Write a comment..."
-                  className="flex-1 bg-muted/50 border border-border/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
+                  className="flex-1 min-w-0 bg-muted/50 border border-border/60 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                 />
                 <button
                   type="submit"
