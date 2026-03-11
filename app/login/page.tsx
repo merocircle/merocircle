@@ -98,7 +98,7 @@ export default function LoginPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
               >
-                <Badge className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-full mb-4">
+                <Badge className="px-4 py-2 bg-gradient-to-r from-blue-600 to-orange-600 text-white text-sm font-medium rounded-full mb-4">
                   Welcome Back
                 </Badge>
               </motion.div>
@@ -160,7 +160,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right Side - Features */}
-        <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
+        <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 via-orange-600 to-red-600 relative overflow-hidden">
           <div className="absolute inset-0 bg-black/20" />
           
           <div className="relative z-10 flex flex-col justify-center p-12 text-white">

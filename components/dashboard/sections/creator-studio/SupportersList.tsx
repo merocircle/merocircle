@@ -21,10 +21,10 @@ interface SupportersListProps {
 
 export function SupportersList({ supporters, totalCount }: SupportersListProps) {
   return (
-    <Card className="p-6 border-border/50">
+    <Card className="p-6 border-border/50 max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-5">
-        <div className="p-2 rounded-xl bg-purple-500/10">
-          <Users className="w-5 h-5 text-purple-500" />
+        <div className="p-2 rounded-xl bg-orange-500/10">
+          <Users className="w-5 h-5 text-orange-500" />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-foreground">All Supporters</h3>
