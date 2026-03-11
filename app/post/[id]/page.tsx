@@ -752,7 +752,7 @@ export default function PostDetailPage({
             ) : (
               <div className="mb-6 text-center py-3 rounded-lg bg-muted/40 border border-border/40">
                 <Link
-                  href="/login"
+                  href="/auth"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Sign in to comment
