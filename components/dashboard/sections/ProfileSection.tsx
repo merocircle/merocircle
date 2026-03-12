@@ -471,7 +471,7 @@ export default function ProfileSection() {
                   <Edit className="w-4 h-4 mr-1" />
                   Edit Profile
                 </Button>
-                <Button variant="outline" size="sm" asChild className="rounded-xl">
+                <Button variant="outline" size="sm" className="rounded-xl">
                   <Link href="/settings">
                     <Settings className="w-4 h-4" />
                   </Link>
