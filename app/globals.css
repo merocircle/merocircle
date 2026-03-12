@@ -568,6 +568,14 @@ html:not(.dark) {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
+.str-chat__message-attachment-download-icon path {
+  fill: var(--foreground) !important;
+}
+
+.str-chat__message-attachment-download-icon path:hover {
+  fill: var(--primary) !important;
+}
+
 /* ===========================================
    LOADING STATES
    =========================================== */
