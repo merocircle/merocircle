@@ -532,6 +532,11 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
   const [editSocialLinks, setEditSocialLinks] = useState<Record<string, string>>({});
   const [editPlatformIds, setEditPlatformIds] = useState<string[]>([]);
   const [editTierPrices, setEditTierPrices] = useState<Record<number, string>>({});
+  const [editTierNames, setEditTierNames] = useState<Record<number, string>>({
+    1: 'Supporter',
+    2: 'Inner Circle',
+    3: 'Core Member',
+  });
   const [editExtraPerks, setEditExtraPerks] = useState<Record<number, string[]>>({ 1: [], 2: [], 3: [] });
   const [editStep, setEditStep] = useState<'profile' | 'pricing'>('profile');
   const [editSaving, setEditSaving] = useState(false);
@@ -551,12 +556,16 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     setEditSocialLinks(links);
     setEditPlatformIds(Object.keys(links));
     const prices: Record<number, string> = {};
+    const names: Record<number, string> = { 1: 'Supporter', 2: 'Inner Circle', 3: 'Core Member' };
     const perks: Record<number, string[]> = { 1: [], 2: [], 3: [] };
     (subscriptionTiers || []).forEach((t: any) => {
       prices[t.tier_level] = String(t.price);
+      names[t.tier_level] =
+        t.tier_name || (t.tier_level === 1 ? 'Supporter' : t.tier_level === 2 ? 'Inner Circle' : 'Core Member');
       perks[t.tier_level] = Array.isArray(t.extra_perks) ? [...t.extra_perks] : [];
     });
     setEditTierPrices(prices);
+    setEditTierNames(names);
     setEditExtraPerks(perks);
   }, [isOwnProfile, creatorDetails, subscriptionTiers]);
 
@@ -584,10 +593,12 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
       const payload = [1, 2, 3].map((level) => {
         const t = (subscriptionTiers || []).find((x: any) => x.tier_level === level);
         const rawPrice = level === 1 ? 0 : parseFloat(editTierPrices[level] ?? '0') || 0;
+        const fallbackName = level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member';
+        const name = (editTierNames[level] ?? '').trim() || t?.tier_name || fallbackName;
         return {
           tier_level: level,
           price: level === 1 ? 0 : Math.max(0, rawPrice),
-          tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
+          tier_name: name,
           description: t?.description ?? null,
           benefits: t?.benefits ?? [],
           extra_perks: (editExtraPerks[level] ?? []).filter((p) => p.trim() !== ''),
@@ -2104,15 +2115,38 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
 
                     {editStep === 'pricing' && (
                       <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">Set your tier prices (NPR per month). Tier 1 is always free.</p>
+                        <p className="text-sm text-muted-foreground">
+                          Name your circles and set prices (NPR per month). Tier 1 is always free.
+                        </p>
                         {[1, 2, 3].map((level) => {
-                          const t = (subscriptionTiers || []).find((x: any) => x.tier_level === level);
-                          const name = t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
+                          const name =
+                            (editTierNames[level] ?? '').trim() ||
+                            (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
                           return (
                             <div key={level} className="rounded-xl border border-border/50 p-4 space-y-3">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-semibold text-foreground">{name}</h4>
-                                <Badge variant="outline" className="rounded-full text-xs">Tier {level}</Badge>
+                                <Badge variant="outline" className="rounded-full text-xs">
+                                  Tier {level}
+                                </Badge>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Circle name</p>
+                                <Input
+                                  value={editTierNames[level] ?? ''}
+                                  onChange={(e) =>
+                                    setEditTierNames({
+                                      ...editTierNames,
+                                      [level]: e.target.value.slice(0, 50),
+                                    })
+                                  }
+                                  placeholder={level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'}
+                                  className="rounded-xl"
+                                  maxLength={50}
+                                />
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  {(editTierNames[level] ?? '').length}/50
+                                </p>
                               </div>
                               {level === 1 ? (
                                 <p className="text-sm text-muted-foreground">Free tier — no payment required</p>
