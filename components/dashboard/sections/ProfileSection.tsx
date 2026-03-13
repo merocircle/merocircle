@@ -100,6 +100,11 @@ export default function ProfileSection() {
   const [platformIds, setPlatformIds] = useState<string[]>([]);
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [tierPrices, setTierPrices] = useState<Record<number, string>>({});
+  const [tierNames, setTierNames] = useState<Record<number, string>>({
+    1: 'Supporter',
+    2: 'Inner Circle',
+    3: 'Core Member',
+  });
   const [extraPerks, setExtraPerks] = useState<Record<number, string[]>>({ 1: [], 2: [], 3: [] });
   const [editStep, setEditStep] = useState<'profile' | 'pricing'>('profile');
   const [editSaving, setEditSaving] = useState(false);
@@ -154,7 +159,7 @@ export default function ProfileSection() {
         bio: creatorProfile?.bio || '',
         category: creatorProfile?.category || ''
       });
-      setCoverImageUrl(creatorProfile?.cover_image_url || null);
+      setCoverImageUrl((creatorProfile as any)?.cover_image_url || null);
       setVanityUsername(creatorProfile?.vanity_username || '');
       const links = (creatorProfile as any)?.social_links || {};
       setSocialLinks(links);
@@ -173,12 +178,16 @@ export default function ProfileSection() {
           const fetchedTiers = data.tiers || [];
           setTiers(fetchedTiers);
           const prices: Record<number, string> = {};
+          const names: Record<number, string> = { 1: 'Supporter', 2: 'Inner Circle', 3: 'Core Member' };
           const perks: Record<number, string[]> = { 1: [], 2: [], 3: [] };
           fetchedTiers.forEach((t: Tier) => {
             prices[t.tier_level] = String(t.price);
+            names[t.tier_level] =
+              t.tier_name || (t.tier_level === 1 ? 'Supporter' : t.tier_level === 2 ? 'Inner Circle' : 'Core Member');
             perks[t.tier_level] = Array.isArray(t.extra_perks) ? [...t.extra_perks] : [];
           });
           setTierPrices(prices);
+          setTierNames(names);
           setExtraPerks(perks);
         }
       } catch (err) {
@@ -330,10 +339,12 @@ export default function ProfileSection() {
       const payload = [1, 2, 3].map((level) => {
         const t = tiers?.find((x) => x.tier_level === level);
         const rawPrice = level === 1 ? 0 : parseFloat(tierPrices[level] ?? '0') || 0;
+        const fallbackName = level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member';
+        const name = (tierNames[level] ?? '').trim() || t?.tier_name || fallbackName;
         return {
           tier_level: level,
           price: level === 1 ? 0 : Math.max(0, rawPrice),
-          tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
+          tier_name: name,
           description: t?.description ?? null,
           benefits: t?.benefits ?? [],
           extra_perks: (extraPerks[level] ?? []).filter((p) => p.trim() !== ''),
@@ -399,7 +410,7 @@ export default function ProfileSection() {
 
   const stats = isCreator ? {
     posts: posts.length,
-    supporters: creatorProfile?.supporter_count || 0,
+    supporters: (creatorProfile as any)?.supporter_count || (creatorProfile as any)?.supporters_count || 0,
     likes: posts.reduce((acc: number, p: any) => acc + (p.likes_count || 0), 0)
   } : null;
 
@@ -471,7 +482,7 @@ export default function ProfileSection() {
                   <Edit className="w-4 h-4 mr-1" />
                   Edit Profile
                 </Button>
-                <Button variant="outline" size="sm" asChild className="rounded-xl">
+                <Button variant="outline" size="sm" className="rounded-xl">
                   <Link href="/settings">
                     <Settings className="w-4 h-4" />
                   </Link>
@@ -1040,15 +1051,38 @@ export default function ProfileSection() {
 
               {editStep === 'pricing' && (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">Set your tier prices (NPR per month). Tier 1 is always free.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Name your circles and set prices (NPR per month). Tier 1 is always free.
+                  </p>
                   {[1, 2, 3].map((level) => {
-                    const t = tiers?.find((x) => x.tier_level === level);
-                    const name = t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
+                    const name =
+                      (tierNames[level] ?? '').trim() ||
+                      (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
                     return (
                       <Card key={level} className="p-5 border-border/50">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-semibold text-foreground">{name}</h4>
-                          <Badge variant="outline" className="rounded-full text-xs">Tier {level}</Badge>
+                          <Badge variant="outline" className="rounded-full text-xs">
+                            Tier {level}
+                          </Badge>
+                        </div>
+                        <div className="mb-3">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Circle name</p>
+                          <Input
+                            value={tierNames[level] ?? ''}
+                            onChange={(e) =>
+                              setTierNames({
+                                ...tierNames,
+                                [level]: e.target.value.slice(0, 50),
+                              })
+                            }
+                            placeholder={level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'}
+                            className="rounded-xl"
+                            maxLength={50}
+                          />
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            {(tierNames[level] ?? '').length}/50
+                          </p>
                         </div>
                         {level === 1 ? (
                           <p className="text-sm text-muted-foreground">Free tier — no payment required</p>

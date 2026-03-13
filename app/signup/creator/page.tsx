@@ -64,6 +64,11 @@ export default function CreatorSignupPage() {
     tier2: '2000',
     tier3: '5000'
   });
+  const [tierNames, setTierNames] = useState({
+    tier1: 'Supporter',
+    tier2: 'Inner Circle',
+    tier3: 'Core Member'
+  });
   const [tierExtraPerks, setTierExtraPerks] = useState<Record<number, string[]>>({
     1: [],
     2: [],
@@ -97,6 +102,7 @@ export default function CreatorSignupPage() {
         step?: string;
         creatorData?: typeof creatorData;
         tierPrices?: typeof tierPrices;
+        tierNames?: typeof tierNames;
         tierExtraPerks?: typeof tierExtraPerks;
         estimatedSupporters?: typeof estimatedSupporters;
         profilePhotoUrl?: string | null;
@@ -105,6 +111,7 @@ export default function CreatorSignupPage() {
       if (draft.step && draft.step !== 'signup') {
         if (draft.creatorData) setCreatorData({ ...creatorData, ...draft.creatorData });
         if (draft.tierPrices) setTierPrices(draft.tierPrices);
+        if (draft.tierNames) setTierNames(draft.tierNames);
         if (draft.tierExtraPerks) setTierExtraPerks(draft.tierExtraPerks);
         if (draft.estimatedSupporters) setEstimatedSupporters(draft.estimatedSupporters);
         if (draft.profilePhotoUrl !== undefined) setProfilePhotoUrl(draft.profilePhotoUrl);
@@ -122,13 +129,14 @@ export default function CreatorSignupPage() {
         step,
         creatorData,
         tierPrices,
+        tierNames,
         tierExtraPerks,
         estimatedSupporters,
         profilePhotoUrl,
         addedSocialPlatforms,
       }));
     } catch (_) {}
-  }, [step, creatorData, tierPrices, tierExtraPerks, estimatedSupporters, profilePhotoUrl, addedSocialPlatforms]);
+  }, [step, creatorData, tierPrices, tierNames, tierExtraPerks, estimatedSupporters, profilePhotoUrl, addedSocialPlatforms]);
 
   // Focus the newly added social link input when a platform is added
   useEffect(() => {
@@ -339,21 +347,26 @@ export default function CreatorSignupPage() {
                 
               if (tierData && tierData.length > 0) {
                 const newTierPrices = { ...tierPrices };
+                const newTierNames = { ...tierNames };
                 const newTierExtraPerks = { ...tierExtraPerks };
                 
                 tierData.forEach(tier => {
                   if (tier.tier_level === 1) {
+                    newTierNames.tier1 = tier.tier_name || 'Supporter';
                     newTierExtraPerks[1] = tier.extra_perks || [];
                   } else if (tier.tier_level === 2) {
+                    newTierNames.tier2 = tier.tier_name || 'Inner Circle';
                     newTierPrices.tier2 = tier.price.toString();
                     newTierExtraPerks[2] = tier.extra_perks || [];
                   } else if (tier.tier_level === 3) {
+                    newTierNames.tier3 = tier.tier_name || 'Core Member';
                     newTierPrices.tier3 = tier.price.toString();
                     newTierExtraPerks[3] = tier.extra_perks || [];
                   }
                 });
                 
                 setTierPrices(newTierPrices);
+                setTierNames(newTierNames);
                 setTierExtraPerks(newTierExtraPerks);
               }
               
@@ -513,12 +526,12 @@ export default function CreatorSignupPage() {
       // Wait a moment for the database trigger to create default tiers
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Update tier prices - the trigger creates default tiers, so we update them
+      // Update tier prices and custom circle names - the trigger creates default tiers, so we update them
       const tierData = [
         { 
           tier_level: 1, 
           price: 0,
-          tier_name: 'Supporter',
+          tier_name: (tierNames.tier1 || 'Supporter').trim() || 'Supporter',
           description: 'Access to supporter posts',
           benefits: ['Access to exclusive posts', 'Community chat'],
           extra_perks: tierExtraPerks[1].filter(p => p.trim() !== '')
@@ -526,7 +539,7 @@ export default function CreatorSignupPage() {
         {
           tier_level: 2,
           price: Math.max(0, parseFloat(tierPrices.tier2) || 0),
-          tier_name: 'Inner Circle',
+          tier_name: (tierNames.tier2 || 'Inner Circle').trim() || 'Inner Circle',
           description: 'Posts + Community chat access',
           benefits: ['Access to exclusive posts', 'Community chat'],
           extra_perks: tierExtraPerks[2].filter(p => p.trim() !== '')
@@ -534,7 +547,7 @@ export default function CreatorSignupPage() {
         {
           tier_level: 3,
           price: Math.max(0, parseFloat(tierPrices.tier3) || 0),
-          tier_name: 'Core Member',
+          tier_name: (tierNames.tier3 || 'Core Member').trim() || 'Core Member',
           description: 'Posts + Chat + Special perks',
           benefits: ['Access to exclusive posts', 'Community chat', 'Special perks'],
           extra_perks: tierExtraPerks[3].filter(p => p.trim() !== '')
@@ -1018,7 +1031,7 @@ export default function CreatorSignupPage() {
                   Set Your Support Tiers
                 </h2>
                 <p className="text-sm sm:text-base text-muted-foreground">
-                  The first tier (Supporter) is always free. Set the <strong className="text-foreground">base price per month</strong> (NPR) for Inner Circle and Core Member below.
+                  Name your circles and set prices. The first tier is always free. You can edit the default names (Supporter, Inner Circle, Core Member) to match your community.
                 </p>
               </div>
 
@@ -1035,12 +1048,25 @@ export default function CreatorSignupPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <Check className="w-5 h-5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
-                            <h3 className="text-lg sm:text-xl font-bold text-foreground">Supporter (Free)</h3>
+                            <h3 className="text-lg sm:text-xl font-bold text-foreground">{tierNames.tier1 || 'Supporter'} (Free)</h3>
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground">Access to community chat and posts</p>
                         </div>
                       </div>
                       <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="tier1-name" className="text-sm font-medium">Circle name</Label>
+                          <input
+                            id="tier1-name"
+                            type="text"
+                            value={tierNames.tier1}
+                            onChange={(e) => setTierNames({ ...tierNames, tier1: e.target.value.slice(0, 50) })}
+                            placeholder="e.g. Supporter"
+                            className="mt-2 w-full min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 text-foreground focus:ring-2 focus:ring-ring"
+                            maxLength={50}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">{tierNames.tier1.length}/50</p>
+                        </div>
                         <div>
                           <Label className="text-sm font-medium">Price</Label>
                           <div className="mt-2 w-full rounded-lg border border-border bg-muted/50 px-3 sm:px-4 py-2.5 sm:py-3 text-muted-foreground text-sm sm:text-base">
@@ -1096,11 +1122,24 @@ export default function CreatorSignupPage() {
                           <Check className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-lg sm:text-xl font-bold text-foreground">Inner Circle</h3>
+                          <h3 className="text-lg sm:text-xl font-bold text-foreground">{tierNames.tier2 || 'Inner Circle'}</h3>
                           <p className="text-xs sm:text-sm text-muted-foreground">Posts + Community chat access</p>
                         </div>
                       </div>
                       <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="tier2-name" className="text-sm font-medium">Circle name</Label>
+                          <input
+                            id="tier2-name"
+                            type="text"
+                            value={tierNames.tier2}
+                            onChange={(e) => setTierNames({ ...tierNames, tier2: e.target.value.slice(0, 50) })}
+                            placeholder="e.g. Inner Circle"
+                            className="mt-2 w-full min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 text-foreground focus:ring-2 focus:ring-ring"
+                            maxLength={50}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">{tierNames.tier2.length}/50</p>
+                        </div>
                         <div>
                           <Label htmlFor="tier2" className="text-sm font-medium">Base price per month (NPR)</Label>
                           <div className="mt-2 flex items-center gap-2 min-w-0">
@@ -1180,12 +1219,25 @@ export default function CreatorSignupPage() {
                             <Check className="w-5 h-5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
                             <Check className="w-5 h-5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
                             <Check className="w-5 h-5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
-                            <h3 className="text-lg sm:text-xl font-bold text-foreground">Core Member</h3>
+                            <h3 className="text-lg sm:text-xl font-bold text-foreground">{tierNames.tier3 || 'Core Member'}</h3>
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground">Posts + Chat + Special perks</p>
                         </div>
                       </div>
                       <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="tier3-name" className="text-sm font-medium">Circle name</Label>
+                          <input
+                            id="tier3-name"
+                            type="text"
+                            value={tierNames.tier3}
+                            onChange={(e) => setTierNames({ ...tierNames, tier3: e.target.value.slice(0, 50) })}
+                            placeholder="e.g. Core Member"
+                            className="mt-2 w-full min-w-0 rounded-lg border border-input bg-background px-3 sm:px-4 py-2.5 text-foreground focus:ring-2 focus:ring-ring"
+                            maxLength={50}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">{tierNames.tier3.length}/50</p>
+                        </div>
                         <div>
                           <Label htmlFor="tier3" className="text-sm font-medium">Base price per month (NPR)</Label>
                           <div className="mt-2 flex items-center gap-2 min-w-0">
@@ -1270,7 +1322,7 @@ export default function CreatorSignupPage() {
                   <div className="space-y-4 sm:space-y-6">
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="estTier1" className="text-sm font-medium">Estimated Supporters (free tier)</Label>
+                        <Label htmlFor="estTier1" className="text-sm font-medium">Estimated {tierNames.tier1 || 'Supporter'} (free tier)</Label>
                         <input
                           id="estTier1"
                           type="number"
@@ -1293,7 +1345,7 @@ export default function CreatorSignupPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="estTier2" className="text-sm font-medium">Estimated Inner Circle supporters</Label>
+                        <Label htmlFor="estTier2" className="text-sm font-medium">Estimated {tierNames.tier2 || 'Inner Circle'} supporters</Label>
                         <input
                           id="estTier2"
                           type="number"
@@ -1316,7 +1368,7 @@ export default function CreatorSignupPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="estTier3" className="text-sm font-medium">Estimated Core Member supporters</Label>
+                        <Label htmlFor="estTier3" className="text-sm font-medium">Estimated {tierNames.tier3 || 'Core Member'} supporters</Label>
                         <input
                           id="estTier3"
                           type="number"
@@ -1346,17 +1398,17 @@ export default function CreatorSignupPage() {
                       </div>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center gap-2">
-                          <span className="text-sm text-muted-foreground">Supporter (free):</span>
+                          <span className="text-sm text-muted-foreground">{tierNames.tier1 || 'Supporter'} (free):</span>
                           <span className="font-medium text-foreground">NPR 0</span>
                         </div>
                         <div className="flex justify-between items-center gap-2">
-                          <span className="text-sm text-muted-foreground">Inner Circle:</span>
+                          <span className="text-sm text-muted-foreground">{tierNames.tier2 || 'Inner Circle'}:</span>
                           <span className="font-medium text-foreground">
                             NPR {((parseFloat(tierPrices.tier2) || 0) * (parseFloat(estimatedSupporters.tier2) || 0)).toLocaleString()}
                           </span>
                         </div>
                         <div className="flex justify-between items-center gap-2">
-                          <span className="text-sm text-muted-foreground">Core Member:</span>
+                          <span className="text-sm text-muted-foreground">{tierNames.tier3 || 'Core Member'}:</span>
                           <span className="font-medium text-foreground">
                             NPR {((parseFloat(tierPrices.tier3) || 0) * (parseFloat(estimatedSupporters.tier3) || 0)).toLocaleString()}
                           </span>

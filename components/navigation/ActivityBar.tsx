@@ -217,7 +217,7 @@ export function ActivityBar({
                 className={cn(
                   'flex items-center justify-center w-8 h-8 rounded-lg transition-colors',
                   isExpanded 
-                    ? 'text-primary bg-primary/10 hover:bg-primary/20 ml-2' 
+                    ? 'text-primary bg-primary/10 hover:text-primary hover:bg-primary/20 ml-2' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 )}
                 whileHover={{ scale: 1.05 }}
@@ -334,7 +334,7 @@ export function ActivityBar({
         {/* Favorite Creators */}
         {favoriteCreators.length > 0 && (
           <div className={cn(
-            'flex gap-1.5 overflow-y-auto scrollbar-hide max-h-[calc(100vh-400px)]',
+            'flex gap-1.5 overflow-y-auto overflow-x-hidden max-h-[calc(100vh-400px)]',
             isExpanded ? 'flex-col px-0 w-full' : 'flex-col items-center'
           )}>
             {favoriteCreators.slice(0, 5).map((creator) => (
@@ -344,7 +344,7 @@ export function ActivityBar({
                     <motion.button
                       onClick={() => handleCreatorClick(creator.id)}
                       className={cn(
-                        "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
+                        "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 hover:text-foreground transition-colors group",
                         isExpanded ? 'w-full' : '',
                         activeCreatorId === creator.id && "bg-primary/10 text-primary"
                       )}
@@ -362,7 +362,7 @@ export function ActivityBar({
                       </Avatar>
                       {isExpanded && (
                         <span className={cn(
-                          "text-sm font-medium text-muted-foreground truncate",
+                          "text-sm font-medium text-muted-foreground truncate group-hover:text-foreground",
                           activeCreatorId === creator.id && "text-primary"
                         )}>
                           {creator.display_name}
@@ -373,7 +373,7 @@ export function ActivityBar({
                     <Link href={`/creator/${creator.vanity_username || creator.username || creator.id}`} prefetch={true}>
                       <motion.div
                         className={cn(
-                          "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors",
+                          "relative flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 hover:text-foreground transition-colors group",
                           isExpanded ? 'w-full' : '',
                           activeCreatorId === creator.id && "bg-primary/10 text-primary"
                         )}
@@ -391,7 +391,7 @@ export function ActivityBar({
                         </Avatar>
                         {isExpanded && (
                           <span className={cn(
-                            "text-sm font-medium text-muted-foreground truncate",
+                            "text-sm font-medium text-muted-foreground truncate group-hover:text-foreground",
                             activeCreatorId === creator.id && "text-primary"
                           )}>
                             {creator.display_name}
@@ -413,7 +413,7 @@ export function ActivityBar({
                 <TooltipTrigger asChild>
                   <motion.button
                     className={cn(
-                      "flex items-center justify-center gap-3 p-2 rounded-lg bg-muted/50 text-muted-foreground hover:bg-muted transition-colors",
+                      "flex items-center justify-center gap-3 p-2 rounded-lg bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors group",
                       isExpanded ? 'w-full justify-start' : 'w-9 h-9'
                     )}
                     whileHover={{ scale: 1.02 }}
@@ -423,7 +423,7 @@ export function ActivityBar({
                       +{favoriteCreators.length - 5}
                     </span>
                     {isExpanded && (
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-muted-foreground group-hover:text-foreground">
                         more creators
                       </span>
                     )}
@@ -454,7 +454,7 @@ export function ActivityBar({
               <motion.button
                 onClick={() => setShowFeedback(true)}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors',
+                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-colors',
                   isExpanded ? 'w-full justify-start' : 'w-10 h-10'
                 )}
                 whileHover={{ scale: 1.02 }}
@@ -480,7 +480,7 @@ export function ActivityBar({
                 onClick={toggleTheme}
                 className={cn(
                   'flex items-center gap-3 p-3 rounded-xl text-muted-foreground transition-colors',
-                  isExpanded ? 'w-full justify-start hover:bg-muted/50' : 'w-10 h-10 hover:text-foreground hover:bg-muted/50'
+                  isExpanded ? 'w-full justify-start hover:bg-muted/50 hover:text-foreground' : 'w-10 h-10 hover:text-foreground hover:bg-muted/50'
                 )}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -529,9 +529,9 @@ export function ActivityBar({
               <Link href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} prefetch={true}>
                 <motion.div
                   className={cn(
-                    "relative flex items-center gap-3 p-2 rounded-lg transition-colors",
+                    "relative flex items-center gap-3 p-2 rounded-lg transition-colors group",
                     currentActiveView === 'profile' && "bg-primary/10 text-primary",
-                    isExpanded ? 'w-full hover:bg-muted/50' : ''
+                    isExpanded ? 'w-full hover:bg-muted/50 hover:text-foreground' : ''
                   )}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -547,7 +547,7 @@ export function ActivityBar({
                   </Avatar>
                   {isExpanded && (
                     <span className={cn(
-                      "text-sm font-medium text-muted-foreground truncate",
+                      "text-sm font-medium text-muted-foreground truncate group-hover:text-foreground",
                       currentActiveView === 'profile' && "text-primary"
                     )}>
                       {user?.display_name || 'Profile'}

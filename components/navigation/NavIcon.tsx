@@ -117,7 +117,7 @@ export function NavIcon({
       {(showLabel || isExpanded) && (
         <span className={cn(
           'text-sm font-medium transition-colors ml-3',
-          isActive ? 'text-primary' : 'text-muted-foreground'
+          isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
         )}>
           {label}
         </span>
@@ -131,7 +131,7 @@ export function NavIcon({
     isExpanded ? 'w-full justify-start px-3 py-2' : 'justify-center',
     isActive
       ? 'text-primary bg-primary/10'
-      : isExpanded ? 'text-muted-foreground hover:bg-muted/50' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+      : isExpanded ? 'text-muted-foreground hover:text-foreground hover:bg-muted/50 group' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 group',
     disabled && 'opacity-50 cursor-not-allowed',
     className
   );

@@ -28,14 +28,14 @@ export function OnboardingBanner({ onDismiss, creatorId }: OnboardingBannerProps
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="relative overflow-hidden border-2 border-purple-200 dark:border-purple-800 bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-purple-200 dark:bg-purple-800 rounded-full blur-3xl opacity-20 -mr-20 -mt-20" />
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-pink-200 dark:bg-pink-800 rounded-full blur-3xl opacity-20 -ml-20 -mb-20" />
+          <Card className="relative overflow-hidden border-2 border-primary/20 bg-primary/5 dark:bg-primary/10">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/30 rounded-full blur-3xl opacity-20 -mr-20 -mt-20" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-primary/20 rounded-full blur-3xl opacity-20 -ml-20 -mb-20" />
 
             <div className="relative p-6">
               <div className="flex items-start gap-4">
                 <div className="shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-linear-to-r from-purple-600 to-pink-600 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
                     <Sparkles className="w-6 h-6 text-white" />
                   </div>
                 </div>
@@ -58,7 +58,7 @@ export function OnboardingBanner({ onDismiss, creatorId }: OnboardingBannerProps
                       rel="noopener noreferrer"
                       className="inline-flex items-center"
                     >
-                      <Button className="bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                      <Button>
                         <Calendar className="w-4 h-4 mr-2" />
                         Book a Call
                         <ExternalLink className="w-4 h-4 ml-2" />

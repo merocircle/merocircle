@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { handleApiError } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { getCreatorUsername } from '@/lib/creator-username';
 
 /**
  * GET /api/posts/[id]/likes
@@ -46,14 +47,27 @@ export async function GET(
       );
     }
 
-    const likers = (likes || []).map((row: { user_id: string; users: { id: string; display_name: string; photo_url: string | null; role: 'user' | 'creator' | null } | null }) => {
-      const u = row.users;
-      return u
-        ? { id: u.id, display_name: u.display_name, photo_url: u.photo_url, isCreator: u.role === 'creator' }
-        : { id: row.user_id, display_name: 'Unknown', photo_url: null as string | null, isCreator: false };
-    });
+    const likers: Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean }> = (likes || [])
+      .map((row: { user_id: string; users: { id: string; display_name: string; photo_url: string | null; role: 'user' | 'creator' | null } | null }) => {
+        const u = row.users;
+        return u
+          ? { id: u.id, display_name: u.display_name, photo_url: u.photo_url, isCreator: u.role === 'creator' }
+          : null;
+      })
+      .filter((liker): liker is NonNullable<typeof liker> => liker !== null);
 
-    return NextResponse.json({ likers });
+    // Fetch usernames for creators
+    const likersWithUsernames = await Promise.all(
+      likers.map(async (liker) => {
+        if (liker.isCreator) {
+          const username = await getCreatorUsername(liker.id);
+          return { ...liker, username };
+        }
+        return { ...liker, username: null };
+      })
+    );
+
+    return NextResponse.json({ likers: likersWithUsernames });
   } catch (error) {
     return handleApiError(error, 'POST_LIKES_API', 'Failed to fetch likers');
   }

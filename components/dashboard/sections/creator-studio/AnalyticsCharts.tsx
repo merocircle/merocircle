@@ -54,8 +54,8 @@ export function AnalyticsCharts({ earningsData = [], supporterFlowData = [] }: A
 
       <Card className="p-6 border-border/50">
         <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-purple-500/20">
-            <Users className="w-4 h-4 text-purple-500" />
+          <div className="p-1.5 rounded-lg bg-orange-500/20">
+            <Users className="w-4 h-4 text-orange-500" />
           </div>
           Supporter Flow
         </h3>

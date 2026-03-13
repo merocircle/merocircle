@@ -276,7 +276,7 @@ function PreviewPost({
                 className={cn(
                   'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium',
                   postType === 'poll'
-                    ? 'text-violet-500 bg-violet-50 dark:bg-violet-950/30'
+                    ? 'text-orange-500 bg-orange-50 dark:bg-orange-950/30'
                     : images.length > 0
                       ? 'text-primary bg-primary/20'
                       : 'text-muted-foreground bg-muted/50'
@@ -619,7 +619,7 @@ export default function CreatePostPage() {
                 <Button
                   onClick={handlePublish}
                   disabled={!onboardingCompleted || isPublishing || isUploading}
-                  className="bg-linear-to-r from-violet-600 to-fuchsia-600 text-white rounded-full px-6"
+                  className="bg-primary text-white rounded-full px-6"
                 >
                   {isPublishing ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -747,7 +747,7 @@ export default function CreatePostPage() {
                       className={cn(
                         'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
                         (Array.isArray(visibility) && visibility.includes('1')) || visibility === 'supporters'
-                          ? 'bg-purple-500/20 text-purple-600 border border-purple-500/30'
+                          ? 'bg-orange-500/20 text-orange-600 border border-orange-500/30'
                           : 'bg-background text-muted-foreground hover:text-foreground border border-border'
                       )}
                     >

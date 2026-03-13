@@ -46,7 +46,7 @@ const tierConfigs: Record<string, TierConfig> = {
   premium: {
     label: "Premium",
     icon: Crown,
-    colors: "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-300",
+    colors: "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 dark:from-orange-900/30 dark:to-red-900/30 dark:text-orange-300",
   },
 };
 
@@ -82,7 +82,7 @@ export function TierBadge({
       )}
     >
       {showIcon && (
-        <Icon className={cn(iconSizes[size], tier === "premium" && "text-purple-500")} />
+        <Icon className={cn(iconSizes[size], tier === "premium" && "text-orange-500")} />
       )}
       {showLabel && <span>{config.label}</span>}
     </motion.span>

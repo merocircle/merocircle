@@ -34,7 +34,7 @@ const tierIcons = [
   { level: 3, icon: Crown, stars: 3 }
 ];
 
-// Map tier levels to display names (backend keeps 1, 2, 3 star)
+// Fallback when tier has no custom name (backend keeps 1, 2, 3)
 const getTierDisplayName = (tierLevel: number): string => {
   switch (tierLevel) {
     case 1:
@@ -47,6 +47,9 @@ const getTierDisplayName = (tierLevel: number): string => {
       return 'Supporter';
   }
 };
+
+const displayName = (tier: Tier): string =>
+  (tier.tier_name?.trim() && tier.tier_name) || getTierDisplayName(tier.tier_level);
 
 export function TierSelection({
   tiers,
@@ -163,7 +166,7 @@ export function TierSelection({
                     {/* Title and Price */}
                     <div className="mb-2 sm:mb-3 md:mb-4">
                       <h3 className="text-sm sm:text-base md:text-lg font-bold text-foreground mb-1">
-                        {getTierDisplayName(tier.tier_level)}
+                        {displayName(tier)}
                       </h3>
                       <div className="mt-1 sm:mt-2">
                         <div className="text-lg sm:text-xl md:text-3xl font-bold text-foreground">
@@ -230,10 +233,10 @@ export function TierSelection({
                           className="w-full py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 rounded-md font-medium text-center bg-foreground text-background hover:opacity-90 active:opacity-80 transition-all duration-200 disabled:opacity-50 text-xs"
                         >
                           {tier.price === 0 && tier.tier_level === 1
-                            ? 'Join as Supporter'
+                            ? `Join as ${displayName(tier)}`
                             : currentTierLevel !== 0 && tier.tier_level > currentTierLevel
-                              ? `Upgrade to ${getTierDisplayName(tier.tier_level)}`
-                              : `Select ${getTierDisplayName(tier.tier_level)}`}
+                              ? `Upgrade to ${displayName(tier)}`
+                              : `Select ${displayName(tier)}`}
                         </button>
                       )}
                     </div>
