@@ -33,11 +33,13 @@ interface Post {
   creator_profile?: {
     category?: string;
     is_verified?: boolean;
+    vanity_username?: string | null;
   };
   likes?: Array<{
     id: string;
     user_id: string;
     user: {
+      id: string;
       display_name: string;
       photo_url?: string;
     };
@@ -100,7 +102,7 @@ export default function PostCard({
   // Determine profile link - if viewing own post, go to own profile
   const creatorProfileLink = currentUserId === post.creator?.id 
     ? '/profile' 
-    : `/creator/${post.creator?.id || ''}`;
+    : `/creator/${post.creator_profile?.vanity_username}`;
 
   const handleLike = async () => {
     if (!currentUserId) return;

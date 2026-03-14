@@ -252,7 +252,7 @@ export default function PostDetailPage({
     if (!post) return "/";
     return currentUser?.id === post.creator.id
       ? "/profile"
-      : `/creator/${post.creator_profile?.vanity_username || post.creator.id}`;
+      : `/creator/${post.creator_profile?.vanity_username}`;
   }, [post, currentUser?.id]);
 
   const handleLike = useCallback(() => {
@@ -786,7 +786,7 @@ export default function PostDetailPage({
         postId={post.id}
         postTitle={post.title}
         postContent={post.content}
-        creatorSlug={post.creator?.vanity_username || undefined}
+        creatorSlug={post.creator_profile?.vanity_username}
         creatorId={post.creator?.id || ""}
       />
     </PageLayout>
