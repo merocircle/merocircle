@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavIconProps {
@@ -115,12 +115,17 @@ export function NavIcon({
 
       {/* Label */}
       {(showLabel || isExpanded) && (
-        <span className={cn(
-          'text-sm font-medium transition-colors ml-3',
-          isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-        )}>
-          {label}
-        </span>
+        <>
+          <span className={cn(
+            'text-sm ml-3 transition-colors flex-1',
+            isActive ? 'text-primary font-semibold' : 'text-muted-foreground font-medium group-hover:text-foreground'
+          )}>
+            {label}
+          </span>
+          {isActive && isExpanded && (
+            <ChevronRight className="w-4 h-4 shrink-0 text-primary" />
+          )}
+        </>
       )}
     </>
   );
@@ -250,8 +255,8 @@ export function BottomNavIcon({
       </motion.div>
 
       <span className={cn(
-        'text-[10px] font-medium',
-        isActive ? 'text-primary' : 'text-muted-foreground'
+        'text-[10px]',
+        isActive ? 'text-primary font-semibold' : 'text-muted-foreground font-medium'
       )}>
         {label}
       </span>
