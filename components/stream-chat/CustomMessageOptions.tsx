@@ -42,12 +42,16 @@ export function CustomMessageOptions(props: MessageOptionsProps) {
   const handlePinClick = useCallback(
     (e: React.MouseEvent) => {
       if (message.pinned) {
-        contextHandlePin(e);
+        // Only the user who pinned can unpin
+        const pinnedByMe = message.pinned_by && (message.pinned_by as { id?: string }).id === client.user?.id;
+        if (pinnedByMe) {
+          contextHandlePin(e);
+        }
       } else {
         setPinModalOpen(true);
       }
     },
-    [message.pinned, contextHandlePin]
+    [message.pinned, message.pinned_by, client.user?.id, contextHandlePin]
   );
 
   const handlePinConfirm = useCallback(
