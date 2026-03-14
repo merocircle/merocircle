@@ -18,7 +18,8 @@ import {
   Shield,
   MessageCircleHeart,
   Calendar,
-  PanelRight
+  PanelRight,
+  ChevronRight
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { NavIcon } from './NavIcon';
@@ -361,12 +362,17 @@ export function ActivityBar({
                         </AvatarFallback>
                       </Avatar>
                       {isExpanded && (
-                        <span className={cn(
-                          "text-sm font-medium text-muted-foreground truncate group-hover:text-foreground",
-                          activeCreatorId === creator.id && "text-primary"
-                        )}>
-                          {creator.display_name}
-                        </span>
+                        <>
+                          <span className={cn(
+                            "text-sm truncate group-hover:text-foreground flex-1",
+                            activeCreatorId === creator.id ? "text-primary font-semibold" : "text-muted-foreground font-medium"
+                          )}>
+                            {creator.display_name}
+                          </span>
+                          {activeCreatorId === creator.id && (
+                            <ChevronRight className="w-4 h-4 shrink-0 text-primary" />
+                          )}
+                        </>
                       )}
                     </motion.button>
                   ) : (
@@ -390,12 +396,17 @@ export function ActivityBar({
                           </AvatarFallback>
                         </Avatar>
                         {isExpanded && (
-                          <span className={cn(
-                            "text-sm font-medium text-muted-foreground truncate group-hover:text-foreground",
-                            activeCreatorId === creator.id && "text-primary"
-                          )}>
-                            {creator.display_name}
-                          </span>
+                          <>
+                            <span className={cn(
+                              "text-sm truncate group-hover:text-foreground flex-1",
+                              activeCreatorId === creator.id ? "text-primary font-semibold" : "text-muted-foreground font-medium"
+                            )}>
+                              {creator.display_name}
+                            </span>
+                            {activeCreatorId === creator.id && (
+                              <ChevronRight className="w-4 h-4 shrink-0 text-primary" />
+                            )}
+                          </>
                         )}
                       </motion.div>
                     </Link>
@@ -454,15 +465,17 @@ export function ActivityBar({
               <motion.button
                 onClick={() => setShowFeedback(true)}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-colors',
-                  isExpanded ? 'w-full justify-start' : 'w-10 h-10'
+                  'flex items-center gap-3 p-3 rounded-xl text-muted-foreground transition-colors',
+                  isExpanded ? 'w-full justify-start hover:bg-primary/5 hover:text-primary group' : 'w-10 h-10 hover:text-primary hover:bg-primary/5'
                 )}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <MessageCircleHeart size={18} className="shrink-0" />
                 {isExpanded && (
-                  <span className="text-sm font-medium">Quick feedback</span>
+                  <span className="text-sm font-medium group-hover:text-primary group-hover:font-medium transition-colors">
+                    Quick feedback
+                  </span>
                 )}
               </motion.button>
             </TooltipTrigger>
@@ -529,9 +542,10 @@ export function ActivityBar({
               <Link href={isCreator && creatorProfile?.vanity_username ? `/creator/${creatorProfile.vanity_username}` : '/profile'} prefetch={true}>
                 <motion.div
                   className={cn(
-                    "relative flex items-center gap-3 p-2 rounded-lg transition-colors group",
-                    currentActiveView === 'profile' && "bg-primary/10 text-primary",
-                    isExpanded ? 'w-full hover:bg-muted/50 hover:text-foreground' : ''
+                    "relative flex items-center gap-3 p-2 rounded-lg transition-colors",
+                    currentActiveView === 'profile' 
+                      ? "bg-primary/10 text-primary" 
+                      : "group hover:bg-muted/50 hover:text-foreground"
                   )}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -546,12 +560,19 @@ export function ActivityBar({
                     </AvatarFallback>
                   </Avatar>
                   {isExpanded && (
-                    <span className={cn(
-                      "text-sm font-medium text-muted-foreground truncate group-hover:text-foreground",
-                      currentActiveView === 'profile' && "text-primary"
-                    )}>
-                      {user?.display_name || 'Profile'}
-                    </span>
+                    <>
+                      <span className={cn(
+                        "text-sm truncate flex-1",
+                        currentActiveView === 'profile' 
+                          ? "text-primary font-semibold" 
+                          : "text-muted-foreground font-medium group-hover:text-foreground"
+                      )}>
+                        {user?.display_name || 'Profile'}
+                      </span>
+                      {currentActiveView === 'profile' && (
+                        <ChevronRight className="w-4 h-4 shrink-0 text-primary" />
+                      )}
+                    </>
                   )}
                 </motion.div>
               </Link>

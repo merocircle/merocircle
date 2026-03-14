@@ -31,7 +31,7 @@ export function RecentPostsList({
 }: RecentPostsListProps) {
   if (posts.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 mx-auto max-w-5xl">
         <h3 className="text-lg font-semibold text-foreground">Recent Posts</h3>
         <Card className="p-10 text-center border-dashed border-2">
           <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
@@ -42,7 +42,7 @@ export function RecentPostsList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mx-auto max-w-5xl">
       <h3 className="text-lg font-semibold text-foreground max-w-5xl mx-auto">Recent Posts</h3>
       <div className="space-y-4 min-w-0 max-w-5xl mx-auto">
         {posts.map((post) => {
