@@ -199,7 +199,7 @@ const ExploreSection = memo(function ExploreSection() {
                       <motion.button
                         key={creator.user_id}
                         variants={itemVariants}
-                        onClick={() => router.push(`/creator/${creator.username || creator.vanity_username || creator.user_id}`)}
+                        onClick={() => router.push(`/creator/${creator.username || creator.vanity_username}`)}
                         className="flex flex-col items-center gap-1.5 shrink-0 w-16 group"
                       >
                         <div className="w-14 h-14 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all overflow-hidden bg-muted">
