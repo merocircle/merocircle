@@ -72,6 +72,7 @@ interface Post {
   creator_profile?: {
     category?: string;
     is_verified?: boolean;
+    vanity_username?: string | null;
   };
   likes?: Array<{ id: string; user_id: string }>;
   likes_count?: number;
@@ -79,6 +80,7 @@ interface Post {
   is_liked?: boolean;
   is_supporter?: boolean;
   poll?: { id: string } | Array<{ id: string }>;
+  polls?: { id: string } | Array<{ id: string }>;
 }
 
 interface Comment {
@@ -114,7 +116,7 @@ export default function PostDetailPage({
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
-  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean }>>([]);
+  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean; username: string | null }>>([]);
   const [likersLoading, setLikersLoading] = useState(false);
   const [likersHover, setLikersHover] = useState(false);
   const likersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,7 +129,9 @@ export default function PostDetailPage({
     try {
       const res = await fetch(`/api/posts/${id}/likes`);
       const data = await res.json();
-      if (res.ok && Array.isArray(data.likers)) setLikers(data.likers);
+      if (res.ok && Array.isArray(data.likers)) {
+        setLikers(data.likers);
+      }
     } catch {
       // ignore
     } finally {
@@ -248,7 +252,7 @@ export default function PostDetailPage({
     if (!post) return "/";
     return currentUser?.id === post.creator.id
       ? "/profile"
-      : `/creator/${post.creator_profile?.vanity_username || post.creator.id}`;
+      : `/creator/${post.creator_profile?.vanity_username}`;
   }, [post, currentUser?.id]);
 
   const handleLike = useCallback(() => {
@@ -381,7 +385,7 @@ export default function PostDetailPage({
   }
 
   const pollData = (() => {
-    const raw = post.poll;
+    const raw = post.polls || post.poll;
     if (!raw) return null;
     if (Array.isArray(raw)) return raw[0] || null;
     return raw;
@@ -394,11 +398,11 @@ export default function PostDetailPage({
   // ── Page ─────────────────────────────────────────────────────────────────────
   return (
     <PageLayout>
-      <div className="max-w-2xl mx-auto py-4 sm:py-6 px-0 sm:px-2">
+      <div className="max-w-5xl mx-auto py-4 sm:py-6 px-0 sm:px-2">
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-5 px-1"
+          className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-5 px-1"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -478,7 +482,7 @@ export default function PostDetailPage({
           )}
 
         {/* Locked / subscriber-only placeholder */}
-        {shouldBlur && (
+        {shouldBlur && post.post_type !== "poll" && (
           <div className="relative w-full aspect-video bg-gradient-to-br from-muted to-muted/50 rounded-xl overflow-hidden mb-6">
             {post.preview_image_url && (
               <Image
@@ -500,7 +504,7 @@ export default function PostDetailPage({
                     Subscribers only
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Join the circle to see this post
+                    Join circle to see this post
                   </p>
                 </div>
                 <Button
@@ -571,7 +575,7 @@ export default function PostDetailPage({
           {post.post_type === "poll" && pollData?.id && (
             <div className="mb-6">
               <PollCard
-                pollId={pollData.id}
+                pollId={pollData?.id}
                 currentUserId={currentUser?.id}
                 isCreator={currentUser?.id === post.creator?.id}
               />
@@ -587,7 +591,7 @@ export default function PostDetailPage({
                     Subscribe to access this post.
                   </p>
                 ) : (
-                  <RichContent content={post.content} truncateLength={9999} creatorId={post.creator?.id} />
+                  <RichContent content={post.content} truncateLength={99999999} creatorId={post.creator?.id} />
                 )}
               </div>
             )}
@@ -637,10 +641,10 @@ export default function PostDetailPage({
                             </div>
                           ) : likers.length > 0 ? (
                             likers.map((u) => (
-                              u.isCreator ? (
+                              u.isCreator && u.username ? (
                                 <Link
                                   key={u.id}
-                                  href={`/creator/${u.id}`}
+                                  href={`/creator/${u.username}`}
                                   className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
                                 >
                                   <Avatar className="h-7 w-7">
@@ -749,7 +753,7 @@ export default function PostDetailPage({
             ) : (
               <div className="mb-6 text-center py-3 rounded-lg bg-muted/40 border border-border/40">
                 <Link
-                  href="/login"
+                  href="/auth"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Sign in to comment
@@ -782,7 +786,7 @@ export default function PostDetailPage({
         postId={post.id}
         postTitle={post.title}
         postContent={post.content}
-        creatorSlug={post.creator?.vanity_username || undefined}
+        creatorSlug={post.creator_profile?.vanity_username}
         creatorId={post.creator?.id || ""}
       />
     </PageLayout>

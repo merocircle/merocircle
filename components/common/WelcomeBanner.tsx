@@ -22,7 +22,7 @@ export function WelcomeBanner({
   title,
   description,
   stats,
-  gradient = 'from-purple-500 via-pink-500 to-red-500',
+  gradient = 'from-orange-500 via-red-500 to-red-500',
   children,
   className
 }: WelcomeBannerProps) {

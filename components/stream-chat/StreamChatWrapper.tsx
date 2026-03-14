@@ -24,6 +24,7 @@ import { CustomQuotedMessage } from './CustomQuotedMessage';
 import { CustomMessageOptions } from './CustomMessageOptions';
 import { CustomMessage } from './CustomMessage';
 import { CustomMessageStatus } from './CustomMessageStatus';
+import { CustomPinIndicator } from './CustomPinIndicator';
 import {
   Loader2, MessageSquare, AlertCircle, Plus,
   ChevronDown, ChevronRight, Users, ArrowLeft, MessageCircle, Send,
@@ -1080,6 +1081,7 @@ export function StreamChatWrapper({
                     MessageRepliesCountButton={NoOpMessageRepliesCountButton}
                     Message={CustomMessage}
                     MessageStatus={CustomMessageStatus}
+                    PinIndicator={CustomPinIndicator}
                   >
                     <Window>
                       <CustomChannelHeader onToggleInfo={() => setShowInfoPanel(!showInfoPanel)} showInfoPanel={showInfoPanel} />
@@ -1303,7 +1305,7 @@ export function StreamChatWrapper({
           {mobileView === "chat" && activeChannel && (
             <div className="h-full min-h-0 flex flex-col overflow-hidden min-w-0 w-full">
               <ChannelSearchProvider>
-                <Channel
+                <Channel 
                   channel={activeChannel}
                   CustomMessageActionsList={CustomMessageActionsList}
                   QuotedMessage={CustomQuotedMessage}
@@ -1311,6 +1313,7 @@ export function StreamChatWrapper({
                   MessageRepliesCountButton={NoOpMessageRepliesCountButton}
                   Message={CustomMessage}
                   MessageStatus={CustomMessageStatus}
+                  PinIndicator={CustomPinIndicator}
                 >
                   <Window>
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card flex-shrink-0">
@@ -2039,6 +2042,34 @@ export function StreamChatWrapper({
             "reminder reminder"
             "options message-bubble"
             "reactions reactions" !important;
+        }
+
+        /* Pinned message: pin indicator out of flow so the bubble doesn't move */
+        .str-chat__message--pinned {
+          position: relative;
+          padding-top: 1.25rem;
+        }
+        /* If SDK uses grid, collapse the pin row so it doesn't shift the bubble */
+        .str-chat__message--pinned.str-chat__message-simple {
+          grid-template-rows: 0px auto !important;
+        }
+        .str-chat__message--pinned .str-chat__pin-indicator {
+          position: absolute;
+          left: 0;
+          top: 0;
+          display: flex !important;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.7rem;
+          color: var(--primary);
+          margin: 0;
+          z-index: 1;
+        }
+        /* Prevent SDK from adding margin/padding that shifts the bubble when pinned */
+        .str-chat__message--pinned .str-chat__message-inner,
+        .str-chat__message--pinned .str-chat__avatar {
+          margin-left: 0 !important;
+          margin-right: 0 !important;
         }
 
         /* Scroll-to-message highlight when clicking a quoted reply */

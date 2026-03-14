@@ -56,6 +56,11 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
   const [platformIds, setPlatformIds] = useState<string[]>([]);
   const [tierPrices, setTierPrices] = useState<Record<number, string>>({});
+  const [tierNames, setTierNames] = useState<Record<number, string>>({
+    1: 'Supporter',
+    2: 'Inner Circle',
+    3: 'Core Member',
+  });
   const [extraPerks, setExtraPerks] = useState<Record<number, string[]>>({ 1: [], 2: [], 3: [] });
   const [estTier2, setEstTier2] = useState('20');
   const [estTier3, setEstTier3] = useState('10');
@@ -88,12 +93,16 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
       setSocialLinks(links);
       setPlatformIds(Object.keys(links));
       const prices: Record<number, string> = {};
+      const names: Record<number, string> = { 1: 'Supporter', 2: 'Inner Circle', 3: 'Core Member' };
       const perks: Record<number, string[]> = { 1: [], 2: [], 3: [] };
       (tiers || []).forEach((t) => {
         prices[t.tier_level] = String(t.price);
+        names[t.tier_level] =
+          t.tier_name || (t.tier_level === 1 ? 'Supporter' : t.tier_level === 2 ? 'Inner Circle' : 'Core Member');
         perks[t.tier_level] = Array.isArray(t.extra_perks) ? [...t.extra_perks] : [];
       });
       setTierPrices(prices);
+      setTierNames(names);
       setExtraPerks(perks);
       setErr(null);
     }
@@ -152,10 +161,12 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
       const payload = [1, 2, 3].map((level) => {
         const t = tiers?.find((x) => x.tier_level === level);
         const rawPrice = level === 1 ? 0 : parseFloat(tierPrices[level] ?? '0') || 0;
+        const fallbackName = level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member';
+        const name = (tierNames[level] ?? '').trim() || t?.tier_name || fallbackName;
         return {
           tier_level: level,
           price: level === 1 ? 0 : Math.max(0, rawPrice),
-          tier_name: t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'),
+          tier_name: name,
           description: t?.description ?? null,
           benefits: t?.benefits ?? [],
           extra_perks: (extraPerks[level] ?? []).filter((p) => p.trim() !== ''),
@@ -343,10 +354,11 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,minmax(280px,350px)]">
               {/* Left: Tier pricing */}
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Set your tier prices (NPR per month). Tier 1 is always free.</p>
+                <p className="text-sm text-muted-foreground">Name your circles and set prices (NPR per month). Tier 1 is always free.</p>
                 {[1, 2, 3].map((level) => {
-                  const t = tiers?.find((x) => x.tier_level === level);
-                  const name = t?.tier_name ?? (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
+                  const name =
+                    (tierNames[level] ?? '').trim() ||
+                    (level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member');
                   return (
                     <div
                       key={level}
@@ -355,6 +367,24 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
                       <div className="flex items-center justify-between mb-2">
                         <p className="font-semibold text-foreground">{name}</p>
                         <Badge variant="outline" className="rounded-full text-xs">Tier {level}</Badge>
+                      </div>
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Circle name</p>
+                        <Input
+                          value={tierNames[level] ?? ''}
+                          onChange={(e) =>
+                            setTierNames({
+                              ...tierNames,
+                              [level]: e.target.value.slice(0, 50),
+                            })
+                          }
+                          placeholder={level === 1 ? 'Supporter' : level === 2 ? 'Inner Circle' : 'Core Member'}
+                          className="rounded-xl"
+                          maxLength={50}
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          {(tierNames[level] ?? '').length}/50
+                        </p>
                       </div>
                       {level === 1 ? (
                         <p className="text-sm text-muted-foreground">Free tier — no payment required</p>
@@ -439,7 +469,15 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
                       type="number"
                       min={0}
                       value={estTier2}
-                      onChange={(e) => setEstTier2(e.target.value)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === '' || v === '-') {
+                          setEstTier2(v === '-' ? '0' : v);
+                          return;
+                        }
+                        const n = parseFloat(v);
+                        setEstTier2(!Number.isNaN(n) && n < 0 ? '0' : v);
+                      }}
                       className="rounded-md"
                     />
                   </div>
@@ -449,7 +487,15 @@ export function EditProfilePricingModal({ open, onOpenChange, profile, tiers, on
                       type="number"
                       min={0}
                       value={estTier3}
-                      onChange={(e) => setEstTier3(e.target.value)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === '' || v === '-') {
+                          setEstTier3(v === '-' ? '0' : v);
+                          return;
+                        }
+                        const n = parseFloat(v);
+                        setEstTier3(!Number.isNaN(n) && n < 0 ? '0' : v);
+                      }}
                       className="rounded-md"
                     />
                   </div>

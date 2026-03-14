@@ -195,10 +195,10 @@ function MentionChip({
         onClick?.(displayName);
       }}
       className={cn(
-        'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[13px] font-medium transition-colors',
+        'mention-chip inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[13px] font-medium transition-colors',
         onClick
-          ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20 cursor-pointer'
-          : 'bg-violet-500/10 text-violet-600 dark:text-violet-400 cursor-default',
+          ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 cursor-pointer'
+          : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 cursor-default',
       )}
     >
       @{displayName}
@@ -254,7 +254,7 @@ function EmbedRenderer({ embed }: { embed: EmbedInfo }) {
             onClick={(e) => { e.stopPropagation(); setShowEmbed(true); }}
             className="w-full flex items-center gap-3 px-4 py-3 bg-card hover:bg-muted/50 transition-colors text-left"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-red-500 to-orange-400 flex items-center justify-center flex-shrink-0">
               <span className="text-white text-sm font-bold">IG</span>
             </div>
             <div className="min-w-0 flex-1">
@@ -389,7 +389,7 @@ function EmbedRenderer({ embed }: { embed: EmbedInfo }) {
 function EmbedLinkCard({ embed }: { embed: EmbedInfo }) {
   const platformConfig: Record<string, { label: string; bg: string; icon: string }> = {
     youtube: { label: 'YouTube', bg: 'bg-red-500', icon: '▶' },
-    instagram: { label: 'Instagram', bg: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400', icon: 'IG' },
+    instagram: { label: 'Instagram', bg: 'bg-gradient-to-br from-orange-500 via-red-500 to-orange-400', icon: 'IG' },
     tiktok: { label: 'TikTok', bg: 'bg-black', icon: 'TT' },
     twitter: { label: 'X / Twitter', bg: 'bg-black', icon: '𝕏' },
     spotify: { label: 'Spotify', bg: 'bg-green-600', icon: '♫' },

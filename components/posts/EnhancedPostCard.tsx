@@ -50,6 +50,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AutoResizeCommentInput } from "@/components/ui/auto-resize-comment-input";
 import { logger } from "@/lib/logger";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -209,7 +210,7 @@ export function EnhancedPostCard({
   const [newComment, setNewComment] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean }>>([]);
+  const [likers, setLikers] = useState<Array<{ id: string; display_name: string; photo_url: string | null; isCreator: boolean; username: string | null }>>([]);
   const [likersLoading, setLikersLoading] = useState(false);
   const [likersHover, setLikersHover] = useState(false);
   const likersTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -328,7 +329,7 @@ export function EnhancedPostCard({
   const creatorProfileLink =
     currentUserId === creator.id
       ? "/profile"
-      : `/creator/${creator.vanity_username || creator.id}`;
+      : `/creator/${creator.vanity_username}`;
 
   const handlePrefetch = useCallback(() => {
     router.prefetch(creatorProfileLink);
@@ -569,8 +570,8 @@ export function EnhancedPostCard({
         return {
           icon: BarChart3,
           label: "Poll",
-          color: "text-violet-500",
-          bg: "bg-violet-50 dark:bg-violet-950/30",
+          color: "text-orange-500",
+          bg: "bg-orange-50 dark:bg-orange-950/30",
         };
       case "video":
         return {
@@ -892,10 +893,10 @@ export function EnhancedPostCard({
                                 </div>
                               ) : likers.length > 0 ? (
                                 likers.map((u) => (
-                                  u.isCreator ? (
+                                  u.isCreator && u.username ? (
                                     <Link
                                       key={u.id}
-                                      href={`/creator/${u.id}`}
+                                      href={`/creator/${u.username}`}
                                       className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50 transition-colors"
                                     >
                                       <Avatar className="h-7 w-7">
@@ -1051,7 +1052,7 @@ export function EnhancedPostCard({
                   {currentUserId ? (
                     <form
                       onSubmit={handleSubmitComment}
-                      className="flex items-center gap-3"
+                      className="flex items-end gap-3"
                     >
                       <Avatar className="h-8 w-8 shrink-0">
                         <AvatarImage
@@ -1063,13 +1064,12 @@ export function EnhancedPostCard({
                             currentUserId?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
+                      <div className="flex-1 relative min-w-0">
+                        <AutoResizeCommentInput
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           placeholder="Write a comment..."
-                          className="w-full rounded-md bg-card border border-border/60 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
+                          className="w-full rounded-xl bg-card border border-border/60 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground"
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
