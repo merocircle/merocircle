@@ -67,6 +67,13 @@ export function CustomMessage(props: any) {
   const isSystemMessage = message?.type === 'system';
   const isMyMessage = message?.user?.id === client?.userID;
 
+  // Ensure message has cid so edit flow works (MessageComposer requires compositionContext.channel or context.cid)
+  useEffect(() => {
+    if (message && channel?.cid && !(message as { cid?: string }).cid) {
+      (message as { cid: string }).cid = channel.cid;
+    }
+  }, [message, channel?.cid]);
+
   const openMenu = useCallback(() => {
     menuOpenedAt.current = Date.now();
     setMenuOpen(true);
