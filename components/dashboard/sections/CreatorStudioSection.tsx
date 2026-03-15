@@ -587,7 +587,7 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
       />
 
       {showOnboardingBanner && user && (
-        <div className="mb-5">
+        <div className="mb-5 max-w-5xl mx-auto">
           <OnboardingBanner
             creatorId={user.id}
             onDismiss={() => {
@@ -640,22 +640,6 @@ const CreatorStudioSection = memo(function CreatorStudioSection() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Quick Stats Row */}
-            {/* <div className="flex items-center gap-4 mb-5 max-w-5xl mx-auto flex-wrap">
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <FileText className="w-4 h-4" />
-                <span className="font-medium text-foreground">{stats.posts}</span> posts
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Heart className="w-4 h-4" />
-                <span className="font-medium text-foreground">{stats.likes}</span> likes
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span className="font-medium text-foreground">{stats.supporters}</span> supporters
-              </div>
-            </div> */}
-
             {/* Create Post CTA */}
             <Link href="/create-post" className="block mb-5 max-w-5xl mx-auto">
               <div className="flex items-center gap-3 p-4 rounded-xl border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer group">

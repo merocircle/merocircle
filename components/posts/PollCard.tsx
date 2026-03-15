@@ -109,8 +109,15 @@ export function PollCard({ pollId, currentUserId, showResults = false, isCreator
   const hasMoreOptions = options.length > VISIBLE_OPTIONS_LIMIT;
   const visibleOptions = useMemo(() => {
     if (showAllOptions || !hasMoreOptions) return options;
-    return options.slice(0, VISIBLE_OPTIONS_LIMIT);
-  }, [options, showAllOptions, hasMoreOptions]);
+    
+    // Always show user's voted options first
+    const userVotedOptions = options.filter(option => userVotes.includes(option.id));
+    const otherOptions = options.filter(option => !userVotes.includes(option.id));
+    
+    // Combine: user's voted options first, then other options up to the limit
+    const combinedOptions = [...userVotedOptions, ...otherOptions];
+    return combinedOptions.slice(0, VISIBLE_OPTIONS_LIMIT);
+  }, [options, showAllOptions, hasMoreOptions, userVotes]);
 
   if (loading) {
     return (

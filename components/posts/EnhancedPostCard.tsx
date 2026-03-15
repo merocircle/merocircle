@@ -329,7 +329,7 @@ export function EnhancedPostCard({
   const creatorProfileLink =
     currentUserId === creator.id
       ? "/profile"
-      : `/creator/${creator.vanity_username || creator.id}`;
+      : `/creator/${creator.vanity_username}`;
 
   const handlePrefetch = useCallback(() => {
     router.prefetch(creatorProfileLink);

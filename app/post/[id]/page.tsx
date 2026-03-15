@@ -72,6 +72,7 @@ interface Post {
   creator_profile?: {
     category?: string;
     is_verified?: boolean;
+    vanity_username?: string | null;
   };
   likes?: Array<{ id: string; user_id: string }>;
   likes_count?: number;
@@ -251,7 +252,7 @@ export default function PostDetailPage({
     if (!post) return "/";
     return currentUser?.id === post.creator.id
       ? "/profile"
-      : `/creator/${post.creator?.vanity_username || post.creator.id}`;
+      : `/creator/${post.creator_profile?.vanity_username}`;
   }, [post, currentUser?.id]);
 
   const handleLike = useCallback(() => {
@@ -397,11 +398,11 @@ export default function PostDetailPage({
   // ── Page ─────────────────────────────────────────────────────────────────────
   return (
     <PageLayout>
-      <div className="max-w-2xl mx-auto py-4 sm:py-6 px-0 sm:px-2">
+      <div className="max-w-5xl mx-auto py-4 sm:py-6 px-0 sm:px-2">
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-5 px-1"
+          className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-5 px-1"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -590,7 +591,7 @@ export default function PostDetailPage({
                     Subscribe to access this post.
                   </p>
                 ) : (
-                  <RichContent content={post.content} truncateLength={9999} creatorId={post.creator?.id} />
+                  <RichContent content={post.content} truncateLength={99999999} creatorId={post.creator?.id} />
                 )}
               </div>
             )}
@@ -785,7 +786,7 @@ export default function PostDetailPage({
         postId={post.id}
         postTitle={post.title}
         postContent={post.content}
-        creatorSlug={post.creator?.vanity_username || undefined}
+        creatorSlug={post.creator_profile?.vanity_username}
         creatorId={post.creator?.id || ""}
       />
     </PageLayout>

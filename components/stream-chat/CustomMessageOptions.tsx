@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   MessageOptions as DefaultMessageOptions,
   useMessageContext,
   useMessageComposer,
   useChannelActionContext,
+  useChannelStateContext,
   useChatContext,
 } from 'stream-chat-react';
 import type { MessageOptionsProps } from 'stream-chat-react';
@@ -16,11 +17,19 @@ import { PinDurationModal } from './PinDurationModal';
  */
 export function CustomMessageOptions(props: MessageOptionsProps) {
   const { message, handlePin: contextHandlePin } = useMessageContext('MessageOptions');
+  const { channel } = useChannelStateContext('CustomMessageOptions');
   const messageComposer = useMessageComposer();
   const { updateMessage } = useChannelActionContext('CustomMessageOptions');
   const { client } = useChatContext('CustomMessageOptions');
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
+
+  // Ensure message has cid so edit flow works (MessageComposer requires compositionContext.channel or context.cid)
+  useEffect(() => {
+    if (message && channel?.cid && !(message as { cid?: string }).cid) {
+      (message as { cid: string }).cid = channel.cid;
+    }
+  }, [message, channel?.cid]);
 
   const handleQuoteReply = useCallback(() => {
     messageComposer.setQuotedMessage(message);
@@ -33,12 +42,16 @@ export function CustomMessageOptions(props: MessageOptionsProps) {
   const handlePinClick = useCallback(
     (e: React.MouseEvent) => {
       if (message.pinned) {
-        contextHandlePin(e);
+        // Only the user who pinned can unpin
+        const pinnedByMe = message.pinned_by && (message.pinned_by as { id?: string }).id === client.user?.id;
+        if (pinnedByMe) {
+          contextHandlePin(e);
+        }
       } else {
         setPinModalOpen(true);
       }
     },
-    [message.pinned, contextHandlePin]
+    [message.pinned, message.pinned_by, client.user?.id, contextHandlePin]
   );
 
   const handlePinConfirm = useCallback(

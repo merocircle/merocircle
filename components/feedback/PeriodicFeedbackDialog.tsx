@@ -21,7 +21,8 @@ const FEEDBACK_QUESTIONS = [
 
 const STORAGE_KEY = 'merocircle_last_periodic_feedback';
 const FEEDBACK_INTERVAL_DAYS = 1; // Show every 1 day (can be changed to 2)
-const INITIAL_DELAY_MS = 10 * 60 * 1000; // 10 minutes after login/page load
+const FIRST_FEEDBACK_DELAY_MS = 30 * 1000; // 30 seconds after login/page load
+const REPEAT_FEEDBACK_DELAY_MS = 10 * 60 * 1000; // 10 minutes after eligible interval
 
 interface PeriodicFeedbackDialogProps {
   userId?: string;
@@ -46,10 +47,10 @@ export function PeriodicFeedbackDialog({ userId, displayName, isCreator }: Perio
     const now = Date.now();
     
     if (!lastShown) {
-      // First time - show after user has been active for a while (10 minutes)
+      // First time - show quickly after user has been active for a short time (30 seconds)
       const timer = setTimeout(() => {
         setOpen(true);
-      }, INITIAL_DELAY_MS);
+      }, FIRST_FEEDBACK_DELAY_MS);
       return () => clearTimeout(timer);
     }
 
@@ -57,10 +58,10 @@ export function PeriodicFeedbackDialog({ userId, displayName, isCreator }: Perio
     const daysSinceLastShown = (now - lastShownTime) / (1000 * 60 * 60 * 24);
 
     if (daysSinceLastShown >= FEEDBACK_INTERVAL_DAYS) {
-      // Show after user has been active for a while (10 minutes)
+      // Subsequent times - show after user has been active for a while (10 minutes)
       const timer = setTimeout(() => {
         setOpen(true);
-      }, INITIAL_DELAY_MS);
+      }, REPEAT_FEEDBACK_DELAY_MS);
       return () => clearTimeout(timer);
     }
   }, [mounted, userId]);
