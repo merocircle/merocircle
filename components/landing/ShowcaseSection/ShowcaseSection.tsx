@@ -57,9 +57,9 @@ export function ShowcaseSection() {
 
           <div className="orbit-card orbit-card-revenue orbit-float-2">
             <div className="orbit-avatar-stack">
-              <Image src="/illustration (1).png" alt="" width={20} height={20} className="orbit-stack-img" />
-              <Image src="/Nishar.jpeg" alt="" width={20} height={20} className="orbit-stack-img" />
-              <Image src="/Shaswot Lamichhane.png" alt="" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/illustration (1).png" alt="Supporter avatar 1" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Nishar.jpeg" alt="Supporter avatar 2" width={20} height={20} className="orbit-stack-img" />
+              <Image src="/Shaswot Lamichhane.png" alt="Supporter avatar 3" width={20} height={20} className="orbit-stack-img" />
             </div>
             <div>
               <p className="orbit-card-value-sm">Your supporters</p>
