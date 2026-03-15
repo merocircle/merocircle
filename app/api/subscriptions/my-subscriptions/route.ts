@@ -76,7 +76,11 @@ export async function GET(request: NextRequest) {
         creators:users!creator_id(
           id,
           display_name,
-          photo_url
+          photo_url,
+          username,
+          creator_profiles (
+            vanity_username
+          )
         ),
         tiers:subscription_tiers(
           id,
@@ -116,7 +120,7 @@ export async function GET(request: NextRequest) {
       const creatorIds = [...new Set(supporterOnly.map((s: any) => s.creator_id))];
       const { data: creatorRows } = await supabase
         .from('users')
-        .select('id, display_name, photo_url')
+        .select('id, display_name, photo_url, username, creator_profiles ( vanity_username )')
         .in('id', creatorIds);
       const creatorMap = new Map((creatorRows || []).map((c: any) => [c.id, c]));
 
@@ -127,6 +131,11 @@ export async function GET(request: NextRequest) {
 
       for (const s of supporterOnly) {
         const creator = creatorMap.get(s.creator_id);
+        const creatorProfile = Array.isArray(creator?.creator_profiles)
+          ? creator.creator_profiles[0]
+          : creator?.creator_profiles;
+        const username = creatorProfile?.vanity_username?.trim() || creator?.username?.trim();
+        
         const tier = (tierRows || []).find(
           (t: any) => t.creator_id === s.creator_id && t.tier_level === s.tier_level
         );
@@ -139,6 +148,7 @@ export async function GET(request: NextRequest) {
             id: creator?.id,
             displayName: creator?.display_name || 'Unknown Creator',
             avatarUrl: creator?.photo_url,
+            username: username || null,
           },
           tier: {
             level: s.tier_level,
@@ -189,6 +199,12 @@ export async function GET(request: NextRequest) {
           id: sub.creators?.id,
           displayName: sub.creators?.display_name || 'Unknown Creator',
           avatarUrl: sub.creators?.photo_url,
+          username: (() => {
+            const creatorProfile = Array.isArray(sub.creators?.creator_profiles)
+              ? sub.creators.creator_profiles[0]
+              : sub.creators?.creator_profiles;
+            return creatorProfile?.vanity_username?.trim() || sub.creators?.username?.trim() || null;
+          })(),
         },
         tier: {
           level: sub.tier_level,

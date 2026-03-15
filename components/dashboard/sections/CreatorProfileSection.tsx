@@ -1602,7 +1602,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
                 {/* CTA */}
                 <div className="flex items-center gap-2">
                   {isOwnProfile ? (
-                    <Button variant="outline" size="sm" onClick={() => setActiveTab('edit')} className="rounded-full h-7 px-3 text-xs gap-1">
+                    <Button variant="outline" size="sm" onClick={() => setActiveTab('edit')} className="rounded-md h-7 px-6 text-xs gap-1">
                       <Edit className="w-3 h-3" />
                       Edit
                     </Button>

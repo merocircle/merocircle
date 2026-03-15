@@ -21,6 +21,7 @@ interface Subscription {
     id: string;
     displayName: string;
     avatarUrl?: string;
+    username?: string | null;
   };
   tier: {
     level: number;
@@ -137,7 +138,9 @@ export default function SubscriptionsManagement() {
       const data = await response.json();
 
       // Redirect to creator page with renew flag
-      window.location.href = `/creator/${subscription.creatorId}?renew=true&tier=${subscription.tier.level}`;
+      window.location.href = subscription.creator.username 
+        ? `/creator/${subscription.creator.username}?renew=true&tier=${subscription.tier.level}`
+        : `/creator/${subscription.creatorId}?renew=true&tier=${subscription.tier.level}`;
     } catch (err: any) {
       logger.error('Error renewing subscription', 'SUBSCRIPTIONS_MANAGEMENT', { error: err?.message });
       toast({ title: 'Failed to renew', description: err?.message, variant: 'destructive' });
@@ -347,7 +350,7 @@ export default function SubscriptionsManagement() {
                     size="sm"
                     variant="outline"
                   >
-                    <Link href={`/creator/${subscription.creatorId}`}>
+                    <Link href={subscription.creator.username ? `/creator/${subscription.creator.username}` : `/creator/${subscription.creatorId}`}>
                       <ExternalLink className="w-4 h-4 mr-2" />
                       View Creator
                     </Link>
