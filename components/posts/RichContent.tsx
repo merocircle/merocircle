@@ -195,7 +195,7 @@ function MentionChip({
         onClick?.(displayName);
       }}
       className={cn(
-        'mention-chip inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[13px] font-medium transition-colors',
+        'mention-chip inline-flex items-center gap-0.5 rounded-full text-sm font-medium transition-colors',
         onClick
           ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 cursor-pointer'
           : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 cursor-default',
