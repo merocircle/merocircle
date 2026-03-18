@@ -26,25 +26,44 @@ export async function GET(request: NextRequest) {
       .rpc('search_creators', {
         search_query: query.trim(),
         search_limit: limit
-      })
+      } as any)
 
     if (searchError) {
       throw searchError
     }
 
-    // Transform search results
-    const results = (searchData || []).map((creator: Record<string, unknown>) => ({
-      ...creator,
-      avatar_url: creator.photo_url || null,
-      supporter_count: creator.supporters_count || 0,
-      total_earned: Number(creator.total_earnings) || 0,
-      created_at: new Date().toISOString(),
-    }))
+    // Transform search results and fetch usernames
+    const resultsWithUsernames = await Promise.all(
+      (searchData || []).map(async (creator: any) => {
+        // Fetch username and vanity_username for each creator
+        const { data: userData } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', creator.user_id)
+          .maybeSingle();
+        
+        const { data: profileData } = await supabase
+          .from('creator_profiles')
+          .select('vanity_username')
+          .eq('user_id', creator.user_id)
+          .maybeSingle();
+
+        return {
+          ...creator,
+          avatar_url: creator.photo_url || null,
+          supporter_count: creator.supporters_count || 0,
+          total_earned: Number(creator.total_earnings) || 0,
+          created_at: new Date().toISOString(),
+          username: profileData?.vanity_username || userData?.username || null,
+          vanity_username: profileData?.vanity_username || null,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
-      data: results,
-      total: results.length,
+      data: resultsWithUsernames,
+      total: resultsWithUsernames.length,
       query: query.trim()
     })
 

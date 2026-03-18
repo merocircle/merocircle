@@ -38,7 +38,7 @@ export function CreatorCard({
   rank,
   className,
 }: CreatorCardProps) {
-  const creatorSlug = creator.username || creator.vanity_username || creator.user_id || creator.id || "";
+  const creatorSlug = creator.vanity_username || creator.username;
   const isCompact = variant === "compact";
 
   if (isCompact) {
