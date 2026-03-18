@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, CreditCard, AlertCircle, RefreshCw, ExternalLink, X } from 'lucide-react';
+import { Calendar, CreditCard, AlertCircle, ExternalLink, X, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { getValidAvatarUrl } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -61,6 +61,17 @@ export default function SubscriptionsManagement() {
 
   useEffect(() => {
     fetchSubscriptions();
+  }, []);
+
+  useEffect(() => {
+    const handleRefreshEvent = () => {
+      fetchSubscriptions();
+    };
+
+    window.addEventListener('refresh-memberships', handleRefreshEvent);
+    return () => {
+      window.removeEventListener('refresh-memberships', handleRefreshEvent);
+    };
   }, []);
 
   const fetchSubscriptions = async () => {
@@ -254,17 +265,6 @@ export default function SubscriptionsManagement() {
   return (
     <>
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
-          <div className="sm:hidden">
-            {/* Mobile-only header for better UX */}
-            <h3 className="text-lg font-semibold">Your Subscriptions</h3>
-            <p className="text-sm text-gray-500">Manage all your creator subscriptions</p>
-          </div>
-          <Button onClick={fetchSubscriptions} variant="ghost" size="sm" className="self-start sm:self-auto">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
-
         {subscriptions.map((subscription) => (
           <Card key={subscription.id} className="p-4">
             <div className="flex items-start gap-4">
@@ -283,7 +283,7 @@ export default function SubscriptionsManagement() {
                     <h4 className="font-semibold text-base sm:text-lg truncate">{subscription.creator.displayName}</h4>
                     <p className="text-sm text-muted-foreground truncate">{subscription.tier.name}</p>
                   </div>
-                  <div className="flex gap-2 flex-wrap flex-shrink-0">
+                  <div className="flex gap-2 flex-wrap shrink-0">
                     {getStatusBadge(subscription)}
                     {getGatewayBadge(subscription.paymentGateway)}
                   </div>
