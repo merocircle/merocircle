@@ -331,6 +331,11 @@ export function EnhancedPostCard({
       ? "/profile"
       : `/creator/${creator.vanity_username}`;
 
+  const creatorMembershipLink =
+    currentUserId === creator.id
+      ? "/profile"
+      : `/creator/${creator.vanity_username}?tab=membership`;
+
   const handlePrefetch = useCallback(() => {
     router.prefetch(creatorProfileLink);
   }, [router, creatorProfileLink]);
@@ -783,7 +788,7 @@ export function EnhancedPostCard({
                       asChild
                     >
                       <Link
-                        href={creatorProfileLink}
+                        href={creatorMembershipLink}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Sparkles />

@@ -255,6 +255,13 @@ export default function PostDetailPage({
       : `/creator/${post.creator_profile?.vanity_username}`;
   }, [post, currentUser?.id]);
 
+  const creatorMembershipLink = useMemo(() => {
+    if (!post) return "/";
+    return currentUser?.id === post.creator.id
+      ? "/profile"
+      : `/creator/${post.creator_profile?.vanity_username}?tab=membership`;
+  }, [post, currentUser?.id]);
+
   const handleLike = useCallback(() => {
     if (!currentUser || !post) {
       router.push("/login");
@@ -512,7 +519,7 @@ export default function PostDetailPage({
                   className="px-5 shadow-md shadow-primary/15"
                   asChild
                 >
-                  <Link href={creatorProfileLink}>Join Circle</Link>
+                  <Link href={creatorMembershipLink}>Join Circle</Link>
                 </Button>
               </div>
             </div>
