@@ -26,6 +26,7 @@ import {
   Menu,
   X,
   ArrowLeft,
+  RefreshCw,
 } from 'lucide-react';
 import SubscriptionsManagement from '@/components/settings/SubscriptionsManagement';
 import EmailNotificationPreferences from '@/components/settings/EmailNotificationPreferences';
@@ -178,10 +179,25 @@ const SettingsSection = memo(function SettingsSection() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [refreshingMemberships, setRefreshingMemberships] = useState(false);
   const feedbackInputRef = useRef<{ focus: () => void }>(null);
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleRefreshMemberships = async () => {
+    setRefreshingMemberships(true);
+    try {
+      // Trigger a refetch by invalidating the subscriptions query
+      // This will work with the existing query client in SubscriptionsManagement
+      const event = new CustomEvent('refresh-memberships');
+      window.dispatchEvent(event);
+    } catch (error) {
+      console.error('Failed to refresh memberships:', error);
+    } finally {
+      setTimeout(() => setRefreshingMemberships(false), 1000);
+    }
   };
 
   const handleFeedbackOpen = () => {
@@ -278,12 +294,27 @@ const SettingsSection = memo(function SettingsSection() {
           {/* Content area */}
           <div className="flex-1 min-w-0">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-foreground">
-                {tabs.find(t => t.id === activeTab)?.label}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {tabs.find(t => t.id === activeTab)?.description}
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {tabs.find(t => t.id === activeTab)?.label}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {tabs.find(t => t.id === activeTab)?.description}
+                  </p>
+                </div>
+                {activeTab === 'memberships' && (
+                  <Button
+                    onClick={handleRefreshMemberships}
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0"
+                    disabled={refreshingMemberships}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${refreshingMemberships ? 'animate-spin' : ''}`} />
+                  </Button>
+                )}
+              </div>
             </div>
 
             {activeTab === 'notifications' && (
