@@ -327,7 +327,7 @@ export function MobileHeader({
               <Bell className="w-4.5 h-4.5 text-muted-foreground" />
               {unreadNotifications > 0 && (
                 <motion.span
-                  className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 flex items-center justify-center text-[9px] font-bold text-white bg-red-500 rounded-full"
+                  className="absolute top-1.5 right-2.5 sm:-top-1 sm:-right-1 min-w-[16px] h-[16px] px-0.5 flex items-center justify-center text-[9px] font-bold text-white bg-red-500 rounded-full"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                 >
