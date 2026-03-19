@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Star,
+  Heart,
   Check,
-  Crown
+  Crown,
+  Star
 } from 'lucide-react';
 
 interface Tier {
@@ -28,7 +29,7 @@ interface TierSelectionProps {
 }
 
 const tierIcons = [
-  { level: 1, icon: Star, stars: 1 },
+  { level: 1, icon: Heart, stars: 1 },
   { level: 2, icon: Star, stars: 2 },
   { level: 3, icon: Crown, stars: 3 }
 ];
@@ -88,12 +89,17 @@ export function TierSelection({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: tier.tier_level * 0.1 }}
-                className="relative h-full flex"
+                className={`relative h-full flex transition-all duration-300 rounded-lg ${!isCurrent && !loading && 'hover:scale-[1.02]'} ${
+                  tier.tier_level === 1 ? 'rounded-lg p-[0.5px] bg-linear-to-br from-primary/20 via-primary/15 to-primary/18 shadow-[0_0_6px_rgba(196,56,42,0.08),0_0_12px_rgba(196,56,42,0.04),0_0_24px_rgba(196,56,42,0.02)]' :
+                  tier.tier_level === 2 ? 'rounded-lg p-px bg-linear-to-br from-orange-400/80 via-red-400/70 to-red-500/80 shadow-[0_0_12px_rgba(234,88,12,0.25),0_0_24px_rgba(234,88,12,0.15),0_0_48px_rgba(234,88,12,0.08)]' :
+                  tier.tier_level === 3 ? 'rounded-lg p-[2px] bg-linear-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.3),0_0_48px_rgba(234,88,12,0.18),0_0_96px_rgba(234,88,12,0.12),0_0_160px_rgba(234,88,12,0.06)]' :
+                  ''
+                }`}
               >
                 <Card
-                  className={`relative overflow-hidden border border-border bg-background transition-all duration-200 flex flex-col w-full ${
-                    isCurrent ? 'opacity-75 cursor-not-allowed' : loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-foreground/30 hover:shadow-lg'
-                  } ${isCurrent ? 'ring-1 ring-foreground/10' : ''} ${isRecommended ? 'border-foreground/30' : ''}`}
+                  className={`relative overflow-hidden transition-all duration-300 flex flex-col w-full ${
+                    isCurrent ? 'opacity-75 cursor-not-allowed' : loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                  } ${isCurrent ? 'ring-1 ring-foreground/10' : ''} bg-card rounded-[10px]`}
                   onClick={() => !loading && !isCurrent && handleTierSelect(tier)}
                 >
                   {/* Blocked Overlay for Current Plan */}
@@ -122,31 +128,45 @@ export function TierSelection({
 
                   {/* Recommended Badge */}
                   {isRecommended && !isCurrent && (
-                    <div className="absolute top-0 left-0 right-0 bg-foreground text-background text-xs font-semibold py-1.5 px-4 text-center z-10">
+                    <div className={`absolute top-0 left-0 right-0 text-xs font-semibold py-1.5 px-4 text-center z-10 ${
+                      tier.tier_level === 2 ? 'bg-gradient-to-r from-orange-400/90 to-red-400/90 text-white' : 'bg-foreground text-background'
+                    }`}>
                       RECOMMENDED BY CREATOR
                     </div>
                   )}
 
                   {/* Header Image Area */}
-                  <div className={`h-12 sm:h-16 md:h-24 bg-gradient-to-br ${
-                    tier.tier_level === 1 ? 'from-muted to-muted/50' :
-                    tier.tier_level === 2 ? 'from-foreground/5 to-foreground/10' :
-                    'from-foreground/10 to-foreground/5'
-                  } flex items-center justify-center relative`}>
-                    <div className="absolute inset-0 opacity-5">
-                      <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-foreground/20 to-transparent" />
-                    </div>
-                    <div className="relative z-10">
-                      <Icon className={`w-5 h-5 sm:w-7 sm:h-7 md:w-10 md:h-10 ${
-                        tier.tier_level === 1 ? 'text-foreground/40' :
-                        tier.tier_level === 2 ? 'text-foreground/60' :
-                        'text-foreground/70'
-                      }`} />
+                  <div className={`h-16 sm:h-20 md:h-28 relative overflow-hidden ${
+                    tier.tier_level === 1 ? 'bg-linear-to-br from-orange-400/5 via-red-400/5 to-red-500/5' :
+                    tier.tier_level === 2 ? 'bg-linear-to-br from-orange-400/20 via-red-400/10 to-red-500/20' :
+                    'bg-linear-to-br from-orange-400/25 via-red-400/15 to-red-500/25'
+                  }`}>
+                    {/* Background pattern for premium tiers */}
+                    {tier.tier_level >= 2 && (
+                      <div className="absolute inset-0 opacity-20">
+                        <div className="w-full h-full bg-[radial-gradient(circle_at_30%_40%,var(--tw-gradient-stops))] from-primary/30 to-transparent" />
+                        <div className="w-full h-full bg-[radial-gradient(circle_at_70%_60%,var(--tw-gradient-stops))] from-primary/20 to-transparent" />
+                      </div>
+                    )}
+                    
+                    {/* Icon container */}
+                    <div className="relative z-10 flex items-center justify-center h-full">
+                      <div className={`p-3 sm:p-4 md:p-5 rounded-full backdrop-blur-sm ${
+                        tier.tier_level === 1 ? 'bg-primary/5' :
+                        tier.tier_level === 2 ? 'bg-primary/10 shadow-md' :
+                        'bg-primary/15 shadow-lg'
+                      }`}>
+                        <Icon className={`w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 ${
+                          tier.tier_level === 1 ? 'text-primary' :
+                          tier.tier_level === 2 ? 'text-primary' :
+                          'text-primary drop-shadow-sm'
+                        }`} />
+                      </div>
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div className={`flex-1 flex flex-col p-2 sm:p-3 md:p-5 ${isCurrent ? 'opacity-60' : ''}`}>
+                  <div className={`flex-1 flex flex-col p-3 sm:p-3 md:p-5 ${isCurrent ? 'opacity-60' : ''}`}>
                     {/* Title and Price */}
                     <div className="mb-2 sm:mb-3 md:mb-4">
                       <h3 className="text-sm sm:text-base md:text-lg font-bold text-foreground mb-1">
@@ -163,14 +183,14 @@ export function TierSelection({
                     </div>
 
                     {/* Benefits */}
-                    <div className="flex-1 space-y-1.5 sm:space-y-2 mb-2 sm:mb-3 md:mb-4">
+                    <div className="flex-1 space-y-2 sm:space-y-2 mb-2 sm:mb-3 md:mb-4">
                       {tier.benefits.map((benefit, index) => (
                         <div
                           key={index}
                           className="flex items-start gap-2"
                         >
-                          <div className="flex-shrink-0 w-3.5 h-3.5 rounded-full bg-foreground/10 flex items-center justify-center mt-0.5">
-                            <Check className="w-2 h-2 text-foreground" />
+                          <div className="shrink-0 w-3.5 h-3.5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                            <Check className="w-2 h-2 text-primary" />
                           </div>
                           <span className="text-xs text-muted-foreground leading-tight">
                             {benefit}
@@ -196,7 +216,7 @@ export function TierSelection({
                     </div>
 
                     {/* CTA Button */}
-                    <div className="mt-auto">
+                    <div className="mt-2">
                       {isCurrent ? (
                         <button
                           disabled
@@ -207,7 +227,11 @@ export function TierSelection({
                       ) : (
                         <button
                           disabled={loading}
-                          className="w-full py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 rounded-md font-medium text-center bg-foreground text-background hover:opacity-90 active:opacity-80 transition-all duration-200 disabled:opacity-50 text-xs"
+                          className={`w-full py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 rounded-md font-medium text-center transition-all duration-200 disabled:opacity-50 text-xs ${
+                            tier.tier_level === 3
+                              ? 'bg-linear-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.3),0_0_48px_rgba(234,88,12,0.18),0_0_96px_rgba(234,88,12,0.12),0_0_160px_rgba(234,88,12,0.06)]' 
+                              : tier.tier_level === 2 ? 'bg-linear-to-br from-orange-400 via-primary to-red-400 shadow-[0_0_12px_rgba(234,88,12,0.25),0_0_24px_rgba(234,88,12,0.15),0_0_48px_rgba(234,88,12,0.08)]' : 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80'
+                          }`}
                         >
                           {tier.price === 0 && tier.tier_level === 1
                             ? `Join as ${displayName(tier)}`
