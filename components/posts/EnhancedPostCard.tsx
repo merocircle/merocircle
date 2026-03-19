@@ -405,9 +405,20 @@ export function EnhancedPostCard({
     deleteMutation.mutate(post.id, {
       onSuccess: () => {
         setShowDeleteConfirm(false);
+        toast({
+          title: "Post deleted successfully",
+          description: "Your post has been permanently deleted.",
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Failed to delete post",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "destructive",
+        });
       },
     });
-  }, [deleteMutation, post.id]);
+  }, [deleteMutation, post.id, toast]);
 
   useEffect(() => {
     // Sync is_liked state from post prop
@@ -1015,7 +1026,14 @@ export function EnhancedPostCard({
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     disabled={deleteMutation.isPending}
                   >
-                    {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                    {deleteMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
