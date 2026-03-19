@@ -15,6 +15,7 @@ function CreatorProfileContent() {
   const router = useRouter();
   const slug = params.slug as string;
   const postId = searchParams.get('post');
+  const tabFromUrl = searchParams.get('tab') as 'posts' | 'membership' | 'shop' | 'about' | 'chat' | 'edit' | undefined;
   const renewFromUrl = searchParams.get('renew') === 'true';
   const subscriptionIdFromUrl = searchParams.get('subscription_id');
   const [creatorId, setCreatorId] = useState<string | null>(null);
@@ -139,7 +140,7 @@ function CreatorProfileContent() {
         <CreatorProfileSection
           creatorId={creatorId}
           initialHighlightedPostId={postId}
-          defaultTab="posts"
+          defaultTab={tabFromUrl || 'posts'}
           renewFromUrl={renewFromUrl}
           subscriptionIdFromUrl={subscriptionIdFromUrl}
         />

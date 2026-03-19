@@ -184,6 +184,16 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     }
   }, [initialHighlightedPostId, isWithinProvider]);
 
+  useEffect(() => {
+    // Only trigger on initial load when defaultTab is membership and we haven't scrolled yet
+    if (defaultTab === 'membership' && activeTab === 'membership' && membershipTabRef.current) {
+      // Slightly longer delay to ensure the tab content is rendered after the main tab logic
+      setTimeout(() => {
+        membershipTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [defaultTab]); // Only depend on defaultTab, not activeTab
+
   const {
     creatorDetails,
     subscriptionTiers,
@@ -427,7 +437,7 @@ export default function CreatorProfileSection({ creatorId, initialHighlightedPos
     }, 150); // Slightly longer delay to ensure content is fully rendered
 
     return () => clearTimeout(scrollTimeout);
-  }, [activeTab]);
+  }, [activeTab, defaultTab]);
 
   const isSupporter = creatorDetails?.is_supporter || false;
   const hasActiveSubscription = creatorDetails?.current_subscription !== null;
