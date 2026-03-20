@@ -55,6 +55,8 @@ function PaymentSuccessContent() {
       const transaction_id = searchParams.get('transaction_id');
       const pidx = searchParams.get('pidx');
       const amountParam = searchParams.get('amount'); // Khalti sends amount in paisa
+      const creator_username = searchParams.get('creator_username');
+      const creator_vanity = searchParams.get('creator_vanity');
 
       // eSewa redirects to success_url with response in Base64 "data" param (developer.esewa.com.np)
       const dataParam = searchParams.get('data');
@@ -183,19 +185,17 @@ function PaymentSuccessContent() {
 
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="p-8 max-w-md w-full mx-4">
           <div className="text-center">
             <div className="mb-4 flex justify-center">
-              <div className="w-12 h-12">
-                <div className="w-12 h-12 bg-primary animate-[morph_2s_ease-in-out_infinite] rounded-[6%]" />
-              </div>
+              <div className="w-16 h-16 bg-primary animate-[morph_2s_ease-in-out_infinite] rounded-[6%]" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Verifying Payment
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Please wait while we confirm your payment with eSewa...
+            <p className="text-muted-foreground">
+              Please wait while we confirm your payment...
             </p>
           </div>
         </Card>
@@ -208,13 +208,13 @@ function PaymentSuccessContent() {
   // No valid callback params or verification failed – e.g. stuck on eSewa then opened our URL without params
   if (!verified && !isVerifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <Card className="p-8 max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
             Payment redirect issue
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            We couldn’t confirm your payment from this page. If you already paid via eSewa or Khalti, your support may still have gone through. Go back to the creator page or home to check.
+          <p className="text-muted-foreground mb-6">
+            We couldn't confirm your payment from this page. If you already paid via eSewa or Khalti, your support may still have gone through. Go back to the creator page or home to check.
           </p>
           <div className="space-y-3">
             {creatorId && (
@@ -231,14 +231,32 @@ function PaymentSuccessContent() {
     );
   }
 
-  const handleGoToCreator = () => {
+  const handleGoToCreator = async () => {
     if (creatorId) {
-      // Force refresh to bypass cache and fetch updated supporter status
-      router.push(`/creator/${creatorId}?refresh=${Date.now()}`);
-      // Also trigger a hard reload after navigation to ensure all caches are cleared
-      setTimeout(() => {
-        router.refresh();
-      }, 100);
+      try {
+        // Always try to get creator info from the ID
+        const response = await fetch(`/api/creator/${creatorId}`);
+        if (response.ok) {
+          const data = await response.json();
+          const creator = data.creatorDetails;
+          const redirectPath = creator.username 
+            ? `/creator/${creator.username}` 
+            : `/creator/${creatorId}`; // Last resort fallback
+          
+          router.push(`${redirectPath}`);
+          setTimeout(() => {
+            router.refresh();
+          }, 100);
+          return; // Success, exit early
+        }
+      } catch (error) {
+        logger.error('Error fetching creator info', 'PAYMENT_SUCCESS', { error, creatorId });
+      }
+      
+      // If API fails, we can't use ID-based redirect since those pages are removed
+      // Log the issue and redirect to home as a safe fallback
+      logger.warn('API failed and ID-based redirects are disabled', 'PAYMENT_SUCCESS', { creatorId });
+      router.push('/home');
     } else if (isAuthenticated) {
       router.push('/home');
     } else {
@@ -254,28 +272,28 @@ function PaymentSuccessContent() {
     <>
       {showAnimation && <BalloonBurst />}
       
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto">
             <Card className="p-8 text-center">
               <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
                   <CheckCircle className="w-12 h-12 text-white" />
                 </div>
               </div>
               
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              <h1 className="text-3xl font-bold text-foreground mb-4">
                 Congratulations! 🎉
               </h1>
               
-              <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-xl text-muted-foreground mb-6">
                 You have successfully supported this creator!
               </p>
 
               {transaction && (
-                <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg p-6 mb-6">
-                  <p className="text-green-100 text-sm mb-1">Amount Paid</p>
-                  <p className="text-3xl font-bold">NPR {transaction.amount}</p>
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 mb-6">
+                  <p className="text-primary text-sm mb-1 font-medium">Amount Paid</p>
+                  <p className="text-3xl font-bold text-foreground">NPR {transaction.amount}</p>
                 </div>
               )}
 
@@ -321,15 +339,13 @@ function PaymentSuccessContent() {
 export default function PaymentSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="p-8 max-w-md w-full mx-4">
           <div className="text-center">
             <div className="mb-4 flex justify-center">
-              <div className="w-12 h-12">
-                <div className="w-12 h-12 bg-primary animate-[morph_2s_ease-in-out_infinite] rounded-[6%]" />
-              </div>
+              <div className="w-16 h-16 bg-primary animate-[morph_2s_ease-in-out_infinite] rounded-[6%]" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Loading...
             </h2>
           </div>
