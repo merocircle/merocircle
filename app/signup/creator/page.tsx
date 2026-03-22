@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSession, signIn } from 'next-auth/react';
-import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
 
@@ -301,11 +300,9 @@ export default function CreatorSignupPage() {
       if (userProfile.role === 'creator') {
         // Check if creator profile exists
         const checkCreatorProfile = async () => {
-          const { data: creatorProfile } = await supabase
-            .from('creator_profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
+          const res = await fetch('/api/creator/check-profile');
+          if (!res.ok) return;
+          const { profile: creatorProfile, tiers: tierData } = await res.json();
 
           if (!creatorProfile) {
             // Creator profile doesn't exist: only move to creator-details if we're still on signup (don't overwrite restored draft step)
@@ -339,18 +336,12 @@ export default function CreatorSignupPage() {
               }
               
               // Load existing tier data
-              const { data: tierData } = await supabase
-                .from('subscription_tiers')
-                .select('*')
-                .eq('creator_id', user.id)
-                .order('tier_level', { ascending: true });
-                
               if (tierData && tierData.length > 0) {
                 const newTierPrices = { ...tierPrices };
                 const newTierNames = { ...tierNames };
                 const newTierExtraPerks = { ...tierExtraPerks };
                 
-                tierData.forEach(tier => {
+                tierData.forEach((tier: any) => {
                   if (tier.tier_level === 1) {
                     newTierNames.tier1 = tier.tier_name || 'Supporter';
                     newTierExtraPerks[1] = tier.extra_perks || [];
@@ -554,46 +545,17 @@ export default function CreatorSignupPage() {
         }
       ];
 
-      // Update each tier with the user's custom prices and extra perks
-      const updatePromises = tierData.map(tier => 
-        supabase
-          .from('subscription_tiers')
-          .update({
-            price: tier.price,
-            tier_name: tier.tier_name,
-            description: tier.description,
-            benefits: tier.benefits,
-            extra_perks: tier.extra_perks
-          })
-          .eq('creator_id', user.id)
-          .eq('tier_level', tier.tier_level)
-      );
+      // Update tier prices via the proxy API
+      const tiersRes = await fetch('/api/creator/tiers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tiers: tierData }),
+      });
 
-      const results = await Promise.all(updatePromises);
-      const errors = results.filter(r => r.error);
-      
-      if (errors.length > 0) {
-        logger.error('Failed to update tier prices', 'CREATOR_SIGNUP', { errors });
-        // Try upsert as fallback
-        const { error: tierError } = await supabase
-          .from('subscription_tiers')
-          .upsert(
-            tierData.map(tier => ({
-              creator_id: user.id,
-              tier_level: tier.tier_level,
-              price: tier.price,
-              tier_name: tier.tier_name,
-              description: tier.description,
-              benefits: tier.benefits,
-              extra_perks: tier.extra_perks
-            })),
-            { onConflict: 'creator_id,tier_level' }
-          );
-        
-        if (tierError) {
-          logger.error('Upsert tier failed', 'CREATOR_SIGNUP', { error: tierError instanceof Error ? tierError.message : String(tierError) });
-          setError('Profile created but tier prices could not be updated. Please update them in your dashboard.');
-        }
+      if (!tiersRes.ok) {
+        const d = await tiersRes.json().catch(() => ({}));
+        logger.error('Failed to update tier prices', 'CREATOR_SIGNUP', { error: d.error });
+        setError('Profile created but tier prices could not be updated. Please update them in your dashboard.');
       } else {
         logger.info('Tier prices updated successfully', 'CREATOR_SIGNUP');
       }

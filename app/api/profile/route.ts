@@ -12,17 +12,18 @@ export async function PUT(request: NextRequest) {
     const supabase = await createClient();
 
     const body = await request.json();
-    const { display_name, photo_url, bio, category, cover_image_url, social_links, vanity_username } = body;
+    const { display_name, photo_url, bio, category, cover_image_url, social_links, vanity_username, role } = body;
 
     // Update users table
     const userUpdates: any = {};
     if (display_name !== undefined) userUpdates.display_name = display_name;
     if (photo_url !== undefined) userUpdates.photo_url = photo_url;
+    if (role !== undefined && (role === 'user' || role === 'creator')) userUpdates.role = role;
 
     if (Object.keys(userUpdates).length > 0) {
       const { error: userError } = await supabase
         .from('users')
-        .update(userUpdates)
+        .update(userUpdates as any)
         .eq('id', user.id);
 
       if (userError) {
@@ -49,7 +50,7 @@ export async function PUT(request: NextRequest) {
       if (Object.keys(profileUpdates).length > 0) {
         const { error: profileError } = await supabase
           .from('creator_profiles')
-          .update(profileUpdates)
+          .update(profileUpdates as any)
           .eq('user_id', user.id);
 
         if (profileError) {
