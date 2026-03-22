@@ -181,39 +181,54 @@ export function ThreadedComments({
             {/* Reply input */}
             <AnimatePresence>
               {replyingTo === comment.id && (
-                <motion.form
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  onSubmit={(e) => handleReplySubmit(e, comment.id)}
-                  className="mt-2 flex items-end gap-2"
+                  className="mt-3"
                 >
-                  <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-1" />
-                  <AutoResizeCommentInput
-                    value={replyContent}
-                    onChange={(e) => setReplyContent(e.target.value)}
-                    placeholder={`Reply to ${comment.user.display_name}...`}
-                    className="flex-1 min-w-0 bg-muted/40 text-sm rounded-xl px-3.5 focus:ring-2 focus:ring-primary/30 border border-border/40 placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={!replyContent.trim() || isSubmitting}
-                    className="h-7 px-3 rounded-full text-xs"
-                  >
-                    {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Reply'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setReplyingTo(null); setReplyContent(''); }}
-                    className="h-7 px-2 text-xs text-muted-foreground"
-                  >
-                    Cancel
-                  </Button>
-                </motion.form>
+                  <div className="flex gap-2.5">
+                    <div className="flex-shrink-0 w-7" /> {/* Spacer to align with comment content */}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <CornerDownRight className="h-3 w-3" />
+                        <span>Replying to {comment.user.display_name}</span>
+                      </div>
+                      <form
+                        onSubmit={(e) => handleReplySubmit(e, comment.id)}
+                        className="space-y-2"
+                      >
+                        <AutoResizeCommentInput
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          placeholder={`Write a reply to ${comment.user.display_name}...`}
+                          className="w-full bg-muted/40 text-sm rounded-xl px-3.5 py-2.5 min-h-[60px] resize-none focus:ring-2 focus:ring-primary/30 border border-border/40 placeholder:text-muted-foreground"
+                          autoFocus
+                          rows={2}
+                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setReplyingTo(null); setReplyContent(''); }}
+                            className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={!replyContent.trim() || isSubmitting}
+                            className="h-7 px-4 rounded-full text-xs"
+                          >
+                            {isSubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Reply'}
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </motion.div>
               )}
             </AnimatePresence>
 
