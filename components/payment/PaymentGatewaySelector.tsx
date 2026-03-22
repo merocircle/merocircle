@@ -4,6 +4,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 
 interface PaymentGatewaySelectorProps {
   open: boolean;
@@ -30,6 +31,9 @@ export function PaymentGatewaySelector({
   supporterMessage,
   onPaymentSuccess,
 }: PaymentGatewaySelectorProps) {
+  const { theme, systemTheme } = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
+
   const gateways = [
     {
       id: 'esewa' as const,
@@ -82,8 +86,8 @@ export function PaymentGatewaySelector({
                 className={`relative overflow-hidden w-full transition-all duration-200 border ${
                   isComingSoon 
                     ? 'opacity-50 cursor-not-allowed' 
-                    : 'cursor-pointer hover:shadow-md hover:border-purple-400 active:scale-[0.98]'
-                } ${(gateway as any).isSubscription ? 'border-blue-500/50' : ''}`}
+                    : 'cursor-pointer hover:shadow-md hover:border-primary active:scale-[0.98]'
+                } ${(gateway as any).isSubscription ? 'border-primary/30' : ''}`}
                 onClick={() => !isComingSoon && onSelectGateway(gateway.id as 'esewa' | 'khalti' | 'dodo')}
               >
                 {/* Coming Soon Badge */}
@@ -113,8 +117,13 @@ export function PaymentGatewaySelector({
                           alt={gateway.name}
                           width={140}
                           height={48}
-                          className="object-contain max-h-12"
+                          className={`object-contain max-h-12 transition-all duration-200 ${
+                            isDark && gateway.id !== 'dodo' ? 'invert(1) hue-rotate(180deg) brightness(1.2)' : ''
+                          }`}
                           unoptimized
+                          style={{
+                            filter: isDark && gateway.id !== 'dodo' ? 'invert(1) hue-rotate(180deg) brightness(1.2)' : 'none'
+                          }}
                         />
                       </div>
                       {(gateway as any).description && (

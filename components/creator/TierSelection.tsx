@@ -229,8 +229,8 @@ export function TierSelection({
                           disabled={loading}
                           className={`w-full py-1.5 sm:py-2 md:py-2.5 px-2 sm:px-3 rounded-md font-medium text-center transition-all duration-200 disabled:opacity-50 text-xs ${
                             tier.tier_level === 3
-                              ? 'bg-linear-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.3),0_0_48px_rgba(234,88,12,0.18),0_0_96px_rgba(234,88,12,0.12),0_0_160px_rgba(234,88,12,0.06)]' 
-                              : tier.tier_level === 2 ? 'bg-linear-to-br from-orange-400 via-primary to-red-400 shadow-[0_0_12px_rgba(234,88,12,0.25),0_0_24px_rgba(234,88,12,0.15),0_0_48px_rgba(234,88,12,0.08)]' : 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80'
+                              ? 'bg-linear-to-br from-orange-400 via-red-400 to-red-500 shadow-[0_0_20px_rgba(234,88,12,0.3),0_0_48px_rgba(234,88,12,0.18),0_0_96px_rgba(234,88,12,0.12),0_0_160px_rgba(234,88,12,0.06)] text-white hover:text-white/90 active:text-white/80' 
+                              : tier.tier_level === 2 ? 'bg-linear-to-br from-orange-400 via-primary to-red-400 shadow-[0_0_12px_rgba(234,88,12,0.25),0_0_24px_rgba(234,88,12,0.15),0_0_48px_rgba(234,88,12,0.08)] text-white hover:text-white/90 active:text-white/80' : 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80'
                           }`}
                         >
                           {tier.price === 0 && tier.tier_level === 1
