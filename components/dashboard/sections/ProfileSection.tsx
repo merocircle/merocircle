@@ -45,7 +45,6 @@ import { TimelineFeed } from '@/components/posts/TimelineFeed';
 import { TimelinePost } from '@/components/posts/TimelinePost';
 import { staggerContainer, fadeInUp } from '@/components/animations/variants';
 import { isToday, isYesterday } from 'date-fns';
-import { supabase } from '@/lib/supabase';
 import { cn, getValidAvatarUrl } from '@/lib/utils';
 
 const CATEGORIES = [
@@ -118,25 +117,10 @@ export default function ProfileSection() {
     const fetchPosts = async () => {
       if (user && isAuthenticated && isCreator) {
         try {
-          const { data, error } = await supabase
-            .from('posts')
-            .select(`
-              *,
-              post_likes(id),
-              post_comments(id),
-              polls(id, question, allows_multiple_answers, expires_at)
-            `)
-            .eq('creator_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-          if (!error && data) {
-            setPosts(data.map((post: any) => ({
-              ...post,
-              likes_count: post.post_likes?.length || 0,
-              comments_count: post.post_comments?.length || 0,
-              poll: post.polls || null
-            })));
+          const res = await fetch(`/api/creator/${user.id}/posts?limit=20`);
+          if (res.ok) {
+            const data = await res.json();
+            setPosts(data.posts || []);
           }
         } catch (error) {
           logger.error('Failed to fetch posts', 'PROFILE_SECTION', { error: error instanceof Error ? error.message : String(error) });
