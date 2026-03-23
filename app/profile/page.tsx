@@ -29,12 +29,8 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, authLoading, isCreator, creatorProfile?.vanity_username, user?.id, router]);
 
-  if (authLoading) {
+  if (authLoading || !isAuthenticated) {
     return <PageLayout loading />;
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   // Creators will be redirected; show loading until redirect completes

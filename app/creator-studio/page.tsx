@@ -44,12 +44,8 @@ export default function CreatorStudioPage() {
     }
   }, [isAuthenticated, authLoading, isCreator, router]);
 
-  if (authLoading) {
+  if (authLoading || !isAuthenticated || !isCreator) {
     return <PageLayout loading />;
-  }
-
-  if (!isAuthenticated || !isCreator) {
-    return null;
   }
 
   return (
