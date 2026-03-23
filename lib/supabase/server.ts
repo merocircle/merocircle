@@ -4,10 +4,10 @@ import { Database } from '../supabase'
 import { logger } from '@/lib/logger'
 
 export async function createClient() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     logger.error('Missing Supabase environment variables', 'SUPABASE_SERVER', {
       hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       env: process.env.VERCEL_ENV || 'local'
     })
     throw new Error('Missing Supabase configuration')
@@ -17,7 +17,7 @@ export async function createClient() {
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
     {
       cookies: {
         get(name: string) {
