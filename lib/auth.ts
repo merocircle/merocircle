@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
 const requiredEnvVars = [
@@ -35,13 +35,13 @@ export const authOptions: NextAuthOptions = {
       }
 
       try {
-        const supabase = await createClient();
+        const supabase = createAdminClient();
         
-        const { data: existingUser, error: fetchError } = await supabase
-          .from('users')
+        const { data: existingUser, error: fetchError } = await (supabase
+          .from('users' as any)
           .select('*')
           .eq('email', user.email)
-          .single();
+          .single() as any);
 
         if (fetchError && fetchError.code !== 'PGRST116') {
           logger.error('Error fetching user in signIn', 'NEXTAUTH', { error: fetchError.message });
@@ -51,16 +51,16 @@ export const authOptions: NextAuthOptions = {
         if (!existingUser) {
           logger.info('Creating new user', 'NEXTAUTH', { email: user.email });
           
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
+          const { data: newUser, error: createError } = await (supabase
+            .from('users' as any)
             .insert({
               email: user.email,
               display_name: user.name || user.email.split('@')[0],
               photo_url: user.image || null,
               role: 'user',
-            })
+            } as any)
             .select()
-            .single();
+            .single() as any);
 
           if (createError) {
             logger.error('Error creating user', 'NEXTAUTH', { error: createError.message });
@@ -118,12 +118,12 @@ export const authOptions: NextAuthOptions = {
         
         // Fetch user profile from Supabase
         try {
-          const supabase = await createClient();
-          const { data: userProfile, error: profileError } = await supabase
-            .from('users')
+          const supabase = createAdminClient();
+          const { data: userProfile, error: profileError } = await (supabase
+            .from('users' as any)
             .select('*, creator_profiles(*)')
             .eq('id', token.sub!)
-            .single();
+            .single() as any);
 
           if (profileError) {
             logger.error('Error fetching profile in session', 'NEXTAUTH', { error: profileError.message });

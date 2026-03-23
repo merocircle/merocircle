@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
     logger.info('Top creators request', 'PUBLIC_TOP_CREATORS_API');
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // First get all users who exist (inner join approach)
     const { data: users } = await supabase
