@@ -20,12 +20,8 @@ export default function SettingsPage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  if (authLoading) {
+  if (authLoading || !isAuthenticated) {
     return <PageLayout loading />;
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   return (

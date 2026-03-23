@@ -57,7 +57,7 @@ export function StreamChatWrapper({
 }: StreamChatWrapperProps) {
   const { chatClient, isConnecting, isConnected, error, reconnect } =
     useStreamChat();
-  const { user, isCreator } = useAuth();
+  const { user, isCreator, loading: authLoading } = useAuth();
   const { resolvedTheme } = useTheme();
 
   // State
@@ -917,7 +917,7 @@ export function StreamChatWrapper({
 
   if (!isConnected || !chatClient) {
     // If user is authenticated, show loading state (chat is still connecting)
-    if (user) {
+    if (user || authLoading) {
       return (
         <div className={`flex items-center justify-center h-full bg-background ${className}`}>
           <div className="text-center p-6">
