@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
-import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
 interface UserProfile {
@@ -43,7 +42,7 @@ interface AuthContextType {
   createCreatorProfile: (bio: string, category: string, socialLinks?: Record<string, string>, vanityUsername?: string, displayName?: string) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
-  signInWithGoogle?: () => void; // Optional for compatibility
+  signInWithGoogle?: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,35 +53,16 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
   const [creatorProfile, setCreatorProfile] = useState<CreatorProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async () => {
     try {
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) {
-        logger.error('Error loading profile', 'AUTH_CONTEXT', { error: profileError.message });
+      const res = await fetch('/api/me');
+      if (!res.ok) {
+        logger.error('Error loading profile', 'AUTH_CONTEXT', { status: res.status });
         return;
       }
-
-      if (profile) {
-        setUserProfile(profile);
-
-        // Load creator profile if user is a creator
-        if (profile.role === 'creator') {
-          const { data: creator, error: creatorError } = await supabase
-            .from('creator_profiles')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-
-          if (!creatorError && creator) {
-            setCreatorProfile(creator);
-          }
-        }
-      }
+      const { userProfile: profile, creatorProfile: creator } = await res.json();
+      setUserProfile(profile ?? null);
+      setCreatorProfile(creator ?? null);
     } catch (error) {
       logger.error('Error in loadProfile', 'AUTH_CONTEXT', { error: error instanceof Error ? error.message : String(error) });
     } finally {
@@ -96,14 +76,14 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
       return;
     }
 
-    if (status === 'authenticated' && session?.user?.id) {
-      loadProfile(session.user.id);
+    if (status === 'authenticated') {
+      loadProfile();
     } else {
       setUserProfile(null);
       setCreatorProfile(null);
       setLoading(false);
     }
-  }, [session, status, loadProfile]);
+  }, [status, loadProfile]);
 
   const updateUserRole = async (role: 'user' | 'creator') => {
     if (!session?.user?.id) {
@@ -111,16 +91,18 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     }
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ role, updated_at: new Date().toISOString() })
-        .eq('id', session.user.id);
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
 
-      if (error) {
-        return { error };
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { error: data.error || 'Failed to update role' };
       }
 
-      await loadProfile(session.user.id);
+      await loadProfile();
       return { error: null };
     } catch (error) {
       return { error };
@@ -144,47 +126,41 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         return { error: roleError };
       }
 
-      // Update display name in users table if provided
       if (displayName) {
-        const { error: displayNameError } = await supabase
-          .from('users')
-          .update({ display_name: displayName.trim(), updated_at: new Date().toISOString() })
-          .eq('id', session.user.id);
-
-        if (displayNameError) {
-          return { error: displayNameError };
+        const res = await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ display_name: displayName.trim() }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          return { error: data.error || 'Failed to update display name' };
         }
       }
 
-      const payload: {
-        user_id: string;
-        bio: string;
-        category: string;
-        social_links: Record<string, string>;
-        vanity_username?: string | null;
-      } = {
-        user_id: session.user.id,
-        bio,
-        category,
-        social_links: socialLinks || {},
-      };
       const trimmed = vanityUsername?.trim().toLowerCase();
-      if (trimmed) payload.vanity_username = trimmed;
+      const res = await fetch('/api/creator/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bio,
+          category,
+          social_links: socialLinks || {},
+          ...(trimmed ? { vanity_username: trimmed } : {}),
+        }),
+      });
 
-      const { data, error: createError } = await supabase
-        .from('creator_profiles')
-        .insert(payload)
-        .select()
-        .single();
-
-      if (createError) {
-        return { error: createError };
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { error: data.error || 'Failed to create creator profile' };
       }
 
-      if (data) {
-        setCreatorProfile(data);
+      const data = await res.json();
+      if (data.creatorProfile) {
+        setCreatorProfile(data.creatorProfile);
       }
 
+      await loadProfile();
       return { error: null };
     } catch (error) {
       return { error };
@@ -192,26 +168,22 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
   };
 
   const refreshProfile = async () => {
-    if (session?.user?.id) {
-      await loadProfile(session.user.id);
+    if (status === 'authenticated') {
+      await loadProfile();
     }
   };
 
   const signOut = async () => {
     try {
-      // Clear local state first
       setUserProfile(null);
       setCreatorProfile(null);
       setLoading(true);
-      
-      // Sign out from NextAuth with redirect
-      await nextAuthSignOut({ 
+      await nextAuthSignOut({
         callbackUrl: '/',
-        redirect: true 
+        redirect: true,
       });
     } catch (error) {
       logger.error('Sign out error', 'AUTH_CONTEXT', { error: error instanceof Error ? error.message : String(error) });
-      // Fallback: force redirect
       window.location.href = '/';
     } finally {
       setLoading(false);
@@ -220,7 +192,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
 
   const value: AuthContextType = {
     userProfile,
-    user: userProfile, // Alias for backward compatibility
+    user: userProfile,
     creatorProfile,
     isAuthenticated: status === 'authenticated' && !!userProfile,
     isCreator: userProfile?.role === 'creator',
@@ -229,7 +201,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     createCreatorProfile,
     refreshProfile,
     signOut,
-    signInWithGoogle: undefined, // Not needed with NextAuth
+    signInWithGoogle: undefined,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
